@@ -30,8 +30,9 @@ find_package(Boost 1.65 CONFIG REQUIRED program_options system filesystem log th
 hunter_add_package(GTest)
 find_package(GTest CONFIG REQUIRED)
 
-hunter_add_package(flatbuffers)
-find_package(Flatbuffers CONFIG REQUIRED)
+hunter_add_package(Protobuf)
+include(FindProtobuf)
+find_package(Protobuf CONFIG REQUIRED)
 
 hunter_add_package(cryptopp)
 find_package(cryptopp CONFIG REQUIRED)

@@ -1,0 +1,55 @@
+syntax = "proto2";
+
+package neuro.messages;
+
+message Blob {
+  required bytes data = 1;
+}
+
+message Timestamp {
+  required uint32 data = 1;
+}
+
+message NCCSDF {
+  required uint64 value = 1;
+}
+
+enum KeyType {
+  ECP256K1 = 0;
+  ECP256R1 = 1;
+}
+
+message KeyPub {
+  required KeyType type = 1;
+  optional bytes raw_data = 2;
+  optional string hex_data = 3;
+}
+
+message Address {
+  optional Hash hash = 1;
+  optional KeyPub pub_key = 2;
+}
+
+message Hash {
+  enum Type { SHA256 = 0; }
+
+  required Type type = 1;
+  required bytes data = 2;
+}
+
+
+message KeyPriv {
+  required KeyType type = 1;
+  required bytes data = 2;
+}
+
+message Peer {
+  required string endpoint = 1;
+  required uint32 port = 2;
+  optional KeyPub key_pub = 3;
+}
+
+message TransactionID {
+  required Hash hash = 1;
+}
+

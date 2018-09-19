@@ -1,0 +1,111 @@
+syntax = "proto2";
+
+package neuro.messages;
+
+import "common.proto";
+
+message Hello {
+  optional KeyPub key_pub = 1;
+  optional uint32 listen_port = 2;
+}
+
+message World {
+  required bool accepted = 1;
+  required KeyPub key_pub_id = 2;
+}
+
+message GetPeers {
+}
+
+message Peers {
+  repeated Peer peers = 1;
+}
+
+message GetRoots {
+  optional Hash last_known_root = 1;
+  optional uint32 count = 2; // ask for count last roots 
+}
+
+message Roots {
+  repeated Hash roots = 1;
+}
+
+message GetBlock {
+  optional Hash hash = 1;
+  optional uint32 height = 2;
+}
+
+message Input {
+  required Hash id = 1;
+  required uint32 output_id = 2;
+  optional KeyPub pub_key = 3;
+  optional Hash block_id = 4;
+}
+
+message Output {
+  required Address address = 1;
+  optional NCCSDF value = 2;
+  optional bytes data = 3;
+}
+
+message Transaction {
+  repeated Input inputs = 1;
+  repeated Output ouptuts = 2;
+  optional NCCSDF fees = 3;
+}
+
+enum State {
+  ACCEPTED = 0;
+  PROBATION = 1;
+}
+
+message Block {
+  required Hash id = 1;
+  required Timestamp timestamp = 2;
+  required Hash previous_block_hash = 3;
+  optional State state = 4;
+  required KeyPub author = 5;
+
+  repeated Transaction transactions = 6;
+}
+
+enum Type {
+  UNKNOWN = 0;
+  HELLO = 1;
+  WORLD = 2;
+  GET_PEERS = 3;
+  PEERS = 4;
+  GET_ROOTS = 5;
+  ROOTS = 6;
+  TRANSACTION = 7;
+  GET_BLOCK = 8;
+  BLOCK = 9;
+  _NB_ELEMENTS = 10;
+}
+
+message Body {
+  oneof body {
+    Hello hello = 1;
+    World world = 2;
+    GetPeers get_peers = 3;
+    Peers peers = 4;
+    GetRoots get_roots = 5;
+    Roots roots = 6;
+    Transaction transaction = 7;
+    GetBlock get_block = 8;
+    Block block = 9;
+  }
+}
+
+message Header {
+  required uint32 version = 1;
+  required Timestamp ts = 2;
+  optional KeyPub sender_key = 10;
+  optional uint32 id = 11;
+  optional uint32 request_id = 12;
+}
+
+message Message {
+  required Header header = 1;
+  repeated Body bodies = 20;
+}

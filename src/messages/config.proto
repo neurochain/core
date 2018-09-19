@@ -1,0 +1,38 @@
+syntax = "proto2";
+
+package neuro.messages.config;
+
+import "common.proto";
+
+message Logs {
+  enum Severity {
+    trace = 0;
+    debug = 1;
+    info = 2;
+    warning = 3;
+    error = 4;
+    fatal = 5;
+  }
+  
+  optional string file_path = 1;
+  optional uint32 rotation_size = 2 [default = 10];
+  optional Severity severity = 3 [default = warning];
+  optional bool to_stdout = 4;
+}
+
+message Tcp {
+  required uint32 port = 1;
+  repeated Peer peers = 2;
+}
+
+message Networking {
+  optional uint32 max_connections = 1;
+  required Tcp tcp = 2;
+}
+
+message Config {
+  required string key_pub_path = 1;
+  required string key_priv_path = 2;
+  optional Logs logs = 3;
+  optional Networking networking = 4;
+}
