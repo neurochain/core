@@ -69,19 +69,7 @@ message Block {
   repeated Transaction transactions = 6;
 }
 
-enum Type {
-  UNKNOWN = 0;
-  HELLO = 1;
-  WORLD = 2;
-  GET_PEERS = 3;
-  PEERS = 4;
-  GET_ROOTS = 5;
-  ROOTS = 6;
-  TRANSACTION = 7;
-  GET_BLOCK = 8;
-  BLOCK = 9;
-  _NB_ELEMENTS = 10;
-}
+message MessageCount {}
 
 message Body {
   oneof body {
@@ -94,6 +82,7 @@ message Body {
     Transaction transaction = 7;
     GetBlock get_block = 8;
     Block block = 9;
+    MessageCount message_count = 10;
   }
 }
 

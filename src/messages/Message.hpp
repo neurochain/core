@@ -12,30 +12,10 @@ namespace neuro {
 namespace messages {
 
 using Packet = google::protobuf::Message;
- 
+using Type = Body::BodyCase;
+  
 Type get_type(const Body &body) {
-
-  if (body.has_hello()) {
-    return HELLO; 
-  } else if (body.has_world()) {
-    return WORLD; 
-  } else if (body.has_get_peers()) {
-    return GET_PEERS; 
-  } else if (body.has_peers()) {
-    return PEERS; 
-  } else if (body.has_get_roots()) {
-    return GET_ROOTS; 
-  } else if (body.has_roots()) {
-    return ROOTS; 
-  } else if (body.has_transaction()) {
-    return TRANSACTION; 
-  } else if (body.has_get_block()) {
-    return GET_BLOCK; 
-  } else if (body.has_block()) {
-    return BLOCK;
-  } 
-
-  return UNKNOWN;
+  return body.body_case();
 }
    
 bool from_json(const std::string &json,

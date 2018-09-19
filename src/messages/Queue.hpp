@@ -66,12 +66,6 @@ class Queue {
 
  private:
   bool _started{false};
-  /*!
-          \var std::array<std::vector<Queue::Callback>,
-messages::Type::_NB_ELEMENTS> _callbacks \brief An array that has a vector of
-callbacks for every type of messages::Message \note Maybe it should be
-implemented using a std::set to avoid inserting the same callback more than once
-   */
   std::set<Subscriber *> _subscribers;
   /*!
     \var std::queue<std::shared_ptr<const messages::Message>> _queue
