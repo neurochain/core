@@ -5,6 +5,7 @@
 #include <google/protobuf/util/json_util.h>
 #include <string>
 #include <fstream>
+#include "common/types.hpp"
 #include "messages.pb.h"
 #include "mongo/mongo.hpp"
 
@@ -17,7 +18,12 @@ using Type = Body::BodyCase;
 Type get_type(const Body &body) {
   return body.body_case();
 }
-   
+
+bool from_buffer(const Buffer &buffer,
+                 Packet *packet) {
+  return packet->ParseFromArray(buffer.data(), buffer.size());
+}
+  
 bool from_json(const std::string &json,
                Packet *packet) {
   google::protobuf::util::JsonParseOptions options;
@@ -40,17 +46,22 @@ bool from_bson(const bsoncxx::document::value &doc,
   return from_json(mongo_json, packet);
 }
 
-std::string to_json(const Packet &packet) {
-  std::string output;
-  google::protobuf::util::MessageToJsonString(packet, &output);
-  return output;
+void to_buffer(const Packet &packet, Buffer *buffer) {
+  packet.SerializeToArray(buffer->data(), buffer->size());
 }
   
-bsoncxx::document::value to_bson(const Packet &packet) {
-  const auto json = to_json(packet);
-  return bsoncxx::from_json(json);
+void to_json(const Packet &packet, std::string *output) {
+  google::protobuf::util::MessageToJsonString(packet, output);
+}
+  
+void to_bson(const Packet &packet, bsoncxx::document::value *bson) {
+  std::string json;
+  to_json(packet, &json);
+  *bson = bsoncxx::from_json(json);
 }
 
+std::ostream & operator<< (std::ostream &os, const Packet &packet);
+  
 }  // messages
 }  // neuro
 

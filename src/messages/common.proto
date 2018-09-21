@@ -25,6 +25,11 @@ message KeyPub {
   optional string hex_data = 3;
 }
 
+message KeyPriv {
+  required KeyType type = 1;
+  required bytes data = 2;
+}
+
 message Address {
   optional Hash hash = 1;
   optional KeyPub pub_key = 2;
@@ -38,15 +43,21 @@ message Hash {
 }
 
 
-message KeyPriv {
-  required KeyType type = 1;
-  required bytes data = 2;
-}
-
 message Peer {
+  enum Status {
+    CONNECTED = 0;
+    CONNECTING = 1;
+    REACHABLE = 2;
+    UNREACHABLE = 3;
+    FULL = 4;
+  }
+
   required string endpoint = 1;
-  required uint32 port = 2;
+  optional uint32 port = 2;
   optional KeyPub key_pub = 3;
+  optional Status status = 4;
+  optional uint32 transport_layer_id = 5;
+  optional uint32 connection_id = 6;
 }
 
 message TransactionID {

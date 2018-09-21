@@ -27,10 +27,24 @@ add_library(core
   ./mongo/mongo.hpp
   ./Bot.hpp
   ./common/logger.cpp
-  ./common/logger.hpp
   ./common/Buffer.hpp
+  ./common/logger.hpp
   ./common/Buffer.cpp
   ./common/types.hpp
+  ./networking/Networking.hpp
+  ./networking/TransportLayer.cpp
+  ./networking/Peer.cpp
+  ./networking/Networking.cpp
+  ./networking/Connection.hpp
+  ./networking/Peer.hpp
+  ./networking/tcp/client.hpp
+  ./networking/tcp/Client.hpp
+  ./networking/tcp/HeaderPattern.hpp
+  ./networking/tcp/Tcp.hpp
+  ./networking/tcp/Connection.hpp
+  ./networking/tcp/Connection.cpp
+  ./networking/tcp/Tcp.cpp
+  ./networking/TransportLayer.hpp
   ./crypto/Ecc.hpp
   ./crypto/EccPriv.hpp
   ./crypto/EccPriv.cpp

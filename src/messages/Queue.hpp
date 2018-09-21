@@ -47,14 +47,6 @@ class Queue {
    */
   bool is_empty();
   /*!
-                \fn bool Queue::quit() const
-                \brief Protected method to set the quitting flag.
-
-                It is only call from the destructor and set the quitting flag so
-     the Queue object can go out of the main loop and quit its thread.
-         */
-  void quit();
-  /*!
                 \fn bool Queue::do_work()
                 \brief Protected method that has the main loop of the
      Queue
@@ -93,6 +85,15 @@ class Queue {
     start processing the pushed messages for the subscribers.
   */
   void run();
+
+  /*!
+    \fn bool Queue::quit() const
+    \brief Protected method to set the quitting flag.
+
+    It is only call from the destructor and set the quitting flag so
+    the Queue object can go out of the main loop and quit its thread.
+  */
+  void quit();
 
   friend class neuro::messages::test::QueueTest;
 };

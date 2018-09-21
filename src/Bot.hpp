@@ -17,10 +17,9 @@ public:
   Bot(const std::string &configuration_path) {
     messages::from_json_file(configuration_path, &_config);
 
-
-    subscriber.subscribe(std::type_index(typeid(messages::Hello)),
+    subscriber.subscribe(messages::Type::kHello,
 			 [this](const messages::Header &header,
-			    const messages::Body &body) {
+				const messages::Body &body) {
 			   this->handle_hello(header, body);
 			 });
     

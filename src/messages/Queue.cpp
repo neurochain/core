@@ -7,12 +7,6 @@ namespace messages {
 
 Queue::Queue() {}
 
-Queue::~Queue() {
-  if (_started) {
-    quit();
-  }
-}
-
 bool Queue::publish(std::shared_ptr<const messages::Message> message) {
   if(_quitting) {
     return false;
@@ -20,7 +14,7 @@ bool Queue::publish(std::shared_ptr<const messages::Message> message) {
 
   {
     std::lock_guard<std::mutex> lock_queue(_queue_mutex);
-    _queue.push(std::move(message));
+    _queue.push(message);
   }
   _condition.notify_all();
 
@@ -56,6 +50,9 @@ std::shared_ptr<const messages::Message> Queue::next_message() {
 }
 
 void Queue::quit() {
+  if (!_started) {
+    return;
+  }
   _quitting = true;
   _condition.notify_all();
 }
@@ -79,6 +76,11 @@ void Queue::do_work() {
     }
   } while (!_quitting);
 }
+
+  Queue::~Queue() {
+    quit();
+}
+
 
 }  // namespace messages
 }  // namespace neuro

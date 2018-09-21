@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <vector>
 #include <boost/asio.hpp>
+#include <cassert>
 #include "common/Buffer.hpp"
 
 namespace neuro {
@@ -15,6 +16,8 @@ using IP  = bai::address;
 using IP4 = bai::address_v4;
 using IP6 = bai::address_v6;
 
+enum class ProtocolType { PROTOBUF2, JSON, BSON };
+  
 }
 
 using std::int16_t;

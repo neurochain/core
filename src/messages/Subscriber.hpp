@@ -19,10 +19,9 @@ private:
 public:
   Subscriber(std::shared_ptr<Queue> queue) :
     _queue(queue),
-    _callbacks_by_type(Body::kMessageCount) {}
+    _callbacks_by_type(Body::kBodyCount) {}
 
-  template <typename T>
-  void subscribe(const Type type, Callback callback) {
+  void subscribe(const Type type, Callback &callback) {
     _queue->subscribe(this);
     _callbacks_by_type[type] = callback;
   }

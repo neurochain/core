@@ -11,7 +11,7 @@ message Hello {
 
 message World {
   required bool accepted = 1;
-  required KeyPub key_pub_id = 2;
+  required KeyPub key_pub = 2;
 }
 
 message GetPeers {
@@ -69,7 +69,14 @@ message Block {
   repeated Transaction transactions = 6;
 }
 
-message MessageCount {}
+message ConnectionClosed {
+}
+
+message ConnectionReady {
+  required bool from_remote = 1;
+}
+
+message BodyCount {}
 
 message Body {
   oneof body {
@@ -82,19 +89,22 @@ message Body {
     Transaction transaction = 7;
     GetBlock get_block = 8;
     Block block = 9;
-    MessageCount message_count = 10;
+    ConnectionClosed connection_closed = 10;
+    ConnectionReady connection_ready = 11;
+    BodyCount body_count = 12;
   }
 }
 
 message Header {
   required uint32 version = 1;
   required Timestamp ts = 2;
-  optional KeyPub sender_key = 10;
+  required bytes signature = 3;
   optional uint32 id = 11;
   optional uint32 request_id = 12;
+  optional Peer peer = 13;
 }
 
 message Message {
-  required Header header = 1;
+  optional Header header = 1;
   repeated Body bodies = 20;
 }
