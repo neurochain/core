@@ -45,7 +45,7 @@ private:
 		 Buffer *header_tcp,
 		 Buffer *body_tcp);
 
-  
+
 public:
   Tcp(Tcp &&) = delete;
   Tcp(const Tcp &) = delete;

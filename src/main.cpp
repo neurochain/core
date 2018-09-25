@@ -1,27 +1,26 @@
-#include <google/protobuf/util/json_util.h>
 #include <boost/program_options.hpp>
 #include <chrono>
-#include <iostream>
-#include <string>
 #include <fstream>
+#include <google/protobuf/util/json_util.h>
+#include <iostream>
 #include <streambuf>
+#include <string>
 
 #include "config.pb.h"
-#include "mongo/mongo.hpp"
 #include "messages/Message.hpp"
+#include "mongo/mongo.hpp"
+#include "Bot.hpp"
 
 namespace neuro {
 
 namespace po = boost::program_options;
 using namespace std::chrono_literals;
-  
 
 int main(int argc, char *argv[]) {
   po::options_description desc("Allowed options");
-  desc.add_options()
-    ("help,h", "Produce help message.")
-    ("configuration,c", po::value<std::string>()->default_value("bot.json"), "Configuration path.")
-    ;
+  desc.add_options()("help,h", "Produce help message.")(
+      "configuration,c", po::value<std::string>()->default_value("bot.json"),
+      "Configuration path.");
 
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -37,14 +36,11 @@ int main(int argc, char *argv[]) {
   }
 
   const auto configuration_filepath = vm["configuration"].as<std::string>();
-  messages::config::Config config;
-  messages::from_json_file(configuration_filepath, &config);
-  
-  
-  
+  Bot bot(configuration_filepath);
+
   return 0;
 }
-}  // namespace neuro
+} // namespace neuro
 
 int main(int argc, char *argv[]) {
   //

@@ -1,33 +1,34 @@
+#include <cassert>
 #include <limits>
 #include <string>
-#include <cassert>
 
 #include "common/logger.hpp"
 #include "networking/Networking.hpp"
-#include "networking/tcp/Tcp.hpp"
 
 namespace neuro {
 namespace networking {
 
 Networking::Networking(std::shared_ptr<messages::Queue> queue)
-    : _queue(queue),
-      _dist(0, std::numeric_limits<uint32_t>::max()),
+    : _queue(queue), _dist(0, std::numeric_limits<uint32_t>::max()),
       _subscriber(queue) {
   _queue->run();
 
-
-  messages::Type type = messages::Type::kConnectionClosed;
-  messages::Subscriber::Callback cb =
-    [this](const messages::Header &header,
-	   const messages::Body &body) {
-    this->remove_connection(header, body);
-  };
-  _subscriber.subscribe(type, cb);
+  // messages::Type type = messages::Type::kConnectionClosed;
+  // messages::Subscriber::Callback cb = [this](const messages::Header &header,
+  //                                            const messages::Body &body) {
+  //   this->remove_connection(header, body);
+  // };
+  //_subscriber.subscribe(type, cb);
+  _subscriber.subscribe(
+      messages::Type::kConnectionClosed,
+      [this](const messages::Header &header, const messages::Body &body) {
+        this->remove_connection(header, body);
+      });
 }
-  
+
 void remove_connection(const messages::Header &header,
                        const messages::Body &body) {
-    
+
   // auto remove_connection =
   //     static_cast<const messages::RemoveConnection *>(body.get());
   // auto transport_layer_id = remove_connection->transport_layer_id;
@@ -39,7 +40,6 @@ void remove_connection(const messages::Header &header,
   //     tcpit->terminated(connection_id);
   //   }
   // }
-  
 }
 
 void Networking::send(std::shared_ptr<messages::Message> message) {
@@ -51,8 +51,8 @@ void Networking::send(std::shared_ptr<messages::Message> message) {
 
 void Networking::send_unicast(std::shared_ptr<messages::Message> message) {
   assert(message->header().has_peer());
-  _transport_layers[message->header().peer().transport_layer_id()]->send_unicast(
-      message);
+  _transport_layers[message->header().peer().transport_layer_id()]
+      ->send_unicast(message);
 }
 
 TransportLayer::ID

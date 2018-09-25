@@ -23,9 +23,6 @@ private:
   std::uniform_int_distribution<int> _dist;
   messages::Subscriber _subscriber;
 
-  void remove_connection(const messages::Header &header,
-			 const messages::Body &body);
-
 public:
   Networking(std::shared_ptr<messages::Queue> _queue);
   ~Networking();
@@ -34,6 +31,10 @@ public:
   void send(std::shared_ptr<messages::Message> message);
   void send_unicast(std::shared_ptr<messages::Message> message);
   messages::Peers connected_peers() const;
+
+  void remove_connection(const messages::Header &header,
+                         const messages::Body &body);
+
 
   void stop();
   void join();

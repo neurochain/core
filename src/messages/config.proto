@@ -3,6 +3,7 @@ syntax = "proto2";
 package neuro.messages.config;
 
 import "common.proto";
+import "messages.proto";
 
 message Logs {
   enum Severity {
@@ -21,7 +22,7 @@ message Logs {
 }
 
 message Tcp {
-  required uint32 port = 1;
+  required uint32 listen_port = 1;
   repeated Peer peers = 2;
 }
 
@@ -31,8 +32,22 @@ message Networking {
 }
 
 message Config {
-  required string key_pub_path = 1;
-  required string key_priv_path = 2;
+  enum KeepStatus {
+    connected = 0;
+    reachable = 1;
+    all = 2;
+  }
+
+  enum NextSelectionMethod {
+    simple = 0;
+    ping = 1;
+    random = 2;
+  }
+
+  optional string key_pub_path = 1;
+  optional string key_priv_path = 2;
   optional Logs logs = 3;
   optional Networking networking = 4;
+  optional KeepStatus keep_status = 5 [default = all]; 
+  optional NextSelectionMethod selection_method = 6 [default = simple];
 }

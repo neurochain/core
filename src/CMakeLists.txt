@@ -15,76 +15,76 @@ add_library(protos
 
 target_link_libraries(protos
   protobuf::libprotobuf
-  ${LIBMONGOCXX_STATIC_LIBRARIES}
-  )
+)
 
 
 add_library(core
   ./messages/Queue.hpp
-  ./messages/Subscriber.hpp
   ./messages/Queue.cpp
+  ./messages/Subscriber.hpp
   ./messages/Message.hpp
+  ./messages/Message.cpp
   ./mongo/mongo.hpp
   ./Bot.hpp
-  ./common/logger.cpp
+  ./Bot.cpp
   ./common/Buffer.hpp
-  ./common/logger.hpp
   ./common/Buffer.cpp
+  ./common/logger.hpp
+  ./common/logger.cpp
   ./common/types.hpp
-  ./networking/Networking.hpp
-  ./networking/TransportLayer.cpp
+  ./networking/Peer.hpp
   ./networking/Peer.cpp
+  ./networking/Networking.hpp
   ./networking/Networking.cpp
   ./networking/Connection.hpp
-  ./networking/Peer.hpp
   ./networking/tcp/client.hpp
   ./networking/tcp/Client.hpp
   ./networking/tcp/HeaderPattern.hpp
+  ./networking/tcp/Tcp.cpp
   ./networking/tcp/Tcp.hpp
   ./networking/tcp/Connection.hpp
   ./networking/tcp/Connection.cpp
-  ./networking/tcp/Tcp.cpp
   ./networking/TransportLayer.hpp
-  ./crypto/Ecc.hpp
+  ./networking/TransportLayer.cpp
   ./crypto/EccPriv.hpp
   ./crypto/EccPriv.cpp
   ./crypto/EccPub.hpp
+  ./crypto/EccPub.cpp
   ./crypto/Hash.hpp
   ./crypto/Hash.cpp
-  ./crypto/EccPub.cpp
+  ./crypto/Ecc.hpp
   ./crypto/Ecc.cpp
   )
 
 target_link_libraries(core
   protos
 
-  Boost::program_options
   Boost::system
-  Boost::filesystem
   Boost::thread
   Boost::log
 
   cryptopp-static
-  
+
   protobuf::libprotobuf
-  ${LIBMONGOCXX_STATIC_LIBRARIES}  
-)  
+  ${LIBMONGOCXX_STATIC_LIBRARIES}
+)
 
 add_executable(main
   main.cpp
   )
 
 target_link_libraries(main
-  protos
   core
+  protos
+
   Boost::program_options
-  Boost::system
   Boost::filesystem
+  Boost::system
   Boost::thread
   Boost::log
-  
+
   protobuf::libprotobuf
-  ${LIBMONGOCXX_STATIC_LIBRARIES}  
+  ${LIBMONGOCXX_STATIC_LIBRARIES}
   )
 
 
