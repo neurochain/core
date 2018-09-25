@@ -30,11 +30,6 @@ message Roots {
   repeated Hash roots = 1;
 }
 
-message GetBlock {
-  optional Hash hash = 1;
-  optional uint32 height = 2;
-}
-
 message Input {
   required Hash id = 1;
   required uint32 output_id = 2;
@@ -49,24 +44,47 @@ message Output {
 }
 
 message Transaction {
+  enum State {
+    ACCEPTED = 0;  /// The block/transaction a is a keeper
+    REJECTED = 1;  /// We didn't delete that one yet
+    PROBATION = 2; /// Might be a good one = ; need more time
+    FORKED = 3;    /// We are in a middle of a fork (implied probation)
+    USED = 4;      /// Already been used by an other transaction
+    UNKNOWN = 5;   /// Block not find
+  }
+
   repeated Input inputs = 1;
   repeated Output ouptuts = 2;
   optional NCCSDF fees = 3;
+  optional Hash id = 4;
 }
 
-enum State {
-  ACCEPTED = 0;
-  PROBATION = 1;
+
+message GetBlock {
+  optional Hash hash = 1;
+  optional uint32 height = 2;
 }
 
-message Block {
+message BlockHeader {
+  enum State {
+    ACCEPTED = 0;  /// The block/transaction a is a keeper
+    REJECTED = 1;  /// We didn't delete that one yet
+    PROBATION = 2; /// Might be a good one = ; need more time
+    FORKED = 3;    /// We are in a middle of a fork (implied probation)
+    UNKNOWN = 5;   /// Block not find
+  }
+
   required Hash id = 1;
   required Timestamp timestamp = 2;
   required Hash previous_block_hash = 3;
   optional State state = 4;
   required KeyPub author = 5;
+  optional uint32 height = 6;
+}
 
-  repeated Transaction transactions = 6;
+message Block {
+  required BlockHeader header = 1;
+  repeated Transaction transactions = 20;
 }
 
 message ConnectionClosed {

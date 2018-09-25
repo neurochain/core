@@ -60,7 +60,3 @@ message Peer {
   optional uint32 connection_id = 6;
 }
 
-message TransactionID {
-  required Hash hash = 1;
-}
-

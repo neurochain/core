@@ -53,6 +53,12 @@ add_library(core
   ./crypto/Hash.cpp
   ./crypto/EccPub.cpp
   ./crypto/Ecc.cpp
+  ./ledger/Parser.hpp
+  ./ledger/Filter.hpp
+  ./ledger/mongo.hpp
+  ./ledger/Ledger.hpp
+  ./ledger/LedgerMongodb.hpp
+  ./ledger/LedgerMongodb.cpp
   )
 
 target_link_libraries(core

@@ -12,6 +12,11 @@
 namespace neuro {
 namespace messages {
 
+
+using BlockHeight = decltype(((BlockHeader*)nullptr)->height());
+using BlockID = decltype(((BlockHeader*)nullptr)->id());
+using TransactionID = decltype(((Transaction*)nullptr)->id());
+  
 using Packet = google::protobuf::Message;
 using Type = Body::BodyCase;
   
@@ -46,6 +51,12 @@ bool from_bson(const bsoncxx::document::value &doc,
   return from_json(mongo_json, packet);
 }
 
+bool from_bson(const bsoncxx::document::view &doc,
+               Packet *packet) {
+  const auto mongo_json = bsoncxx::to_json(doc);
+  return from_json(mongo_json, packet);
+}
+
 void to_buffer(const Packet &packet, Buffer *buffer) {
   packet.SerializeToArray(buffer->data(), buffer->size());
 }
@@ -54,10 +65,10 @@ void to_json(const Packet &packet, std::string *output) {
   google::protobuf::util::MessageToJsonString(packet, output);
 }
   
-void to_bson(const Packet &packet, bsoncxx::document::value *bson) {
+bsoncxx::document::value to_bson(const Packet &packet) {
   std::string json;
   to_json(packet, &json);
-  *bson = bsoncxx::from_json(json);
+  return bsoncxx::from_json(json);
 }
 
 std::ostream & operator<< (std::ostream &os, const Packet &packet);
