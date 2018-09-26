@@ -18,50 +18,17 @@ class LedgerMongodb {
   mutable mongocxx::collection _blocks;
   mutable mongocxx::collection _transactions;
   
-  messages::BlockHeader::State
-  get_block_header(const bsoncxx::document::view &block,
-                   messages::BlockHeader *header) {
+  bool get_block_header(const bsoncxx::document::view &block,
+                        messages::BlockHeader *header) {
 
     messages::from_bson(block, header);
-    return header->state();
+    return true;
   }
 
-  // messages::BlockHeader::State
+  // bool
   // get_block(const bsoncxx::document::view &bson_block,
   //           messages::Block *block);
   ~LedgerMongodb() {}
-
- public:
-  LedgerMongodb(const std::string &url, const std::string &db_name);
-
-
-  messages::BlockHeight height() const {
-    auto query = bss::document{} << bss::finalize;
-    auto options = mongocxx::options::find{};
-    options.sort(bss::document{} << "height" << -1 << bss::finalize);
-    const auto res = _blocks.find_one(std::move(query), options);
-    if(!res) {
-      return 0;
-    }
-    
-    return res->view()["height"].get_int32().value +1;
-  }
-
-  messages::BlockHeader::State
-  get_block_header(const messages::BlockID &id,
-                   messages::BlockHeader *header) {
-
-    const auto bson_id = to_bson(id);
-
-    auto query = bss::document{} << "id" << bson_id << bss::finalize;
-    auto res = _blocks.find_one(std::move(query));
-    if (!res) {
-      return messages::BlockHeader::UNKNOWN;
-    }
-
-    return get_block_header(res->view(), header);
-  }
-
 
   bool get_transactions_from_block(mongocxx::cursor &cursor,
                                    messages::Block *block) {
@@ -72,28 +39,82 @@ class LedgerMongodb {
 
     return true;
   }
-  
-  messages::BlockHeader::State
-  get_block(const messages::BlockID &id,
-            messages::Block *block) {
+
+ public:
+  LedgerMongodb(const std::string &url, const std::string &db_name);
+
+  messages::BlockHeight height() const {
+    auto query = bss::document{} << bss::finalize;
+    auto options = mongocxx::options::find{};
+    options.sort(bss::document{} << "header.height" << -1 << bss::finalize);
+    const auto res = _blocks.find_one(std::move(query), options);
+    if(!res) {
+      return 0;
+    }
+    
+    return res->view()["header.height"].get_int32().value +1;
+  }
+
+  bool get_block_header(const messages::BlockID &id,
+                        messages::BlockHeader *header) {
+    
+    const auto bson_id = to_bson(id);
+
+    auto query = bss::document{} << "id" << bson_id << bss::finalize;
+    auto res = _blocks.find_one(std::move(query));
+    if (!res) {
+      return messages::BlockHeader::UNKNOWN;
+    }
+    return get_block_header(res->view(), header);
+  }
+
+  bool get_last_block_header(messages::BlockHeader *block_header) {
+    auto query = bss::document{} << bss::finalize;
+    auto options = mongocxx::options::find{};
+    options.sort(bss::document{} << "header.height" << -1 << bss::finalize);
+    const auto res = _blocks.find_one(std::move(query), options);
+    if(!res) {
+      return messages::BlockHeader::UNKNOWN;
+    }
+    
+    messages::from_bson(*res, block_header);
+    return block_header->state();
+  }
+
+  bool get_block(const messages::BlockID &id,
+                 messages::Block *block) {
 
     auto header = block->mutable_header();
     auto res_state = get_block_header(id, header);
 
     const auto bson_id = to_bson(id);
     auto query = bss::document{} << "header.id" << bson_id << bss::finalize;
-    auto cursor = _transactions.find_one(std::move(query));
+    auto cursor = _transactions.find(std::move(query));
+    get_transactions_from_block(cursor, block);
 
     return res_state;
   }
   
-  messages::Transaction::State get_block(const messages::BlockHeight height,
-                                         messages::Block *block) {
+  
+  bool get_block(const messages::BlockHeight height,
+                 messages::Block *block) {
 
-
+    auto query = bss::document{} << "header.height" <<  height << bss::finalize;
+    const auto res = _blocks.find_one(std::move(query));
+    if(!res) {
+      return false;
+    }
     
+    return true;
   }
 
+  bool push_block(const messages::Block &block) {
+    const auto header = block.header();
+    
+  }
+  
+
+  
   
   // messages::Transaction::State get_block_header(const messages::BlockID &id,
   //                                 messages::BlockHeader *header) {

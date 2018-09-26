@@ -15,18 +15,18 @@ message Logs {
   }
   
   optional string file_path = 1;
-  optional uint32 rotation_size = 2 [default = 10];
+  optional int32 rotation_size = 2 [default = 10];
   optional Severity severity = 3 [default = warning];
   optional bool to_stdout = 4;
 }
 
 message Tcp {
-  required uint32 port = 1;
+  required int32 port = 1;
   repeated Peer peers = 2;
 }
 
 message Networking {
-  optional uint32 max_connections = 1;
+  optional int32 max_connections = 1;
   required Tcp tcp = 2;
 }
 

@@ -6,7 +6,7 @@ import "common.proto";
 
 message Hello {
   optional KeyPub key_pub = 1;
-  optional uint32 listen_port = 2;
+  optional int32 listen_port = 2;
 }
 
 message World {
@@ -23,7 +23,7 @@ message Peers {
 
 message GetRoots {
   optional Hash last_known_root = 1;
-  optional uint32 count = 2; // ask for count last roots 
+  optional int32 count = 2; // ask for count last roots 
 }
 
 message Roots {
@@ -32,7 +32,7 @@ message Roots {
 
 message Input {
   required Hash id = 1;
-  required uint32 output_id = 2;
+  required int32 output_id = 2;
   optional KeyPub pub_key = 3;
   optional Hash block_id = 4;
 }
@@ -62,24 +62,15 @@ message Transaction {
 
 message GetBlock {
   optional Hash hash = 1;
-  optional uint32 height = 2;
+  optional int32 height = 2;
 }
 
 message BlockHeader {
-  enum State {
-    ACCEPTED = 0;  /// The block/transaction a is a keeper
-    REJECTED = 1;  /// We didn't delete that one yet
-    PROBATION = 2; /// Might be a good one = ; need more time
-    FORKED = 3;    /// We are in a middle of a fork (implied probation)
-    UNKNOWN = 5;   /// Block not find
-  }
-
   required Hash id = 1;
   required Timestamp timestamp = 2;
   required Hash previous_block_hash = 3;
-  optional State state = 4;
   required KeyPub author = 5;
-  optional uint32 height = 6;
+  optional int32 height = 6;
 }
 
 message Block {
@@ -114,11 +105,11 @@ message Body {
 }
 
 message Header {
-  required uint32 version = 1;
+  required int32 version = 1;
   required Timestamp ts = 2;
   required bytes signature = 3;
-  optional uint32 id = 11;
-  optional uint32 request_id = 12;
+  optional int32 id = 11;
+  optional int32 request_id = 12;
   optional Peer peer = 13;
 }
 
