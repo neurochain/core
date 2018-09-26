@@ -26,7 +26,7 @@ Networking::Networking(std::shared_ptr<messages::Queue> queue)
       });
 }
 
-void remove_connection(const messages::Header &header,
+  void Networking::remove_connection(const messages::Header &header,
                        const messages::Body &body) {
 
   // auto remove_connection =
