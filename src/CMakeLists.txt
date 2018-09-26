@@ -76,6 +76,12 @@ add_executable(main
 target_link_libraries(main
   core
   protos
+  Boost::log
+  Boost::program_options
+  Boost::filesystem
+  Boost::system
+  Boost::thread
+  cryptopp-static
   
   protobuf::libprotobuf
   ${LIBMONGOCXX_STATIC_LIBRARIES}
