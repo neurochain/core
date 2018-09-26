@@ -56,7 +56,6 @@ add_library(core
   ./ledger/Parser.hpp
   ./ledger/Filter.hpp
   ./ledger/mongo.hpp
-  ./ledger/Ledger.hpp
   ./ledger/LedgerMongodb.hpp
   ./ledger/LedgerMongodb.cpp
   )

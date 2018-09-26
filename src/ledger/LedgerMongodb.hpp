@@ -2,7 +2,6 @@
 #define NEURO_SRC_LEDGERMONGODB_HPP
 
 #include "ledger/Filter.hpp"
-#include "ledger/Ledger.hpp"
 #include "ledger/mongo.hpp"
 #include "messages.pb.h"
 
@@ -30,14 +29,23 @@ class LedgerMongodb {
   //           messages::Block *block);
   ~LedgerMongodb() {}
 
-  bool get_transactions_from_block(mongocxx::cursor &cursor,
+  bool get_transactions_from_block(const bsoncxx::document::view &id,
                                    messages::Block *block) {
+    auto query = bss::document{} << "header.id" << id << bss::finalize;
+    auto cursor = _transactions.find(std::move(query));
+
     for(auto &bson_transaction: cursor) {
       auto transaction = block->add_transactions();
       from_bson(bson_transaction, transaction);
     }
 
     return true;
+  }
+
+  bool get_transactions_from_block(const messages::BlockID &id,
+                                   messages::Block *block) {
+    const auto bson_id = to_bson(id);
+    return get_transactions_from_block(bson_id.view(), block);
   }
 
  public:
@@ -52,7 +60,7 @@ class LedgerMongodb {
       return 0;
     }
     
-    return res->view()["header.height"].get_int32().value +1;
+    return res->view()["header.height"].get_int32().value;
   }
 
   bool get_block_header(const messages::BlockID &id,
@@ -63,7 +71,7 @@ class LedgerMongodb {
     auto query = bss::document{} << "id" << bson_id << bss::finalize;
     auto res = _blocks.find_one(std::move(query));
     if (!res) {
-      return messages::BlockHeader::UNKNOWN;
+      return false;
     }
     return get_block_header(res->view(), header);
   }
@@ -74,11 +82,11 @@ class LedgerMongodb {
     options.sort(bss::document{} << "header.height" << -1 << bss::finalize);
     const auto res = _blocks.find_one(std::move(query), options);
     if(!res) {
-      return messages::BlockHeader::UNKNOWN;
+      return false;
     }
     
     messages::from_bson(*res, block_header);
-    return block_header->state();
+    return true;
   }
 
   bool get_block(const messages::BlockID &id,
@@ -87,10 +95,7 @@ class LedgerMongodb {
     auto header = block->mutable_header();
     auto res_state = get_block_header(id, header);
 
-    const auto bson_id = to_bson(id);
-    auto query = bss::document{} << "header.id" << bson_id << bss::finalize;
-    auto cursor = _transactions.find(std::move(query));
-    get_transactions_from_block(cursor, block);
+    res_state &= get_transactions_from_block(id, block);
 
     return res_state;
   }
@@ -104,13 +109,23 @@ class LedgerMongodb {
     if(!res) {
       return false;
     }
+
+    get_transactions_from_block(res->view()["header.id"].get_document(), block);
     
     return true;
   }
 
   bool push_block(const messages::Block &block) {
     const auto header = block.header();
-    
+    auto bson_header = messages::to_bson(header);
+
+    _blocks.insert_one(std::move(bson_header));
+
+    for (const auto &transaction: block.transactions()) { 
+      auto bson_transaction = messages::to_bson(transaction);
+      _transactions.insert_one(std::move(bson_transaction));
+    }
+    return true;
   }
   
 
