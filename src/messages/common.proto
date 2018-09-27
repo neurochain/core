@@ -20,25 +20,20 @@ enum KeyType {
 }
 
 message KeyPub {
-  required KeyType type = 1;
+  required KeyType type = 1 [ default = ECP256K1 ];
   optional bytes raw_data = 2;
   optional string hex_data = 3;
 }
 
 message KeyPriv {
-  required KeyType type = 1;
+  required KeyType type = 1 [ default = ECP256K1 ];
   required bytes data = 2;
-}
-
-message Address {
-  optional Hash hash = 1;
-  optional KeyPub pub_key = 2;
 }
 
 message Hash {
   enum Type { SHA256 = 0; }
 
-  required Type type = 1;
+  required Type type = 1 [ default = SHA256 ];
   required bytes data = 2;
 }
 

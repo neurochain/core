@@ -24,6 +24,7 @@ add_library(core
   ./messages/Subscriber.hpp
   ./messages/Queue.cpp
   ./messages/Message.hpp
+  ./messages/Message.cpp
   ./mongo/mongo.hpp
   ./Bot.hpp
   ./common/logger.cpp
@@ -63,11 +64,11 @@ add_library(core
 target_link_libraries(core
   protos
 
+  Boost::log
   Boost::program_options
   Boost::system
   Boost::filesystem
   Boost::thread
-  Boost::log
 
   cryptopp-static
   
@@ -82,15 +83,34 @@ add_executable(main
 target_link_libraries(main
   protos
   core
+  Boost::log
   Boost::program_options
   Boost::system
   Boost::filesystem
   Boost::thread
-  Boost::log
   
   protobuf::libprotobuf
   ${LIBMONGOCXX_STATIC_LIBRARIES}  
   )
+
+add_executable(keygen
+  tooling/keygen.cpp
+  )
+
+target_link_libraries(keygen
+  core
+  Boost::program_options
+  )
+
+add_executable(coinbase
+  tooling/coinbase.cpp
+  )
+
+target_link_libraries(coinbase
+  core
+  Boost::program_options
+  )
+
 
 
 include_directories(${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/src ${LIBMONGOCXX_STATIC_INCLUDE_DIRS})

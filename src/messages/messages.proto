@@ -38,7 +38,7 @@ message Input {
 }
 
 message Output {
-  required Address address = 1;
+  required Hash address = 1;
   optional NCCSDF value = 2;
   optional bytes data = 3;
 }
@@ -54,8 +54,8 @@ message Transaction {
   }
 
   repeated Input inputs = 1;
-  repeated Output ouptuts = 2;
-  optional NCCSDF fees = 3;
+  repeated Output outputs = 2;
+  optional uint64 fees = 3;
   optional Hash id = 4;
 }
 
