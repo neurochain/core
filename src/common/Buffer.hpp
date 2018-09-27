@@ -42,8 +42,10 @@ class Buffer : public std::vector<uint8_t> {
   void save(const std::string &filepath);
   void copy(const uint8_t *data, const std::size_t size);
   void copy(const std::string &string);
-  void copy(const Buffer &buffer);  
+  void copy(const Buffer &buffer);
   bool operator==(const Buffer &other);
+
+  std::string str() const;
 
 };
 

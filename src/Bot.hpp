@@ -31,7 +31,9 @@ private:
   messages::config::Config _config;
   std::shared_ptr<crypto::Ecc> _keys;
 
-  messages::Peers _peers{};
+  // for the peers
+  messages::config::Tcp _tcp_config{};
+  //Peers _peers{};
   std::size_t _connected_peers{0};
   std::size_t _max_connections;
 
@@ -52,7 +54,7 @@ private:
                           const messages::Body &body);
   void handler_deconnection(const messages::Header &header,
                             const messages::Body &body);
-  bool next_to_connect(std::shared_ptr<networking::Peer> &out_peer);
+  bool next_to_connect(messages::Peer **out_peer);
 
 
 public:
@@ -67,8 +69,10 @@ public:
   void join();
   Bot::Status status() const;
   void keep_max_connections();
-  void update_peers_file(const std::string &filename) const;
 };
+
+std::ostream &operator<<(std::ostream &os, const neuro::Bot &b);
+std::ostream &operator<<(std::ostream &os, const google::protobuf::RepeatedPtrField<neuro::messages::Peer> &peers);
 
 } // namespace neuro
 

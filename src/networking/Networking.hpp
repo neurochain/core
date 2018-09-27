@@ -10,6 +10,7 @@
 #include "messages/Subscriber.hpp"
 #include "networking/TransportLayer.hpp"
 #include "networking/tcp/Connection.hpp"
+#include "common/types.hpp"
 
 namespace neuro {
 namespace networking {
@@ -28,8 +29,8 @@ public:
   ~Networking();
 
   TransportLayer::ID push(std::shared_ptr<TransportLayer> transport_layer);
-  void send(std::shared_ptr<messages::Message> message);
-  void send_unicast(std::shared_ptr<messages::Message> message);
+  void send(std::shared_ptr<messages::Message> message, ProtocolType type);
+  void send_unicast(std::shared_ptr<messages::Message> message, ProtocolType type);
   messages::Peers connected_peers() const;
 
   void remove_connection(const messages::Header &header,

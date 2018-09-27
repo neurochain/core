@@ -10,7 +10,8 @@ namespace neuro {
 using namespace std::chrono_literals;
 
 std::stringstream botconf(const std::string &max_connections,
-                          const std::string &listening_port) {
+                          const std::string &listening_port,
+                          const std::vector<std::string> &ports) {
   std::stringstream conf;
   conf << "{"
        << "    \"logs\": {"
@@ -20,17 +21,8 @@ std::stringstream botconf(const std::string &max_connections,
        << "    \"networking\" : {"
        << "        \"max_connections\" : " << max_connections << " ,"
        << "        \"tcp\" : {"
-       << "            \"listen_ports\" : [ " << listening_port << " ]"
-       << "        }"
-       << "    },"
-       << "    \"selection_method\" :\"SIMPLE\" "
-       << "}";
-  return conf;
-}
-
-std::stringstream peersconf(const std::vector<std::string> &ports) {
-  std::stringstream conf;
-  conf << "{ \"peers\": [";
+       << "            \"listen_ports\" : [ " << listening_port << " ],";
+  conf << " \"peers\": [";
   if (!ports.empty()) {
     std::size_t i;
     for (i = 0; i < ports.size() - 1; i += 1) {
@@ -38,7 +30,11 @@ std::stringstream peersconf(const std::vector<std::string> &ports) {
     }
     conf << "  {\"ip\" : \"127.0.0.1\", \"port\" : " << ports[i] << "}";
   }
-  conf << "]}";
+  conf << "]";
+  conf << "        }"
+       << "    },"
+       << "    \"selection_method\" :\"SIMPLE\" "
+       << "}";
   return conf;
 }
 
@@ -96,21 +92,16 @@ public:
   Integration() {}
 
   bool test_reachmax() {
-    auto conf0 = botconf("2", "1337");
-    auto conf1 = botconf("1", "1338");
-    auto conf2 = botconf("1", "1339");
-    auto conf3 = botconf("1", "1340");
-
-    auto peers0 = peersconf({"1338", "1339"});
-    auto peers1 = peersconf({});
-    auto peers2 = peersconf({});
-    auto peers3 = peersconf({"1337"});
+    auto conf0 = botconf("2", "1337", {"1338", "1339"});
+    auto conf1 = botconf("1", "1338", {});
+    auto conf2 = botconf("1", "1339", {});
+    auto conf3 = botconf("1", "1340", {"1337"});
 
     std::vector<std::shared_ptr<Bot>> bots{
-        std::make_shared<Bot>(conf0, peers0),
-        std::make_shared<Bot>(conf1, peers1),
-        std::make_shared<Bot>(conf2, peers2),
-        std::make_shared<Bot>(conf3, peers3)};
+        std::make_shared<Bot>(conf0),
+        std::make_shared<Bot>(conf1),
+        std::make_shared<Bot>(conf2),
+        std::make_shared<Bot>(conf3)};
 
     bots[1]->keep_max_connections();
     bots[2]->keep_max_connections();

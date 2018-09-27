@@ -23,31 +23,25 @@ message Logs {
 
 message Tcp {
   required uint32 listen_port = 1;
-  repeated Peer peers = 2;
+  repeated Peer peers = 4;
 }
 
 message Networking {
   optional uint32 max_connections = 1;
-  required Tcp tcp = 2;
+  optional Tcp tcp = 2;
 }
 
 message Config {
-  enum KeepStatus {
-    connected = 0;
-    reachable = 1;
-    all = 2;
-  }
-
   enum NextSelectionMethod {
-    simple = 0;
-    ping = 1;
-    random = 2;
+    SIMPLE = 0;
+    PING = 1;
+    RANDOM = 2;
   }
 
   optional string key_pub_path = 1;
   optional string key_priv_path = 2;
   optional Logs logs = 3;
-  optional Networking networking = 4;
-  optional KeepStatus keep_status = 5 [default = all]; 
-  optional NextSelectionMethod selection_method = 6 [default = simple];
+  required Networking networking = 4;
+  optional Peer.Status keep_status = 5 [default = CONNECTED]; 
+  optional NextSelectionMethod selection_method = 6 [default = SIMPLE];
 }

@@ -12,13 +12,14 @@ message Hello {
 message World {
   required bool accepted = 1;
   required KeyPub key_pub = 2;
+  repeated Peer peers = 3;
 }
 
 message GetPeers {
 }
 
 message Peers {
-  repeated Peer peers = 1;
+  repeated Peer peer = 1;
 }
 
 message GetRoots {

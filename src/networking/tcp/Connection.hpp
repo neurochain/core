@@ -50,7 +50,7 @@ class Connection : public networking::Connection {
   const std::shared_ptr<messages::Peer> peer() const;
   const IP remote_ip() const;
   const Port remote_port() const;
-  std::shared_ptr<const messages::Peer> remote_peer() const;  
+  std::shared_ptr<messages::Peer> remote_peer();
   void terminate();
 };
 } // namespace tcp

@@ -3,8 +3,8 @@
 #include <thread>
 #include <tuple>
 
-#include "crypto/Ecc.hpp"
 #include "common/logger.hpp"
+#include "crypto/Ecc.hpp"
 #include "networking/Networking.hpp"
 #include "networking/tcp/HeaderPattern.hpp"
 #include "networking/tcp/Tcp.hpp"
@@ -15,8 +15,8 @@ using namespace std::chrono_literals;
 
 Tcp::Tcp(std::shared_ptr<messages::Queue> queue,
          std::shared_ptr<crypto::Ecc> keys)
-    : TransportLayer(queue, keys), _io_service(),
-      _resolver(_io_service), _current_connection_id(0) {}
+    : TransportLayer(queue, keys), _io_service(), _resolver(_io_service),
+      _current_connection_id(0) {}
 
 bool Tcp::connect(const bai::tcp::endpoint host, const Port port) {
   return false; // TODO
@@ -49,20 +49,20 @@ void Tcp::accept(std::shared_ptr<bai::tcp::acceptor> acceptor,
   _listening_port = port;
 
   auto socket = std::make_shared<bai::tcp::socket>(acceptor->get_io_service());
-  acceptor->async_accept
-      (*socket,
-       [this, acceptor, socket, port](const boost::system::error_code &error) {
-        const auto remote_endpoint = socket->remote_endpoint().address().to_string();
-        
-        auto peer = std::make_shared<messages::Peer>();
-        peer->set_endpoint(remote_endpoint);
-        peer->set_port(socket->remote_endpoint().port());
-        peer->set_status(messages::Peer::CONNECTING);
-        peer->set_transport_layer_id(_id);
-			   
-        this->new_connection(socket, error, peer, true);
-        this->accept(acceptor, port);
-      });
+  acceptor->async_accept(*socket, [this, acceptor, socket, port](
+                                      const boost::system::error_code &error) {
+    const auto remote_endpoint =
+        socket->remote_endpoint().address().to_string();
+
+    auto peer = std::make_shared<messages::Peer>();
+    peer->set_endpoint(remote_endpoint);
+    peer->set_port(socket->remote_endpoint().port());
+    peer->set_status(messages::Peer::CONNECTING);
+    peer->set_transport_layer_id(_id);
+
+    this->new_connection(socket, error, peer, true);
+    this->accept(acceptor, port);
+  });
 }
 
 Port Tcp::listening_port() const { return _listening_port; }
@@ -82,15 +82,14 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
   if (!error) {
     _current_connection_id++;
     peer->set_connection_id(_current_connection_id);
-    
+
     auto r = _connections.emplace(
         std::piecewise_construct, std::forward_as_tuple(_current_connection_id),
         std::forward_as_tuple(_current_connection_id, this->id(), _queue,
-                              socket, peer,
-                              from_remote));
+                              socket, peer, from_remote));
 
     auto connection_ready = body->mutable_connection_ready();
-    
+
     connection_ready->set_from_remote(from_remote);
 
     peer_tmp->CopyFrom(*peer);
@@ -131,9 +130,18 @@ void Tcp::_stop() {
   }
 }
 
+void Tcp::terminated(const Connection::ID id) {
+  std::lock_guard<std::mutex> lock_queue(_connection_mutex);
+  auto got = _connections.find(id);
+  if (got == _connections.end()) {
+    LOG_ERROR << this << " Connection not found";
+    return;
+  }
+  _connections.erase(got);
+}
+
 bool Tcp::serialize(std::shared_ptr<const messages::Message> message,
-                    const ProtocolType protocol_type,
-                    Buffer *header_tcp,
+                    const ProtocolType protocol_type, Buffer *header_tcp,
                     Buffer *body_tcp) {
 
   messages::to_buffer(*message, body_tcp);
@@ -145,7 +153,8 @@ bool Tcp::serialize(std::shared_ptr<const messages::Message> message,
     return false;
   }
 
-  auto header_pattern = reinterpret_cast<tcp::HeaderPattern *>(header_tcp->data());
+  auto header_pattern =
+      reinterpret_cast<tcp::HeaderPattern *>(header_tcp->data());
   header_pattern->size = body_tcp->size();
   _keys->sign(body_tcp->data(), body_tcp->size(),
               reinterpret_cast<uint8_t *>(&header_pattern->signature));
@@ -215,5 +224,5 @@ Tcp::~Tcp() {
   LOG_DEBUG << "TCP Killing: " << this;
 }
 
-} // namespace networking
+} // namespace neuro
 } // namespace neuro

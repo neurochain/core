@@ -83,9 +83,8 @@ const Port Connection::remote_port() const {
   return static_cast<Port>(endpoint.port());
 }
 
-  std::shared_ptr<const messages::Peer> Connection::remote_peer() const {
+std::shared_ptr<messages::Peer> Connection::remote_peer() {
   return _remote_peer;
-  // if we didn't connect to remote bot we can't know the remote port
 }
 
 } // namespace tcp

@@ -7,6 +7,8 @@
 #include <cassert>
 #include "common/Buffer.hpp"
 
+#include "common.pb.h"
+
 namespace neuro {
 
 namespace networking {
@@ -17,7 +19,7 @@ using IP4 = bai::address_v4;
 using IP6 = bai::address_v6;
 
 enum class ProtocolType { PROTOBUF2, JSON, BSON };
-  
+
 }
 
 using std::int16_t;
@@ -32,6 +34,8 @@ using std::uint8_t;
 
 using Port = uint16_t;
 using Ports = std::vector<Port>;
+
+  //using Peers = google::protobuf::RepeatedPtrField<neuro::messages::Peer>;
 
 namespace crypto {
 namespace keys {

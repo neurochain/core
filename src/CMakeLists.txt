@@ -32,8 +32,8 @@ add_library(core
   ./common/logger.hpp
   ./common/logger.cpp
   ./common/types.hpp
-  ./networking/Peer.hpp
-  ./networking/Peer.cpp
+  #./networking/Peer.hpp
+  #./networking/Peer.cpp
   ./networking/Networking.hpp
   ./networking/Networking.cpp
   ./networking/Connection.hpp
@@ -82,7 +82,7 @@ target_link_libraries(main
   Boost::system
   Boost::thread
   cryptopp-static
-  
+
   protobuf::libprotobuf
   ${LIBMONGOCXX_STATIC_LIBRARIES}
   )

@@ -13,46 +13,39 @@ Networking::Networking(std::shared_ptr<messages::Queue> queue)
       _subscriber(queue) {
   _queue->run();
 
-  // messages::Type type = messages::Type::kConnectionClosed;
-  // messages::Subscriber::Callback cb = [this](const messages::Header &header,
-  //                                            const messages::Body &body) {
-  //   this->remove_connection(header, body);
-  // };
-  //_subscriber.subscribe(type, cb);
-  _subscriber.subscribe(
-      messages::Type::kConnectionClosed,
-      [this](const messages::Header &header, const messages::Body &body) {
-        this->remove_connection(header, body);
-      });
+  // _subscriber.subscribe(
+  //     messages::Type::kConnectionClosed,
+  //     [this](const messages::Header &header, const messages::Body &body) {
+  //       this->remove_connection(header, body);
+  //     });
 }
 
-  void Networking::remove_connection(const messages::Header &header,
-                       const messages::Body &body) {
+void Networking::remove_connection(const messages::Header &header,
+                                   const messages::Body &body) {
 
-  // auto remove_connection =
-  //     static_cast<const messages::RemoveConnection *>(body.get());
-  // auto transport_layer_id = remove_connection->transport_layer_id;
-  // auto connection_id = remove_connection->connection_id;
-
-  // for (auto it : _transport_layers) {
-  //   auto tcpit = static_cast<networking::Tcp *>(it.get());
-  //   if (tcpit->id() == transport_layer_id) {
-  //     tcpit->terminated(connection_id);
-  //   }
+  // from header get the peer and then the transport layer id and connection id
+  // auto peer = header.peer();
+  // if (!peer.has_transport_layer_id() || !peer.has_connection_id()) {
+  //   LOG_WARNING << this << " Traying to remove connection but not necessary info in message::Header";
+  //   return;
   // }
+
+  // _transport_layers[peer.transport_layer_id()]->terminated(peer.connection_id());
 }
 
-void Networking::send(std::shared_ptr<messages::Message> message) {
+void Networking::send(std::shared_ptr<messages::Message> message,
+                      ProtocolType type) {
   message->mutable_header()->set_id(_dist(_rd));
   for (auto &transport_layer : _transport_layers) {
-    transport_layer->send(message);
+    transport_layer->send(message, type);
   }
 }
 
-void Networking::send_unicast(std::shared_ptr<messages::Message> message) {
+void Networking::send_unicast(std::shared_ptr<messages::Message> message,
+                              ProtocolType type) {
   assert(message->header().has_peer());
   _transport_layers[message->header().peer().transport_layer_id()]
-      ->send_unicast(message);
+      ->send_unicast(message, type);
 }
 
 TransportLayer::ID

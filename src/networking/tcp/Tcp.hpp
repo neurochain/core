@@ -63,6 +63,7 @@ public:
   bool disconnected(const Connection::ID id, std::shared_ptr<Peer> remote_peer);
   Port listening_port() const;
   IP local_ip() const;
+  void terminated(const Connection::ID id);
   ~Tcp();
 
   friend class neuro::networking::test::Tcp;
