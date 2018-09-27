@@ -39,7 +39,7 @@ message Input {
 
 message Output {
   required Hash address = 1;
-  optional NCCSDF value = 2;
+  required NCCSDF value = 2;
   optional bytes data = 3;
 }
 

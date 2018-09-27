@@ -14,8 +14,9 @@ int main(int argc, char *argv[]) {
   po::options_description desc("Allowed options");
   desc.add_options()
     ("help,h", "Produce help message.")
-    ("filepath,f", po::value<std::string>()->default_value("keys"), "File path for keys (appending .pub or .priv)")
+    ("filepath,f", po::value<std::string>()->default_value("key.pub"), "File path for keys (appending .pub or .priv)")
     ("ncc,n", po::value<uint64_t>()->default_value(1000), "How many ncc you want")
+    ("fees,e", po::value<uint64_t>()->default_value(1), "How many ncc you want")
     ("type,t", po::value<std::string>()->default_value("json"), "enum [json, bson, protobuf]")
       ;
 
@@ -35,6 +36,7 @@ int main(int argc, char *argv[]) {
   const auto filepath = vm["filepath"].as<std::string>();
   const auto type = vm["type"].as<std::string>();
   const auto ncc = vm["ncc"].as<uint64_t>();
+  const auto fees = vm["fees"].as<uint64_t>();
   
   crypto::EccPub ecc_pub(filepath);
   Buffer key_pub;
@@ -45,12 +47,17 @@ int main(int argc, char *argv[]) {
   auto input = transaction.add_inputs();
 
   auto input_id = input->mutable_id();
+  input_id->set_type(messages::Hash::SHA256);
   input_id->set_data("");
   input->set_output_id(0);
-  
-  transaction.add_outputs()->mutable_address()->set_data(address.data(), address.size());
 
-  transaction.set_fees(ncc);
+  auto output = transaction.add_outputs();
+  output->mutable_value()->set_value(ncc);
+  auto addr = output->mutable_address();
+  addr->set_data(address.data(), address.size());
+  addr->set_type(messages::Hash::SHA256);
+
+  transaction.set_fees(fees);
   
   if(type == "json") {
     std::string t;

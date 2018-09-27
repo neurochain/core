@@ -11,7 +11,7 @@ int main(int argc, char *argv[]) {
   po::options_description desc("Allowed options");
   desc.add_options()
       ("help,h", "Produce help message.")
-      ("filepath,f", po::value<std::string>()->default_value("keys"),
+      ("filepath,f", po::value<std::string>()->default_value("key"),
        "File path for keys (appending .pub or .priv)")
       ;
 
