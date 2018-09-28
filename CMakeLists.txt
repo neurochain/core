@@ -3,8 +3,8 @@ set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake")
 include(HunterGate)
 
 HunterGate(
-  URL "https://gitlab.com/traxncc/hunter/-/archive/mongo-cxx-driver/hunter-mongo-cxx-driver.tar.bz2"
-  SHA1 "05c11fe7ff40e60fed99febdcb7c885ec0e9dc75"
+  URL "https://gitlab.com/traxncc/hunter/-/archive/pr.mongo-cxx-driver/hunter-pr.mongo-cxx-driver.tar.bz2"
+  SHA1 "a5c6dc5f3c826ec14d98a4093df9063805d872fc"
   )
 
 set(CPACK_PACKAGE_VERSION_MAJOR "0")
