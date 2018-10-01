@@ -40,6 +40,7 @@ void Connection::read_body() {
         messages::from_buffer(_buffer, message.get());
         auto header = message->mutable_header();
         header->mutable_peer()->CopyFrom(*_remote_peer);
+        // TODO
         header->set_signature(&header_pattern->signature, sizeof(header_pattern->signature));
 
         _queue->publish(message);

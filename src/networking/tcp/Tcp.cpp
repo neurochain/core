@@ -153,9 +153,12 @@ bool Tcp::serialize(std::shared_ptr<const messages::Message> message,
     return false;
   }
 
+
   auto header_pattern =
       reinterpret_cast<tcp::HeaderPattern *>(header_tcp->data());
+
   header_pattern->size = body_tcp->size();
+
   _keys->sign(body_tcp->data(), body_tcp->size(),
               reinterpret_cast<uint8_t *>(&header_pattern->signature));
   header_pattern->type = protocol_type;
@@ -172,8 +175,9 @@ bool Tcp::send(std::shared_ptr<messages::Message> message,
     return false;
   }
 
-  Buffer header_tcp;
+  Buffer header_tcp(sizeof(networking::tcp::HeaderPattern), 0);
   Buffer body_tcp;
+
   serialize(message, protocol_type, &header_tcp, &body_tcp);
 
   bool res = true;
@@ -194,8 +198,9 @@ bool Tcp::send_unicast(std::shared_ptr<messages::Message> message,
     return false;
   }
 
-  Buffer header_tcp;
+  Buffer header_tcp(sizeof(networking::tcp::HeaderPattern), 0);
   Buffer body_tcp;
+
   serialize(message, protocol_type, &header_tcp, &body_tcp);
 
   got->second.send(header_tcp);

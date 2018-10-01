@@ -13,24 +13,21 @@
 set(ProtoFiles "networking/proto/Messages.proto")
 PROTOBUF_GENERATE_CPP(ProtoSources ProtoHeaders ${ProtoFiles})
 
-#add_test(integration integration)
-#add_executable(integration
-#  integration.cpp
-#  )
-#
-#target_link_libraries(integration
-#  GTest::main
-#  commons
-#  networking
-#  cryptocc
-#  messages
-#  cryptopp-static
-#  Boost::program_options
-#  Boost::system
-#  Boost::filesystem
-#  Boost::thread
-#  Boost::log
-#  ${LIBMONGOCXX_STATIC_LIBRARIES}
-#  )
+add_test(integration integration)
+add_executable(integration
+  integration.cpp
+  )
+
+target_link_libraries(integration
+  GTest::main
+  core
+  protos
+  Boost::program_options
+  Boost::system
+  Boost::filesystem
+  Boost::thread
+  Boost::log
+  ${LIBMONGOCXX_STATIC_LIBRARIES}
+  )
 
 include_directories(${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/src ${LIBMONGOCXX_STATIC_INCLUDE_DIRS})

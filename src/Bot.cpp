@@ -15,8 +15,11 @@ Bot::Bot(std::istream &bot_stream)
     : _queue(std::make_shared<messages::Queue>()),
       _networking(std::make_shared<networking::Networking>(_queue)),
       _subscriber(std::make_shared<messages::Subscriber>(_queue)) {
+  // REDO
   std::string tmp;
-  bot_stream >> tmp;
+  std::stringstream ss;
+  while (!bot_stream.eof()) { bot_stream >> tmp; ss << tmp; }
+  tmp = ss.str();
   messages::from_json(tmp, &_config);
   if (!init()) {
     throw std::runtime_error("Could not create bot from configuration file");
@@ -37,10 +40,16 @@ bool Bot::init() {
   if (_config.has_logs()) {
     log::from_config(_config.logs());
   }
-  const auto keypath_priv = _config.key_priv_path();
-  const auto keypath_pub = _config.key_pub_path();
+
   bool keys_save{false};
   bool keys_create{false};
+  std::string keypath_priv;
+  std::string keypath_pub;
+
+  if (_config.has_key_priv_path() && _config.has_key_pub_path()) {
+    keypath_priv = _config.key_priv_path();
+    keypath_pub = _config.key_pub_path();
+  }
 
   if (keypath_pub.empty() && keypath_priv.empty()) {
     keys_create = true;
@@ -68,7 +77,6 @@ bool Bot::init() {
   _selection_method = _config.selection_method();
   _keep_status = _config.keep_status();
   _max_connections = networking_conf.max_connections();
-
   if (networking_conf.has_tcp()) {
     _tcp_config = networking_conf.tcp();
     _tcp = std::make_shared<networking::Tcp>(_queue, _keys);
@@ -105,6 +113,7 @@ bool Bot::init() {
       [this](const messages::Header &header, const messages::Body &body) {
         this->handler_connection(header, body);
       });
+
   return true;
 }
 
@@ -166,7 +175,7 @@ void Bot::handler_deconnection(const messages::Header &header,
   // find the peer in our list of peers and update its status
   auto peers = _tcp_config.mutable_peers();
   auto it =
-      std::find_if(peers->begin(), peers->end(), [remote_peer](const auto &el) {
+      std::find_if(peers->begin(), peers->end(), [&remote_peer](const auto &el) {
         if (remote_peer.endpoint() == el.endpoint()) {
           if (remote_peer.has_port() && el.has_port()) {
             return remote_peer.port() == el.port();
@@ -377,7 +386,7 @@ bool Bot::next_to_connect(messages::Peer **peer) {
 
   switch (_selection_method) {
   case sm::Config_NextSelectionMethod_SIMPLE: {
-    //
+    LOG_DEBUG << this << " It entered the simple method for next selection";
     auto it = std::find_if(peers->begin(), peers->end(), [](const auto &el) {
       return el.status() == ps::Peer_Status_REACHABLE;
     });
@@ -392,6 +401,7 @@ bool Bot::next_to_connect(messages::Peer **peer) {
                 << " SelectionMethod::PING is not implemented - Using RANDOM ";
   } // break; // TODO: After implementing PING, remove the comment from break
   case sm::Config_NextSelectionMethod_RANDOM: {
+    LOG_DEBUG << this << " It entered the random method for next selection";
     // Create a vector with all possible positions shuffled
     std::vector<std::size_t> pos((std::size_t)peers->size());
     std::iota(pos.begin(), pos.end(), 0);
@@ -401,7 +411,7 @@ bool Bot::next_to_connect(messages::Peer **peer) {
     // Check every pos until we find one that is good to use
     for (const auto &idx : pos) {
       auto tmp_peer = peers->Mutable(idx);
-      //auto &tmp_peer = peers[idx];
+      // auto &tmp_peer = peers[idx];
       if (tmp_peer->status() == ps::Peer_Status_REACHABLE) {
         *peer = tmp_peer;
         return true;
@@ -447,8 +457,16 @@ void Bot::keep_max_connections() {
   }
 }
 
+std::shared_ptr<networking::Networking> Bot::networking() {
+  return _networking;
+}
+
+void Bot::subscribe(const messages::Type type, messages::Subscriber::Callback callback) {
+  _subscriber->subscribe(type, callback);
+}
+
 void Bot::join() { this->keep_max_connections(); }
 
-Bot::~Bot() {}
+Bot::~Bot() {LOG_DEBUG << this << " From Bot destructor";}
 
 } // namespace neuro

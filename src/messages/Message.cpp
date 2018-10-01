@@ -14,6 +14,9 @@ bool from_json(const std::string &json, Packet *packet) {
   auto r = google::protobuf::util::JsonStringToMessage(json, packet, options);
   if (!r.ok()) {
     std::cerr << r << std::endl;
+    std::cerr << "==================================" << std::endl;
+    std::cerr << json << std::endl;
+    std::cerr << "==================================" << std::endl;
   }
   return r.ok();
 }
@@ -35,6 +38,8 @@ bool from_bson(const bsoncxx::document::value &doc, Packet *packet) {
 }
 
 void to_buffer(const Packet &packet, Buffer *buffer) {
+  const auto size = packet.ByteSizeLong();
+  buffer->resize(size);
   packet.SerializeToArray(buffer->data(), buffer->size());
 }
 

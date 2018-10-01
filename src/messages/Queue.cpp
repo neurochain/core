@@ -8,7 +8,7 @@ namespace messages {
 Queue::Queue() {}
 
 bool Queue::publish(std::shared_ptr<const messages::Message> message) {
-  if(_quitting) {
+  if (_quitting) {
     return false;
   }
 
@@ -59,7 +59,7 @@ void Queue::quit() {
 
 void Queue::do_work() {
   do {
-    while (!_quitting && this->is_empty()) {  // avoid spurious wakeups
+    while (!_quitting && this->is_empty()) { // avoid spurious wakeups
       std::unique_lock<std::mutex> lock_queue(_queue_mutex);
       _condition.wait(lock_queue);
     }
@@ -69,18 +69,16 @@ void Queue::do_work() {
     }
     auto message = this->next_message();
     // for every body in the message we get the type
-    {std::lock_guard<std::mutex> lock_callbacks(_callbacks_mutex);
+    {
+      std::lock_guard<std::mutex> lock_callbacks(_callbacks_mutex);
       for (auto &subscriber : _subscribers) {
-	subscriber->handler(message);
+        subscriber->handler(message);
       }
     }
   } while (!_quitting);
 }
 
-  Queue::~Queue() {
-    quit();
-}
+Queue::~Queue() { quit(); }
 
-
-}  // namespace messages
-}  // namespace neuro
+} // namespace messages
+} // namespace neuro

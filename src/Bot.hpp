@@ -33,7 +33,6 @@ private:
 
   // for the peers
   messages::config::Tcp _tcp_config{};
-  //Peers _peers{};
   std::size_t _connected_peers{0};
   std::size_t _max_connections;
 
@@ -69,6 +68,9 @@ public:
   void join();
   Bot::Status status() const;
   void keep_max_connections();
+  std::shared_ptr<networking::Networking> networking();
+  void subscribe(const messages::Type type, messages::Subscriber::Callback callback);
+
 };
 
 std::ostream &operator<<(std::ostream &os, const neuro::Bot &b);
