@@ -35,6 +35,7 @@ message Input {
   required int32 output_id = 2;
   optional KeyPub pub_key = 3;
   optional Hash block_id = 4;
+  optional Signature signature = 5;
 }
 
 message Output {

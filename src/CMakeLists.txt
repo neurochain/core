@@ -20,45 +20,56 @@ target_link_libraries(protos
 
 
 add_library(core
-  ./messages/Queue.hpp
-  ./messages/Subscriber.hpp
-  ./messages/Queue.cpp
-  ./messages/Message.hpp
-  ./messages/Message.cpp
-  ./mongo/mongo.hpp
-  ./Bot.hpp
-  ./common/logger.cpp
-  ./common/Buffer.hpp
-  ./common/logger.hpp
-  ./common/Buffer.cpp
-  ./common/types.hpp
-  ./networking/Networking.hpp
-  ./networking/TransportLayer.cpp
-  ./networking/Peer.cpp
-  ./networking/Networking.cpp
-  ./networking/Connection.hpp
-  ./networking/Peer.hpp
-  ./networking/tcp/client.hpp
-  ./networking/tcp/Client.hpp
-  ./networking/tcp/HeaderPattern.hpp
-  ./networking/tcp/Tcp.hpp
-  ./networking/tcp/Connection.hpp
-  ./networking/tcp/Connection.cpp
-  ./networking/tcp/Tcp.cpp
-  ./networking/TransportLayer.hpp
-  ./crypto/Ecc.hpp
-  ./crypto/EccPriv.hpp
-  ./crypto/EccPriv.cpp
-  ./crypto/EccPub.hpp
   ./crypto/Hash.hpp
-  ./crypto/Hash.cpp
   ./crypto/EccPub.cpp
   ./crypto/Ecc.cpp
+  ./crypto/EccPub.hpp
+  ./crypto/Sign.cpp
+  ./crypto/Sign.hpp
+  ./crypto/EccPriv.hpp
+  ./crypto/Ecc.hpp
+  ./crypto/Hash.cpp
+  ./crypto/EccPriv.cpp
+  ./common/Buffer.cpp
+  ./common/Buffer.hpp
+  ./common/logger.hpp
+  ./common/logger.cpp
+  ./common/types.hpp
+  ./mongo/mongo.hpp
+  ./networking/tcp/HeaderPattern.hpp
+  ./networking/tcp/Tcp.hpp
+  ./networking/tcp/Connection.cpp
+  ./networking/tcp/Connection.hpp
+  ./networking/tcp/client.hpp
+  ./networking/tcp/Tcp.cpp
+  ./networking/tcp/Client.hpp
+  ./networking/Peer.hpp
+  ./networking/Networking.cpp
+  ./networking/TransportLayer.hpp
+  ./networking/Networking.hpp
+  ./networking/Connection.cpp
+  ./networking/Connection.hpp
+  ./networking/Peer.cpp
+  ./networking/TransportLayer.cpp
+  ./tooling/coinbase.cpp
+  ./tooling/wallet.cpp
+  ./tooling/transaction.cpp
+  ./tooling/list.cpp
+  ./tooling/keygen.cpp
+  ./messages/Queue.hpp
+  ./messages/Queue.cpp
+  ./messages/Message.hpp
+  ./messages/Subscriber.hpp
+  ./messages/Message.cpp
+  ./messages/Hasher.hpp
   ./ledger/Parser.hpp
   ./ledger/Filter.hpp
   ./ledger/mongo.hpp
+  ./ledger/Ledger.hpp
   ./ledger/LedgerMongodb.hpp
   ./ledger/LedgerMongodb.cpp
+  ./ledger/Transaction.hpp
+  ./Bot.hpp
   )
 
 target_link_libraries(core
@@ -107,6 +118,15 @@ add_executable(coinbase
   )
 
 target_link_libraries(coinbase
+  core
+  Boost::program_options
+  )
+
+add_executable(transaction
+  tooling/transaction.cpp
+  )
+
+target_link_libraries(transaction
   core
   Boost::program_options
   )

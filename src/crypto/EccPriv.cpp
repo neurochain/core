@@ -49,12 +49,12 @@ bool EccPriv::load(const Buffer &buffer) {
 }
 
 void EccPriv::sign(const uint8_t *data, const std::size_t size,
-                   uint8_t *signature) {
+                   uint8_t *signature) const {
   CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA256>::Signer signer(_key);
   signer.SignMessage(*_prng, data, size, signature);
 }
 
-Buffer EccPriv::sign(const uint8_t *data, const std::size_t size) {
+Buffer EccPriv::sign(const uint8_t *data, const std::size_t size) const {
   const auto siglen = sign_length();
   Buffer signature(siglen, 0);
   sign(data, size, signature.data());
@@ -62,7 +62,7 @@ Buffer EccPriv::sign(const uint8_t *data, const std::size_t size) {
   return signature;
 }
 
-Buffer EccPriv::sign(const Buffer &input) {
+Buffer EccPriv::sign(const Buffer &input) const {
   return sign(input.data(), input.size());
 }
 

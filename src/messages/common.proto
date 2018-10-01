@@ -2,6 +2,7 @@ syntax = "proto2";
 
 package neuro.messages;
 
+
 message Blob {
   required bytes data = 1;
 }
@@ -34,6 +35,11 @@ message Hash {
   enum Type { SHA256 = 0; }
 
   required Type type = 1 [ default = SHA256 ];
+  required bytes data = 2;
+}
+
+message Signature {
+  required KeyType type = 1;
   required bytes data = 2;
 }
 

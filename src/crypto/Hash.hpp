@@ -2,6 +2,7 @@
 #define NEURO_SRC_CRYPTO_HASH_HPP
 
 #include "common/Buffer.hpp"
+#include "common/types.hpp"
 
 namespace neuro {
 namespace crypto {

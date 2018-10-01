@@ -26,9 +26,9 @@ class EccPriv {
   bool load(const Buffer &buffer);
   bool load(const std::string &filepath);
   static constexpr std::size_t sign_length() { return 64; /* TODO  magic */ }
-  void sign(const uint8_t *data, const std::size_t size, uint8_t *signature);
-  Buffer sign(const uint8_t *data, const std::size_t size);
-  Buffer sign(const Buffer &input);
+  void sign(const uint8_t *data, const std::size_t size, uint8_t *signature) const;
+  Buffer sign(const uint8_t *data, const std::size_t size) const;
+  Buffer sign(const Buffer &input) const;
 
   EccPub make_public_key();
   bool operator==(const EccPriv &key) const;

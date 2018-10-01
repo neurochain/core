@@ -1,14 +1,14 @@
 #ifndef NEURO_SRC_LEDGERMONGODB_HPP
 #define NEURO_SRC_LEDGERMONGODB_HPP
 
-#include "ledger/Filter.hpp"
+#include "ledger/Ledger.hpp"
 #include "ledger/mongo.hpp"
 #include "messages.pb.h"
 
 namespace neuro {
 namespace ledger {
 
-class LedgerMongodb {
+class LedgerMongodb : public Ledger {
  private:
   mutable mongocxx::instance _instance{};
   mutable mongocxx::uri _uri;
@@ -127,62 +127,54 @@ class LedgerMongodb {
     }
     return true;
   }
-  
 
-  
-  
-  // messages::Transaction::State get_block_header(const messages::BlockID &id,
-  //                                 messages::BlockHeader *header) {
+  bool for_each(const Filter &filter, Functor functor) {
+    if (filter.output()) {
+      return false;
+    }
 
-  //   bsoncxx::document bson_id;
-  //   to_bson(id, &bson_id);
-  
-  //   auto query = bss::document{} << "header.id" << bson_id << bss::finalize;
-  //   auto res = _blocks.find_one(std::move(query));
-  //   if (!res) {
-  //     return messages::Transaction::UNKNOWN;
-  //   }
+    bss::document query_block;
+    if (filter.lower_height()) {
+      query_block << "height"
+		  << bss::open_document
+		  << "$gte" << *filter.lower_height()
+		  << bss::close_document;
+    }
+    if (filter.upper_height()) {
+      query_block << "height"
+		  << bss::open_document
+		  << "$lte" << *filter.upper_height()
+		  << bss::close_document;
+    }
+    if (filter.block_id()) {
+      const auto bson = messages::to_bson(*filter.block_id());
+      query_block << "id" << bson;
+    }
 
-  //   return get_block_header(res->view(), header);
-  // }
-
-
-  //   messages::BlockHeader::State get_block(const messages::BlockID &id,
-  // 					 messages::Block *block) {
-
-  //   auto header = block->mutable_header();
-  //   auto res_state = get_block_header(id, header);
-
-  //   bsoncxx::document::value bson_id;
-  //   to_bson(id, &bson_id);
-  
-  //   auto query = bss::document{} << "block_id" << bson_id << bss::finalize;
-  //   auto cursor = _transactions.find(query);
-
-  //   for (const auto transaction : cursor) {
+    query_block << bss::finalize;
     
-  //   }
+    auto query_transaction = bss::document{};
 
+    if (filter.output()) {
+      const auto bson = messages::to_bson(*filter.output());
+      query_transaction
+	<< "inputs" << bss::open_document
+	<< "block_id" << bson
+	<< bss::close_document;
+    }
+
+    auto cursor_block = _blocks.find(query_block.view());
+    auto cursor_transaction = _transactions.find(query_transaction.view());
+
+    for (auto &bson_block : cursor_block) {
+      for (auto &bson_transaction : cursor_transaction) {
+	messages::Transaction transaction;
+	messages::from_bson(bson_transaction, &transaction);
+	functor(transaction);
+      }
+    }
+  }
   
-  // messages::BlockHeader::State get_block(const messages::BlockID &id,
-  // 					 messages::Block *block);
-  // messages::BlockHeader::State get_block(const messages::BlockHeight height,
-  // 					 messages::Block *block);
-  // messages::BlockHeader::State get_last_block(messages::Block *block);
-
-  // bool push_block(const messages::Block &block);
-  // bool delete_block(const messages::BlockID &id);
-  // bool for_each(Filter filter, Functor functor);
-  // messages::Transaction::State get_transaction(
-  //     const messages::TransactionID &id, messages::Transaction *transaction);
-  // bool has_transaction(const messages::TransactionID &transaction_id) const;
-  // bool has_transaction(const messages::BlockID &block_id,
-  //                      const messages::TransactionID &transaction_id) const;
-  // messages::Transaction::State transaction(
-  //     const messages::BlockID &block_id, const messages::TransactionID &id,
-  //     messages::Transaction *transaction) const;
-
-  // ~LedgerMongodb();
 };
 
 }  // namespace ledger
