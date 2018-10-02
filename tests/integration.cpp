@@ -146,30 +146,30 @@ public:
     bots.emplace_back(std::make_shared<Bot>(conf0));
     bots.emplace_back(std::make_shared<Bot>(conf1));
 
-    // bots[1]->subscribe(
-    //     messages::Type::kHello,
-    //     [&listener](const messages::Header &header,
-    //                 const messages::Body &body) {
-    //       listener.handler_hello(header, body);
-    //     });
-    // bots[0]->subscribe(
-    //     messages::Type::kWorld,
-    //     [&listener](const messages::Header &header,
-    //                 const messages::Body &body) {
-    //       listener.handler_world(header, body);
-    //     });
-    // bots[0]->subscribe(
-    //     messages::Type::kConnectionReady,
-    //     [&listener](const messages::Header &header,
-    //                 const messages::Body &body) {
-    //       listener.handler_connection0(header, body);
-    //     });
-    // bots[1]->subscribe(
-    //     messages::Type::kConnectionReady,
-    //     [&listener](const messages::Header &header,
-    //                 const messages::Body &body) {
-    //       listener.handler_connection1(header, body);
-    //     });
+    bots[1]->subscribe(
+        messages::Type::kHello,
+        [&listener](const messages::Header &header,
+                    const messages::Body &body) {
+          listener.handler_hello(header, body);
+        });
+    bots[0]->subscribe(
+        messages::Type::kWorld,
+        [&listener](const messages::Header &header,
+                    const messages::Body &body) {
+          listener.handler_world(header, body);
+        });
+    bots[0]->subscribe(
+        messages::Type::kConnectionReady,
+        [&listener](const messages::Header &header,
+                    const messages::Body &body) {
+          listener.handler_connection0(header, body);
+        });
+    bots[1]->subscribe(
+        messages::Type::kConnectionReady,
+        [&listener](const messages::Header &header,
+                    const messages::Body &body) {
+          listener.handler_connection1(header, body);
+        });
 
     bots[0]->keep_max_connections();
     bots[1]->keep_max_connections();

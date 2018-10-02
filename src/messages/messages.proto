@@ -99,7 +99,7 @@ message Body {
 message Header {
   required uint32 version = 1;
   required Timestamp ts = 2;
-  required bytes signature = 3;
+  optional bytes signature = 3;
   optional uint32 id = 11;
   optional uint32 request_id = 12;
   optional Peer peer = 13;

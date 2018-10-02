@@ -34,6 +34,7 @@ using std::uint8_t;
 
 using Port = uint16_t;
 using Ports = std::vector<Port>;
+const int32_t MessageVersion = 1;
 
   //using Peers = google::protobuf::RepeatedPtrField<neuro::messages::Peer>;
 

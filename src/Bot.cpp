@@ -327,6 +327,14 @@ void Bot::handler_hello(const messages::Header &header,
     }
   }
   message->mutable_header()->CopyFrom(header);
+  world->set_accepted(accepted);
+  // setting the key_pub
+  Buffer pub_key_buffer;
+  _keys->public_key().save(&pub_key_buffer);
+  auto key_pub = world->mutable_key_pub();
+  key_pub->set_type(messages::KeyType::ECP256K1);
+  key_pub->set_hex_data(pub_key_buffer.str());
+
   _networking->send_unicast(message, networking::ProtocolType::PROTOBUF2);
 
   // == Check if we need to add this peer to our list or not ==

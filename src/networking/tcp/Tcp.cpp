@@ -140,25 +140,23 @@ void Tcp::terminated(const Connection::ID id) {
   _connections.erase(got);
 }
 
-bool Tcp::serialize(std::shared_ptr<const messages::Message> message,
+bool Tcp::serialize(std::shared_ptr<messages::Message> message,
                     const ProtocolType protocol_type, Buffer *header_tcp,
                     Buffer *body_tcp) {
 
+  LOG_DEBUG << this << " Before reinterpret and signing";
+  auto header_pattern =
+    reinterpret_cast<tcp::HeaderPattern *>(header_tcp->data());
+  message->mutable_header()->mutable_ts()->set_data(time(NULL));
+  message->mutable_header()->set_version(neuro::MessageVersion);
   messages::to_buffer(*message, body_tcp);
 
-  /// validate that the size of the buffer can be written in
-  /// tcp::HeaderPattern::size
   if (body_tcp->size() > (1 << (8 * sizeof(tcp::HeaderPattern::size)))) {
     LOG_ERROR << "Message is too big (" << body_tcp->size() << ")";
     return false;
   }
 
-
-  auto header_pattern =
-      reinterpret_cast<tcp::HeaderPattern *>(header_tcp->data());
-
   header_pattern->size = body_tcp->size();
-
   _keys->sign(body_tcp->data(), body_tcp->size(),
               reinterpret_cast<uint8_t *>(&header_pattern->signature));
   header_pattern->type = protocol_type;

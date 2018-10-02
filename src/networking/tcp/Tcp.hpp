@@ -40,7 +40,7 @@ private:
                       const bool from_remote);
   void accept(std::shared_ptr<bai::tcp::acceptor> acceptor, const Port port);
 
-  bool serialize(std::shared_ptr<const messages::Message> message,
+  bool serialize(std::shared_ptr<messages::Message> message,
 		 const ProtocolType protocol_type,
 		 Buffer *header_tcp,
 		 Buffer *body_tcp);
