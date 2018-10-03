@@ -3,8 +3,8 @@ set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake")
 include(HunterGate)
 
 HunterGate(
-  URL "https://gitlab.com/traxncc/hunter/-/archive/pr.mongo-cxx-driver/hunter-pr.mongo-cxx-driver.tar.bz2"
-  SHA1 "a5c6dc5f3c826ec14d98a4093df9063805d872fc"
+  URL "https://gitlab.com/traxncc/hunter/-/archive/pr.onion/hunter-pr.onion.tar.bz2"
+  SHA1 "89e5c4616ad9d1e38c745ea8b30641bd64e1ec83"
   )
 
 set(CPACK_PACKAGE_VERSION_MAJOR "0")
@@ -24,8 +24,8 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g -O0  ${CMAKE_CXX_FLAGS} --coverage -fsanitize=addr
 include(GNUInstallDirs)
 include(FindPkgConfig)
 
-hunter_add_package(Boost COMPONENTS program_options system filesystem log thread)
-find_package(Boost 1.65 CONFIG REQUIRED program_options system filesystem log thread)
+hunter_add_package(Boost COMPONENTS program_options system filesystem log thread )
+find_package(Boost 1.65 CONFIG REQUIRED program_options system filesystem log thread )
 
 hunter_add_package(GTest)
 find_package(GTest CONFIG REQUIRED)
@@ -40,6 +40,9 @@ find_package(cryptopp CONFIG REQUIRED)
 hunter_add_package(mongo-cxx-driver)
 find_package(libbsoncxx-static CONFIG REQUIRED)
 find_package(libmongocxx-static CONFIG REQUIRED)
+
+hunter_add_package(libonion)
+find_package(libonion CONFIG REQUIRED)
 
 add_subdirectory(src)
 add_subdirectory(tests)
