@@ -14,7 +14,7 @@ namespace neuro {
 Bot::Bot(std::istream &bot_stream)
     : _queue(std::make_shared<messages::Queue>()),
       _networking(std::make_shared<networking::Networking>(_queue)),
-      _subscriber(std::make_shared<messages::Subscriber>(_queue)) {
+      _subscriber(_queue) {
   // REDO
   std::string tmp;
   std::stringstream ss;
@@ -32,7 +32,7 @@ Bot::Bot(std::istream &bot_stream)
 Bot::Bot(const std::string &configuration_path)
     : _queue(std::make_shared<messages::Queue>()),
       _networking(std::make_shared<networking::Networking>(_queue)),
-      _subscriber(std::make_shared<messages::Subscriber>(_queue)) {
+      _subscriber(_queue) {
   messages::from_json_file(configuration_path, &_config);
   if (!init()) {
     throw std::runtime_error("Could not create bot from configuration file");
@@ -76,49 +76,50 @@ bool Bot::init() {
     }
   }
 
-  const auto &networking_conf = _config.networking();
+  auto networking_conf = _config.mutable_networking();
   _selection_method = _config.selection_method();
   _keep_status = _config.keep_status();
-  _max_connections = networking_conf.max_connections();
-  if (networking_conf.has_tcp()) {
-    _tcp_config = networking_conf.tcp();
+  _max_connections = networking_conf->max_connections();
+
+  if (networking_conf->has_tcp()) {
+    _tcp_config = networking_conf->mutable_tcp();
     _tcp = std::make_shared<networking::Tcp>(_queue, _keys);
-    auto port = _tcp_config.listen_port();
+    auto port = _tcp_config->listen_port();
     _tcp->accept(port);
     LOG_INFO << this << " Accepting connections on port " << port;
     _networking->push(_tcp);
-    if (_tcp_config.peers().empty()) {
+    if (_tcp_config->peers().empty()) {
       LOG_WARNING << this << " There is no information about peers";
     }
-    for (auto &peer : _tcp_config.peers()) {
+    for (auto &peer : _tcp_config->peers()) {
       LOG_DEBUG << this << " Peer: " << peer;
     }
   }
 
-  _subscriber->subscribe(
+  _subscriber.subscribe(
       messages::Type::kHello,
       [this](const messages::Header &header, const messages::Body &body) {
         this->handler_hello(header, body);
       });
 
-  _subscriber->subscribe(
+  _subscriber.subscribe(
       messages::Type::kWorld,
       [this](const messages::Header &header, const messages::Body &body) {
         this->handler_world(header, body);
       });
 
-  _subscriber->subscribe(
+  _subscriber.subscribe(
       messages::Type::kConnectionClosed,
       [this](const messages::Header &header, const messages::Body &body) {
         this->handler_deconnection(header, body);
       });
 
-  _subscriber->subscribe(
+  _subscriber.subscribe(
       messages::Type::kConnectionReady,
       [this](const messages::Header &header, const messages::Body &body) {
         this->handler_connection(header, body);
       });
-  // _subscriber->subscribe(messages::Type::kConnectionReady,
+  // _subscriber.subscribe(messages::Type::kConnectionReady,
   //                        std::bind(&Bot::handler_connection, this, std::placeholders::_1, std::placeholders::_2));
 
   return true;
@@ -195,7 +196,7 @@ void Bot::handler_deconnection(const messages::Header &header,
   auto remote_peer = header.peer();
   // find the peer in our list of peers and update its status
   // std::lock_guard<std::mutex> lock_connections(_mutex_connections);
-  auto peers = _tcp_config.mutable_peers();
+  auto peers = _tcp_config->mutable_peers();
   auto it = std::find_if(peers->begin(), peers->end(),
                          [&remote_peer](const auto &el) {
                            if (remote_peer.endpoint() == el.endpoint()) {
@@ -215,7 +216,7 @@ void Bot::handler_deconnection(const messages::Header &header,
   auto old_status = remote_peer.status();
 
   if (old_status == ps::Peer_Status_CONNECTING && it != peers->end()) {
-    (*it).set_status(ps::Peer_Status_UNREACHABLE);
+    it->set_status(ps::Peer_Status_UNREACHABLE);
   } else if (old_status == ps::Peer_Status_CONNECTED) {
     _connected_peers -= 1;
   }
@@ -231,7 +232,8 @@ void Bot::handler_world(const messages::Header &header,
       return;
     }
   }
-
+  LOG_DEBUG << this << "handling woarld " << &_subscriber;
+  
   if (!body.has_world()) {
     LOG_WARNING << this
                 << " SomeThing wrong. Got a call to handler_world with "
@@ -252,7 +254,7 @@ void Bot::handler_world(const messages::Header &header,
 
   // std::lock_guard<std::mutex> lock_connections(_mutex_connections);
   // Check that I am not in the received list
-  auto peers = _tcp_config.mutable_peers();
+  auto peers = _tcp_config->mutable_peers();
   for (const auto &peer : world.peers()) {
     auto predicate = [peer, this](const auto &it) {
       if (it.endpoint() == this->_tcp->local_ip().to_string()) {
@@ -267,7 +269,7 @@ void Bot::handler_world(const messages::Header &header,
       continue;
     }
 
-    _tcp_config.add_peers()->CopyFrom(peer);
+    _tcp_config->add_peers()->CopyFrom(peer);
   }
 
   if (!header.has_peer()) {
@@ -286,7 +288,7 @@ void Bot::handler_world(const messages::Header &header,
 
   messages::Peer *remote_peer;
   if (peer_it == peers->end()) {
-    remote_peer = _tcp_config.add_peers();
+    remote_peer = _tcp_config->add_peers();
     remote_peer->CopyFrom(peer_header);
   } else {
     remote_peer = &(*peer_it);
@@ -355,7 +357,7 @@ void Bot::handler_hello(const messages::Header &header,
     }
   }
 
-  auto peers = _tcp_config.peers();
+  auto peers = _tcp_config->peers();
   if (peers_connected) {
     for (const auto &peer_conn : peers) {
       if (peer_conn.status() == ps::Peer_Status_CONNECTED ||
@@ -386,7 +388,7 @@ void Bot::handler_hello(const messages::Header &header,
 
   messages::Peer *remote_peer;
   if (!found) {
-    remote_peer = _tcp_config.add_peers();
+    remote_peer = _tcp_config->add_peers();
     remote_peer->CopyFrom(peer_header);
   } else {
     remote_peer = &(*peer_it);
@@ -420,7 +422,7 @@ std::ostream &operator<<(std::ostream &os, const neuro::Bot &b) {
 
 Bot::Status Bot::status() const {
   // std::lock_guard<std::mutex> lock_connections(_mutex_connections);
-  auto peers_size = _tcp_config.peers().size();
+  auto peers_size = _tcp_config->peers().size();
   auto status = Bot::Status(_connected_peers, _max_connections, peers_size);
   return status;
 }
@@ -436,7 +438,7 @@ bool Bot::next_to_connect(messages::Peer **peer) {
   // it is locked from the caller
   using ps = messages::Peer_Status;
   using sm = messages::config::Config_NextSelectionMethod;
-  auto peers = _tcp_config.mutable_peers();
+  auto peers = _tcp_config->mutable_peers();
 
   switch (_selection_method) {
   case sm::Config_NextSelectionMethod_SIMPLE: {
@@ -496,7 +498,7 @@ void Bot::keep_max_connections() {
   std::size_t peers_size = 0;
   {
     // std::lock_guard<std::mutex> lock_connections(_mutex_connections);
-    peers_size = _tcp_config.peers().size();
+    peers_size = _tcp_config->peers().size();
   }
 
   if (peers_size == 0) {
@@ -536,17 +538,19 @@ std::shared_ptr<networking::Networking> Bot::networking() {
 
 void Bot::subscribe(const messages::Type type,
                     messages::Subscriber::Callback callback) {
-  _subscriber->subscribe(type, callback);
+  _subscriber.subscribe(type, callback);
 }
 
 void Bot::join() { this->keep_max_connections(); }
 
 Bot::~Bot() {
+  LOG_DEBUG << this << " dying " << &_subscriber;
+  //_subscriber.unsubscribe();
   {
     std::lock_guard<std::mutex> lock_connections(_mutex_quitting);
     _quitting = true;
   }
-  LOG_DEBUG << this << " From Bot destructor";
+  LOG_DEBUG << this << " From Bot destructor" << &_subscriber;
 }
 
 } // namespace neuro

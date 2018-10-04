@@ -27,12 +27,12 @@ public:
 private:
   std::shared_ptr<messages::Queue> _queue;
   std::shared_ptr<networking::Networking> _networking;
-  std::shared_ptr<messages::Subscriber> _subscriber;
   messages::config::Config _config;
   std::shared_ptr<crypto::Ecc> _keys;
+  messages::Subscriber _subscriber;
 
   // for the peers
-  messages::config::Tcp _tcp_config{};
+  messages::config::Tcp *_tcp_config;
   std::size_t _connected_peers{0};
   std::size_t _max_connections;
 

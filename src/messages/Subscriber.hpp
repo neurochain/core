@@ -27,6 +27,9 @@ public:
     _queue->subscribe(this);
     _callbacks_by_type[type] = callback;
   }
+  void unsubscribe() {
+    _queue->unsubscribe(this);
+  }
 
   void handler(std::shared_ptr<const Message> message) {
     std::lock_guard<std::mutex> lock_handler(_mutex_handler);
@@ -43,7 +46,9 @@ public:
   ~Subscriber() {
      std::lock_guard<std::mutex> lock_handler(_mutex_handler);
     // _quitting = true;
+    LOG_DEBUG << "Subscriber unsubscribing " << this;
     _queue->unsubscribe(this);
+    LOG_DEBUG << "Subscriber unsubscribed " << this ;
   }
 };
 

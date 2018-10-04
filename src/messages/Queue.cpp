@@ -28,6 +28,7 @@ void Queue::subscribe(Subscriber *subscriber) {
 
 void Queue::unsubscribe(Subscriber *subscriber) {
   std::lock_guard<std::mutex> lock_callbacks(_callbacks_mutex);
+  LOG_DEBUG << "Queue unsub "  << subscriber;
   _subscribers.erase(subscriber);
 }
 
@@ -75,6 +76,7 @@ void Queue::do_work() {
       for (auto &subscriber : _subscribers) {
         LOG_DEBUG << this << " Before calling " << subscriber;
         subscriber->handler(message);
+        LOG_DEBUG << this << " After calling " << subscriber;
       }
     }
   } while (!_quitting);
