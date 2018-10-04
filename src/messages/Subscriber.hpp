@@ -14,6 +14,8 @@ public:
   using Callback = std::function<void(const Header &header, const Body &body)>;
 
 private:
+  bool _quitting{false};
+  mutable std::mutex _mutex_handler;
   std::shared_ptr<Queue> _queue;
   std::vector<std::optional<Callback>> _callbacks_by_type;
 
@@ -27,6 +29,8 @@ public:
   }
 
   void handler(std::shared_ptr<const Message> message) {
+    std::lock_guard<std::mutex> lock_handler(_mutex_handler);
+    // if (_quitting) return;
     for (const auto &body : message->bodies()) {
       const auto type = get_type(body);
       auto opt = _callbacks_by_type[type];
@@ -36,7 +40,11 @@ public:
     }
   }
 
-  ~Subscriber() { _queue->unsubscribe(this); }
+  ~Subscriber() {
+     std::lock_guard<std::mutex> lock_handler(_mutex_handler);
+    // _quitting = true;
+    _queue->unsubscribe(this);
+  }
 };
 
 } // namespace messages

@@ -55,7 +55,7 @@ message Peer {
   required string endpoint = 1;
   optional uint32 port = 2;
   optional KeyPub key_pub = 3;
-  optional Status status = 4 [default = REACHABLE];
+  optional Status status = 4 [ default = REACHABLE ];
   optional uint32 transport_layer_id = 5;
   optional uint32 connection_id = 6;
 }

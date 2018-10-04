@@ -72,7 +72,9 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
                          const boost::system::error_code &error,
                          std::shared_ptr<messages::Peer> peer,
                          const bool from_remote) {
+  LOG_DEBUG << this << " It entered new_connection on TCP";
   std::lock_guard<std::mutex> lock_queue(_connection_mutex);
+  LOG_DEBUG << this << " It passed the lock on new_connection TCP";
 
   auto message = std::make_shared<messages::Message>();
   auto header = message->mutable_header();
@@ -92,7 +94,9 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
 
     connection_ready->set_from_remote(from_remote);
 
+    LOG_DEBUG << this << " Before copyfrom on new_connection TCP";
     peer_tmp->CopyFrom(*peer);
+    LOG_DEBUG << this << " Before publishing on new_connection TCP";
     _queue->publish(message);
     r.first->second.read();
   } else {

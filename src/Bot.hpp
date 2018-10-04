@@ -41,6 +41,8 @@ private:
   messages::config::Config::NextSelectionMethod _selection_method;
 
   mutable std::mutex _mutex_connections;
+  mutable std::mutex _mutex_quitting;
+  bool _quitting{false};
 
 private:
   bool init();

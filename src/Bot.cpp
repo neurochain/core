@@ -18,7 +18,10 @@ Bot::Bot(std::istream &bot_stream)
   // REDO
   std::string tmp;
   std::stringstream ss;
-  while (!bot_stream.eof()) { bot_stream >> tmp; ss << tmp; }
+  while (!bot_stream.eof()) {
+    bot_stream >> tmp;
+    ss << tmp;
+  }
   tmp = ss.str();
   messages::from_json(tmp, &_config);
   if (!init()) {
@@ -84,9 +87,11 @@ bool Bot::init() {
     _tcp->accept(port);
     LOG_INFO << this << " Accepting connections on port " << port;
     _networking->push(_tcp);
-    auto peers = _tcp_config.peers(); // const
-    if (peers.empty()) {
+    if (_tcp_config.peers().empty()) {
       LOG_WARNING << this << " There is no information about peers";
+    }
+    for (auto &peer : _tcp_config.peers()) {
+      LOG_DEBUG << this << " Peer: " << peer;
     }
   }
 
@@ -113,12 +118,22 @@ bool Bot::init() {
       [this](const messages::Header &header, const messages::Body &body) {
         this->handler_connection(header, body);
       });
+  // _subscriber->subscribe(messages::Type::kConnectionReady,
+  //                        std::bind(&Bot::handler_connection, this, std::placeholders::_1, std::placeholders::_2));
 
   return true;
 }
 
 void Bot::handler_connection(const messages::Header &header,
                              const messages::Body &body) {
+  {
+    std::lock_guard<std::mutex> lock_connections(_mutex_quitting);
+    if (_quitting) {
+      return;
+    }
+  }
+
+  LOG_DEBUG << this << " It entered the handler_connection on BOT";
   if (!body.has_connection_ready()) {
     LOG_WARNING << this
                 << "Got a call to handler_connection with "
@@ -161,6 +176,12 @@ void Bot::handler_connection(const messages::Header &header,
 
 void Bot::handler_deconnection(const messages::Header &header,
                                const messages::Body &body) {
+  {
+    std::lock_guard<std::mutex> lock_connections(_mutex_quitting);
+    if (_quitting) {
+      return;
+    }
+  }
 
   if (!body.has_connection_closed()) {
     LOG_WARNING << this
@@ -173,19 +194,20 @@ void Bot::handler_deconnection(const messages::Header &header,
 
   auto remote_peer = header.peer();
   // find the peer in our list of peers and update its status
+  // std::lock_guard<std::mutex> lock_connections(_mutex_connections);
   auto peers = _tcp_config.mutable_peers();
-  auto it =
-      std::find_if(peers->begin(), peers->end(), [&remote_peer](const auto &el) {
-        if (remote_peer.endpoint() == el.endpoint()) {
-          if (remote_peer.has_port() && el.has_port()) {
-            return remote_peer.port() == el.port();
+  auto it = std::find_if(peers->begin(), peers->end(),
+                         [&remote_peer](const auto &el) {
+                           if (remote_peer.endpoint() == el.endpoint()) {
+                             if (remote_peer.has_port() && el.has_port()) {
+                               return remote_peer.port() == el.port();
 
-          } else {
-            return !remote_peer.has_port() && !el.has_port();
-          }
-        }
-        return false;
-      });
+                             } else {
+                               return !remote_peer.has_port() && !el.has_port();
+                             }
+                           }
+                           return false;
+                         });
 
   _tcp->terminated(remote_peer.connection_id());
 
@@ -203,6 +225,13 @@ void Bot::handler_deconnection(const messages::Header &header,
 
 void Bot::handler_world(const messages::Header &header,
                         const messages::Body &body) {
+  {
+    std::lock_guard<std::mutex> lock_connections(_mutex_quitting);
+    if (_quitting) {
+      return;
+    }
+  }
+
   if (!body.has_world()) {
     LOG_WARNING << this
                 << " SomeThing wrong. Got a call to handler_world with "
@@ -221,6 +250,7 @@ void Bot::handler_world(const messages::Header &header,
     LOG_DEBUG << this << " Peers from remote: " << ss.str();
   }
 
+  // std::lock_guard<std::mutex> lock_connections(_mutex_connections);
   // Check that I am not in the received list
   auto peers = _tcp_config.mutable_peers();
   for (const auto &peer : world.peers()) {
@@ -272,7 +302,7 @@ void Bot::handler_world(const messages::Header &header,
   } else {
     bool accepted{false};
     {
-      std::lock_guard<std::mutex> lock_connections(_mutex_connections);
+      // std::lock_guard<std::mutex> lock_connections(_mutex_connections);
       accepted = _connected_peers < _max_connections;
       if (accepted) {
         _connected_peers += 1;
@@ -293,6 +323,13 @@ void Bot::handler_world(const messages::Header &header,
 
 void Bot::handler_hello(const messages::Header &header,
                         const messages::Body &body) {
+  {
+    std::lock_guard<std::mutex> lock_connections(_mutex_quitting);
+    if (_quitting) {
+      return;
+    }
+  }
+
   if (!body.has_hello()) {
     LOG_WARNING << this
                 << " SomeThing wrong. Got a call to handler_hello with "
@@ -304,12 +341,13 @@ void Bot::handler_hello(const messages::Header &header,
   LOG_DEBUG << this << " Got a HELLO message";
   using ps = messages::Peer_Status;
 
+  // std::lock_guard<std::mutex> lock_connections(_mutex_connections);
   // == Create world message for replying ==
   auto message = std::make_shared<messages::Message>();
   auto world = message->add_bodies()->mutable_world();
   bool accepted, peers_connected{false};
   {
-    std::lock_guard<std::mutex> lock_connections(_mutex_connections);
+    // std::lock_guard<std::mutex> lock_connections(_mutex_connections);
     accepted = _connected_peers < _max_connections;
     peers_connected = _connected_peers > 0;
     if (accepted) {
@@ -381,13 +419,21 @@ std::ostream &operator<<(std::ostream &os, const neuro::Bot &b) {
 }
 
 Bot::Status Bot::status() const {
-  std::lock_guard<std::mutex> lock_connections(_mutex_connections);
+  // std::lock_guard<std::mutex> lock_connections(_mutex_connections);
   auto peers_size = _tcp_config.peers().size();
   auto status = Bot::Status(_connected_peers, _max_connections, peers_size);
   return status;
 }
 
 bool Bot::next_to_connect(messages::Peer **peer) {
+  {
+    std::lock_guard<std::mutex> lock_connections(_mutex_quitting);
+    if (_quitting) {
+      return false;
+    }
+  }
+
+  // it is locked from the caller
   using ps = messages::Peer_Status;
   using sm = messages::config::Config_NextSelectionMethod;
   auto peers = _tcp_config.mutable_peers();
@@ -399,9 +445,13 @@ bool Bot::next_to_connect(messages::Peer **peer) {
       return el.status() == ps::Peer_Status_REACHABLE;
     });
 
+    LOG_DEBUG << this << " Despues del find_if en simple";
     if (it != peers->end()) {
+      LOG_DEBUG << this << " En simple en el if";
       *peer = &(*it);
       return true;
+    } else {
+      LOG_DEBUG << this << " En simple en el else";
     }
   } break;
   case sm::Config_NextSelectionMethod_PING: {
@@ -434,33 +484,48 @@ bool Bot::next_to_connect(messages::Peer **peer) {
 }
 
 void Bot::keep_max_connections() {
+  {
+    std::lock_guard<std::mutex> lock_connections(_mutex_quitting);
+    if (_quitting) {
+      return;
+    }
+  }
+
   using ps = messages::Peer_Status;
-  auto peers = _tcp_config.mutable_peers();
-  if (peers->empty()) {
+
+  std::size_t peers_size = 0;
+  {
+    // std::lock_guard<std::mutex> lock_connections(_mutex_connections);
+    peers_size = _tcp_config.peers().size();
+  }
+
+  if (peers_size == 0) {
     LOG_INFO << this << " Stayng server mode";
     return;
   }
-  {
-    std::lock_guard<std::mutex> lock_connections(_mutex_connections);
-    if (_connected_peers == _max_connections)
-      return;
 
-    if (_connected_peers == (std::size_t)peers->size()) {
-      LOG_WARNING << this << " There is no available peer to check";
-      return;
-    }
+  if (_connected_peers == _max_connections)
+    return;
 
-    if (_connected_peers < _max_connections) {
-      messages::Peer *peer;
-      if (this->next_to_connect(&peer)) {
-        LOG_DEBUG << this << " Asking to connect to " << *peer;
-        peer->set_status(ps::Peer_Status_CONNECTING);
-        auto tmp_peer = std::make_shared<messages::Peer>();
-        tmp_peer->CopyFrom(*peer);
-        _tcp->connect(tmp_peer);
-      } else {
-        LOG_DEBUG << this << " No more REACHABLE peers";
-      }
+  if (_connected_peers == peers_size) {
+    LOG_WARNING << this << " There is no available peer to check";
+    return;
+  }
+
+  if (_connected_peers < _max_connections) {
+    messages::Peer *peer;
+    if (this->next_to_connect(&peer)) {
+      LOG_DEBUG << this << " Asking to connect to " << *peer;
+      peer->set_status(ps::Peer_Status_CONNECTING);
+      LOG_DEBUG << this << " Already changed the status " << *peer;
+      auto tmp_peer = std::make_shared<messages::Peer>();
+      LOG_DEBUG << this << " Passed the make_shared";
+      tmp_peer->CopyFrom(*peer);
+      LOG_DEBUG << this << " Passed the copy from";
+      _tcp->connect(tmp_peer);
+      LOG_DEBUG << this << " Passed the connect";
+    } else {
+      LOG_DEBUG << this << " No more REACHABLE peers";
     }
   }
 }
@@ -469,12 +534,19 @@ std::shared_ptr<networking::Networking> Bot::networking() {
   return _networking;
 }
 
-void Bot::subscribe(const messages::Type type, messages::Subscriber::Callback callback) {
+void Bot::subscribe(const messages::Type type,
+                    messages::Subscriber::Callback callback) {
   _subscriber->subscribe(type, callback);
 }
 
 void Bot::join() { this->keep_max_connections(); }
 
-Bot::~Bot() {LOG_DEBUG << this << " From Bot destructor";}
+Bot::~Bot() {
+  {
+    std::lock_guard<std::mutex> lock_connections(_mutex_quitting);
+    _quitting = true;
+  }
+  LOG_DEBUG << this << " From Bot destructor";
+}
 
 } // namespace neuro

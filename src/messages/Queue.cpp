@@ -59,6 +59,7 @@ void Queue::quit() {
 
 void Queue::do_work() {
   do {
+    LOG_DEBUG << this << " After do in queue";
     while (!_quitting && this->is_empty()) { // avoid spurious wakeups
       std::unique_lock<std::mutex> lock_queue(_queue_mutex);
       _condition.wait(lock_queue);
@@ -72,6 +73,7 @@ void Queue::do_work() {
     {
       std::lock_guard<std::mutex> lock_callbacks(_callbacks_mutex);
       for (auto &subscriber : _subscribers) {
+        LOG_DEBUG << this << " Before calling " << subscriber;
         subscriber->handler(message);
       }
     }
