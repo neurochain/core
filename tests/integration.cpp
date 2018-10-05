@@ -1,6 +1,6 @@
 #include "Bot.hpp"
-#include "messages/Subscriber.hpp"
 #include "common/logger.hpp"
+#include "messages/Subscriber.hpp"
 #include <chrono>
 #include <gtest/gtest.h>
 #include <sstream>
@@ -26,7 +26,8 @@ std::stringstream botconf(const std::string &max_connections,
   if (!ports.empty()) {
     std::size_t i;
     for (i = 0; i < ports.size() - 1; i += 1) {
-      conf << "  {\"endpoint\" : \"127.0.0.1\", \"port\" : " << ports[i] << "},";
+      conf << "  {\"endpoint\" : \"127.0.0.1\", \"port\" : " << ports[i]
+           << "},";
     }
     conf << "  {\"endpoint\" : \"127.0.0.1\", \"port\" : " << ports[i] << "}";
   }
@@ -42,7 +43,7 @@ std::stringstream botconf(const std::string &max_connections,
 }
 
 class Listener {
-private :
+private:
   bool _received_connection0{false};
   bool _received_connection1{false};
   bool _received_hello{false};
@@ -134,67 +135,60 @@ public:
   // }
 
   bool test_interaction() {
-    auto conf0 = botconf("3", "1337", {});
-    auto conf1 = botconf("3", "1338", {"1337", "1339"});
-    auto conf2 = botconf("3", "1339", {"1337", "1338"});
+    bool res{false};
+    {
+      auto conf0 = botconf("3", "1337", {});
+      auto conf1 = botconf("3", "1338", {"1337", "1339"});
+      auto conf2 = botconf("3", "1339", {"1337", "1338"});
 
-    // { Bot bot(conf2); }
-    // return true;
+      // { Bot bot(conf2); }
+      // return true;
 
-    Listener listener;
-    std::vector<std::shared_ptr<Bot>> bots;
-    bots.emplace_back(std::make_shared<Bot>(conf0));
-    bots.emplace_back(std::make_shared<Bot>(conf1));
+      Listener listener;
+      std::vector<std::shared_ptr<Bot>> bots;
+      bots.emplace_back(std::make_shared<Bot>(conf0));
+      bots.emplace_back(std::make_shared<Bot>(conf1));
 
-    bots[1]->subscribe(
-        messages::Type::kHello,
-        [&listener](const messages::Header &header,
-                    const messages::Body &body) {
-          listener.handler_hello(header, body);
-        });
-    bots[0]->subscribe(
-        messages::Type::kWorld,
-        [&listener](const messages::Header &header,
-                    const messages::Body &body) {
-          listener.handler_world(header, body);
-        });
-    bots[0]->subscribe(
-        messages::Type::kConnectionReady,
-        [&listener](const messages::Header &header,
-                    const messages::Body &body) {
-          listener.handler_connection0(header, body);
-        });
-    bots[1]->subscribe(
-        messages::Type::kConnectionReady,
-        [&listener](const messages::Header &header,
-                    const messages::Body &body) {
-          listener.handler_connection1(header, body);
-        });
+      bots[1]->subscribe(messages::Type::kHello,
+                         [&listener](const messages::Header &header,
+                                     const messages::Body &body) {
+                           listener.handler_hello(header, body);
+                         });
+      bots[0]->subscribe(messages::Type::kWorld,
+                         [&listener](const messages::Header &header,
+                                     const messages::Body &body) {
+                           listener.handler_world(header, body);
+                         });
+      bots[0]->subscribe(messages::Type::kConnectionReady,
+                         [&listener](const messages::Header &header,
+                                     const messages::Body &body) {
+                           listener.handler_connection0(header, body);
+                         });
+      bots[1]->subscribe(messages::Type::kConnectionReady,
+                         [&listener](const messages::Header &header,
+                                     const messages::Body &body) {
+                           listener.handler_connection1(header, body);
+                         });
 
-    bots[0]->keep_max_connections();
-    bots[1]->keep_max_connections();
+      bots[0]->keep_max_connections();
+      bots[1]->keep_max_connections();
 
-    std::this_thread::sleep_for(500ms);
+      std::this_thread::sleep_for(500ms);
 
-    for (const auto &bot : bots) {
-      bot->status();
+      for (const auto &bot : bots) {
+        bot->status();
+      }
+
+      std::this_thread::sleep_for(500ms);
+      auto message = std::make_shared<messages::Message>();
+      message->add_bodies()->mutable_hello();
+      bots[0]->networking()->send(message, networking::ProtocolType::PROTOBUF2);
+
+      std::this_thread::sleep_for(500ms);
+      res = listener.validated();
     }
-    std::cout << __FUNCTION__ << ":" << __LINE__ << std::endl;
+
     std::this_thread::sleep_for(500ms);
-
-    std::cout << __FUNCTION__ << ":" << __LINE__ << std::endl;
-    auto message = std::make_shared<messages::Message>();
-
-    std::cout << __FUNCTION__ << ":" << __LINE__ << std::endl;
-    message->add_bodies()->mutable_hello();
-
-    std::cout << __FUNCTION__ << ":" << __LINE__ << std::endl;
-    bots[0]->networking()->send(message, networking::ProtocolType::PROTOBUF2);
-
-    std::cout << __FUNCTION__ << ":" << __LINE__ << std::endl;
-
-    std::this_thread::sleep_for(250ms);
-    auto res = listener.validated();
     LOG_DEBUG << this << " About to go out";
 
     return res;
@@ -203,6 +197,6 @@ public:
 
 TEST_F(Integration, simple_interaction) { ASSERT_TRUE(test_interaction()); }
 
-  //TEST_F(Integration, max_connections) { ASSERT_TRUE(test_reachmax()); }
+// TEST_F(Integration, max_connections) { ASSERT_TRUE(test_reachmax()); }
 
 } // namespace neuro

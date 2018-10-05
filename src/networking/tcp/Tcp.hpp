@@ -22,6 +22,7 @@ class Tcp;
 
 class Tcp : public TransportLayer {
 private:
+  bool _started{false};
   boost::asio::io_service _io_service;
   bai::tcp::resolver _resolver;
   Connection::ID _current_connection_id;

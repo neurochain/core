@@ -121,17 +121,22 @@ void Tcp::_run() {
   if (ec) {
     LOG_ERROR << "service run failed (" << ec.message() << ")";
   }
+  _started = true;
 }
 
 void Tcp::_stop() {
+  if (!_started) return;
+
   {
     std::lock_guard<std::mutex> m(_stopping_mutex);
     _stopping = true;
   }
   _io_service.stop();
   while (!_io_service.stopped()) {
+    std::cout << this << " waiting ..." << std::endl;
     std::this_thread::sleep_for(10ms);
   }
+  LOG_DEBUG << this << " Finished the _stop() in tcp";
 }
 
 void Tcp::terminated(const Connection::ID id) {
