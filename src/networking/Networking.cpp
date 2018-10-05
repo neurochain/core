@@ -9,8 +9,7 @@ namespace neuro {
 namespace networking {
 
 Networking::Networking(std::shared_ptr<messages::Queue> queue)
-    : _queue(queue), _dist(0, std::numeric_limits<uint32_t>::max()),
-      _subscriber(queue) {
+    : _queue(queue), _dist(0, std::numeric_limits<uint32_t>::max()) {
   _queue->run();
 
   // _subscriber.subscribe(
@@ -69,7 +68,9 @@ void Networking::join() {
   }
 }
 
-Networking::~Networking() { _queue->quit(); }
+Networking::~Networking() {
+  _queue->quit();
+}
 
 } // namespace networking
 } // namespace neuro

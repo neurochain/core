@@ -50,19 +50,19 @@ void Tcp::accept(std::shared_ptr<bai::tcp::acceptor> acceptor,
 
   auto socket = std::make_shared<bai::tcp::socket>(acceptor->get_io_service());
   acceptor->async_accept(*socket, [this, acceptor, socket, port](
-                                      const boost::system::error_code &error) {
-    const auto remote_endpoint =
-        socket->remote_endpoint().address().to_string();
+      const boost::system::error_code &error) {
+                           const auto remote_endpoint =
+                               socket->remote_endpoint().address().to_string();
 
-    auto peer = std::make_shared<messages::Peer>();
-    peer->set_endpoint(remote_endpoint);
-    peer->set_port(socket->remote_endpoint().port());
-    peer->set_status(messages::Peer::CONNECTING);
-    peer->set_transport_layer_id(_id);
+                           auto peer = std::make_shared<messages::Peer>();
+                           peer->set_endpoint(remote_endpoint);
+                           peer->set_port(socket->remote_endpoint().port());
+                           peer->set_status(messages::Peer::CONNECTING);
+                           peer->set_transport_layer_id(_id);
 
-    this->new_connection(socket, error, peer, true);
-    this->accept(acceptor, port);
-  });
+                           this->new_connection(socket, error, peer, true);
+                           this->accept(acceptor, port);
+                         });
 }
 
 Port Tcp::listening_port() const { return _listening_port; }
@@ -109,28 +109,19 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
 }
 
 void Tcp::_run() {
-  LOG_INFO << "Starting io_service";
   boost::system::error_code ec;
-  {
-    std::lock_guard<std::mutex> m(_stopping_mutex);
-    if (_stopping) {
-      return;
-    }
+  if (_stopping) {
+    return;
   }
+  LOG_INFO << this << " Starting io_service";
   _io_service.run(ec);
   if (ec) {
     LOG_ERROR << "service run failed (" << ec.message() << ")";
   }
-  _started = true;
 }
 
 void Tcp::_stop() {
-  if (!_started) return;
-
-  {
-    std::lock_guard<std::mutex> m(_stopping_mutex);
-    _stopping = true;
-  }
+  _stopping = true;
   _io_service.stop();
   while (!_io_service.stopped()) {
     std::cout << this << " waiting ..." << std::endl;
@@ -155,7 +146,7 @@ bool Tcp::serialize(std::shared_ptr<messages::Message> message,
 
   LOG_DEBUG << this << " Before reinterpret and signing";
   auto header_pattern =
-    reinterpret_cast<tcp::HeaderPattern *>(header_tcp->data());
+      reinterpret_cast<tcp::HeaderPattern *>(header_tcp->data());
   message->mutable_header()->mutable_ts()->set_data(time(NULL));
   message->mutable_header()->set_version(neuro::MessageVersion);
   messages::to_buffer(*message, body_tcp);
@@ -231,9 +222,11 @@ bool Tcp::disconnected(const Connection::ID id, std::shared_ptr<Peer> peer) {
 }
 
 Tcp::~Tcp() {
+  std::cout << this << " " << __FUNCTION__ << ":" << __LINE__ << " connection count " << _connections.size() << std::endl;
   std::lock_guard<std::mutex> lock_queue(_connection_mutex);
+  std::cout << this << " " << __FUNCTION__ << ":" << __LINE__ << std::endl;
   _stop();
-  LOG_DEBUG << "TCP Killing: " << this;
+  LOG_DEBUG << this << " TCP Killing: ";
 }
 
 } // namespace neuro

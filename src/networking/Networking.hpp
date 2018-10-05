@@ -22,7 +22,6 @@ private:
   std::random_device _rd;
   std::shared_ptr<messages::Queue> _queue;
   std::uniform_int_distribution<int> _dist;
-  messages::Subscriber _subscriber;
 
 public:
   Networking(std::shared_ptr<messages::Queue> _queue);

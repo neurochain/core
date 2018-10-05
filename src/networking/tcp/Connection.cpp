@@ -43,7 +43,7 @@ void Connection::read_body() {
         header->mutable_peer()->CopyFrom(*_remote_peer);
         header->set_signature(&header_pattern->signature,
                               sizeof(header_pattern->signature));
-        _queue->publish(message);
+        this->_queue->publish(message);
 
         read_header();
       });
@@ -65,6 +65,11 @@ bool Connection::send(const Buffer &message) {
 }
 
 void Connection::terminate() {
+  std::lock_guard<std::mutex> m(_connection_mutex);
+  if(_is_dead) {
+    return;
+  }
+  _socket->close();
   auto message = std::make_shared<messages::Message>();
   auto header = message->mutable_header();
   auto peer = header->mutable_peer();
@@ -72,6 +77,7 @@ void Connection::terminate() {
   auto body = message->add_bodies();
   body->mutable_connection_closed();
   _queue->publish(message);
+  _is_dead = true;
 }
 
 const IP Connection::remote_ip() const {
@@ -87,7 +93,13 @@ const Port Connection::remote_port() const {
 std::shared_ptr<messages::Peer> Connection::remote_peer() {
   return _remote_peer;
 }
+Connection::~Connection() {
+  terminate();
 
+  while(!_is_dead) {
+    std::this_thread::yield();
+  }
+}
 } // namespace tcp
 } // namespace networking
 } // namespace neuro

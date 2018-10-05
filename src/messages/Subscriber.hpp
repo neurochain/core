@@ -48,7 +48,6 @@ public:
     // _quitting = true;
     LOG_DEBUG << "Subscriber unsubscribing " << this;
     _queue->unsubscribe(this);
-    LOG_DEBUG << "Subscriber unsubscribed " << this ;
   }
 };
 

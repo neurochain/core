@@ -26,7 +26,8 @@ private:
   std::shared_ptr<tcp::socket> _socket;
   std::shared_ptr<messages::Peer> _remote_peer;
   Port _listen_port;
-  mutable std::mutex _connection_mutex;
+  std::atomic<bool> _is_dead{false};
+  std::mutex _connection_mutex;
 
 public:
   Connection(const ID id, networking::TransportLayer::ID transport_layer_id,
@@ -51,6 +52,7 @@ public:
   const Port remote_port() const;
   std::shared_ptr<messages::Peer> remote_peer();
   void terminate();
+  ~Connection();
 };
 } // namespace tcp
 } // namespace networking
