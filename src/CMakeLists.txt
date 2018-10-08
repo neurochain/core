@@ -43,15 +43,15 @@ add_library(core
   ./networking/tcp/client.hpp
   ./networking/tcp/Tcp.cpp
   ./networking/tcp/Client.hpp
-  ./networking/Peer.hpp
   ./networking/Networking.cpp
   ./networking/TransportLayer.hpp
   ./networking/Networking.hpp
   ./networking/Connection.cpp
   ./networking/Connection.hpp
-  ./networking/Peer.cpp
   ./networking/TransportLayer.cpp
+  ./Bot.cpp
   ./tooling/coinbase.cpp
+  ./tooling/http.cpp
   ./tooling/wallet.cpp
   ./tooling/transaction.cpp
   ./tooling/list.cpp

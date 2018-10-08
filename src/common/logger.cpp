@@ -12,6 +12,8 @@ BOOST_LOG_GLOBAL_LOGGER_INIT(logger, src::severity_logger_mt) {
 namespace neuro {
 namespace log {
 
+bool _STDOUT_ADDED{false};
+
 
 logging::formatter neuro_formatter() {
   return expr::stream << expr::format_date_time(timestamp, "%Y-%m-%d %H:%M:%S")
@@ -35,6 +37,10 @@ void add_file_sink(const std::string &log_file, const size_t rotation_size_mb) {
 }
 
 void add_stdout_sink() {
+  if (_STDOUT_ADDED) {
+    return;
+  }
+
   auto sink = boost::make_shared<text_sink>();
   sink->locked_backend()->add_stream(
       boost::shared_ptr<std::ostream>(&std::clog, boost::null_deleter()));
@@ -42,6 +48,8 @@ void add_stdout_sink() {
   sink->set_formatter(neuro_formatter());
   sink->locked_backend()->auto_flush(true);
   logging::core::get()->add_sink(sink);
+
+  _STDOUT_ADDED = true;
 }
 
 void from_config(const messages::config::Logs &logs) {

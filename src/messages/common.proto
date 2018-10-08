@@ -2,7 +2,6 @@ syntax = "proto2";
 
 package neuro.messages;
 
-
 message Blob {
   required bytes data = 1;
 }

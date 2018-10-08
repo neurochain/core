@@ -36,8 +36,8 @@ public:
   TransportLayer(std::shared_ptr<messages::Queue> queue,
                  std::shared_ptr<crypto::Ecc> keys);
 
-  virtual bool send(const std::shared_ptr<messages::Message> message) = 0;
-  virtual bool send_unicast(const std::shared_ptr<messages::Message> message) = 0;
+  virtual bool send(const std::shared_ptr<messages::Message> message, ProtocolType type) = 0;
+  virtual bool send_unicast(const std::shared_ptr<messages::Message> message, ProtocolType type) = 0;
   ID id() const;
   void id(const ID id);
   void run();

@@ -22,6 +22,7 @@ class Tcp;
 
 class Tcp : public TransportLayer {
 private:
+  bool _started{false};
   boost::asio::io_service _io_service;
   bai::tcp::resolver _resolver;
   Connection::ID _current_connection_id;
@@ -40,12 +41,12 @@ private:
                       const bool from_remote);
   void accept(std::shared_ptr<bai::tcp::acceptor> acceptor, const Port port);
 
-  bool serialize(std::shared_ptr<const messages::Message> message,
+  bool serialize(std::shared_ptr<messages::Message> message,
 		 const ProtocolType protocol_type,
 		 Buffer *header_tcp,
 		 Buffer *body_tcp);
 
-  
+
 public:
   Tcp(Tcp &&) = delete;
   Tcp(const Tcp &) = delete;
@@ -63,6 +64,7 @@ public:
   bool disconnected(const Connection::ID id, std::shared_ptr<Peer> remote_peer);
   Port listening_port() const;
   IP local_ip() const;
+  void terminated(const Connection::ID id);
   ~Tcp();
 
   friend class neuro::networking::test::Tcp;

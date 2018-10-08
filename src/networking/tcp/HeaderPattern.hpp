@@ -4,7 +4,7 @@
 namespace neuro {
 namespace networking {
 namespace tcp {
-  
+
 struct __attribute__((__packed__)) HeaderPattern {
   uint16_t size;
   ProtocolType type;

@@ -31,8 +31,16 @@ message Networking {
 }
 
 message Config {
-  required string key_pub_path = 1;
-  required string key_priv_path = 2;
+  enum SelectionMethod {
+    SIMPLE = 0;
+    PING = 1;
+    RANDOM = 2;
+  }
+
+  optional string key_pub_path = 1;
+  optional string key_priv_path = 2;
   optional Logs logs = 3;
-  optional Networking networking = 4;
+  required Networking networking = 4;
+  optional Peer.Status keep_status = 5 [default = CONNECTED]; 
+  optional SelectionMethod selection_method = 6 [default = SIMPLE];
 }

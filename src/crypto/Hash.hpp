@@ -7,15 +7,7 @@
 namespace neuro {
 namespace crypto {
 
-  class Hash : public Buffer {
-  public:
-    Hash(const Buffer &data): Buffer(CryptoPP::SHA3_256::DIGESTSIZE, uint8_t{0}) {
-      CryptoPP::SHA3_256().CalculateDigest(this->data(), data.data(),
-					   data.size());
-    }
-  };
-
-
+  Buffer hash_sha3_256(const Buffer &data);
 
 }  // namespace crypto
 }  // namespace neuro

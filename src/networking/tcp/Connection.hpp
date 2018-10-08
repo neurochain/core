@@ -20,25 +20,25 @@ namespace tcp {
 using boost::asio::ip::tcp;
 
 class Connection : public networking::Connection {
- private:
-  Buffer _header{sizeof(HeaderPattern), 0};
-  Buffer _buffer{128, 0};
+private:
+  Buffer _header;
+  Buffer _buffer;
   std::shared_ptr<tcp::socket> _socket;
   std::shared_ptr<messages::Peer> _remote_peer;
   Port _listen_port;
-  mutable std::mutex _connection_mutex;
+  std::atomic<bool> _is_dead{false};
+  std::mutex _connection_mutex;
 
- public:
-  Connection(const ID id,
-             networking::TransportLayer::ID transport_layer_id,
+public:
+  Connection(const ID id, networking::TransportLayer::ID transport_layer_id,
              std::shared_ptr<messages::Queue> queue,
              std::shared_ptr<tcp::socket> socket,
              std::shared_ptr<messages::Peer> remote_peer,
-             const bool from_remote) :
-    ::neuro::networking::Connection::Connection(id, transport_layer_id, queue),
-      _socket(socket),
-      _remote_peer(remote_peer),
-      _listen_port(_remote_peer->port()){}
+             const bool from_remote)
+      : ::neuro::networking::Connection::Connection(id, transport_layer_id,
+                                                    queue),
+        _header(sizeof(HeaderPattern), 0), _buffer(128, 0), _socket(socket),
+        _remote_peer(remote_peer), _listen_port(_remote_peer->port()) {}
 
   std::shared_ptr<tcp::socket> socket();
 
@@ -50,8 +50,9 @@ class Connection : public networking::Connection {
   const std::shared_ptr<messages::Peer> peer() const;
   const IP remote_ip() const;
   const Port remote_port() const;
-  std::shared_ptr<const messages::Peer> remote_peer() const;  
+  std::shared_ptr<messages::Peer> remote_peer();
   void terminate();
+  ~Connection();
 };
 } // namespace tcp
 } // namespace networking

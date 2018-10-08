@@ -12,6 +12,7 @@ message Hello {
 message World {
   required bool accepted = 1;
   required KeyPub key_pub = 2;
+  repeated Peer peers = 3;
 }
 
 message GetPeers {
@@ -30,12 +31,16 @@ message Roots {
   repeated Hash roots = 1;
 }
 
+message GetBlock {
+  optional Hash hash = 1;
+  optional uint32 height = 2;
+}
+
 message Input {
   required Hash id = 1;
   required int32 output_id = 2;
-  optional KeyPub pub_key = 3;
+  required int32 key_id = 3;
   optional Hash block_id = 4;
-  optional Signature signature = 5;
 }
 
 message Output {
@@ -45,25 +50,12 @@ message Output {
 }
 
 message Transaction {
-  enum State {
-    ACCEPTED = 0;  /// The block/transaction a is a keeper
-    REJECTED = 1;  /// We didn't delete that one yet
-    PROBATION = 2; /// Might be a good one = ; need more time
-    FORKED = 3;    /// We are in a middle of a fork (implied probation)
-    USED = 4;      /// Already been used by an other transaction
-    UNKNOWN = 5;   /// Block not find
-  }
-
   repeated Input inputs = 1;
   repeated Output outputs = 2;
-  optional uint64 fees = 3;
-  optional Hash id = 4;
-}
-
-
-message GetBlock {
-  optional Hash hash = 1;
-  optional int32 height = 2;
+  repeated Hash signatures = 3;
+  repeated KeyPub key_pubs = 4;
+  optional uint64 fees = 5;
+  optional Hash id = 6;
 }
 
 message BlockHeader {

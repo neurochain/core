@@ -62,14 +62,6 @@ int main(int argc, char *argv[]) {
   const auto type = vm["type"].as<std::string>();
   const auto ncc = vm["ncc"].as<uint64_t>();
   
-  crypto::EccPub ecc_pub(filepath);
-  Buffer key_pub;
-  ecc_pub.save(&key_pub);
-  Buffer address = crypto::Hash(key_pub);
-  
-  messages::Transaction transaction;
-  auto input = transaction.add_inputs();
-
   messages::NCCSDF nccsdf;
   nccsdf.set_value(ncc);
   crypto::EccPub key_pub (keypath);

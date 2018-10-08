@@ -8,6 +8,7 @@
 #include "common/types.hpp"
 #include "messages.pb.h"
 #include "mongo/mongo.hpp"
+#include "messages/Hasher.hpp"
 
 namespace neuro {
 namespace messages {
@@ -16,10 +17,9 @@ namespace messages {
 using BlockHeight = decltype(((BlockHeader*)nullptr)->height());
 using BlockID = decltype(((BlockHeader*)nullptr)->id());
 using TransactionID = decltype(((Transaction*)nullptr)->id());
-using Address = messages::Hash;
-  
 using Packet = google::protobuf::Message;
 using Type = Body::BodyCase;
+using Address = Hasher;
   
 Type get_type(const Body &body);
 

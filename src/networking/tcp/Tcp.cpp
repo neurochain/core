@@ -3,8 +3,8 @@
 #include <thread>
 #include <tuple>
 
-#include "crypto/Ecc.hpp"
 #include "common/logger.hpp"
+#include "crypto/Ecc.hpp"
 #include "networking/Networking.hpp"
 #include "networking/tcp/HeaderPattern.hpp"
 #include "networking/tcp/Tcp.hpp"
@@ -15,8 +15,8 @@ using namespace std::chrono_literals;
 
 Tcp::Tcp(std::shared_ptr<messages::Queue> queue,
          std::shared_ptr<crypto::Ecc> keys)
-    : TransportLayer(queue, keys), _io_service(),
-      _resolver(_io_service), _current_connection_id(0) {}
+    : TransportLayer(queue, keys), _io_service(), _resolver(_io_service),
+      _current_connection_id(0) {}
 
 bool Tcp::connect(const bai::tcp::endpoint host, const Port port) {
   return false; // TODO
@@ -49,20 +49,25 @@ void Tcp::accept(std::shared_ptr<bai::tcp::acceptor> acceptor,
   _listening_port = port;
 
   auto socket = std::make_shared<bai::tcp::socket>(acceptor->get_io_service());
-  acceptor->async_accept
-      (*socket,
-       [this, acceptor, socket, port](const boost::system::error_code &error) {
-        const auto remote_endpoint = socket->remote_endpoint().address().to_string();
-        
-        auto peer = std::make_shared<messages::Peer>();
-        peer->set_endpoint(remote_endpoint);
-        peer->set_port(socket->remote_endpoint().port());
-        peer->set_status(messages::Peer::CONNECTING);
-        peer->set_transport_layer_id(_id);
-			   
-        this->new_connection(socket, error, peer, true);
-        this->accept(acceptor, port);
-      });
+  acceptor->async_accept(*socket, [this, acceptor, socket, port](
+      const boost::system::error_code &error) {
+                           const auto remote_endpoint =
+                               socket->remote_endpoint().address().to_string();
+
+                           auto peer = std::make_shared<messages::Peer>();
+                           peer->set_endpoint(remote_endpoint);
+                           peer->set_port(socket->remote_endpoint().port());
+                           peer->set_status(messages::Peer::CONNECTING);
+                           peer->set_transport_layer_id(_id);
+
+                           this->new_connection(socket, error, peer, true);
+                           this->accept(acceptor, port);
+                         });
+  while (!acceptor->is_open()) {
+    std::this_thread::yield();
+    LOG_DEBUG << "Waiting for acceptor to be open";
+  }
+      
 }
 
 Port Tcp::listening_port() const { return _listening_port; }
@@ -72,7 +77,9 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
                          const boost::system::error_code &error,
                          std::shared_ptr<messages::Peer> peer,
                          const bool from_remote) {
+  LOG_DEBUG << this << " It entered new_connection on TCP";
   std::lock_guard<std::mutex> lock_queue(_connection_mutex);
+  LOG_DEBUG << this << " It passed the lock on new_connection TCP";
 
   auto message = std::make_shared<messages::Message>();
   auto header = message->mutable_header();
@@ -82,18 +89,19 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
   if (!error) {
     _current_connection_id++;
     peer->set_connection_id(_current_connection_id);
-    
+
     auto r = _connections.emplace(
         std::piecewise_construct, std::forward_as_tuple(_current_connection_id),
         std::forward_as_tuple(_current_connection_id, this->id(), _queue,
-                              socket, peer,
-                              from_remote));
+                              socket, peer, from_remote));
 
     auto connection_ready = body->mutable_connection_ready();
-    
+
     connection_ready->set_from_remote(from_remote);
 
+    LOG_DEBUG << this << " Before copyfrom on new_connection TCP";
     peer_tmp->CopyFrom(*peer);
+    LOG_DEBUG << this << " Before publishing on new_connection TCP";
     _queue->publish(message);
     r.first->second.read();
   } else {
@@ -106,14 +114,11 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
 }
 
 void Tcp::_run() {
-  LOG_INFO << "Starting io_service";
   boost::system::error_code ec;
-  {
-    std::lock_guard<std::mutex> m(_stopping_mutex);
-    if (_stopping) {
-      return;
-    }
+  if (_stopping) {
+    return;
   }
+  LOG_INFO << this << " Starting io_service";
   _io_service.run(ec);
   if (ec) {
     LOG_ERROR << "service run failed (" << ec.message() << ")";
@@ -121,31 +126,41 @@ void Tcp::_run() {
 }
 
 void Tcp::_stop() {
-  {
-    std::lock_guard<std::mutex> m(_stopping_mutex);
-    _stopping = true;
-  }
+  _stopping = true;
   _io_service.stop();
   while (!_io_service.stopped()) {
+    std::cout << this << " waiting ..." << std::endl;
     std::this_thread::sleep_for(10ms);
   }
+  LOG_DEBUG << this << " Finished the _stop() in tcp";
 }
 
-bool Tcp::serialize(std::shared_ptr<const messages::Message> message,
-                    const ProtocolType protocol_type,
-                    Buffer *header_tcp,
+void Tcp::terminated(const Connection::ID id) {
+  std::lock_guard<std::mutex> lock_queue(_connection_mutex);
+  auto got = _connections.find(id);
+  if (got == _connections.end()) {
+    LOG_ERROR << this << " Connection not found";
+    return;
+  }
+  _connections.erase(got);
+}
+
+bool Tcp::serialize(std::shared_ptr<messages::Message> message,
+                    const ProtocolType protocol_type, Buffer *header_tcp,
                     Buffer *body_tcp) {
 
+  LOG_DEBUG << this << " Before reinterpret and signing";
+  auto header_pattern =
+      reinterpret_cast<tcp::HeaderPattern *>(header_tcp->data());
+  message->mutable_header()->mutable_ts()->set_data(time(NULL));
+  message->mutable_header()->set_version(neuro::MessageVersion);
   messages::to_buffer(*message, body_tcp);
 
-  /// validate that the size of the buffer can be written in
-  /// tcp::HeaderPattern::size
   if (body_tcp->size() > (1 << (8 * sizeof(tcp::HeaderPattern::size)))) {
     LOG_ERROR << "Message is too big (" << body_tcp->size() << ")";
     return false;
   }
 
-  auto header_pattern = reinterpret_cast<tcp::HeaderPattern *>(header_tcp->data());
   header_pattern->size = body_tcp->size();
   _keys->sign(body_tcp->data(), body_tcp->size(),
               reinterpret_cast<uint8_t *>(&header_pattern->signature));
@@ -163,8 +178,9 @@ bool Tcp::send(std::shared_ptr<messages::Message> message,
     return false;
   }
 
-  Buffer header_tcp;
+  Buffer header_tcp(sizeof(networking::tcp::HeaderPattern), 0);
   Buffer body_tcp;
+
   serialize(message, protocol_type, &header_tcp, &body_tcp);
 
   bool res = true;
@@ -185,8 +201,9 @@ bool Tcp::send_unicast(std::shared_ptr<messages::Message> message,
     return false;
   }
 
-  Buffer header_tcp;
+  Buffer header_tcp(sizeof(networking::tcp::HeaderPattern), 0);
   Buffer body_tcp;
+
   serialize(message, protocol_type, &header_tcp, &body_tcp);
 
   got->second.send(header_tcp);
@@ -212,8 +229,8 @@ bool Tcp::disconnected(const Connection::ID id, std::shared_ptr<Peer> peer) {
 Tcp::~Tcp() {
   std::lock_guard<std::mutex> lock_queue(_connection_mutex);
   _stop();
-  LOG_DEBUG << "TCP Killing: " << this;
+  LOG_DEBUG << this << " TCP Killing: ";
 }
 
-} // namespace networking
+} // namespace neuro
 } // namespace neuro

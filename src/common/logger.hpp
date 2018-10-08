@@ -1,5 +1,5 @@
-#ifndef NEURO_SRC_LOGGER_HPP
-#define NEURO_SRC_LOGGER_HPP
+#ifndef NEURO_SRC_COMMON_LOGGER_HPP
+#define NEURO_SRC_COMMON_LOGGER_HPP
 
 /****************************************************************
  * To use the logger in any file:
