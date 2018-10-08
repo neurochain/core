@@ -5,7 +5,7 @@ package neuro.messages;
 import "common.proto";
 
 message Hello {
-  optional KeyPub key_pub = 1;
+  required KeyPub key_pub = 1;
   optional int32 listen_port = 2;
 }
 

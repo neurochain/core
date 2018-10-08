@@ -21,7 +21,7 @@ enum KeyType {
 
 message KeyPub {
   required KeyType type = 1 [ default = ECP256K1 ];
-  optional bytes raw_data = 2;
+  optional bytes raw_data = 2; // use OneOf
   optional string hex_data = 3;
 }
 

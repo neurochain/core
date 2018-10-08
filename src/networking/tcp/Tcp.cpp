@@ -2,6 +2,8 @@
 #include <sstream>
 #include <thread>
 #include <tuple>
+#include <iomanip>
+#include <stdio.h>
 
 #include "common/logger.hpp"
 #include "crypto/Ecc.hpp"
@@ -166,6 +168,8 @@ bool Tcp::serialize(std::shared_ptr<messages::Message> message,
   header_pattern->size = size;
   _keys->sign(body_tcp->data(), body_tcp->size(),
               reinterpret_cast<uint8_t *>(&header_pattern->signature));
+
+  std::cout << this << "signed message " << *body_tcp << std::endl;
   header_pattern->type = protocol_type;
 
   return true;

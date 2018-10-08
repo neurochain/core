@@ -128,6 +128,7 @@ add_executable(transaction
 target_link_libraries(transaction
   core
   Boost::program_options
+  crypto
   )
 
 

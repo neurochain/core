@@ -78,6 +78,10 @@ bool Bot::init() {
     }
   }
 
+  std::cout << this << " keys " << std::endl
+	    << "priv " << _keys->private_key() << std::endl
+	    << "puv  " << _keys->public_key() << std::endl;
+  
   auto networking_conf = _config.mutable_networking();
   
   _selection_method = _config.selection_method();
@@ -136,7 +140,6 @@ bool Bot::init() {
 
 void Bot::handler_connection(const messages::Header &header,
                              const messages::Body &body) {
-  LOG_DEBUG << this << " T_T " << __FUNCTION__ ;
   if (!header.has_peer()) {
     // TODO: ask to close the connection
     LOG_ERROR << this
@@ -160,12 +163,12 @@ void Bot::handler_connection(const messages::Header &header,
   auto hello = message->add_bodies()->mutable_hello();
   hello->set_listen_port(_tcp->listening_port());
 
-  Buffer key_pub_buffer;
-  _keys->public_key().save(&key_pub_buffer);
-
   auto key_pub = hello->mutable_key_pub();
   key_pub->set_type(messages::KeyType::ECP256K1);
-  key_pub->set_hex_data(key_pub_buffer.str());
+  const auto tmp = _keys->public_key().save();
+  key_pub->set_raw_data(tmp.data(), tmp.size());
+
+  std::cout << this << " setting pub key in hello " << tmp << std::endl;
 
   _networking->send_unicast(message, networking::ProtocolType::PROTOBUF2);
 }
