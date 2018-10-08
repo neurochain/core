@@ -41,8 +41,12 @@ bool from_bson(const bsoncxx::document::view &doc,
   return from_json(mongo_json, packet);
 }
 
-void to_buffer(const Packet &packet, Buffer *buffer) {
+std::size_t to_buffer(const Packet &packet, Buffer *buffer) {
+  const auto size = packet.ByteSizeLong();
+  buffer->resize(size);
   packet.SerializeToArray(buffer->data(), buffer->size());
+
+  return size;
 }
   
 void to_json(const Packet &packet, std::string *output) {
@@ -54,7 +58,7 @@ bsoncxx::document::value to_bson(const Packet &packet) {
   to_json(packet, &json);
   return bsoncxx::from_json(json);
 }
-  
+ 
 std::ostream & operator<< (std::ostream &os, const Packet &packet) {
   std::string buff;
   to_json(packet, &buff);

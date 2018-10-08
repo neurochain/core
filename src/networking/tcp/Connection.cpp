@@ -40,9 +40,29 @@ void Connection::read_body() {
         auto message = std::make_shared<messages::Message>();
         messages::from_buffer(_buffer, message.get());
         auto header = message->mutable_header();
+
+        for (const auto &body : message->bodies()) {
+          const auto type = get_type(body);
+          if(type == messages::Type::kHello) {
+            std::cout << this << " read hello" << std::endl;
+            if (_remote_peer->has_key_pub()) {
+              LOG_ERROR << this << " Peer key does not match on in configuration " << *_remote_peer;
+              terminate();
+              return;
+            } else {
+              auto new_key_pub = _remote_peer->mutable_key_pub();
+              new_key_pub->set_type(messages::ECP256K1);
+              new_key_pub->set_raw_data(header_pattern->signature, sizeof(header_pattern->signature));
+            }
+          }
+        }	
+
+	
         header->mutable_peer()->CopyFrom(*_remote_peer);
-        header->set_signature(&header_pattern->signature,
-                              sizeof(header_pattern->signature));
+        auto signature = header->mutable_signature();
+        signature->set_type(messages::Hash::SHA256);
+        signature->set_data(header_pattern->signature,
+                            sizeof(header_pattern->signature));
         this->_queue->publish(message);
 
         read_header();

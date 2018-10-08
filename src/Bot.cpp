@@ -465,10 +465,7 @@ std::shared_ptr<networking::Networking> Bot::networking() {
   return _networking;
 }
 
-void Bot::subscribe(const messages::Type type,
-                    messages::Subscriber::Callback callback) {
-  _subscriber.subscribe(type, callback);
-}
+std::shared_ptr<messages::Queue> Bot::queue() { return _queue; }
 
 void Bot::join() { this->keep_max_connections(); }
 

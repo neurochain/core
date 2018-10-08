@@ -8,10 +8,9 @@
 namespace neuro {
 namespace crypto {
 
-bool sign (const crypto::EccPriv &key_priv,
-           const int input_index,
+bool sign (const std::vector<const EccPriv *>key_privs,
            messages::Transaction *transaction);
-
+  
 }  // crypto
 }  // neuro
 

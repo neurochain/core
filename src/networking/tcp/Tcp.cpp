@@ -149,19 +149,21 @@ bool Tcp::serialize(std::shared_ptr<messages::Message> message,
                     const ProtocolType protocol_type, Buffer *header_tcp,
                     Buffer *body_tcp) {
 
-  LOG_DEBUG << this << " Before reinterpret and signing";
   auto header_pattern =
       reinterpret_cast<tcp::HeaderPattern *>(header_tcp->data());
   message->mutable_header()->mutable_ts()->set_data(time(NULL));
   message->mutable_header()->set_version(neuro::MessageVersion);
-  messages::to_buffer(*message, body_tcp);
-
-  if (body_tcp->size() > (1 << (8 * sizeof(tcp::HeaderPattern::size)))) {
+  
+  const auto size = messages::to_buffer(*message, body_tcp);
+  if (size > (1 << (8 * sizeof(tcp::HeaderPattern::size)))) {
     LOG_ERROR << "Message is too big (" << body_tcp->size() << ")";
+    return false;
+  } else if (size == 0) {
+    LOG_ERROR << "Could not serialize message";
     return false;
   }
 
-  header_pattern->size = body_tcp->size();
+  header_pattern->size = size;
   _keys->sign(body_tcp->data(), body_tcp->size(),
               reinterpret_cast<uint8_t *>(&header_pattern->signature));
   header_pattern->type = protocol_type;
@@ -174,7 +176,7 @@ bool Tcp::send(std::shared_ptr<messages::Message> message,
   std::lock_guard<std::mutex> lock_queue(_connection_mutex);
 
   if (_connections.size() == 0) {
-    LOG_ERROR << "Could not send message because there is no connection";
+    LOG_ERROR << this << " Could not send message because there is no connection";
     return false;
   }
 
@@ -198,17 +200,22 @@ bool Tcp::send_unicast(std::shared_ptr<messages::Message> message,
   assert(message->header().has_peer());
   auto got = _connections.find(message->header().peer().connection_id());
   if (got == _connections.end()) {
+    LOG_ERROR << this << " Send unicast could not find connection";
     return false;
   }
 
   Buffer header_tcp(sizeof(networking::tcp::HeaderPattern), 0);
   Buffer body_tcp;
 
-  serialize(message, protocol_type, &header_tcp, &body_tcp);
+  if (!serialize(message, protocol_type, &header_tcp, &body_tcp)) {
+    LOG_ERROR << this << " Could not serialize message";
+    return false;
+  }
+
+  std::cout << this << " message sent to connection size " << body_tcp.size() << std::endl;
 
   got->second.send(header_tcp);
   got->second.send(body_tcp);
-
   return true;
 }
 

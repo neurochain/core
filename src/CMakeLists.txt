@@ -51,7 +51,6 @@ add_library(core
   ./networking/TransportLayer.cpp
   ./Bot.cpp
   ./tooling/coinbase.cpp
-  ./tooling/http.cpp
   ./tooling/wallet.cpp
   ./tooling/transaction.cpp
   ./tooling/list.cpp

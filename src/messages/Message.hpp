@@ -9,6 +9,7 @@
 #include "messages.pb.h"
 #include "mongo/mongo.hpp"
 #include "messages/Hasher.hpp"
+#include "crypto/EccPriv.hpp"
 
 namespace neuro {
 namespace messages {
@@ -29,7 +30,7 @@ bool from_json_file(const std::string &path, Packet *packet);
 bool from_bson(const bsoncxx::document::value &doc, Packet *packet);
 bool from_bson(const bsoncxx::document::view &doc, Packet *packet);
 
-void to_buffer(const Packet &packet, Buffer *buffer);  
+std::size_t  to_buffer(const Packet &packet, Buffer *buffer);  
 void to_json(const Packet &packet, std::string *output);
 bsoncxx::document::value to_bson(const Packet &packet);
 std::ostream & operator<< (std::ostream &os, const Packet &packet);

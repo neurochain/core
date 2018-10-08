@@ -71,8 +71,7 @@ public:
   Bot::Status status() const;
   void keep_max_connections();
   std::shared_ptr<networking::Networking> networking();
-  void subscribe(const messages::Type type, messages::Subscriber::Callback callback);
-
+  std::shared_ptr<messages::Queue> queue();
 };
 
 std::ostream &operator<<(std::ostream &os, const neuro::Bot &b);
