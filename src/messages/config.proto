@@ -20,9 +20,16 @@ message Logs {
   optional bool to_stdout = 4;
 }
 
-message Db {
-    required string url = 1;
-    required string db_name = 2;
+message Database {
+  enum Block0Format {
+    PROTO = 1;
+    BSON = 2;
+    JSON = 3;
+  }
+  required string url = 1;
+  required string db_name = 2;
+  required Block0Format block0_format = 3 [default = PROTO];
+  required string block0_path = 4;
 }
 
 message Tcp {
@@ -46,7 +53,8 @@ message Config {
   optional string key_priv_path = 2;
   optional Logs logs = 3;
   required Networking networking = 4;
-  optional Peer.Status keep_status = 5 [default = CONNECTED]; 
-  optional SelectionMethod selection_method = 6 [default = SIMPLE];
-  optional Db db = 7;
+  required Database database = 5;
+  optional Peer.Status keep_status = 6 [default = CONNECTED]; 
+  optional SelectionMethod selection_method = 7 [default = SIMPLE];
+
 }
