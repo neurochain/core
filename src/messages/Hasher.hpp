@@ -10,6 +10,8 @@ namespace messages {
 
 class Hasher : public messages::Hash {
  public:
+  Hasher() {}
+
   Hasher(const Buffer &data) {
     const auto tmp = crypto::hash_sha3_256(data);
     this->set_type(Hash::SHA256);
