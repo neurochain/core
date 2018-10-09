@@ -38,7 +38,22 @@ bool EccPub::load(const Buffer &buffer) {
   return true;
 }
 
-bool EccPub::save(Buffer *buffer) const {
+bool EccPub::load(const uint8_t *data, const std::size_t size) {
+  CryptoPP::StringSource array(reinterpret_cast<const byte *>(data),
+                               size, true);
+  _key.Load(array);
+  return true;
+}
+  
+Buffer EccPub::save() const {
+  Buffer tmp;
+  std::string s;
+  _key.Save(CryptoPP::StringSink(s).Ref());
+  tmp.copy(s);
+  return tmp;
+}
+
+  bool EccPub::save(Buffer *buffer) const {
   std::string s;
   _key.Save(CryptoPP::StringSink(s).Ref());
   buffer->copy(s);

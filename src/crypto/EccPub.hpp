@@ -31,7 +31,9 @@ class EccPub {
   bool save(const std::string &filepath) const;
   bool load(const Buffer &buffer);
   bool load(const std::string &filepath);
+  bool load(const uint8_t *data, const std::size_t size);  
   bool save(Buffer *buffer) const;
+  Buffer save() const;
   bool verify(const Buffer &data, const uint8_t *signature,
               const std::size_t size) const;
   bool verify(const Buffer &data, const Buffer &signature) const;

@@ -5,7 +5,7 @@ package neuro.messages;
 import "common.proto";
 
 message Hello {
-  optional KeyPub key_pub = 1;
+  required KeyPub key_pub = 1;
   optional int32 listen_port = 2;
 }
 
@@ -100,7 +100,7 @@ message Body {
 message Header {
   required int32 version = 1;
   required Timestamp ts = 2;
-  required bytes signature = 3;
+  optional Hash signature = 3;
   optional int32 id = 11;
   optional int32 request_id = 12;
   optional Peer peer = 13;

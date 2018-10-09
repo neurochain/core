@@ -1,13 +1,13 @@
 #include "Bot.hpp"
+#include "common/logger.hpp"
+#include "common/types.hpp"
+#include "messages/Subscriber.hpp"
 #include <algorithm>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 #include <cstdlib>
 #include <ctime>
 #include <random>
-#include "common/logger.hpp"
-#include "common/types.hpp"
-#include "messages/Subscriber.hpp"
 
 namespace neuro {
 
@@ -78,6 +78,10 @@ bool Bot::init() {
     }
   }
 
+  std::cout << this << " keys " << std::endl
+	    << "priv " << _keys->private_key() << std::endl
+	    << "puv  " << _keys->public_key() << std::endl;
+  
   auto networking_conf = _config.mutable_networking();
 
   _selection_method = _config.selection_method();
@@ -137,7 +141,6 @@ bool Bot::init() {
 
 void Bot::handler_connection(const messages::Header &header,
                              const messages::Body &body) {
-  LOG_DEBUG << this << " T_T " << __FUNCTION__;
   if (!header.has_peer()) {
     // TODO: ask to close the connection
     LOG_ERROR << this
@@ -166,13 +169,17 @@ void Bot::handler_connection(const messages::Header &header,
 
   auto key_pub = hello->mutable_key_pub();
   key_pub->set_type(messages::KeyType::ECP256K1);
-  key_pub->set_hex_data(key_pub_buffer.str());
+  const auto tmp = _keys->public_key().save();
+  key_pub->set_raw_data(tmp.data(), tmp.size());
+
+  std::cout << this << " setting pub key in hello " << tmp << std::endl;
 
   _networking->send_unicast(message, networking::ProtocolType::PROTOBUF2);
 }
 
 void Bot::handler_deconnection(const messages::Header &header,
                                const messages::Body &body) {
+
   LOG_DEBUG << this << " Got a connection_closed message";
 
   auto remote_peer = header.peer();
@@ -285,6 +292,7 @@ void Bot::handler_world(const messages::Header &header,
 
 void Bot::handler_hello(const messages::Header &header,
                         const messages::Body &body) {
+
   if (!body.has_hello()) {
     LOG_WARNING << this
                 << " SomeThing wrong. Got a call to handler_hello with "
@@ -373,6 +381,7 @@ Bot::Status Bot::status() const {
 }
 
 bool Bot::next_to_connect(messages::Peer **peer) {
+
   // it is locked from the caller
   auto peers = _tcp_config->mutable_peers();
 
@@ -462,6 +471,8 @@ void Bot::keep_max_connections() {
 std::shared_ptr<networking::Networking> Bot::networking() {
   return _networking;
 }
+
+std::shared_ptr<messages::Queue> Bot::queue() { return _queue; }
 
 void Bot::subscribe(const messages::Type type,
                     messages::Subscriber::Callback callback) {

@@ -2,6 +2,7 @@ set(ProtoFiles
   "${CMAKE_CURRENT_SOURCE_DIR}/messages/common.proto"
   "${CMAKE_CURRENT_SOURCE_DIR}/messages/config.proto"
   "${CMAKE_CURRENT_SOURCE_DIR}/messages/messages.proto"
+  "${CMAKE_CURRENT_SOURCE_DIR}/messages/rest.proto"
   )
 
 PROTOBUF_GENERATE_CPP(ProtoSources ProtoHeaders ${ProtoFiles})
@@ -51,6 +52,7 @@ add_library(core
   ./networking/TransportLayer.cpp
   ./Bot.cpp
   ./tooling/coinbase.cpp
+  ./tooling/http.cpp
   ./tooling/wallet.cpp
   ./tooling/transaction.cpp
   ./tooling/list.cpp
@@ -83,8 +85,8 @@ target_link_libraries(core
   cryptopp-static
 
   protobuf::libprotobuf
-  ${LIBMONGOCXX_STATIC_LIBRARIES}
-)
+  ${LIBMONGOCXX_STATIC_LIBRARIES}  
+)  
 
 add_executable(main
   main.cpp
@@ -111,7 +113,7 @@ target_link_libraries(keygen
   core
   Boost::program_options
   )
-#[[
+
 add_executable(coinbase
   tooling/coinbase.cpp
   )

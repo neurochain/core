@@ -1,10 +1,10 @@
-#include <gtest/gtest.h>
-#include <chrono>
-#include <sstream>
-#include <thread>
 #include "Bot.hpp"
 #include "common/logger.hpp"
 #include "messages/Subscriber.hpp"
+#include <chrono>
+#include <gtest/gtest.h>
+#include <sstream>
+#include <thread>
 
 namespace neuro {
 using namespace std::chrono_literals;
@@ -59,16 +59,19 @@ class Listener {
   }
   void handler_world(const messages::Header &header,
                      const messages::Body &hello) {
+
     LOG_DEBUG << "It entered the handler_world";
     _received_world = true;
   }
   void handler_connection0(const messages::Header &header,
                            const messages::Body &body) {
+
     LOG_DEBUG << "It entered the handler_connection0";
     _received_connection0 = true;
   }
   void handler_connection1(const messages::Header &header,
                            const messages::Body &body) {
+
     LOG_DEBUG << "It entered the handler_connection1";
     _received_connection1 = true;
   }
@@ -148,34 +151,37 @@ TEST(COIN, simple_interaction) {
   bots.emplace_back(std::make_shared<Bot>(conf0));
   bots.emplace_back(std::make_shared<Bot>(conf1));
 
+  messages::Subscriber subscriber0(bots[0]->queue());
+  messages::Subscriber subscriber1(bots[1]->queue());
+  
   int bot_id = 0;
 
   std::cout << conf1.str() << std::endl;
-
+  
   for (const auto &bot : bots) {
     std::cout << bot_id++ << " bot_id " << bot.get() << std::endl;
   }
-
-  bots[1]->subscribe(
-      messages::Type::kHello,
-      [&listener](const messages::Header &header, const messages::Body &body) {
-        listener.handler_hello(header, body);
-      });
-  bots[0]->subscribe(
-      messages::Type::kWorld,
-      [&listener](const messages::Header &header, const messages::Body &body) {
-        listener.handler_world(header, body);
-      });
-  bots[0]->subscribe(
-      messages::Type::kConnectionReady,
-      [&listener](const messages::Header &header, const messages::Body &body) {
-        listener.handler_connection0(header, body);
-      });
-  bots[1]->subscribe(
-      messages::Type::kConnectionReady,
-      [&listener](const messages::Header &header, const messages::Body &body) {
-        listener.handler_connection1(header, body);
-      });
+  
+  subscriber0.subscribe(messages::Type::kHello,
+		     [&listener](const messages::Header &header,
+				 const messages::Body &body) {
+		       listener.handler_hello(header, body);
+		     });
+  subscriber1.subscribe(messages::Type::kWorld,
+		     [&listener](const messages::Header &header,
+				 const messages::Body &body) {
+		       listener.handler_world(header, body);
+		     });
+  subscriber0.subscribe(messages::Type::kConnectionReady,
+		     [&listener](const messages::Header &header,
+				 const messages::Body &body) {
+		       listener.handler_connection0(header, body);
+		     });
+  subscriber1.subscribe(messages::Type::kConnectionReady,
+		     [&listener](const messages::Header &header,
+				 const messages::Body &body) {
+		       listener.handler_connection1(header, body);
+		     });
 
   std::this_thread::sleep_for(1s);
   bots[0]->keep_max_connections();
@@ -199,4 +205,4 @@ TEST(COIN, simple_interaction) {
   LOG_DEBUG << this << " About to go out";
 }
 
-}  // namespace neuro
+} // namespace neuro

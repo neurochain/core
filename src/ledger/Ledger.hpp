@@ -3,9 +3,9 @@
 
 #include <functional>
 #include <optional>
-#include "crypto/Hash.hpp"
 #include "ledger/Filter.hpp"
 #include "messages.pb.h"
+#include "crypto/Hash.hpp"
 
 namespace neuro {
 namespace ledger {
@@ -56,6 +56,22 @@ class Ledger {
   virtual bool push_block(const messages::Block &block) = 0;
   virtual bool for_each(const Filter &filter, Functor functor) = 0;
 
+  // helpers
+  
+  messages::Transactions list_transactions (const messages::Address &address) {
+    Filter filter;
+    filter.output_key_id(address);
+    messages::Transactions transactions;
+    
+    for_each (filter,
+	      [&transactions] (const messages::Transaction &transaction) -> bool {
+		transactions.add_transactions()->CopyFrom(transaction);
+		return true;
+	      });
+
+    return transactions;
+  }
+  
   virtual ~Ledger() {}
 };
 

@@ -37,12 +37,53 @@ void Connection::read_body() {
 
         const auto header_pattern =
             reinterpret_cast<HeaderPattern *>(_header.data());
+
         auto message = std::make_shared<messages::Message>();
         messages::from_buffer(_buffer, message.get());
         auto header = message->mutable_header();
+
+        for (const auto &body : message->bodies()) {
+          const auto type = get_type(body);
+	  std::cout << this << " TYPE " << type << std::endl;
+          if(type == messages::Type::kHello) {
+            std::cout << this << " read hello" << std::endl;
+            if (_remote_peer->has_key_pub()) {
+	      // TODO check pub key
+	      
+              LOG_ERROR << this << " Peer key does not match one in configuration " << *_remote_peer;
+              terminate();
+              return;
+            } else {
+	      std::cout << this << "coin " << body.hello() << std::endl;
+              _remote_peer->mutable_key_pub()->CopyFrom(body.hello().key_pub());
+	      std::cout << this << "coin " << *_remote_peer << std::endl;
+            }
+          }
+        }	
+	
+	crypto::EccPub ecc_pub;
+	const auto key_pub = _remote_peer->key_pub();
+	std::cout << this << " received message " << _buffer << std::endl;
+	std::cout << this << " verifying with ";
+	const auto ks = key_pub.raw_data();
+	for (int i = 0 ; i < ks.size() ; i++) { printf("%02x", (uint8_t)ks[i]);} std::cout << std::endl;
+
+	ecc_pub.load(reinterpret_cast<const uint8_t*>(key_pub.raw_data().data()),
+		     key_pub.raw_data().size());
+
+	const auto check = ecc_pub.verify(_buffer, header_pattern->signature,
+					  sizeof(header_pattern->signature));
+
+	if(!check) {
+	  LOG_ERROR << "Bad signature, dropping message";
+	  read_header();
+	}
+	
         header->mutable_peer()->CopyFrom(*_remote_peer);
-        header->set_signature(&header_pattern->signature,
-                              sizeof(header_pattern->signature));
+        auto signature = header->mutable_signature();
+        signature->set_type(messages::Hash::SHA256);
+        signature->set_data(header_pattern->signature,
+                            sizeof(header_pattern->signature));
         this->_queue->publish(message);
 
         read_header();
