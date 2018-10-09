@@ -1,19 +1,17 @@
-#include "messages.pb.h"
+#include <boost/program_options.hpp>
+#include "common/types.hpp"
 #include "crypto/Ecc.hpp"
 #include "crypto/Hash.hpp"
-#include "common/types.hpp"
-#include "messages/Message.hpp"
+#include "messages.pb.h"
 #include "messages/Hasher.hpp"
-#include <boost/program_options.hpp>
+#include "messages/Message.hpp"
 
 namespace po = boost::program_options;
 
 namespace neuro {
 
-
 messages::Transaction coinbase(const crypto::EccPub &key_pub,
                                const messages::NCCSDF &ncc) {
-
   messages::Transaction transaction;
   Buffer key_pub_raw;
   key_pub.save(&key_pub_raw);
@@ -29,22 +27,20 @@ messages::Transaction coinbase(const crypto::EccPub &key_pub,
   auto output = transaction.add_outputs();
   output->mutable_address()->CopyFrom(address);
   output->mutable_value()->CopyFrom(ncc);
-    transaction.mutable_fees()->set_value("0");
-
+  transaction.mutable_fees()->set_value("0");
 
   return transaction;
 }
 
-
 int main(int argc, char *argv[]) {
-
   po::options_description desc("Allowed options");
-  desc.add_options()
-    ("help,h", "Produce help message.")
-    ("keypath,k", po::value<std::string>()->default_value("keys"), "File path for keys (appending .pub or .priv)")
-    ("ncc,n", po::value<uint64_t>()->default_value(1000), "How many ncc you want")
-    ("type,t", po::value<std::string>()->default_value("json"), "enum [json, bson, protobuf]")
-      ;
+  desc.add_options()("help,h", "Produce help message.")(
+      "keypath,k", po::value<std::string>()->default_value("keys"),
+      "File path for keys (appending .pub or .priv)")(
+      "ncc,n", po::value<uint64_t>()->default_value(1000),
+      "How many ncc you want")("type,t",
+                               po::value<std::string>()->default_value("json"),
+                               "enum [json, bson, protobuf]");
 
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -65,10 +61,10 @@ int main(int argc, char *argv[]) {
 
   messages::NCCSDF nccsdf;
   nccsdf.set_value(std::to_string(ncc));
-  crypto::EccPub key_pub (keypath);
+  crypto::EccPub key_pub(keypath);
   messages::Transaction transaction = coinbase(key_pub, nccsdf);
 
-  if(type == "json") {
+  if (type == "json") {
     std::string t;
     messages::to_json(transaction, &t);
     std::cout << t << std::endl;
@@ -87,9 +83,6 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-}  // neuro
+}  // namespace neuro
 
-
-int main(int argc, char *argv[]) {
-  return neuro::main(argc, argv);
-}
+int main(int argc, char *argv[]) { return neuro::main(argc, argv); }

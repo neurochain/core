@@ -1,29 +1,29 @@
 #ifndef NEURO_SRC_LEDGER_MONGO_HPP
 #define NEURO_SRC_LEDGER_MONGO_HPP
 
+#include <bsoncxx/builder/stream/array.hpp>
+#include <bsoncxx/builder/stream/document.hpp>
+#include <bsoncxx/json.hpp>
 #include <mongocxx/client.hpp>
+#include <mongocxx/instance.hpp>
+#include <mongocxx/options/find.hpp>
 #include <mongocxx/stdx.hpp>
 #include <mongocxx/uri.hpp>
-#include <mongocxx/options/find.hpp>
-#include <mongocxx/instance.hpp>
-#include <bsoncxx/builder/stream/document.hpp>
-#include <bsoncxx/builder/stream/array.hpp>
-#include <bsoncxx/json.hpp>
 
 namespace neuro {
 namespace ledger {
 
 namespace bss = bsoncxx::builder::stream;
-using bss::document;
 using bss::array;
-using bss::open_document;
-using bss::close_document;
-using bss::open_array;
 using bss::close_array;
+using bss::close_document;
 using bss::concatenate;
+using bss::document;
 using bss::finalize;
+using bss::open_array;
+using bss::open_document;
 
-}  // ledger
-}  // neuro
+}  // namespace ledger
+}  // namespace neuro
 
 #endif /* NEURO_SRC_LEDGER_MONGO_HPP */

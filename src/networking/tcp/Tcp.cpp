@@ -15,11 +15,13 @@ using namespace std::chrono_literals;
 
 Tcp::Tcp(std::shared_ptr<messages::Queue> queue,
          std::shared_ptr<crypto::Ecc> keys)
-    : TransportLayer(queue, keys), _io_service(), _resolver(_io_service),
+    : TransportLayer(queue, keys),
+      _io_service(),
+      _resolver(_io_service),
       _current_connection_id(0) {}
 
 bool Tcp::connect(const bai::tcp::endpoint host, const Port port) {
-  return false; // TODO
+  return false;  // TODO
 }
 
 void Tcp::connect(std::shared_ptr<messages::Peer> peer) {
@@ -50,24 +52,23 @@ void Tcp::accept(std::shared_ptr<bai::tcp::acceptor> acceptor,
 
   auto socket = std::make_shared<bai::tcp::socket>(acceptor->get_io_service());
   acceptor->async_accept(*socket, [this, acceptor, socket, port](
-      const boost::system::error_code &error) {
-                           const auto remote_endpoint =
-                               socket->remote_endpoint().address().to_string();
+                                      const boost::system::error_code &error) {
+    const auto remote_endpoint =
+        socket->remote_endpoint().address().to_string();
 
-                           auto peer = std::make_shared<messages::Peer>();
-                           peer->set_endpoint(remote_endpoint);
-                           peer->set_port(socket->remote_endpoint().port());
-                           peer->set_status(messages::Peer::CONNECTING);
-                           peer->set_transport_layer_id(_id);
+    auto peer = std::make_shared<messages::Peer>();
+    peer->set_endpoint(remote_endpoint);
+    peer->set_port(socket->remote_endpoint().port());
+    peer->set_status(messages::Peer::CONNECTING);
+    peer->set_transport_layer_id(_id);
 
-                           this->new_connection(socket, error, peer, true);
-                           this->accept(acceptor, port);
-                         });
+    this->new_connection(socket, error, peer, true);
+    this->accept(acceptor, port);
+  });
   while (!acceptor->is_open()) {
     std::this_thread::yield();
     LOG_DEBUG << "Waiting for acceptor to be open";
   }
-      
 }
 
 Port Tcp::listening_port() const { return _listening_port; }
@@ -148,7 +149,6 @@ void Tcp::terminated(const Connection::ID id) {
 bool Tcp::serialize(std::shared_ptr<messages::Message> message,
                     const ProtocolType protocol_type, Buffer *header_tcp,
                     Buffer *body_tcp) {
-
   LOG_DEBUG << this << " Before reinterpret and signing";
   auto header_pattern =
       reinterpret_cast<tcp::HeaderPattern *>(header_tcp->data());
@@ -232,5 +232,5 @@ Tcp::~Tcp() {
   LOG_DEBUG << this << " TCP Killing: ";
 }
 
-} // namespace neuro
-} // namespace neuro
+}  // namespace networking
+}  // namespace neuro

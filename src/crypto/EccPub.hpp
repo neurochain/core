@@ -26,7 +26,7 @@ class EccPub {
   EccPub(const std::string &filepath);
   EccPub(const Buffer &pub_key);
   EccPub(const Key &key);
-  
+
   Key *key();
   bool save(const std::string &filepath) const;
   bool load(const Buffer &buffer);

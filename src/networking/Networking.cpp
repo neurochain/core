@@ -21,12 +21,11 @@ Networking::Networking(std::shared_ptr<messages::Queue> queue)
 
 void Networking::remove_connection(const messages::Header &header,
                                    const messages::Body &body) {
-
   // from header get the peer and then the transport layer id and connection id
   // auto peer = header.peer();
   // if (!peer.has_transport_layer_id() || !peer.has_connection_id()) {
-  //   LOG_WARNING << this << " Traying to remove connection but not necessary info in message::Header";
-  //   return;
+  //   LOG_WARNING << this << " Traying to remove connection but not necessary
+  //   info in message::Header"; return;
   // }
 
   // _transport_layers[peer.transport_layer_id()]->terminated(peer.connection_id());
@@ -47,8 +46,8 @@ void Networking::send_unicast(std::shared_ptr<messages::Message> message,
       ->send_unicast(message, type);
 }
 
-TransportLayer::ID
-Networking::push(std::shared_ptr<TransportLayer> transport_layer) {
+TransportLayer::ID Networking::push(
+    std::shared_ptr<TransportLayer> transport_layer) {
   _transport_layers.push_back(transport_layer);
   transport_layer->run();
   const auto id = _transport_layers.size() - 1;
@@ -68,9 +67,7 @@ void Networking::join() {
   }
 }
 
-Networking::~Networking() {
-  _queue->quit();
-}
+Networking::~Networking() { _queue->quit(); }
 
-} // namespace networking
-} // namespace neuro
+}  // namespace networking
+}  // namespace neuro

@@ -1,10 +1,10 @@
 #ifndef NEURO_SRC_NETWORKING_TCP_CONNECTION_HPP
 #define NEURO_SRC_NETWORKING_TCP_CONNECTION_HPP
 
+#include <stdio.h>
 #include <boost/asio.hpp>
 #include <cmath>
 #include <iostream>
-#include <stdio.h>
 
 #include "messages.pb.h"
 #include "networking/Connection.hpp"
@@ -14,13 +14,13 @@
 namespace neuro {
 namespace messages {
 class Queue;
-} // namespace messages
+}  // namespace messages
 namespace networking {
 namespace tcp {
 using boost::asio::ip::tcp;
 
 class Connection : public networking::Connection {
-private:
+ private:
   Buffer _header;
   Buffer _buffer;
   std::shared_ptr<tcp::socket> _socket;
@@ -29,7 +29,7 @@ private:
   std::atomic<bool> _is_dead{false};
   std::mutex _connection_mutex;
 
-public:
+ public:
   Connection(const ID id, networking::TransportLayer::ID transport_layer_id,
              std::shared_ptr<messages::Queue> queue,
              std::shared_ptr<tcp::socket> socket,
@@ -37,8 +37,11 @@ public:
              const bool from_remote)
       : ::neuro::networking::Connection::Connection(id, transport_layer_id,
                                                     queue),
-        _header(sizeof(HeaderPattern), 0), _buffer(128, 0), _socket(socket),
-        _remote_peer(remote_peer), _listen_port(_remote_peer->port()) {}
+        _header(sizeof(HeaderPattern), 0),
+        _buffer(128, 0),
+        _socket(socket),
+        _remote_peer(remote_peer),
+        _listen_port(_remote_peer->port()) {}
 
   std::shared_ptr<tcp::socket> socket();
 
@@ -54,8 +57,8 @@ public:
   void terminate();
   ~Connection();
 };
-} // namespace tcp
-} // namespace networking
-} // namespace neuro
+}  // namespace tcp
+}  // namespace networking
+}  // namespace neuro
 
 #endif /* NEURO_SRC_NETWORKING_CONNECTION_HPP */

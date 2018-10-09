@@ -10,15 +10,15 @@ Buffer::Buffer(const std::string &string, const InputType input_type) {
   }
 
   switch (input_type) {
-  case InputType::HEX: {
-    auto it = string.begin(), end = string.end();
-    while (it < end) {
-      push_back((char2uint(*it) << 4) + char2uint(*(it + 1)));
-      it += 2;
-    }
-  } break;
-  default:
-    throw std::runtime_error("Unknown type");
+    case InputType::HEX: {
+      auto it = string.begin(), end = string.end();
+      while (it < end) {
+        push_back((char2uint(*it) << 4) + char2uint(*(it + 1)));
+        it += 2;
+      }
+    } break;
+    default:
+      throw std::runtime_error("Unknown type");
   }
 }
 
@@ -71,4 +71,4 @@ std::ostream &operator<<(std::ostream &os, const Buffer &buffer) {
   return os;
 }
 
-} // namespace neuro
+}  // namespace neuro

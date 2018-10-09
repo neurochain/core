@@ -8,8 +8,8 @@
 #include <functional>
 #include <mutex>
 #include <queue>
-#include <thread>
 #include <set>
+#include <thread>
 
 #include "common/logger.hpp"
 #include "messages/Message.hpp"
@@ -30,7 +30,8 @@ class QueueTest;
  */
 class Queue {
  public:
-  using Callback = std::function<void(std::shared_ptr<const messages::Message>)>;
+  using Callback =
+      std::function<void(std::shared_ptr<const messages::Message>)>;
 
  protected:
   /*!

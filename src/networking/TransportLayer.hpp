@@ -3,41 +3,43 @@
 
 #include <thread>
 
-#include "common/types.hpp"
 #include "common/logger.hpp"
+#include "common/types.hpp"
 
 namespace neuro {
 namespace messages {
 class Queue;
-} // namespace messages
+}  // namespace messages
 
 namespace crypto {
 class Ecc;
-} // namespace crypto
+}  // namespace crypto
 
 namespace networking {
 class Networking;
 
 class TransportLayer {
-public:
+ public:
   using ID = int16_t;
 
-protected:
+ protected:
   std::shared_ptr<messages::Queue> _queue;
   std::shared_ptr<crypto::Ecc> _keys;
   ID _id;
   std::thread _thread;
 
-protected:
+ protected:
   virtual void _run() = 0;
   virtual void _stop() = 0;
 
-public:
+ public:
   TransportLayer(std::shared_ptr<messages::Queue> queue,
                  std::shared_ptr<crypto::Ecc> keys);
 
-  virtual bool send(const std::shared_ptr<messages::Message> message, ProtocolType type) = 0;
-  virtual bool send_unicast(const std::shared_ptr<messages::Message> message, ProtocolType type) = 0;
+  virtual bool send(const std::shared_ptr<messages::Message> message,
+                    ProtocolType type) = 0;
+  virtual bool send_unicast(const std::shared_ptr<messages::Message> message,
+                            ProtocolType type) = 0;
   ID id() const;
   void id(const ID id);
   void run();
@@ -46,8 +48,8 @@ public:
   virtual ~TransportLayer();
 };
 
-} // namespace networking
+}  // namespace networking
 
-} // namespace neuro
+}  // namespace neuro
 
 #endif /* NEURO_SRC_TRANSPORT_LAYER_HPP */

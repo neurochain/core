@@ -1,15 +1,15 @@
+#include <google/protobuf/util/json_util.h>
 #include <boost/program_options.hpp>
 #include <chrono>
 #include <fstream>
-#include <google/protobuf/util/json_util.h>
 #include <iostream>
 #include <streambuf>
 #include <string>
 
+#include "Bot.hpp"
 #include "config.pb.h"
 #include "messages/Message.hpp"
 #include "mongo/mongo.hpp"
-#include "Bot.hpp"
 
 namespace neuro {
 
@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
-} // namespace neuro
+}  // namespace neuro
 
 int main(int argc, char *argv[]) {
   //

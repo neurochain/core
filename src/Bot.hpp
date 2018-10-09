@@ -1,18 +1,18 @@
 #ifndef NEURO_SRC_BOT_HPP
 #define NEURO_SRC_BOT_HPP
 
+#include <memory>
 #include "crypto/Ecc.hpp"
 #include "messages/Message.hpp"
 #include "messages/Queue.hpp"
 #include "messages/Subscriber.hpp"
 #include "networking/Networking.hpp"
 #include "networking/tcp/Tcp.hpp"
-#include <memory>
 
 namespace neuro {
 
 class Bot {
-public:
+ public:
   struct Status {
     std::size_t connected_peers;
     std::size_t max_connections;
@@ -20,11 +20,12 @@ public:
 
     Status(const std::size_t connected, const std::size_t max,
            const std::size_t peers)
-        : connected_peers(connected), max_connections(max),
+        : connected_peers(connected),
+          max_connections(max),
           peers_in_pool(peers) {}
   };
 
-private:
+ private:
   std::shared_ptr<messages::Queue> _queue;
   std::shared_ptr<networking::Networking> _networking;
   messages::config::Config _config;
@@ -44,7 +45,7 @@ private:
   mutable std::mutex _mutex_quitting;
   bool _quitting{false};
 
-private:
+ private:
   bool init();
 
   void handler_hello(const messages::Header &header,
@@ -57,27 +58,28 @@ private:
                             const messages::Body &body);
   bool next_to_connect(messages::Peer **out_peer);
 
-
-public:
+ public:
   Bot(const std::string &configuration_path);
   Bot(std::istream &bot_stream);
   Bot(const Bot &) = delete;
   Bot(Bot &&) = delete;
 
-  virtual ~Bot(); // save_config(_config);
+  virtual ~Bot();  // save_config(_config);
 
   void stop();
   void join();
   Bot::Status status() const;
   void keep_max_connections();
   std::shared_ptr<networking::Networking> networking();
-  void subscribe(const messages::Type type, messages::Subscriber::Callback callback);
-
+  void subscribe(const messages::Type type,
+                 messages::Subscriber::Callback callback);
 };
 
 std::ostream &operator<<(std::ostream &os, const neuro::Bot &b);
-std::ostream &operator<<(std::ostream &os, const google::protobuf::RepeatedPtrField<neuro::messages::Peer> &peers);
+std::ostream &operator<<(
+    std::ostream &os,
+    const google::protobuf::RepeatedPtrField<neuro::messages::Peer> &peers);
 
-} // namespace neuro
+}  // namespace neuro
 
 #endif /* NEURO_SRC_BOT_HPP */

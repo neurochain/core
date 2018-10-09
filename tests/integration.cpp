@@ -1,10 +1,10 @@
+#include <gtest/gtest.h>
+#include <chrono>
+#include <sstream>
+#include <thread>
 #include "Bot.hpp"
 #include "common/logger.hpp"
 #include "messages/Subscriber.hpp"
-#include <chrono>
-#include <gtest/gtest.h>
-#include <sstream>
-#include <thread>
 
 namespace neuro {
 using namespace std::chrono_literals;
@@ -25,7 +25,7 @@ std::stringstream botconf(const std::string &max_connections,
   conf << " \"peers\": [";
   if (!ports.empty()) {
     std::size_t i;
-    for (i = 0; i < ports.size() - 1; i ++) {
+    for (i = 0; i < ports.size() - 1; i++) {
       conf << "  {\"endpoint\" : \"127.0.0.1\", \"port\" : " << ports[i]
            << "},";
     }
@@ -43,13 +43,13 @@ std::stringstream botconf(const std::string &max_connections,
 }
 
 class Listener {
-private:
+ private:
   bool _received_connection0{false};
   bool _received_connection1{false};
   bool _received_hello{false};
   bool _received_world{false};
 
-public:
+ public:
   Listener() {}
 
   void handler_hello(const messages::Header &header,
@@ -59,35 +59,26 @@ public:
   }
   void handler_world(const messages::Header &header,
                      const messages::Body &hello) {
-
     LOG_DEBUG << "It entered the handler_world";
     _received_world = true;
   }
   void handler_connection0(const messages::Header &header,
                            const messages::Body &body) {
-
     LOG_DEBUG << "It entered the handler_connection0";
     _received_connection0 = true;
   }
   void handler_connection1(const messages::Header &header,
                            const messages::Body &body) {
-
     LOG_DEBUG << "It entered the handler_connection1";
     _received_connection1 = true;
   }
 
   bool validated() {
-    std::cout << std::boolalpha
-	      << "validation " 
-	      << _received_connection0 << " "
-	      << _received_connection1 << " "
-	      << _received_hello << " "
-	      << _received_world;
-    return
-      _received_connection0 &&
-      _received_connection1 &&
-      _received_hello &&
-      _received_world;
+    std::cout << std::boolalpha << "validation " << _received_connection0 << " "
+              << _received_connection1 << " " << _received_hello << " "
+              << _received_world;
+    return _received_connection0 && _received_connection1 && _received_hello &&
+           _received_world;
   }
 
   ~Listener() {
@@ -100,7 +91,7 @@ public:
 };
 
 class Integration : public ::testing::Test {
-public:
+ public:
   Integration() {}
 
   // bool test_reachmax() {
@@ -143,7 +134,7 @@ public:
   //   return all_good;
   // }
 };
-  
+
 TEST(COIN, simple_interaction) {
   auto conf0 = botconf("3", "1337", {});
   auto conf1 = botconf("3", "1338", {"1337", "1339"});
@@ -160,31 +151,31 @@ TEST(COIN, simple_interaction) {
   int bot_id = 0;
 
   std::cout << conf1.str() << std::endl;
-  
+
   for (const auto &bot : bots) {
     std::cout << bot_id++ << " bot_id " << bot.get() << std::endl;
   }
-  
-  bots[1]->subscribe(messages::Type::kHello,
-		     [&listener](const messages::Header &header,
-				 const messages::Body &body) {
-		       listener.handler_hello(header, body);
-		     });
-  bots[0]->subscribe(messages::Type::kWorld,
-		     [&listener](const messages::Header &header,
-				 const messages::Body &body) {
-		       listener.handler_world(header, body);
-		     });
-  bots[0]->subscribe(messages::Type::kConnectionReady,
-		     [&listener](const messages::Header &header,
-				 const messages::Body &body) {
-		       listener.handler_connection0(header, body);
-		     });
-  bots[1]->subscribe(messages::Type::kConnectionReady,
-		     [&listener](const messages::Header &header,
-				 const messages::Body &body) {
-		       listener.handler_connection1(header, body);
-		     });
+
+  bots[1]->subscribe(
+      messages::Type::kHello,
+      [&listener](const messages::Header &header, const messages::Body &body) {
+        listener.handler_hello(header, body);
+      });
+  bots[0]->subscribe(
+      messages::Type::kWorld,
+      [&listener](const messages::Header &header, const messages::Body &body) {
+        listener.handler_world(header, body);
+      });
+  bots[0]->subscribe(
+      messages::Type::kConnectionReady,
+      [&listener](const messages::Header &header, const messages::Body &body) {
+        listener.handler_connection0(header, body);
+      });
+  bots[1]->subscribe(
+      messages::Type::kConnectionReady,
+      [&listener](const messages::Header &header, const messages::Body &body) {
+        listener.handler_connection1(header, body);
+      });
 
   std::this_thread::sleep_for(1s);
   bots[0]->keep_max_connections();
@@ -208,4 +199,4 @@ TEST(COIN, simple_interaction) {
   LOG_DEBUG << this << " About to go out";
 }
 
-} // namespace neuro
+}  // namespace neuro

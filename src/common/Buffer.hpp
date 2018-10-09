@@ -46,7 +46,6 @@ class Buffer : public std::vector<uint8_t> {
   bool operator==(const Buffer &other);
 
   std::string str() const;
-
 };
 
 std::ostream &operator<<(std::ostream &os, const Buffer &buffer);

@@ -10,19 +10,16 @@ namespace networking {
 class Connection {
  public:
   using ID = uint16_t;
-    
-protected:
+
+ protected:
   ID _id;
   TransportLayer::ID _transport_layer_id;
   std::shared_ptr<messages::Queue> _queue;
 
  public:
-  Connection(const ID id,
-             TransportLayer::ID transport_layer_id,
-	     std::shared_ptr<messages::Queue> queue):
-      _id(id),
-      _transport_layer_id(transport_layer_id),
-      _queue(queue){}
+  Connection(const ID id, TransportLayer::ID transport_layer_id,
+             std::shared_ptr<messages::Queue> queue)
+      : _id(id), _transport_layer_id(transport_layer_id), _queue(queue) {}
 
   ID id() const;
   TransportLayer::ID transport_layer_id() const;

@@ -4,10 +4,7 @@
 #include "messages.pb.h"
 
 namespace neuro {
-namespace ledger {
-
-
-}  // ledger
-}  // neuro
+namespace ledger {}  // namespace ledger
+}  // namespace neuro
 
 #endif /* NEURO_SRC_LEDGER_TRANSACTION_HPP */

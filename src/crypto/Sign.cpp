@@ -3,7 +3,7 @@
 namespace neuro {
 namespace crypto {
 
-bool sign (const EccPriv &key_priv, messages::Transaction *transaction) {
+bool sign(const EccPriv &key_priv, messages::Transaction *transaction) {
   Buffer tmp;
   messages::to_buffer(*transaction, &tmp);
   const auto sig = key_priv.sign(tmp);
@@ -13,5 +13,5 @@ bool sign (const EccPriv &key_priv, messages::Transaction *transaction) {
   return true;
 }
 
-}  // crypto
-}  // neuro
+}  // namespace crypto
+}  // namespace neuro

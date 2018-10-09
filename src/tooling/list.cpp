@@ -1,22 +1,20 @@
-#include "messages.pb.h"
+#include <boost/program_options.hpp>
+#include "common/types.hpp"
 #include "crypto/Ecc.hpp"
 #include "crypto/Hash.hpp"
-#include "common/types.hpp"
-#include "messages/Message.hpp"
+#include "messages.pb.h"
 #include "messages/Hasher.hpp"
-#include <boost/program_options.hpp>
+#include "messages/Message.hpp"
 
 namespace po = boost::program_options;
 
 namespace neuro {
 
 int main(int argc, char *argv[]) {
-
   po::options_description desc("Allowed options");
-  desc.add_options()
-    ("help,h", "Produce help message.")
-    ("key,k", po::value<std::string>()->default_value("key.pub"), "File path to public key")
-    ;
+  desc.add_options()("help,h", "Produce help message.")(
+      "key,k", po::value<std::string>()->default_value("key.pub"),
+      "File path to public key");
 
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -36,7 +34,7 @@ int main(int argc, char *argv[]) {
   const auto ncc = vm["ncc"].as<uint64_t>();
 
   crypto::EccPub ecc_pub(filepath);
-  messages::Hasher address (ecc_pub);
+  messages::Hasher address(ecc_pub);
 
   messages::Transaction transaction;
   auto input = transaction.add_inputs();
@@ -47,10 +45,10 @@ int main(int argc, char *argv[]) {
 
   transaction.add_outputs()->mutable_address()->CopyFrom(address);
 
-  //transaction.set_fees(ncc);
+  // transaction.set_fees(ncc);
   transaction.mutable_fees()->set_value(std::to_string(ncc));
 
-  if(type == "json") {
+  if (type == "json") {
     std::string t;
     messages::to_json(transaction, &t);
     std::cout << t << std::endl;
@@ -69,9 +67,6 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-}  // neuro
+}  // namespace neuro
 
-
-int main(int argc, char *argv[]) {
-  return neuro::main(argc, argv);
-}
+int main(int argc, char *argv[]) { return neuro::main(argc, argv); }

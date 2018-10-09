@@ -10,16 +10,16 @@ namespace neuro {
 namespace messages {
 
 class Subscriber {
-public:
+ public:
   using Callback = std::function<void(const Header &header, const Body &body)>;
 
-private:
+ private:
   bool _quitting{false};
   mutable std::mutex _mutex_handler;
   std::shared_ptr<Queue> _queue;
   std::vector<std::optional<Callback>> _callbacks_by_type;
 
-public:
+ public:
   Subscriber(std::shared_ptr<Queue> queue)
       : _queue(queue), _callbacks_by_type(Body::kBodyCount) {}
 
@@ -27,35 +27,35 @@ public:
     _queue->subscribe(this);
     _callbacks_by_type[type] = callback;
     auto opt = _callbacks_by_type[type];
-    std::cout << this << " callback registred " << (bool)opt << " " << type << std::endl;
+    std::cout << this << " callback registred " << (bool)opt << " " << type
+              << std::endl;
   }
-  void unsubscribe() {
-    _queue->unsubscribe(this);
-  }
+  void unsubscribe() { _queue->unsubscribe(this); }
 
   void handler(std::shared_ptr<const Message> message) {
     std::lock_guard<std::mutex> lock_handler(_mutex_handler);
     // if (_quitting) return;
     for (const auto &body : message->bodies()) {
       const auto type = get_type(body);
-      std::cout << this << " subscriber handler " <<  type << " == " << messages::Type::kConnectionReady << std::endl;
+      std::cout << this << " subscriber handler " << type
+                << " == " << messages::Type::kConnectionReady << std::endl;
       auto opt = _callbacks_by_type[type];
       if (opt) {
-	std::cout << this << " found function" << std::endl;
+        std::cout << this << " found function" << std::endl;
         (*opt)(message->header(), body);
       }
     }
   }
 
   ~Subscriber() {
-     std::lock_guard<std::mutex> lock_handler(_mutex_handler);
+    std::lock_guard<std::mutex> lock_handler(_mutex_handler);
     // _quitting = true;
     LOG_DEBUG << "Subscriber unsubscribing " << this;
     _queue->unsubscribe(this);
   }
 };
 
-} // namespace messages
-} // namespace neuro
+}  // namespace messages
+}  // namespace neuro
 
 #endif /* NEURO_SRC_MESSAGES_SUBSCRIBER_HPP */

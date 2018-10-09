@@ -1,9 +1,9 @@
 #ifndef NEURO_SRC_CRYPTO_ECCPRIV_HPP
 #define NEURO_SRC_CRYPTO_ECCPRIV_HPP
 
+#include <filters.h>
 #include <sha3.h>
 #include <memory>
-#include <filters.h>
 
 #include "EccPub.hpp"
 #include "common/types.hpp"
@@ -26,7 +26,8 @@ class EccPriv {
   bool load(const Buffer &buffer);
   bool load(const std::string &filepath);
   static constexpr std::size_t sign_length() { return 64; /* TODO  magic */ }
-  void sign(const uint8_t *data, const std::size_t size, uint8_t *signature) const;
+  void sign(const uint8_t *data, const std::size_t size,
+            uint8_t *signature) const;
   Buffer sign(const uint8_t *data, const std::size_t size) const;
   Buffer sign(const Buffer &input) const;
 

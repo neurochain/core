@@ -5,9 +5,7 @@
 namespace neuro {
 namespace crypto {
 
-EccPub::EccPub(const std::string &filepath) {
-  load(filepath);
-}
+EccPub::EccPub(const std::string &filepath) { load(filepath); }
 
 EccPub::EccPub(const Buffer &pub_key) {
   if (!load(pub_key)) {

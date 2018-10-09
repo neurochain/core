@@ -25,5 +25,5 @@ TransportLayer::~TransportLayer() {
   }
 }
 
-} // namespace networking
-} // namespace neuro
+}  // namespace networking
+}  // namespace neuro

@@ -1,10 +1,10 @@
 #ifndef NEURO_SRC_COMMON_TYPES_HPP
 #define NEURO_SRC_COMMON_TYPES_HPP
 
-#include <cstdint>
-#include <vector>
 #include <boost/asio.hpp>
 #include <cassert>
+#include <cstdint>
+#include <vector>
 #include "common/Buffer.hpp"
 
 #include "common.pb.h"
@@ -14,13 +14,13 @@ namespace neuro {
 namespace networking {
 class Peer;
 namespace bai = boost::asio::ip;
-using IP  = bai::address;
+using IP = bai::address;
 using IP4 = bai::address_v4;
 using IP6 = bai::address_v6;
 
 enum class ProtocolType { PROTOBUF2, JSON, BSON };
 
-}
+}  // namespace networking
 
 using std::int16_t;
 using std::int32_t;
@@ -36,7 +36,7 @@ using Port = uint16_t;
 using Ports = std::vector<Port>;
 const int32_t MessageVersion = 1;
 
-  //using Peers = google::protobuf::RepeatedPtrField<neuro::messages::Peer>;
+// using Peers = google::protobuf::RepeatedPtrField<neuro::messages::Peer>;
 
 namespace crypto {
 namespace keys {

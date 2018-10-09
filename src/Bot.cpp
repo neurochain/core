@@ -1,13 +1,13 @@
 #include "Bot.hpp"
-#include "common/logger.hpp"
-#include "common/types.hpp"
-#include "messages/Subscriber.hpp"
 #include <algorithm>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 #include <cstdlib>
 #include <ctime>
 #include <random>
+#include "common/logger.hpp"
+#include "common/types.hpp"
+#include "messages/Subscriber.hpp"
 
 namespace neuro {
 
@@ -45,7 +45,7 @@ bool Bot::init() {
   }
 
   std::cout << this << " subscriber " << &_subscriber << std::endl;
-  
+
   bool keys_save{false};
   bool keys_create{false};
   std::string keypath_priv;
@@ -79,7 +79,7 @@ bool Bot::init() {
   }
 
   auto networking_conf = _config.mutable_networking();
-  
+
   _selection_method = _config.selection_method();
   _keep_status = _config.keep_status();
   _max_connections = networking_conf->max_connections();
@@ -88,7 +88,7 @@ bool Bot::init() {
     LOG_ERROR << "Missing tcp configuration";
     return false;
   }
-  
+
   _tcp_config = networking_conf->mutable_tcp();
 
   for (auto &peer : *_tcp_config->mutable_peers()) {
@@ -129,14 +129,15 @@ bool Bot::init() {
         this->handler_connection(header, body);
       });
   // _subscriber.subscribe(messages::Type::kConnectionReady,
-  //                        std::bind(&Bot::handler_connection, this, std::placeholders::_1, std::placeholders::_2));
+  //                        std::bind(&Bot::handler_connection, this,
+  //                        std::placeholders::_1, std::placeholders::_2));
 
   return true;
 }
 
 void Bot::handler_connection(const messages::Header &header,
                              const messages::Body &body) {
-  LOG_DEBUG << this << " T_T " << __FUNCTION__ ;
+  LOG_DEBUG << this << " T_T " << __FUNCTION__;
   if (!header.has_peer()) {
     // TODO: ask to close the connection
     LOG_ERROR << this
@@ -152,7 +153,7 @@ void Bot::handler_connection(const messages::Header &header,
     LOG_DEBUG << this << " Got a connection from " << peer;
     return;
   }
-    
+
   LOG_DEBUG << this << " Got a connection to " << peer;
   // send hello msg
   auto message = std::make_shared<messages::Message>();
@@ -172,7 +173,6 @@ void Bot::handler_connection(const messages::Header &header,
 
 void Bot::handler_deconnection(const messages::Header &header,
                                const messages::Body &body) {
-
   LOG_DEBUG << this << " Got a connection_closed message";
 
   auto remote_peer = header.peer();
@@ -182,10 +182,10 @@ void Bot::handler_deconnection(const messages::Header &header,
   auto it = std::find_if(peers->begin(), peers->end(),
                          [&remote_peer](const auto &el) {
                            if ((remote_peer.endpoint() != el.endpoint()) ||
-			       !remote_peer.has_port() || !el.has_port()) {
-			     return false;
-			   }
-			   return remote_peer.port() == el.port();
+                               !remote_peer.has_port() || !el.has_port()) {
+                             return false;
+                           }
+                           return remote_peer.port() == el.port();
                          });
 
   _tcp->terminated(remote_peer.connection_id());
@@ -199,7 +199,7 @@ void Bot::handler_deconnection(const messages::Header &header,
     return;
   }
 
-  if(old_status == messages::Peer::CONNECTED) {
+  if (old_status == messages::Peer::CONNECTED) {
     _connected_peers--;
   }
   it->set_status(messages::Peer::UNREACHABLE);
@@ -243,7 +243,7 @@ void Bot::handler_world(const messages::Header &header,
   auto peer_it = std::find_if(
       peers->begin(), peers->end(), [&peer_header](const auto &it) {
         return it.endpoint() == peer_header.endpoint() &&
-        it.port() == peer_header.port();
+               it.port() == peer_header.port();
       });
 
   messages::Peer *remote_peer;
@@ -285,11 +285,10 @@ void Bot::handler_world(const messages::Header &header,
 
 void Bot::handler_hello(const messages::Header &header,
                         const messages::Body &body) {
-
   if (!body.has_hello()) {
     LOG_WARNING << this
                 << " SomeThing wrong. Got a call to handler_hello with "
-        "different type of body on the msg";
+                   "different type of body on the msg";
     return;
   }
   auto hello = body.hello();
@@ -307,7 +306,7 @@ void Bot::handler_hello(const messages::Header &header,
   auto peers = _tcp_config->peers();
   for (const auto &peer_conn : peers) {
     if (peer_conn.status() == messages::Peer::CONNECTED ||
-	peer_conn.status() == messages::Peer::REACHABLE) {
+        peer_conn.status() == messages::Peer::REACHABLE) {
       world->add_peers()->CopyFrom(peer_conn);
     }
   }
@@ -328,7 +327,7 @@ void Bot::handler_hello(const messages::Header &header,
   auto peer_it = std::find_if(
       peers.begin(), peers.end(), [&peer_header, &hello](const auto &it) {
         return it.endpoint() == peer_header.endpoint() &&
-        it.port() == hello.listen_port();
+               it.port() == hello.listen_port();
       });
   bool found = peer_it != peers.end();
 
@@ -374,10 +373,9 @@ Bot::Status Bot::status() const {
 }
 
 bool Bot::next_to_connect(messages::Peer **peer) {
-
   // it is locked from the caller
   auto peers = _tcp_config->mutable_peers();
-  
+
   for (auto &peer : *_tcp_config->mutable_peers()) {
     std::cout << this << " PEER STATUS " << peer << std::endl;
   }
@@ -386,8 +384,8 @@ bool Bot::next_to_connect(messages::Peer **peer) {
     case messages::config::Config::SIMPLE: {
       LOG_DEBUG << this << " It entered the simple method for next selection";
       auto it = std::find_if(peers->begin(), peers->end(), [](const auto &el) {
-          return el.status() == messages::Peer::REACHABLE;
-        });
+        return el.status() == messages::Peer::REACHABLE;
+      });
 
       if (it == peers->end()) {
         LOG_DEBUG << this << " No reachable peer";
@@ -397,12 +395,13 @@ bool Bot::next_to_connect(messages::Peer **peer) {
         LOG_DEBUG << this << " found a peer";
         return true;
       }
-      break;    
+      break;
     }
     case messages::config::Config::PING: {
-      LOG_WARNING << this
-                  << " SelectionMethod::PING is not implemented - Using RANDOM ";
-    } // break; // TODO: After implementing PING, remove the comment from break
+      LOG_WARNING
+          << this
+          << " SelectionMethod::PING is not implemented - Using RANDOM ";
+    }  // break; // TODO: After implementing PING, remove the comment from break
     case messages::config::Config::RANDOM: {
       LOG_DEBUG << this << " It entered the random method for next selection";
       // Create a vector with all possible positions shuffled
@@ -438,9 +437,8 @@ void Bot::keep_max_connections() {
     return;
   }
   LOG_DEBUG << this << " peer count " << peers_size;
-  
-  if (_connected_peers == _max_connections)
-    return;
+
+  if (_connected_peers == _max_connections) return;
 
   if (_connected_peers == peers_size) {
     LOG_WARNING << this << " No available peer to check";
@@ -477,4 +475,4 @@ Bot::~Bot() {
   LOG_DEBUG << this << " From Bot destructor" << &_subscriber;
 }
 
-} // namespace neuro
+}  // namespace neuro

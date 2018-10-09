@@ -1,7 +1,6 @@
 #include "ledger/LedgerMongodb.hpp"
 #include "messages.pb.h"
 
-
 namespace neuro {
 namespace ledger {
 
@@ -24,14 +23,15 @@ LedgerMongodb::LedgerMongodb(const std::string &url, const std::string &db_name)
 //   return res->view()["height"].get_int32().value + 1;
 // }
 
-
-  
-// messages::Transaction::State LedgerMongodb::get_block(const messages::BlockID &id,
-//                                                       messages::Block *block) {
+// messages::Transaction::State LedgerMongodb::get_block(const messages::BlockID
+// &id,
+//                                                       messages::Block *block)
+//                                                       {
 //   // const auto state = get_block_header(id, block->mutable_header());
 //   // const auto bson_id =
 //   //     bsoncxx::types::b_binary{bsoncxx::binary_sub_type::k_binary,
-//   //                              static_cast<uint32_t>(id.size()), id.data()};
+//   //                              static_cast<uint32_t>(id.size()),
+//   id.data()};
 //   // auto query = bss::document{} << "_id" << bson_id << bss::finalize;
 //   // auto cursor = _transactions.find(std::move(query));
 //   // get_block(cursor, block);
@@ -43,7 +43,8 @@ LedgerMongodb::LedgerMongodb(const std::string &url, const std::string &db_name)
 //   return messages::Transaction::UNKNOWN; // STUB
 // }
 
-// messages::Transaction::State LedgerMongodb::get_last_block(messages::Block *block) {
+// messages::Transaction::State LedgerMongodb::get_last_block(messages::Block
+// *block) {
 //   return messages::Transaction::UNKNOWN;  // STUB
 // }
 
@@ -74,8 +75,6 @@ LedgerMongodb::LedgerMongodb(const std::string &url, const std::string &db_name)
 //     messages::Transaction *transaction) const {
 //   return messages::Transaction::UNKNOWN;
 // }  // STUB
-
-
 
 }  // namespace ledger
 }  // namespace neuro

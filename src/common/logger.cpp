@@ -1,7 +1,6 @@
 #include "common/logger.hpp"
 #include "config.pb.h"
 
-
 BOOST_LOG_GLOBAL_LOGGER_INIT(logger, src::severity_logger_mt) {
   src::severity_logger_mt<boost::log::trivial::severity_level> logger;
   // add global attributes
@@ -13,7 +12,6 @@ namespace neuro {
 namespace log {
 
 bool _STDOUT_ADDED{false};
-
 
 logging::formatter neuro_formatter() {
   return expr::stream << expr::format_date_time(timestamp, "%Y-%m-%d %H:%M:%S")
@@ -62,7 +60,7 @@ void from_config(const messages::config::Logs &logs) {
     add_file_sink(logs.file_path(), logs.rotation_size());
   }
 
-  switch(logs.severity()) {
+  switch (logs.severity()) {
     case messages::config::Logs::trace:
       logging::core::get()->set_filter(logging::trivial::severity >=
                                        logging::trivial::trace);
@@ -89,7 +87,6 @@ void from_config(const messages::config::Logs &logs) {
       break;
   }
 }
-
 
 }  // namespace log
 }  // namespace neuro

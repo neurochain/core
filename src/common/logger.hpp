@@ -30,10 +30,9 @@
 #include <fstream>
 #include <ostream>
 
-#include "messages/Message.hpp"
-#include "messages.pb.h"
 #include "config.pb.h"
-
+#include "messages.pb.h"
+#include "messages/Message.hpp"
 
 // register a global logger
 BOOST_LOG_GLOBAL_LOGGER(logger, boost::log::sources::severity_logger_mt<
@@ -48,14 +47,11 @@ namespace expr = boost::log::expressions;
 namespace keywords = boost::log::keywords;
 namespace attrs = boost::log::attributes;
 
-
 namespace neuro {
 namespace log {
 
-
 using text_sink = sinks::synchronous_sink<sinks::text_ostream_backend>;
 using file_sink = sinks::synchronous_sink<sinks::text_file_backend>;
-
 
 logging::formatter neuro_formatter();
 void add_file_sink(const std::string &log_file, const size_t rotation_size_mb);

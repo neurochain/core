@@ -66,7 +66,7 @@ bool Connection::send(const Buffer &message) {
 
 void Connection::terminate() {
   std::lock_guard<std::mutex> m(_connection_mutex);
-  if(_is_dead) {
+  if (_is_dead) {
     return;
   }
   _socket->close();
@@ -96,10 +96,10 @@ std::shared_ptr<messages::Peer> Connection::remote_peer() {
 Connection::~Connection() {
   terminate();
 
-  while(!_is_dead) {
+  while (!_is_dead) {
     std::this_thread::yield();
   }
 }
-} // namespace tcp
-} // namespace networking
-} // namespace neuro
+}  // namespace tcp
+}  // namespace networking
+}  // namespace neuro

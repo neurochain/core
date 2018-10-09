@@ -12,16 +12,16 @@
 namespace neuro {
 namespace messages {
 class Queue;
-} // namespace messages
+}  // namespace messages
 
 namespace networking {
 
 namespace test {
 class Tcp;
-} // namespace test
+}  // namespace test
 
 class Tcp : public TransportLayer {
-private:
+ private:
   bool _started{false};
   boost::asio::io_service _io_service;
   bai::tcp::resolver _resolver;
@@ -42,12 +42,10 @@ private:
   void accept(std::shared_ptr<bai::tcp::acceptor> acceptor, const Port port);
 
   bool serialize(std::shared_ptr<messages::Message> message,
-		 const ProtocolType protocol_type,
-		 Buffer *header_tcp,
-		 Buffer *body_tcp);
+                 const ProtocolType protocol_type, Buffer *header_tcp,
+                 Buffer *body_tcp);
 
-
-public:
+ public:
   Tcp(Tcp &&) = delete;
   Tcp(const Tcp &) = delete;
 
@@ -58,9 +56,9 @@ public:
   void connect(std::shared_ptr<messages::Peer> peer);
   bool connect(const bai::tcp::endpoint host, const Port port);
   bool send(std::shared_ptr<messages::Message> message,
-	    ProtocolType protocol_type);
+            ProtocolType protocol_type);
   bool send_unicast(std::shared_ptr<messages::Message> message,
-		    ProtocolType protocol_type);
+                    ProtocolType protocol_type);
   bool disconnected(const Connection::ID id, std::shared_ptr<Peer> remote_peer);
   Port listening_port() const;
   IP local_ip() const;
@@ -70,7 +68,7 @@ public:
   friend class neuro::networking::test::Tcp;
 };
 
-} // namespace networking
-} // namespace neuro
+}  // namespace networking
+}  // namespace neuro
 
 #endif /* NEURO_SRC_NETWORKING_TCP_TCP_HPP */

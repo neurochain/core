@@ -13,13 +13,13 @@ namespace neuro {
 namespace crypto {
 
 Ecc::Ecc()
-  : _prng(std::make_shared<CryptoPP::AutoSeededRandomPool>()),
+    : _prng(std::make_shared<CryptoPP::AutoSeededRandomPool>()),
       _key_private(_prng),
       _key_public(_key_private.make_public_key()) {}
 
 Ecc::Ecc(const std::string &filepath_private,
          const std::string &filepath_public)
-  : _prng(std::make_shared<CryptoPP::AutoSeededRandomPool>()),
+    : _prng(std::make_shared<CryptoPP::AutoSeededRandomPool>()),
       _key_private(_prng, filepath_private),
       _key_public(filepath_public) {}
 
