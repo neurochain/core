@@ -51,7 +51,6 @@ add_library(core
   ./networking/TransportLayer.cpp
   ./Bot.cpp
   ./tooling/coinbase.cpp
-  ./tooling/http.cpp
   ./tooling/wallet.cpp
   ./tooling/transaction.cpp
   ./tooling/list.cpp
@@ -82,10 +81,10 @@ target_link_libraries(core
   Boost::thread
 
   cryptopp-static
-  
+
   protobuf::libprotobuf
-  ${LIBMONGOCXX_STATIC_LIBRARIES}  
-)  
+  ${LIBMONGOCXX_STATIC_LIBRARIES}
+)
 
 add_executable(main
   main.cpp
@@ -99,9 +98,9 @@ target_link_libraries(main
   Boost::system
   Boost::filesystem
   Boost::thread
-  
+
   protobuf::libprotobuf
-  ${LIBMONGOCXX_STATIC_LIBRARIES}  
+  ${LIBMONGOCXX_STATIC_LIBRARIES}
   )
 
 add_executable(keygen
@@ -112,7 +111,7 @@ target_link_libraries(keygen
   core
   Boost::program_options
   )
-
+#[[
 add_executable(coinbase
   tooling/coinbase.cpp
   )
@@ -120,8 +119,24 @@ add_executable(coinbase
 target_link_libraries(coinbase
   core
   Boost::program_options
+  )]]
+
+add_executable(blockg
+  tooling/blockg.cpp
+  )
+target_link_libraries(blockg
+  core
+  Boost::program_options
   )
 
+add_executable(wallet
+  tooling/wallet.cpp
+  )
+target_link_libraries(wallet
+  core
+  Boost::program_options
+  )
+#[[
 add_executable(transaction
   tooling/transaction.cpp
   )
@@ -129,7 +144,7 @@ add_executable(transaction
 target_link_libraries(transaction
   core
   Boost::program_options
-  )
+  )]]
 
 
 

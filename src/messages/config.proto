@@ -20,6 +20,11 @@ message Logs {
   optional bool to_stdout = 4;
 }
 
+message Db {
+    required string url = 1;
+    required string db_name = 2;
+}
+
 message Tcp {
   required int32 port = 1;
   repeated Peer peers = 2;
@@ -43,4 +48,5 @@ message Config {
   required Networking networking = 4;
   optional Peer.Status keep_status = 5 [default = CONNECTED]; 
   optional SelectionMethod selection_method = 6 [default = SIMPLE];
+  optional Db db = 7;
 }

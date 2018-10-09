@@ -54,7 +54,7 @@ message Transaction {
   repeated Output outputs = 2;
   repeated Hash signatures = 3;
   repeated KeyPub key_pubs = 4;
-  optional uint64 fees = 5;
+  optional NCCSDF fees = 5;
   optional Hash id = 6;
 }
 

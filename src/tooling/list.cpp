@@ -34,21 +34,22 @@ int main(int argc, char *argv[]) {
   const auto filepath = vm["filepath"].as<std::string>();
   const auto type = vm["type"].as<std::string>();
   const auto ncc = vm["ncc"].as<uint64_t>();
-  
+
   crypto::EccPub ecc_pub(filepath);
   messages::Hasher address (ecc_pub);
-  
+
   messages::Transaction transaction;
   auto input = transaction.add_inputs();
 
   auto input_id = input->mutable_id();
   input_id->set_data("");
   input->set_output_id(0);
-  
+
   transaction.add_outputs()->mutable_address()->CopyFrom(address);
 
-  transaction.set_fees(ncc);
-  
+  //transaction.set_fees(ncc);
+  transaction.mutable_fees()->set_value(std::to_string(ncc));
+
   if(type == "json") {
     std::string t;
     messages::to_json(transaction, &t);
@@ -64,7 +65,7 @@ int main(int argc, char *argv[]) {
     std::cout << desc << "\n";
     return 1;
   }
-  
+
   return 0;
 }
 
