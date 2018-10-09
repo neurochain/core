@@ -10,6 +10,8 @@ namespace crypto {
 
 bool sign (const std::vector<const EccPriv *>key_privs,
            messages::Transaction *transaction);
+
+bool verify (const messages::Transaction &transaction);
   
 }  // crypto
 }  // neuro

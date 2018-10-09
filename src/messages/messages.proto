@@ -41,6 +41,7 @@ message Input {
   required int32 output_id = 2;
   required int32 key_id = 3;
   optional Hash block_id = 4;
+  optional int32 signature_id = 5;
 }
 
 message Output {
@@ -49,13 +50,17 @@ message Output {
   optional bytes data = 3;
 }
 
+message Signature {
+  required Hash signatures = 1;
+  required KeyPub key_pubs = 2;
+}
+
 message Transaction {
   repeated Input inputs = 1;
   repeated Output outputs = 2;
-  repeated Hash signatures = 3;
-  repeated KeyPub key_pubs = 4;
-  optional NCCSDF fees = 5;
-  optional Hash id = 6;
+  repeated Signature signatures = 3;
+  optional NCCSDF fees = 4;
+  optional Hash id = 5;
 }
 
 message BlockHeader {

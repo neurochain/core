@@ -51,11 +51,6 @@ add_library(core
   ./networking/Connection.hpp
   ./networking/TransportLayer.cpp
   ./Bot.cpp
-  ./tooling/coinbase.cpp
-  ./tooling/wallet.cpp
-  ./tooling/transaction.cpp
-  ./tooling/list.cpp
-  ./tooling/keygen.cpp
   ./messages/Queue.hpp
   ./messages/Queue.cpp
   ./messages/Message.hpp
