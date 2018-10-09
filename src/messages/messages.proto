@@ -51,8 +51,8 @@ message Output {
 }
 
 message Signature {
-  required Hash signatures = 1;
-  required KeyPub key_pubs = 2;
+  required Hash signature = 1;
+  required KeyPub key_pub = 2;
 }
 
 message Transaction {

@@ -3,13 +3,13 @@
 
 #include "messages.pb.h"
 #include "messages/Message.hpp"
-#include "crypto/EccPriv.hpp"
+#include "crypto/Ecc.hpp"
 
 namespace neuro {
 namespace crypto {
 
-bool sign (const std::vector<const EccPriv *>key_privs,
-           messages::Transaction *transaction);
+bool sign (const std::vector<const crypto::Ecc *>keys, messages::Transaction *transaction);
+
 
 bool verify (const messages::Transaction &transaction);
   
