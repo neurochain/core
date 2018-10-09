@@ -5,6 +5,7 @@
 #include <optional>
 #include "ledger/Filter.hpp"
 #include "messages.pb.h"
+#include "rest.pb.h"
 #include "crypto/Hash.hpp"
 
 namespace neuro {
