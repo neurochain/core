@@ -50,7 +50,7 @@ bsoncxx::document::value to_bson(const Packet &packet) {
   to_json(packet, &json);
   return bsoncxx::from_json(json);
 }
- 
+
 std::ostream & operator<< (std::ostream &os, const Packet &packet) {
   std::string buff;
   to_json(packet, &buff);
