@@ -1,0 +1,10 @@
+syntax = "proto2";
+
+package neuro.messages;
+
+import "common.proto";
+import "messages.proto";
+
+message Transactions {
+  repeated Transaction transactions = 1;
+}

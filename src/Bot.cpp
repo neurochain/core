@@ -464,6 +464,10 @@ void Bot::keep_max_connections() {
   }
 }
 
+messages::Transaction transaction () {
+  
+}
+  
 std::shared_ptr<networking::Networking> Bot::networking() {
   return _networking;
 }
