@@ -75,7 +75,7 @@ bool Bot::load_keys(const messages::config::Config &config) {
   return true;
 }
 
-void Bot::subscribe () {
+void Bot::subscribe() {
   _subscriber.subscribe(
       messages::Type::kHello,
       [this](const messages::Header &header, const messages::Body &body) {
@@ -99,24 +99,24 @@ void Bot::subscribe () {
       [this](const messages::Header &header, const messages::Body &body) {
         this->handler_connection(header, body);
       });
-
 }
-  
+
 bool Bot::init() {
   if (_config.has_logs()) {
     log::from_config(_config.logs());
   }
 
   load_keys(_config);
-  if(!_config.has_database()) {
+  if (!_config.has_database()) {
     LOG_ERROR << "Missing db configuration";
     return false;
   }
-       
-  const auto db_config = _config.database();
-  _ledger = std::make_shared<ledger::LedgerMongodb> (db_config.url(), db_config.db_name());
 
-  if(!_config.has_rest()) {
+  const auto db_config = _config.database();
+  _ledger = std::make_shared<ledger::LedgerMongodb>(db_config.url(),
+                                                    db_config.db_name());
+
+  if (!_config.has_rest()) {
     const auto rest_config = _config.rest();
     _rest = std::make_shared<rest::Rest>(rest_config.port(), _ledger);
   }

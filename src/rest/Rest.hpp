@@ -9,9 +9,6 @@
 #include <onion/url.hpp>
 
 namespace neuro {
-namespace ledger {
-class Ledger;
-}
 namespace rest {
 
 class Rest {

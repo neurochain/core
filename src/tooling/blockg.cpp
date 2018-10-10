@@ -8,8 +8,8 @@
 #include "messages/Hasher.hpp"
 #include "messages/Message.hpp"
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
 
 namespace po = boost::program_options;
 
@@ -85,7 +85,6 @@ void block0(uint32_t bots, const std::string &pathdir, messages::NCCSDF &nccsdf,
   id->CopyFrom(hash_id);
   id->set_type(messages::Hash::SHA256);
 
-
   ledger.push_block(b);
 
   std::ofstream blockfile0;
@@ -136,10 +135,10 @@ int main(int argc, char *argv[]) {
 
   LOG_INFO << "Load DB ...";
 
-    if (!_config.has_database()){
-       LOG_INFO << "Database configuration required";
-       return 1;
-    }
+  if (!_config.has_database()) {
+    LOG_INFO << "Database configuration required";
+    return 1;
+  }
 
   std::string keypath = vm["keyspath"].as<std::string>();
   if (!exists_file(keypath)) {
