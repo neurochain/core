@@ -4,8 +4,8 @@
 namespace neuro {
 namespace crypto {
 
-  bool sign (const std::vector<const crypto::Ecc *>keys,
-             messages::Transaction *transaction) {
+bool sign(const std::vector<const crypto::Ecc *> keys,
+          messages::Transaction *transaction) {
   Buffer transaction_serialized;
   messages::to_buffer(*transaction, &transaction_serialized);
 
@@ -22,22 +22,20 @@ namespace crypto {
     Buffer tmp;
     key->public_key().save(&tmp);
     key_pub->set_type(messages::KeyType::ECP256K1);
-    
+
     key_pub->set_raw_data(tmp.data(), tmp.size());
-    
   }
 
   return true;
 }
 
-bool verify (const messages::Transaction &transaction) {
-
+bool verify(const messages::Transaction &transaction) {
   Buffer bin;
   auto transaction_raw = transaction;
   transaction_raw.clear_signatures();
   messages::to_buffer(transaction_raw, &bin);
 
-  for (const auto& input : transaction.inputs()) {
+  for (const auto &input : transaction.inputs()) {
     const auto signature = transaction.signatures(input.signature_id());
 
     const auto key_pub_raw = signature.key_pub().raw_data();
@@ -47,7 +45,7 @@ bool verify (const messages::Transaction &transaction) {
     const auto hash = signature.signature().data();
     const Buffer sig(hash.data(), hash.size());
 
-    if(!ecc_pub.verify(bin, sig)) {
+    if (!ecc_pub.verify(bin, sig)) {
       LOG_WARNING << "Wrong signature in transaction " << transaction;
       return false;
     }
@@ -55,6 +53,5 @@ bool verify (const messages::Transaction &transaction) {
   return true;
 }
 
-  
-}  // crypto
-}  // neuro
+}  // namespace crypto
+}  // namespace neuro

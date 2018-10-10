@@ -9,10 +9,8 @@ namespace ledger {}  // namespace ledger
 }  // namespace neuro
 =======
 namespace ledger {
-namespace Transaction {
-
-}  // Transaction
-}  // ledger
+namespace Transaction {}  // namespace Transaction
+}  // namespace ledger
 }  // neuro
 >>>>>>> Stashed changes
 

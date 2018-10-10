@@ -1,6 +1,5 @@
 #include "messages/Message.hpp"
 
-
 namespace neuro {
 namespace messages {
 
@@ -51,12 +50,12 @@ bsoncxx::document::value to_bson(const Packet &packet) {
   return bsoncxx::from_json(json);
 }
 
-std::ostream & operator<< (std::ostream &os, const Packet &packet) {
+std::ostream &operator<<(std::ostream &os, const Packet &packet) {
   std::string buff;
   to_json(packet, &buff);
   os << buff;
   return os;
 }
 
-}  // messages
-}  // neuro
+}  // namespace messages
+}  // namespace neuro

@@ -1,13 +1,13 @@
 #include "Bot.hpp"
-#include "common/logger.hpp"
-#include "common/types.hpp"
-#include "messages/Subscriber.hpp"
 #include <algorithm>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 #include <cstdlib>
 #include <ctime>
 #include <random>
+#include "common/logger.hpp"
+#include "common/types.hpp"
+#include "messages/Subscriber.hpp"
 
 namespace neuro {
 
@@ -79,9 +79,9 @@ bool Bot::init() {
   }
 
   std::cout << this << " keys " << std::endl
-	    << "priv " << _keys->private_key() << std::endl
-	    << "puv  " << _keys->public_key() << std::endl;
-  
+            << "priv " << _keys->private_key() << std::endl
+            << "puv  " << _keys->public_key() << std::endl;
+
   auto networking_conf = _config.mutable_networking();
 
   _selection_method = _config.selection_method();
@@ -179,7 +179,6 @@ void Bot::handler_connection(const messages::Header &header,
 
 void Bot::handler_deconnection(const messages::Header &header,
                                const messages::Body &body) {
-
   LOG_DEBUG << this << " Got a connection_closed message";
 
   auto remote_peer = header.peer();
@@ -292,7 +291,6 @@ void Bot::handler_world(const messages::Header &header,
 
 void Bot::handler_hello(const messages::Header &header,
                         const messages::Body &body) {
-
   if (!body.has_hello()) {
     LOG_WARNING << this
                 << " SomeThing wrong. Got a call to handler_hello with "
@@ -381,7 +379,6 @@ Bot::Status Bot::status() const {
 }
 
 bool Bot::next_to_connect(messages::Peer **peer) {
-
   // it is locked from the caller
   auto peers = _tcp_config->mutable_peers();
 

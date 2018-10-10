@@ -234,7 +234,8 @@ class LedgerMongodb : public Ledger {
     }
 
     query_transaction << bss::finalize;
-    std::cout << "query_transaction " << bsoncxx::to_json(query_transaction) << std::endl;
+    std::cout << "query_transaction " << bsoncxx::to_json(query_transaction)
+              << std::endl;
 
     // auto cursor_block = _blocks.find(query_block.view());
 
@@ -244,7 +245,7 @@ class LedgerMongodb : public Ledger {
     findoption.projection(projection_transaction.view());
 
     auto cursor_transaction =
-      _transactions.find(query_transaction.view(), findoption);
+        _transactions.find(query_transaction.view(), findoption);
 
     for (auto &bson_transaction : cursor_transaction) {
       messages::Transaction transaction;

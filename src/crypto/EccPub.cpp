@@ -39,28 +39,28 @@ bool EccPub::load(const Buffer &buffer) {
 }
 
 bool EccPub::load(const uint8_t *data, const std::size_t size) {
-  CryptoPP::StringSource array(reinterpret_cast<const byte *>(data),
-                               size, true);
+  CryptoPP::StringSource array(reinterpret_cast<const byte *>(data), size,
+                               true);
   _key.Load(array);
   return true;
 }
 
 bool EccPub::load(const messages::KeyPub &keypub) {
   if (keypub.has_raw_data()) {
-    const auto& raw_data = keypub.raw_data();
-    //load(raw_data.data(), raw_data.size());
+    const auto &raw_data = keypub.raw_data();
+    // load(raw_data.data(), raw_data.size());
   } else if (keypub.has_hex_data()) {
-    const auto& hex_data = keypub.hex_data();
-    Buffer tmp (hex_data, Buffer::InputType::HEX);
+    const auto &hex_data = keypub.hex_data();
+    Buffer tmp(hex_data, Buffer::InputType::HEX);
     load(tmp);
   } else {
     // not possible since we have a oneof
     return false;
   }
-  
+
   return true;
 }
-  
+
 Buffer EccPub::save() const {
   Buffer tmp;
   std::string s;
@@ -69,7 +69,7 @@ Buffer EccPub::save() const {
   return tmp;
 }
 
-  bool EccPub::save(Buffer *buffer) const {
+bool EccPub::save(Buffer *buffer) const {
   std::string s;
   _key.Save(CryptoPP::StringSink(s).Ref());
   buffer->copy(s);

@@ -1,9 +1,9 @@
+#include <stdio.h>
 #include <chrono>
+#include <iomanip>
 #include <sstream>
 #include <thread>
 #include <tuple>
-#include <iomanip>
-#include <stdio.h>
 
 #include "common/logger.hpp"
 #include "crypto/Ecc.hpp"
@@ -71,7 +71,6 @@ void Tcp::accept(std::shared_ptr<bai::tcp::acceptor> acceptor,
     std::this_thread::yield();
     LOG_DEBUG << "Waiting for acceptor to be open";
   }
-      
 }
 
 Port Tcp::listening_port() const { return _listening_port; }
@@ -152,7 +151,6 @@ void Tcp::terminated(const Connection::ID id) {
 bool Tcp::serialize(std::shared_ptr<messages::Message> message,
                     const ProtocolType protocol_type, Buffer *header_tcp,
                     Buffer *body_tcp) {
-
   LOG_DEBUG << this << " Before reinterpret and signing";
   auto header_pattern =
       reinterpret_cast<tcp::HeaderPattern *>(header_tcp->data());
@@ -236,5 +234,5 @@ Tcp::~Tcp() {
   LOG_DEBUG << this << " TCP Killing: ";
 }
 
-} // namespace neuro
-} // namespace neuro
+}  // namespace networking
+}  // namespace neuro

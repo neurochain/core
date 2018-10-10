@@ -47,7 +47,7 @@ void block0(uint32_t bots, const std::string &pathdir, messages::NCCSDF &nccsdf,
   LOG_INFO << "In Block 0";
   messages::Block b;
   messages::BlockHeader *header = b.mutable_header();
-  
+
   LOG_INFO << "Ecc owner block0";
   crypto::Ecc ecc;
   Buffer key_pub_raw;
@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
   messages::NCCSDF nccsdf;
   nccsdf.set_value(std::to_string(ncc));
   auto db = _config.database();
-  ledger::LedgerMongodb ledger("mongodb://127.0.0.1:27017/neuro","neuro");
+  ledger::LedgerMongodb ledger("mongodb://127.0.0.1:27017/neuro", "neuro");
   block0(bots, keypath, nccsdf, ledger);
 
   return 0;

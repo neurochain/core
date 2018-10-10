@@ -12,8 +12,8 @@
 namespace neuro {
 namespace rest {
 
-  std::string get_transactions(ledger::LedgerMongodb &ledger,
-			       const std::string &address) {
+std::string get_transactions(ledger::LedgerMongodb &ledger,
+                             const std::string &address) {
   messages::Hasher addr;
   addr.set_type(messages::Hash::SHA256);
   addr.set_data(address.c_str(), address.size());
