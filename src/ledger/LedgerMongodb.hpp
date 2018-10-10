@@ -22,8 +22,6 @@ private:
     mutable mongocxx::collection _blocks;
     mutable mongocxx::collection _transactions;
 
-    void remove_OID(mongocxx::options::find &filter) {}
-
     bool get_block_header(const bsoncxx::document::view &block,
                           messages::BlockHeader *header)
     {
@@ -38,7 +36,7 @@ private:
     bool get_transactions_from_block(const bsoncxx::document::view &id,
                                      messages::Block *block)
     {
-        auto query = bss::document{} << "id" << id << bss::finalize;
+        auto query = bss::document{} << "blockId" << id << bss::finalize;
 
         mongocxx::options::find findoption;
         auto projection_transaction = bss::document{};
@@ -70,9 +68,10 @@ private:
         if (!get_block(0,&block0))
         {
             messages::Block block0file;
-            std::ifstream t("block.0.bp");
+            std::ifstream t(db.block0_path());
             std::string str((std::istreambuf_iterator<char>(t)),
                             std::istreambuf_iterator<char>());
+
             auto d = bss::document{};
             switch(db.block0_format() )
             {
@@ -87,9 +86,6 @@ private:
                 messages::from_json(str, &block0file);
                 break;
             }
-
-
-
             push_block(block0file);
         }
     }
@@ -99,6 +95,12 @@ public:
     LedgerMongodb(messages::config::Database &db);
 
     ~LedgerMongodb() {}
+
+    void remove_all()
+    {
+        _blocks.delete_many(bss::document{}.view());
+        _transactions.delete_many(bss::document{}.view());
+    }
 
     messages::BlockHeight height() const
     {
@@ -203,13 +205,43 @@ public:
         {
             if (!transaction.has_id())
             {
-                transaction.mutable_id()->CopyFrom(header.id());
+                neuro::messages::Transaction _transaction(transaction);
+                _transaction.clear_id();
+                _transaction.clear_block_id();
+
+                Buffer buf;
+                messages::to_buffer(_transaction,&buf);
+                messages::Hasher newit(buf);
+                transaction.mutable_id()->CopyFrom(newit);
+            }
+
+            if(!transaction.has_block_id())
+            {
+                transaction.mutable_block_id()->CopyFrom(header.id());
             }
 
             auto bson_transaction = messages::to_bson(transaction);
             _transactions.insert_one(std::move(bson_transaction));
         }
         return true;
+    }
+
+    bool get_transaction( messages::Hash &id, messages::Transaction * transaction )
+    {
+        auto query_transaction = bss::document{} << "id" << messages::to_bson(id) << bss::finalize;
+
+        mongocxx::options::find findoption;
+        auto projection_transaction = bss::document{};
+        projection_transaction << "_id" << 0;  ///!< remove _id objectID
+        findoption.projection(projection_transaction.view());
+
+        auto res = _transactions.find_one(query_transaction.view(), findoption);
+        if ( res )
+        {
+            messages::from_bson(res->view(), transaction);
+            return true;
+        }
+        return false;
     }
 
     bool for_each(const Filter &filter, Functor functor)

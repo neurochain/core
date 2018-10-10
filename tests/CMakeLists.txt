@@ -10,10 +10,21 @@
 #file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/config/peers.json
 #  DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-set(ProtoFiles "networking/proto/Messages.proto")
+set(ProtoFiles
+  "${CMAKE_CURRENT_SOURCE_DIR}/messages/common.proto"
+  "${CMAKE_CURRENT_SOURCE_DIR}/messages/config.proto"
+  "${CMAKE_CURRENT_SOURCE_DIR}/messages/messages.proto"
+  "${CMAKE_CURRENT_SOURCE_DIR}/messages/rest.proto"
+  )
+
 PROTOBUF_GENERATE_CPP(ProtoSources ProtoHeaders ${ProtoFiles})
 
-add_test(integration integration)
+#add_test(integration integration)
+add_test(dbreset dbreset)
+add_test(block0 block0)
+add_test(blocks19 blocks19)
+add_test(piitest piitest)
+
 add_executable(integration
   integration.cpp
   )
@@ -29,5 +40,41 @@ target_link_libraries(integration
   Boost::log
   ${LIBMONGOCXX_STATIC_LIBRARIES}
   )
+
+add_executable(dbreset
+    dbreset.cpp
+)
+
+target_link_libraries(dbreset
+    GTest::main
+    core
+)
+
+add_executable(block0
+    block0.cpp
+)
+
+target_link_libraries(block0
+    GTest::main
+    core
+)
+
+add_executable(blocks19
+    blocks19.cpp
+)
+
+target_link_libraries(blocks19
+    GTest::main
+    core
+)
+
+add_executable(piitest
+    piitest.cpp
+)
+
+target_link_libraries(piitest
+    GTest::main
+    consensus
+)
 
 include_directories(${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/src ${LIBMONGOCXX_STATIC_INCLUDE_DIRS})

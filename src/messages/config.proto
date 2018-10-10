@@ -53,7 +53,7 @@ message Config {
   optional string key_priv_path = 2;
   optional Logs logs = 3;
   required Networking networking = 4;
-  required Database database = 5;
+  optional Database database = 5;
   optional Peer.Status keep_status = 6 [default = CONNECTED]; 
   optional SelectionMethod selection_method = 7 [default = SIMPLE];
 

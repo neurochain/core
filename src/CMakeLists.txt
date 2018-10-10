@@ -51,11 +51,7 @@ add_library(core
   ./networking/Connection.hpp
   ./networking/TransportLayer.cpp
   ./Bot.cpp
-  ./tooling/coinbase.cpp
-  ./tooling/wallet.cpp
-  ./tooling/transaction.cpp
-  ./tooling/list.cpp
-  ./tooling/keygen.cpp
+  ./tooling/genblock.hpp
   ./messages/Queue.hpp
   ./messages/Queue.cpp
   ./messages/Message.hpp
@@ -72,6 +68,7 @@ add_library(core
   ./Bot.hpp
   )
 
+
 target_link_libraries(core
   protos
 
@@ -85,6 +82,20 @@ target_link_libraries(core
 
   protobuf::libprotobuf
   ${LIBMONGOCXX_STATIC_LIBRARIES}
+)
+
+add_library(consensus
+    ./consensus/Consensus.h
+    ./consensus/ForkSus.h
+    ./consensus/ForkSus.cpp
+    ./consensus/Pii.h
+    ./consensus/Pii.cpp
+    ./consensus/PiiSus.h
+    ./consensus/PiiSus.cpp
+)
+
+target_link_libraries(consensus
+    core
 )
 
 add_executable(main
@@ -134,7 +145,7 @@ add_executable(wallet
   tooling/wallet.cpp
   )
 target_link_libraries(wallet
-  core
+  consensus
   Boost::program_options
   )
 
@@ -158,4 +169,7 @@ target_link_libraries(rest
   core
   )
 
+
+
 include_directories(${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/src ${LIBMONGOCXX_STATIC_INCLUDE_DIRS})
+

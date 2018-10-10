@@ -47,33 +47,35 @@ void coinbase(const crypto::EccPub &key_pub, const messages::NCCSDF &ncc,
 void block0( uint32_t bots,
              const std::string &pathdir,
              messages::NCCSDF &nccsdf,
+             const std::string &outfile,
              ledger::LedgerMongodb &ledger
            )
 {
-    LOG_INFO << "In Block 0";
+
+
     messages::Block b;
     messages::BlockHeader *header = b.mutable_header();
 
-    LOG_INFO << "Ecc owner block0";
+
     crypto::Ecc ecc;
     Buffer key_pub_raw;
     ecc.mutable_public_key()->save(&key_pub_raw);
 
-    LOG_INFO << "Header block0";
+
     messages::KeyPub *author = header->mutable_author();
     author->set_type(messages::KeyType::ECP256K1);
     author->set_raw_data(key_pub_raw.data(), key_pub_raw.size());
 
     header->mutable_timestamp()->set_data(time(0));
 
-    LOG_INFO << "Prev block0";
+
     auto previons_block_hash = header->mutable_previous_block_hash();
     previons_block_hash->set_data("");  ///!< load 0
     previons_block_hash->set_type(messages::Hash::Type::Hash_Type_SHA256);
 
     header->set_height(0);
 
-    LOG_INFO << "Bot(s) block0";
+
     ///!< bots generateur
     for(uint32_t i = 0; i < bots ; ++i)
     {
@@ -84,20 +86,16 @@ void block0( uint32_t bots,
         coinbase(ecc.public_key(), nccsdf, *transaction);
     }
 
-
     header->mutable_id()->set_data("");
 
     // const auto tmp = crypto::hash_sha3_256( b.SerializeAsString() );
     neuro::Buffer tmpbuffer(b.SerializeAsString());
     messages::Hasher hash_id(tmpbuffer);
     header->mutable_id()->CopyFrom(hash_id);
-
     ledger.push_block(b);
 
-
-
     std::ofstream blockfile0;
-    blockfile0.open("block.0.bp");
+    blockfile0.open(outfile);
     blockfile0 << b.SerializeAsString();
     blockfile0.close();
 
@@ -108,7 +106,7 @@ int main(int argc, char *argv[])
     po::options_description desc("Allowed options");
     desc.add_options()("help,h", "Produce help message.")
     ("wallet,w" , po::value<uint32_t>()->default_value(100),
-     "Nombre of Wallet in BLock 0")
+     "Number of Wallet in BLock 0")
     ("keyspath,k", po::value<std::string>()->default_value("keys"),
      "File path for keys (appending .pub or .priv)")
     ("ncc,n", po::value<uint64_t>()->default_value(1000),
@@ -158,8 +156,6 @@ int main(int argc, char *argv[])
        return 1;
     }
 
-    return 0;
-
     std::string keypath = vm["keyspath"].as<std::string>();
     if ( !exists_file(keypath))
     {
@@ -174,8 +170,8 @@ int main(int argc, char *argv[])
     messages::NCCSDF nccsdf;
     nccsdf.set_value(std::to_string(ncc));
     auto db = _config.database();
-    ledger::LedgerMongodb ledger(db);
-    block0(bots,keypath ,  nccsdf, ledger);
+    ledger::LedgerMongodb ledger(_config.database().url(), _config.database().db_name());
+    block0(bots,keypath ,  nccsdf, _config.database().block0_path() ,  ledger);
 
     return 0;
 }

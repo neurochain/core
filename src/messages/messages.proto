@@ -56,6 +56,7 @@ message Transaction {
   repeated KeyPub key_pubs = 4;
   optional NCCSDF fees = 5;
   optional Hash id = 6;
+  optional Hash block_id = 7;
 }
 
 message BlockHeader {
