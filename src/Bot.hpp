@@ -31,7 +31,7 @@ class Bot {
   messages::config::Config _config;
   std::shared_ptr<crypto::Ecc> _keys;
   messages::Subscriber _subscriber;
-
+  
   // for the peers
   messages::config::Tcp *_tcp_config;
   std::size_t _connected_peers{0};
@@ -58,6 +58,7 @@ class Bot {
                             const messages::Body &body);
   bool next_to_connect(messages::Peer **out_peer);
   bool load_keys(const messages::config::Config &config);
+  void subscribe();
   
  public:
   Bot(const std::string &configuration_path);

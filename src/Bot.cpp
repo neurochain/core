@@ -74,6 +74,33 @@ bool Bot::load_keys(const messages::config::Config &config) {
 
   return true;
 }
+
+void Bot::subscribe () {
+  _subscriber.subscribe(
+      messages::Type::kHello,
+      [this](const messages::Header &header, const messages::Body &body) {
+        this->handler_hello(header, body);
+      });
+
+  _subscriber.subscribe(
+      messages::Type::kWorld,
+      [this](const messages::Header &header, const messages::Body &body) {
+        this->handler_world(header, body);
+      });
+
+  _subscriber.subscribe(
+      messages::Type::kConnectionClosed,
+      [this](const messages::Header &header, const messages::Body &body) {
+        this->handler_deconnection(header, body);
+      });
+
+  _subscriber.subscribe(
+      messages::Type::kConnectionReady,
+      [this](const messages::Header &header, const messages::Body &body) {
+        this->handler_connection(header, body);
+      });
+
+}
   
 bool Bot::init() {
   if (_config.has_logs()) {
@@ -108,29 +135,6 @@ bool Bot::init() {
     LOG_WARNING << this << " There is no information about peers";
   }
 
-  _subscriber.subscribe(
-      messages::Type::kHello,
-      [this](const messages::Header &header, const messages::Body &body) {
-        this->handler_hello(header, body);
-      });
-
-  _subscriber.subscribe(
-      messages::Type::kWorld,
-      [this](const messages::Header &header, const messages::Body &body) {
-        this->handler_world(header, body);
-      });
-
-  _subscriber.subscribe(
-      messages::Type::kConnectionClosed,
-      [this](const messages::Header &header, const messages::Body &body) {
-        this->handler_deconnection(header, body);
-      });
-
-  _subscriber.subscribe(
-      messages::Type::kConnectionReady,
-      [this](const messages::Header &header, const messages::Body &body) {
-        this->handler_connection(header, body);
-      });
   // _subscriber.subscribe(messages::Type::kConnectionReady,
   //                        std::bind(&Bot::handler_connection, this,
   //                        std::placeholders::_1, std::placeholders::_2));
