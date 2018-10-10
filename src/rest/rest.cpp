@@ -2,35 +2,28 @@
 #include <onion/request.hpp>
 #include <onion/response.hpp>
 #include <onion/url.hpp>
+#include "common/Buffer.hpp"
 #include "crypto/Ecc.hpp"
 #include "crypto/Hash.hpp"
 #include "ledger/LedgerMongodb.hpp"
 #include "messages.pb.h"
 #include "messages/Hasher.hpp"
 #include "messages/Message.hpp"
+#include "networking/Message.hpp"
+
+/*
+ * TODO generate_keys
+ */
 
 namespace neuro {
 namespace rest {
 
-std::string get_transactions(ledger::LedgerMongodb &ledger,
-                             const std::string &address) {
-  messages::Hasher addr;
-  addr.set_type(messages::Hash::SHA256);
-  addr.set_data(address.c_str(), address.size());
-  ledger::Ledger::Filter filter;
-  filter.output_key_id(addr);
-  std::vector<messages::Transaction> transactions;
-
-  ledger.for_each(filter, [&](const messages::Transaction &a) {
-    transactions.push_back(std::move(a));
-    return true;
-  });
-
-  // for_each(transactions.begin(), polygon.end(), [&sum](int i) { sum += i; });
-  // boost::algorithm::join(elems, ", ");
-
+std::string get_address_transactions(ledger::LedgerMongodb &ledger,
+                                     const std::string &address) {
+  auto buffer = Buffer(address);
+  auto addr = messages::Hasher(buffer);
   std::string t;
-  messages::to_json(transactions.front(), &t);
+  messages::to_json(ledger.list_transactions(addr), &t);
   return t;
 }
 
@@ -38,25 +31,27 @@ int main(int argc, char **argv) {
   ONION_INFO("Listening at http://localhost:8080");
   Onion::Onion server(O_POOL);
   Onion::Url root(&server);
-  // auto ledger = LedgerMongodb("", "");
   auto ledger =
       ledger::LedgerMongodb("mongodb://127.0.0.1:27017/neuro", "neuro");
 
   const auto list_transactions = [&ledger](Onion::Request &req,
                                            Onion::Response &res) {
-    res << "list transactions ?";
-    const auto toto = req.query("toto", "nothing there");
-    res << get_transactions(ledger,
-                            "/yYWmEyqfHRJIrrOrxcRL+TiDcIAhjr7XQQ+EhNPGsc=");
+    const auto address = req.query("address", "");
+    //"/yYWmEyqfHRJIrrOrxcRL+TiDcIAhjr7XQQ+EhNPGsc="
+    ONION_INFO("ADDRESS");
+    ONION_INFO(address.c_str());
+    res << get_address_transactions(ledger, address);
     return OCS_PROCESSED;
   };
 
   const auto publish_transaction = [&ledger](Onion::Request &req,
                                              Onion::Response &res) {
+    onion_request *c_req = req.c_handler();
+    const onion_block *dreq = onion_request_get_data(c_req);
+    std::string post_data = onion_block_data(dreq);
+    messages::Transaction transaction;
+    messages::from_json(post_data, &transaction);
     res << "publish_transactions";
-    const auto inputs = req.post("inputs", "");
-    const auto outputs = req.post("outputs", "");
-    const auto fee = req.post("fee", "");
     return OCS_PROCESSED;
   };
 
