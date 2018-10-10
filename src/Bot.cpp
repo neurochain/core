@@ -39,21 +39,15 @@ Bot::Bot(const std::string &configuration_path)
   }
 }
 
-bool Bot::init() {
-  if (_config.has_logs()) {
-    log::from_config(_config.logs());
-  }
-
-  std::cout << this << " subscriber " << &_subscriber << std::endl;
-
+bool Bot::load_keys(const messages::config::Config &config) {
   bool keys_save{false};
   bool keys_create{false};
   std::string keypath_priv;
   std::string keypath_pub;
 
-  if (_config.has_key_priv_path() && _config.has_key_pub_path()) {
-    keypath_priv = _config.key_priv_path();
-    keypath_pub = _config.key_pub_path();
+  if (config.has_key_priv_path() && config.has_key_pub_path()) {
+    keypath_priv = config.key_priv_path();
+    keypath_pub = config.key_pub_path();
   }
 
   if (keypath_pub.empty() && keypath_priv.empty()) {
@@ -78,9 +72,14 @@ bool Bot::init() {
     }
   }
 
-  std::cout << this << " keys " << std::endl
-            << "priv " << _keys->private_key() << std::endl
-            << "puv  " << _keys->public_key() << std::endl;
+  return true;
+}
+  
+bool Bot::init() {
+  if (_config.has_logs()) {
+    log::from_config(_config.logs());
+  }
+
 
   auto networking_conf = _config.mutable_networking();
 

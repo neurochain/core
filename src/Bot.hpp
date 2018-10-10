@@ -57,7 +57,8 @@ class Bot {
   void handler_deconnection(const messages::Header &header,
                             const messages::Body &body);
   bool next_to_connect(messages::Peer **out_peer);
-
+  bool load_keys(const messages::config::Config &config);
+  
  public:
   Bot(const std::string &configuration_path);
   Bot(std::istream &bot_stream);
