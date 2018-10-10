@@ -1,8 +1,12 @@
 #ifndef NEURO_SRC_REST_HPP
 #define NEURO_SRC_REST_HPP
 
-#include <thread>
 #include "common/types.hpp"
+
+#include <thread>
+
+#include <onion/onion.hpp>
+#include <onion/url.hpp>
 
 namespace neuro {
 namespace rest {
@@ -14,8 +18,10 @@ class Rest {
 
   Onion::Onion _server;
   Onion::Url _root;
-
+  
   std::thread _thread;
+  std::string get_address_transactions(std::shared_ptr<ledger::Ledger> ledger,
+                                       const std::string &address) const;
 
  public:
   Rest(const Port port,

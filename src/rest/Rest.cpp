@@ -1,4 +1,9 @@
+#include <onion/request.hpp>
+#include <onion/response.hpp>
+#include "ledger/Ledger.hpp"
+
 #include "rest/Rest.hpp"
+#include "common/logger.hpp"
 
 namespace neuro {
 namespace rest {
@@ -6,21 +11,21 @@ namespace rest {
 Rest::Rest(const Port port,
            std::shared_ptr<ledger::Ledger> ledger):
     _port(port),
-    _leger(ledger),
+    _ledger(ledger),
     _server(O_POOL),
-    _root(&server) {
+    _root(&_server) {
   
-  ONION_INFO("Listening at http://localhost:" + std::to_string(port));
+  LOG_INFO << "Listening at http://localhost:" << port;
 
-  const auto list_transactions = [&_ledger](Onion::Request &req,
-                                            Onion::Response &res) {
+      const auto list_transactions = [this](Onion::Request &req,
+                                           Onion::Response &res) {
     const auto address = req.query("address", "");
-    ONION_INFO("ADDRESS " + address);
-    res << get_address_transactions(ledger, address);
+    LOG_INFO << "ADDRESS " << address;
+    res << get_address_transactions(_ledger, address);
     return OCS_PROCESSED;
   };
 
-  const auto publish_transaction = [&ledger](Onion::Request &req,
+  const auto publish_transaction = [this](Onion::Request &req,
                                              Onion::Response &res) {
     onion_request *c_req = req.c_handler();
     const onion_block *dreq = onion_request_get_data(c_req);
@@ -31,10 +36,21 @@ Rest::Rest(const Port port,
     return OCS_PROCESSED;
   };
 
-  root.add("list_transactions", list_transactions);
-  root.add("publish_transaction", publish_transaction);
-  _server = std::thread([&server]server.listen());
+  _root.add("list_transactions", list_transactions);
+  _root.add("publish_transaction", publish_transaction);
+  _thread = std::thread([this](){_server.listen();});
 }
+
+
+std::string Rest::get_address_transactions(std::shared_ptr<ledger::Ledger> ledger,
+                                           const std::string &address) const {
+  auto buffer = Buffer(address);
+  auto addr = messages::Hasher(buffer);
+  std::string t;
+  messages::to_json(ledger->list_transactions(addr), &t);
+  return t;
+}
+
 
 void Rest::stop() {
   _server.listenStop();

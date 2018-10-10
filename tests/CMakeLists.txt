@@ -27,6 +27,8 @@ target_link_libraries(integration
   Boost::filesystem
   Boost::thread
   Boost::log
+  libonion::onion
+  libonion::onioncpp
   ${LIBMONGOCXX_STATIC_LIBRARIES}
   )
 

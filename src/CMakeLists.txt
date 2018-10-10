@@ -65,7 +65,8 @@ add_library(core
   ./ledger/LedgerMongodb.cpp
   ./ledger/Transaction.hpp
   ./Bot.hpp
-  rest/rest.cpp
+  rest/Rest.cpp
+  rest/Rest.hpp
   )
 
 target_link_libraries(core
@@ -95,6 +96,9 @@ target_link_libraries(main
   Boost::system
   Boost::filesystem
   Boost::thread
+
+  libonion::onion
+  libonion::onioncpp
 
   protobuf::libprotobuf
   ${LIBMONGOCXX_STATIC_LIBRARIES}

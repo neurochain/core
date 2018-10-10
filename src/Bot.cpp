@@ -107,6 +107,19 @@ bool Bot::init() {
     log::from_config(_config.logs());
   }
 
+  load_keys(_config);
+  if(!_config.has_database()) {
+    LOG_ERROR << "Missing db configuration";
+    return false;
+  }
+       
+  const auto db_config = _config.database();
+  _ledger = std::make_shared<ledger::LedgerMongodb> (db_config.url(), db_config.db_name());
+
+  if(!_config.has_rest()) {
+    const auto rest_config = _config.rest();
+    _rest = std::make_shared<rest::Rest>(rest_config.port(), _ledger);
+  }
 
   auto networking_conf = _config.mutable_networking();
 

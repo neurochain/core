@@ -8,6 +8,8 @@
 #include "messages/Subscriber.hpp"
 #include "networking/Networking.hpp"
 #include "networking/tcp/Tcp.hpp"
+#include "ledger/LedgerMongodb.hpp"
+#include "rest/Rest.hpp"
 
 namespace neuro {
 
@@ -31,6 +33,8 @@ class Bot {
   messages::config::Config _config;
   std::shared_ptr<crypto::Ecc> _keys;
   messages::Subscriber _subscriber;
+  std::shared_ptr<ledger::Ledger> _ledger;
+  std::shared_ptr<rest::Rest> _rest;
   
   // for the peers
   messages::config::Tcp *_tcp_config;

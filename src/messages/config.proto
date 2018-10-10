@@ -20,6 +20,10 @@ message Logs {
   optional bool to_stdout = 4;
 }
 
+message Rest {
+  required int32 port = 1;
+}
+
 message Database {
   enum Block0Format {
     PROTO = 1;
@@ -56,5 +60,5 @@ message Config {
   optional Database database = 5;
   optional Peer.Status keep_status = 6 [default = CONNECTED]; 
   optional SelectionMethod selection_method = 7 [default = SIMPLE];
-
+  optional Rest rest = 8;
 }
