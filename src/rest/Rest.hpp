@@ -9,6 +9,9 @@
 #include <onion/url.hpp>
 
 namespace neuro {
+namespace ledger {
+class Ledger;
+}
 namespace rest {
 
 class Rest {
@@ -18,20 +21,18 @@ class Rest {
 
   Onion::Onion _server;
   Onion::Url _root;
-  
+
   std::thread _thread;
   std::string get_address_transactions(std::shared_ptr<ledger::Ledger> ledger,
                                        const std::string &address) const;
 
  public:
-  Rest(const Port port,
-       std::shared_ptr<ledger::Ledger> ledger);
+  Rest(const Port port, std::shared_ptr<ledger::Ledger> ledger);
 
   void stop();
 };
 
-
-}  // rest
-}  // neuro
+}  // namespace rest
+}  // namespace neuro
 
 #endif /* NEURO_SRC_REST_HPP */
