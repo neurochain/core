@@ -165,8 +165,6 @@ class LedgerMongodb : public Ledger {
       return false;
     }
 
-    std::cout << bsoncxx::to_json(res->view()) << std::endl;
-
     auto header = block->mutable_header();
     get_block_header(res->view(), header);
 
@@ -230,12 +228,7 @@ class LedgerMongodb : public Ledger {
     if (filter.output()) {
       const auto bson = messages::to_bson(*filter.output());
       query_transaction << "outputs.address" << bson;
-      std::cout << "adding output filter to query transaction" << std::endl;
     }
-
-    query_transaction << bss::finalize;
-    std::cout << "query_transaction " << bsoncxx::to_json(query_transaction)
-              << std::endl;
 
     // auto cursor_block = _blocks.find(query_block.view());
 

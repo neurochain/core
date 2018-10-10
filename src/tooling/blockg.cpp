@@ -8,8 +8,8 @@
 #include "messages/Hasher.hpp"
 #include "messages/Message.hpp"
 
-#include <fstream>
 #include <iostream>
+#include <fstream>
 
 namespace po = boost::program_options;
 
@@ -85,6 +85,7 @@ void block0(uint32_t bots, const std::string &pathdir, messages::NCCSDF &nccsdf,
   id->CopyFrom(hash_id);
   id->set_type(messages::Hash::SHA256);
 
+
   ledger.push_block(b);
 
   std::ofstream blockfile0;
@@ -134,14 +135,11 @@ int main(int argc, char *argv[]) {
   }
 
   LOG_INFO << "Load DB ...";
-  /*
-  if (!_config.has_database()) {
-    // ledger_ = std::make_shared<ledger::LedgerMongodb>(_config.db().url(),
-    LOG_INFO << "Database require";
-    return 1;
-  }
 
-  return 0;*/
+    if (!_config.has_database()){
+       LOG_INFO << "Database configuration required";
+       return 1;
+    }
 
   std::string keypath = vm["keyspath"].as<std::string>();
   if (!exists_file(keypath)) {
@@ -156,7 +154,7 @@ int main(int argc, char *argv[]) {
   messages::NCCSDF nccsdf;
   nccsdf.set_value(std::to_string(ncc));
   auto db = _config.database();
-  ledger::LedgerMongodb ledger("mongodb://127.0.0.1:27017/neuro", "neuro");
+  ledger::LedgerMongodb ledger(db);
   block0(bots, keypath, nccsdf, ledger);
 
   return 0;
