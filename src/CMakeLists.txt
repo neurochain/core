@@ -65,6 +65,7 @@ add_library(core
   ./ledger/LedgerMongodb.cpp
   ./ledger/Transaction.hpp
   ./Bot.hpp
+  rest/rest.cpp
   )
 
 target_link_libraries(core

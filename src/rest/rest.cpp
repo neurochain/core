@@ -9,7 +9,6 @@
 #include "messages.pb.h"
 #include "messages/Hasher.hpp"
 #include "messages/Message.hpp"
-#include "networking/Message.hpp"
 
 /*
  * TODO generate_keys
@@ -37,7 +36,6 @@ int main(int argc, char **argv) {
   const auto list_transactions = [&ledger](Onion::Request &req,
                                            Onion::Response &res) {
     const auto address = req.query("address", "");
-    //"/yYWmEyqfHRJIrrOrxcRL+TiDcIAhjr7XQQ+EhNPGsc="
     ONION_INFO("ADDRESS");
     ONION_INFO(address.c_str());
     res << get_address_transactions(ledger, address);
