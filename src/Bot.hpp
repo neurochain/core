@@ -1,13 +1,13 @@
 #ifndef NEURO_SRC_BOT_HPP
 #define NEURO_SRC_BOT_HPP
 
+#include <memory>
 #include "crypto/Ecc.hpp"
 #include "messages/Message.hpp"
 #include "messages/Queue.hpp"
 #include "messages/Subscriber.hpp"
 #include "networking/Networking.hpp"
 #include "networking/tcp/Tcp.hpp"
-#include <memory>
 
 namespace neuro {
 
