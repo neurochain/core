@@ -21,24 +21,32 @@ PiiSus::PiiSus(ledger::LedgerMongodb &l, uint32_t block_assembly) : _ledger(l),
 }
 
 void PiiSus::add_block(const neuro::messages::Block &b) {
-    ///!< verife block Support Correct Calculer of PII
-    if (_valide_block && check_owner(b.header())) {
+    ///!< verif block suppose Correct Calcul of PII
+    if (_valide_block && !check_owner(b.header())) {
+        throw std::runtime_error("Erreur of Owner");
         return;  // TO DO
     }
 
     neuro::messages::Block last_block, prev_block;
     ///!< compare heigth with ledger
-    _ledger.get_block(b.header().previous_block_hash(), &last_block);
+    _ledger.get_block(_ledger.height(), &last_block);
     ///!< get prev block from this
     _ledger.get_block(b.header().previous_block_hash(), &prev_block);
 
     if ( _valide_block ) {
-        ForkSus::ForkStatus r = _forksus.fork_status(b.header(), prev_block.header(), last_block.header());
+        ForkSus::ForkStatus r = _forksus.fork_status(
+                                    b.header(),
+                                    prev_block.header(),
+                                    last_block.header());
         if ( r == ForkSus::ForkStatus::Non_Fork ) {
             _ledger.push_block(b);
+        } else {
+            /// add it to
+            _ledger.fork_add_block(b);
+            _forksus.fork_results(_ledger);
+            throw std::runtime_error({"Fork " + std::to_string(r) } );
         }
     }
-
 
     ///!< build PiiTransaction for intermider calcule
     std::vector<PiiTransaction> _piithx;
@@ -87,6 +95,7 @@ void PiiSus::add_block(const neuro::messages::Block &b) {
 
     _last_heigth_block = b.header().height();
     if (((_last_heigth_block+1) % _assembly_blocks) == 0) {
+        std::cout << "I m in new assembly "<< std::endl;
         calcul();
         random_from_hashs();
     }
@@ -127,12 +136,28 @@ std::string PiiSus::get_next_owner() const {
 }
 
 bool PiiSus::check_owner(const neuro::messages::BlockHeader &bh) const {
+
+
     std::string owner_p = operator()(
                               ramdon_at(bh.height() % _assembly_blocks
                                         , _nonce_assembly
                                        ));
-    //    #error add here addr from pubkey
-    return (bh.author().hex_data() == owner_p);
+    Buffer buf(bh.author().raw_data());
+    messages::Address author_addr(buf);
+
+    /** for debug
+    std::string t;
+    Buffer buftmp(owner_p);
+    messages::Hash owner_addr;
+    owner_addr.ParseFromString(owner_p);
+    messages::to_json(owner_addr,&t);
+    std::cout << "Owner -- " << t << std::endl;
+    t = "";
+    messages::to_json(author_addr, &t);
+    std::cout << "Autho -- " << t << std::endl;
+    std::cout << "Height -- " << bh.height() << std::endl;
+    */
+    return (author_addr.SerializeAsString() == owner_p);
 }
 
 }  // namespace consensus

@@ -24,11 +24,16 @@ bool genblock_from_last_db_block(messages::Block &block,
                                  ledger::LedgerMongodb &ledger,
                                  const uint64_t seed,
                                  std::optional<neuro::messages::KeyPub> author = std::nullopt,
+                                 const int32_t last_height = 0,
                                  const int max_trx = 20,
                                  const int max_trail = 5) {
 
+    uint32_t height = last_height;
+    if ( height == 0 ){
+        height = ledger.height();
+    }
     neuro::messages::Block last_block;
-    if ( ! ledger.get_block( ledger.height(), &last_block) ) {
+    if ( ! ledger.get_block( height, &last_block) ) {
         return false;
     }
 

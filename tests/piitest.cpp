@@ -42,7 +42,6 @@ TEST(PiiTest, Pii_next_owner) {
     Buffer key_pub_raw;
     _ecc.mutable_public_key()->save(&key_pub_raw);
 
-
     messages::KeyPub author;
     author.set_type(messages::KeyType::ECP256K1);
     author.set_raw_data(key_pub_raw.data(), key_pub_raw.size());
@@ -57,12 +56,13 @@ TEST(PiiTest, Pii_next_owner) {
     _piisus.add_block(block11);
 
     neuro::messages::Block lastblock;
-    bool res = _ledger->get_block(_ledger->height(), &lastblock);
+    bool res = _ledger->get_block(10, &lastblock);
     ASSERT_TRUE(res);
 
 
     neuro::messages::Hash next_addr;
     messages::from_json("{\"type\":\"SHA256\",\"data\":\"2XFWRkUWhaC2J0ghedz7c6IxiSO0rqEEqR37YDGGAPE=\"}", &next_addr);
+
     auto addr = neuro::Buffer{lastblock.header().author().raw_data()};
     neuro::messages::Hasher owner_addr( addr );
 
@@ -70,9 +70,33 @@ TEST(PiiTest, Pii_next_owner) {
         next_addr.type() == owner_addr.type() &&
         next_addr.data() == owner_addr.data()
     );
-
-
 }
+
+
+TEST(PiiTest, Pii_first_fork) {
+
+    neuro::consensus::PiiSus _piisus(*_ledger,10);
+    neuro::messages::Block block11;
+
+    crypto::Ecc _ecc({ "../../keys/key_3.priv" }, { "../../keys/key_3.pub" });
+    Buffer key_pub_raw;
+    _ecc.mutable_public_key()->save(&key_pub_raw);
+
+    messages::KeyPub author;
+    author.set_type(messages::KeyType::ECP256K1);
+    author.set_raw_data(key_pub_raw.data(), key_pub_raw.size());
+
+    neuro::tooling::genblock::genblock_from_last_db_block(
+        block11,
+        *_ledger,
+        0,
+        std::make_optional<neuro::messages::KeyPub>(author),
+        9
+    );
+
+    ASSERT_THROW(_piisus.add_block(block11), std::runtime_error) ;
+}
+
 
 
 

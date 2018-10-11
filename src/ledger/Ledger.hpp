@@ -14,6 +14,8 @@ namespace ledger {
 class Ledger {
  public:
   using Functor = std::function<bool(const messages::Transaction)>;
+  using Functor_block = std::function<void(messages::Block&)>;
+
   class Filter {
    private:
     std::optional<messages::BlockHeight> _lower_height;
@@ -58,12 +60,12 @@ class Ledger {
   virtual bool for_each(const Filter &filter, Functor functor) = 0;
 
   // helpers
-  
+
   messages::Transactions list_transactions (const messages::Address &address) {
     Filter filter;
     filter.output_key_id(address);
     messages::Transactions transactions;
-    
+
     for_each (filter,
 	      [&transactions] (const messages::Transaction &transaction) -> bool {
 		transactions.add_transactions()->CopyFrom(transaction);
@@ -72,7 +74,7 @@ class Ledger {
 
     return transactions;
   }
-  
+
   virtual ~Ledger() {}
 };
 

@@ -53,8 +53,8 @@ void Pii::calcul() {
                 std::log2(l.second.nboutput / m.sum_inputs);
       }
     }
-    p.second.update(std::max(1.0, -0.5 * (epr1 + epr2)));
-    //p.second.update(-0.5 * (epr1 + epr2));
+    //p.second.update(std::max(1.0, -0.5 * (epr1 + epr2)));
+    p.second.update(-0.5 * (epr1 + epr2));
   }
 
   // Order it
@@ -67,6 +67,7 @@ void Pii::calcul() {
   int i = 0;
   for (auto& p : orderpii) {
     _owner_ordered.push_back(p.first);
+    //std::cout << "p[" <<  i << "]=" << p.first << " = " << p.second.entropie << std::endl;
     i++;
     if (i > _assembly_owners) break;
   }

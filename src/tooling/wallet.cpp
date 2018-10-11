@@ -133,41 +133,33 @@ int main(int argc, char *argv[]) {
 
     auto db = _config.database();
     neuro::ledger::LedgerMongodb _ledger(db);
-    Wallet w(keyprivPath, keypubPath, _ledger);
-    w.getTransactions();
+
+    //Wallet w(keyprivPath, keypubPath, _ledger);
+    //w.getTransactions();
     //w.getLastBlockHeigth();
     //w.showlastBlock();
     //w.testgenblock();
-
-    for(int i = 0 ; i < 10 ; ++i)
-    {
-        crypto::Ecc _ecc({ "../keys/key_" + std::to_string(i) + ".priv" },{ "../keys/key_" + std::to_string(i) + ".pub" });
-
-        Buffer key_pub_raw;
-        _ecc.public_key().save(&key_pub_raw);
-        messages::Hasher address(key_pub_raw);
-
-        std::string t;
-        messages::to_json(address,&t);
-        std::cout << i << " : " << t << std::endl;
-    }
-
-    /*
+    _ledger.fork_test(); ///!< Delete Fork branche
     neuro::consensus::PiiSus _piisus(_ledger,10);
-    std::string proto =  _piisus.get_next_owner();
+    neuro::messages::Block block11;
 
-    std::cout << proto << std::endl;
+    crypto::Ecc _ecc({ "../keys/key_3.priv" }, { "../keys/key_3.pub" });
+    Buffer key_pub_raw;
+    _ecc.mutable_public_key()->save(&key_pub_raw);
 
-    neuro::messages::Hash id;
-    id.ParseFromString(proto);
+    messages::KeyPub author;
+    author.set_type(messages::KeyType::ECP256K1);
+    author.set_raw_data(key_pub_raw.data(), key_pub_raw.size());
 
-    std::string t;
-    messages::to_json(id,&t);
+    neuro::tooling::genblock::genblock_from_last_db_block(
+        block11,
+        _ledger,
+        0,
+        std::make_optional<neuro::messages::KeyPub>(author),
+        9
+    );
 
-    std::cout << t << std::endl;*/
-
-
-
+    _piisus.add_block(block11);
 
     return 0;
 }
