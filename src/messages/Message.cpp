@@ -57,5 +57,12 @@ std::ostream &operator<<(std::ostream &os, const Packet &packet) {
   return os;
 }
 
+bool operator==(const Packet &a, const Packet &b) {
+  std::string json_a, json_b;
+  to_json(a, &json_a);
+  to_json(b, &json_b);
+  return json_a == json_b;
+}
+
 }  // namespace messages
 }  // namespace neuro

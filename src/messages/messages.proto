@@ -48,6 +48,7 @@ message Output {
   required Hash address = 1;
   required NCCSDF value = 2;
   optional bytes data = 3;
+  optional int32 output_id = 4;
 }
 
 message Signature {

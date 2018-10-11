@@ -29,7 +29,9 @@ class Rest {
  public:
   Rest(const Port port, std::shared_ptr<ledger::Ledger> ledger);
 
+  void join();
   void stop();
+  ~Rest() { stop(); }
 };
 
 }  // namespace rest

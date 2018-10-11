@@ -73,6 +73,28 @@ class Ledger {
     return transactions;
   }
 
+  bool is_unspent_output(const messages::Transaction &transaction,
+                         int output_id) {
+    // TODO
+    return true;
+  }
+
+  std::vector<messages::Output> get_outputs_for_address(
+      const messages::Hash &transaction_id, const messages::Address &address) {
+    // TODO get transaction
+    messages::Transaction transaction;
+    auto outputs = transaction.outputs();
+    std::vector<messages::Output> result;
+    for (int i = 0; i < transaction.outputs_size(); ++i) {
+      auto output = transaction.mutable_outputs(i);
+      if (output->address() == address) {
+        output->set_output_id(i);
+        result.push_back(*output);
+      }
+    }
+    return result;
+  }
+
   virtual ~Ledger() {}
 };
 
