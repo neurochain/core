@@ -32,8 +32,11 @@ message Roots {
 }
 
 message GetBlock {
-  optional Hash hash = 1;
-  optional uint32 height = 2;
+  oneof id {
+    Hash hash = 1;
+    uint32 height = 2;
+  }
+  optional int32 count = 3;
 }
 
 message Input {

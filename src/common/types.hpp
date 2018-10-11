@@ -35,7 +35,7 @@ using std::uint8_t;
 using Port = uint16_t;
 using Ports = std::vector<Port>;
 const int32_t MessageVersion = 1;
-
+const uint8_t BLOCK_PERIODE = 30;
 // using Peers = google::protobuf::RepeatedPtrField<neuro::messages::Peer>;
 
 namespace crypto {

@@ -13,7 +13,7 @@
 
 namespace neuro {
 
-  class Bot {
+class Bot {
  public:
   struct Status {
     std::size_t connected_peers;
@@ -60,9 +60,13 @@ namespace neuro {
                           const messages::Body &body);
   void handler_deconnection(const messages::Header &header,
                             const messages::Body &body);
+  void handler_ledger(const messages::Header &header,
+                      const messages::Body &body);
   bool next_to_connect(messages::Peer **out_peer);
   bool load_keys(const messages::config::Config &config);
   void subscribe();
+  int32_t fill_header(messages::Header *header);
+  bool update_ledger();
 
  public:
   Bot(const std::string &configuration_path);
