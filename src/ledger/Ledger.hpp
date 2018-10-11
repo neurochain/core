@@ -80,7 +80,8 @@ class Ledger {
   }
 
   std::vector<messages::Output> get_outputs_for_address(
-      const messages::Hash &transaction_id, const messages::Address &address) {
+      const messages::Hasher &transaction_id,
+      const messages::Address &address) {
     // TODO get transaction
     messages::Transaction transaction;
     auto outputs = transaction.outputs();

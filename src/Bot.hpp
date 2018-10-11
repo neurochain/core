@@ -3,12 +3,12 @@
 
 #include <memory>
 #include "crypto/Ecc.hpp"
+#include "ledger/LedgerMongodb.hpp"
 #include "messages/Message.hpp"
 #include "messages/Queue.hpp"
 #include "messages/Subscriber.hpp"
 #include "networking/Networking.hpp"
 #include "networking/tcp/Tcp.hpp"
-#include "ledger/LedgerMongodb.hpp"
 #include "rest/Rest.hpp"
 
 namespace neuro {
@@ -35,7 +35,7 @@ class Bot {
   messages::Subscriber _subscriber;
   std::shared_ptr<ledger::Ledger> _ledger;
   std::shared_ptr<rest::Rest> _rest;
-  
+
   // for the peers
   messages::config::Tcp *_tcp_config;
   std::size_t _connected_peers{0};
@@ -60,10 +60,14 @@ class Bot {
                           const messages::Body &body);
   void handler_deconnection(const messages::Header &header,
                             const messages::Body &body);
+  void handler_ledger(const messages::Header &header,
+                      const messages::Body &body);
   bool next_to_connect(messages::Peer **out_peer);
   bool load_keys(const messages::config::Config &config);
   void subscribe();
-  
+  int32_t fill_header(messages::Header *header);
+  bool update_ledger();
+
  public:
   Bot(const std::string &configuration_path);
   Bot(std::istream &bot_stream);

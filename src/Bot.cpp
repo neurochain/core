@@ -75,7 +75,45 @@ bool Bot::load_keys(const messages::config::Config &config) {
   return true;
 }
 
-void Bot::subscribe () {
+int32_t Bot::fill_header(messages::Header *header) {
+  int32_t id = std::rand();
+  header->set_version(MessageVersion);
+  header->mutable_ts()->set_data(std::time(nullptr));
+  header->set_id(id);
+
+  return id;
+}
+
+void Bot::handler_ledger(const messages::Header &header,
+                         const messages::Body &body) {
+  // TODO send to concensus
+
+  update_ledger();
+}
+
+bool Bot::update_ledger() {
+  messages::BlockHeader last_header;
+  if (!_ledger->get_last_block_header(&last_header)) {
+    LOG_ERROR << "Ledger should have at least block0";
+    return false;
+  }
+
+  if ((last_header.timestamp().data() - time(nullptr)) < BLOCK_PERIODE) {
+    return true;
+  }
+
+  auto message = std::make_shared<messages::Message>();
+  auto header = message->mutable_header();
+  const auto id = fill_header(header);
+  // auto height = last_header->mutable_height();
+  // get_block->set_height(last_header->height()+1);
+  // get_block->set_count(10);
+  // _networking->send(message, ProtocolType::PROTOBUF2);
+
+  return false;
+}
+
+void Bot::subscribe() {
   _subscriber.subscribe(
       messages::Type::kHello,
       [this](const messages::Header &header, const messages::Body &body) {
@@ -100,23 +138,35 @@ void Bot::subscribe () {
         this->handler_connection(header, body);
       });
 
+  _subscriber.subscribe(
+      messages::Type::kTransaction,
+      [this](const messages::Header &header, const messages::Body &body) {
+        this->handler_ledger(header, body);
+      });
+
+  _subscriber.subscribe(
+      messages::Type::kBlock,
+      [this](const messages::Header &header, const messages::Body &body) {
+        this->handler_ledger(header, body);
+      });
 }
-  
+
 bool Bot::init() {
   if (_config.has_logs()) {
     log::from_config(_config.logs());
   }
 
   load_keys(_config);
-  if(!_config.has_database()) {
+  if (!_config.has_database()) {
     LOG_ERROR << "Missing db configuration";
     return false;
   }
-       
-  const auto db_config = _config.database();
-  _ledger = std::make_shared<ledger::LedgerMongodb> (db_config.url(), db_config.db_name());
 
-  if(!_config.has_rest()) {
+  const auto db_config = _config.database();
+  _ledger = std::make_shared<ledger::LedgerMongodb>(db_config.url(),
+                                                    db_config.db_name());
+
+  if (!_config.has_rest()) {
     const auto rest_config = _config.rest();
     _rest = std::make_shared<rest::Rest>(rest_config.port(), _ledger);
   }
@@ -176,6 +226,8 @@ void Bot::handler_connection(const messages::Header &header,
   LOG_DEBUG << this << " Got a connection to " << peer;
   // send hello msg
   auto message = std::make_shared<messages::Message>();
+  const auto id = fill_header(message->mutable_header());
+
   message->mutable_header()->mutable_peer()->CopyFrom(peer);
   auto hello = message->add_bodies()->mutable_hello();
   hello->set_listen_port(_tcp->listening_port());

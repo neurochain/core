@@ -2,6 +2,7 @@
 #define NEURO_SRC_REST_HPP
 
 #include "common/types.hpp"
+#include "ledger/Ledger.hpp"
 
 #include <thread>
 
@@ -9,9 +10,6 @@
 #include <onion/url.hpp>
 
 namespace neuro {
-namespace ledger {
-class Ledger;
-}
 namespace rest {
 
 class Rest {
