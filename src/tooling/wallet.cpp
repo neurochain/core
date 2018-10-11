@@ -90,8 +90,6 @@ class Wallet {
         std::cout << t << std::endl;
 
         _ledger.push_block(block1);
-
-
     }
     ~Wallet() {}
 };
@@ -139,6 +137,20 @@ int main(int argc, char *argv[]) {
     //w.getLastBlockHeigth();
     //w.showlastBlock();
     //w.testgenblock();
+/*
+    for(int i = 0; i < 10 ; i++){
+        crypto::Ecc ecc({"../keys/key_" + std::to_string(i) + ".priv"  },{"../keys/key_" + std::to_string(i) + ".pub"});
+        Buffer buf;
+        ecc.public_key().save(&buf);
+
+        messages::Address addr(buf);
+        std::string t;
+        messages::to_json(addr,&t);
+
+        std::cout << i << " - " << t << std::endl;
+    }*/
+
+
     _ledger.fork_test(); ///!< Delete Fork branche
     neuro::consensus::PiiSus _piisus(_ledger,10);
     neuro::messages::Block block11;
@@ -154,7 +166,7 @@ int main(int argc, char *argv[]) {
     neuro::tooling::genblock::genblock_from_last_db_block(
         block11,
         _ledger,
-        0,
+        std::time(nullptr),
         std::make_optional<neuro::messages::KeyPub>(author),
         9
     );

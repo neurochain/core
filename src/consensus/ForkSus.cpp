@@ -84,21 +84,21 @@ void ForkSus::fork_results( neuro::ledger::LedgerMongodb &ledger) {
        //! load block 0
        neuro::messages::Block b0;
        ledger.get_block(0, &b0);
-       Forktree forktree(b0);
+       Forktree forktree(b0 ,0 , Forktree::MainBranch);
        //! Load all Main Block in trees
        int32_t h = ledger.height();
        for(int32_t i = 1; i<=h ; i++)
        {
             neuro::messages::Block block;
             ledger.get_block(i, &block);
-            if ( !forktree.find_add(block))
+            if ( !forktree.find_add(block, Forktree::MainBranch))
             {
                 throw std::runtime_error("Not found block ");
             }
        }
 
        ledger.fork_for_each([&](neuro::messages::Block &b){
-            if ( !forktree.find_add(b))
+            if ( !forktree.find_add(b, Forktree::ForkBranch))
             {
                 throw std::runtime_error("Not found block ");
             }

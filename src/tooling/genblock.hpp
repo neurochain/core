@@ -29,7 +29,7 @@ bool genblock_from_last_db_block(messages::Block &block,
                                  const int max_trail = 5) {
 
     uint32_t height = last_height;
-    if ( height == 0 ){
+    if ( height == 0 ) {
         height = ledger.height();
     }
     neuro::messages::Block last_block;
@@ -39,12 +39,10 @@ bool genblock_from_last_db_block(messages::Block &block,
 
     neuro::messages::BlockHeader * header =  block.mutable_header();
 
-    if ( author )
-    {
+    if ( author ) {
         header->mutable_author()->CopyFrom(*author);
-    }
-    else{
-    header->mutable_author()->CopyFrom(last_block.header().author());
+    } else {
+        header->mutable_author()->CopyFrom(last_block.header().author());
     }
 
     header->mutable_previous_block_hash()->CopyFrom(last_block.header().id());
@@ -72,6 +70,7 @@ bool genblock_from_last_db_block(messages::Block &block,
         }
         if ( how_trial > max_trail )
             break;
+
         how_trial = 0 ;
         used_transaction.push_back(rinput);
 
@@ -87,11 +86,19 @@ bool genblock_from_last_db_block(messages::Block &block,
         const neuro::messages::Transaction &sender = last_block.transactions(rinput);
         const neuro::messages::Transaction &recevied = last_block.transactions(routput);
 
+        int32_t num_output = 0; // To used rand
+        uint64_t total_ncc = sender.outputs(num_output).value().value();//std::atol(sender.outputs(num_output).value().value().c_str());
+        if ( total_ncc < 2 ) {
+            break;
+        }
+        uint64_t how_ncc =std::min( total_ncc - 1, std::abs(std::rand() ) % total_ncc );
+        if ( how_ncc == 0 ) {
+            break;
+        }
+
         neuro::messages::Transaction *new_trans = block.add_transactions();
 
-        int32_t num_output = 0; // To used rand
-        uint64_t total_ncc = std::atol(sender.outputs(num_output).value().value().c_str());
-        uint64_t how_ncc =std::max( total_ncc - 1, static_cast<uint64_t>(std::rand()) );
+
         // Input from sender
         neuro::messages::Input * input = new_trans->add_inputs();
         input->mutable_id()->CopyFrom(sender.id());
@@ -103,13 +110,13 @@ bool genblock_from_last_db_block(messages::Block &block,
         // Output to sender with min 1 ncc
         neuro::messages::Output * output_revevied = new_trans->add_outputs();
         output_revevied->mutable_address()->CopyFrom(recevied.outputs(num_output).address());
-        output_revevied->mutable_value()->set_value(std::to_string(how_ncc));
+        output_revevied->mutable_value()->set_value(how_ncc); //std::to_string(how_ncc));
 
         neuro::messages::Output * output_sender = new_trans->add_outputs();
         output_sender->mutable_address()->CopyFrom(sender.outputs(num_output).address());
-        output_sender->mutable_value()->set_value(std::to_string(total_ncc-how_ncc));
+        output_sender->mutable_value()->set_value(total_ncc-how_ncc);// std::to_string(total_ncc-how_ncc));
 
-        new_trans->mutable_fees()->set_value("0");
+        new_trans->mutable_fees()->set_value(0);
     }
 
     neuro::Buffer bufid;

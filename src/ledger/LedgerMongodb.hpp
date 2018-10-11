@@ -89,6 +89,7 @@ class LedgerMongodb : public Ledger {
 
     void remove_all() {
         _blocks.delete_many(bss::document{} .view());
+        _blocks_forks.delete_many(bss::document{} .view());
         _transactions.delete_many(bss::document{} .view());
     }
 
@@ -293,16 +294,16 @@ class LedgerMongodb : public Ledger {
         return false;
     }
 
-    bool fork_delete_block(messages::Hash &id){
+    bool fork_delete_block(messages::Hash &id) {
         auto query_block = bss::document{} << "id" << messages::to_bson(id) << bss::finalize;
         auto res = _blocks_forks.delete_one(query_block.view());
-        if ( res ){
+        if ( res ) {
             return true;
         }
         return false;
     }
 
-    void fork_for_each(Functor_block functor){
+    void fork_for_each(Functor_block functor) {
         auto query_block = bss::document{} << bss::finalize;
 
         mongocxx::options::find findoption;
@@ -319,8 +320,7 @@ class LedgerMongodb : public Ledger {
         }
     }
 
-    void fork_test()
-    {
+    void fork_test() {
         auto query_block = bss::document{} << bss::finalize;
         _blocks_forks.delete_many( query_block.view() );
     }

@@ -23,7 +23,8 @@ TEST(PiiTest, Pii_1_assembly) {
     neuro::consensus::PiiSus _piisus(*_ledger,10);
 
     neuro::messages::Hash next_id, owner_id;
-    messages::from_json("{\"type\":\"SHA256\",\"data\":\"2XFWRkUWhaC2J0ghedz7c6IxiSO0rqEEqR37YDGGAPE=\"}", &next_id);
+    messages::from_json("{\"type\":\"SHA256\",\"data\":\"vHf7HIWFjkUrcgDx4+ZPbqkcbSAPDeX6opHVnuR5lc0=\"}", &next_id);
+
     owner_id.ParseFromString(_piisus.get_next_owner());
 
     ASSERT_TRUE(
@@ -55,13 +56,15 @@ TEST(PiiTest, Pii_next_owner) {
 
     _piisus.add_block(block11);
 
+
     neuro::messages::Block lastblock;
     bool res = _ledger->get_block(10, &lastblock);
     ASSERT_TRUE(res);
 
 
     neuro::messages::Hash next_addr;
-    messages::from_json("{\"type\":\"SHA256\",\"data\":\"2XFWRkUWhaC2J0ghedz7c6IxiSO0rqEEqR37YDGGAPE=\"}", &next_addr);
+//    messages::from_json("{\"type\":\"SHA256\",\"data\":\"2XFWRkUWhaC2J0ghedz7c6IxiSO0rqEEqR37YDGGAPE=\"}", &next_addr);
+    messages::from_json("{\"type\":\"SHA256\",\"data\":\"vHf7HIWFjkUrcgDx4+ZPbqkcbSAPDeX6opHVnuR5lc0=\"}", &next_addr);
 
     auto addr = neuro::Buffer{lastblock.header().author().raw_data()};
     neuro::messages::Hasher owner_addr( addr );

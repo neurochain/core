@@ -60,7 +60,7 @@ void PiiSus::add_block(const neuro::messages::Block &b) {
         for (int jo = 0; jo < thx.outputs_size(); jo++) {
             const neuro::messages::Output &output = thx.outputs(jo);
             _output.push_back({output.address().SerializeAsString(),
-                               std::atol(output.value().value().c_str())
+                               output.value().value() //std::atol(output.value().value().c_str())
                               }///!< ProtoBuf to JSON String for uint64_t fix
                              );
         }
@@ -78,7 +78,7 @@ void PiiSus::add_block(const neuro::messages::Block &b) {
             auto inputid = input.id();
             if ( _ledger.get_transaction(inputid, &thinput)) {
                 const neuro::messages::Output &thxouput = thinput.outputs(input.output_id());
-                add = std::atol(thxouput.value().value().c_str());
+                add = thxouput.value().value() ; //std::atol(thxouput.value().value().c_str());
                 _input.push_back({thxouput.address().SerializeAsString(),add});
             }
             somme_Inputs += add;

@@ -53,8 +53,8 @@ void Pii::calcul() {
                 std::log2(l.second.nboutput / m.sum_inputs);
       }
     }
-    //p.second.update(std::max(1.0, -0.5 * (epr1 + epr2)));
-    p.second.update(-0.5 * (epr1 + epr2));
+    p.second.update(std::max(1.0, -0.5 * (epr1 + epr2)));
+    //p.second.update(-0.5 * (epr1 + epr2));
   }
 
   // Order it
