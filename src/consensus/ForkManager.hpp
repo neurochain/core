@@ -30,17 +30,18 @@ class ForkManager {
     Separate_Block,
   };
 
- protected:
  private:
+  std::shared_ptr<ledger::Ledger> _ledger;
+
  public:
-  ForkManager();
+  ForkManager(std::shared_ptr<ledger::Ledger> ledger);
   virtual ~ForkManager();
 
   ForkStatus fork_status(const messages::BlockHeader &blockheader,
                          const messages::BlockHeader &prev_blockheader,
                          const messages::BlockHeader &last_blockheader);
 
-  void fork_results(ledger::Ledger *ledger);
+  void fork_results();
 };
 
 }  // namespace consensus

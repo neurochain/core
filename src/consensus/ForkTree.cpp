@@ -6,7 +6,7 @@ ForkTree::ForkTree(neuro::messages::Block &block, uint64_t w,
                    BranchType branch) {
   _entry.CopyFrom(block);
   _weight = w + score();
-  _branch = branch;
+  _branch_origin = branch;
   _tree.clear();
 }
 
@@ -46,6 +46,38 @@ bool ForkTree::find_add(neuro::messages::Block &fork_block, BranchType branch) {
   return false;
 }
 
+void ForkTree::for_each(Functor functor) {
+  functor(_entry, _branch_origin, _branch_apply);
+  for (auto p : _tree) {
+    p->for_each(functor);
+  }
+}
+
+uint64_t ForkTree::update_branch() {
+  set_branch(MainBranch);
+  if (_tree.size() == 0) {
+    return _weight;
+  }
+
+  if (_tree.size() == 1) {
+    return _tree[0]->update_branch();
+  }
+
+  uint64_t max_score = 0;
+  int i = 0, max_i = -1;
+  for (auto p : _tree) {
+    auto res = p->update_branch();
+    if (max_score < res) {
+      max_score = res;
+      max_i = i;
+    }
+    p->set_branch();
+    i++;
+  }
+  _tree[max_i]->set_branch(MainBranch);
+  return max_score;
+}
+
 inline bool ForkTree::equalme(const neuro::messages::Hash &block_id) {
   return (_entry.header().id().data() == block_id.data());
 }
@@ -71,7 +103,8 @@ std::string ForkTree::printtree(const std::string &prefix, bool isLeft) {
   // print the value of the node
   ss << _entry.header().height();
   if (_tree.size() == 0) {
-    ss << ":" << ((_branch == MainBranch) ? "Main" : "Fork") << ":" << _weight;
+    ss << ":" << ((_branch_origin == MainBranch) ? "Main" : "Fork") << ":"
+       << ((_branch_apply == MainBranch) ? "Main" : "Fork") << ":" << _weight;
   }
   ss << std::endl;
 

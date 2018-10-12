@@ -6,7 +6,7 @@ namespace consensus {
 
 PiiConsensus::PiiConsensus(std::shared_ptr<ledger::Ledger> ledger,
                            uint32_t block_assembly)
-    : _ledger(ledger), _valide_block(true) {
+    : _ledger(ledger), _ForkManager(ledger), _valide_block(true) {
   // load all block from
   _assembly_blocks = block_assembly;
   bool save_valide = _valide_block;
@@ -50,7 +50,7 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
   if (_valide_block && !check_owner(block.header())) {
     _ledger->fork_add_block(block);
     // possible do this after n blocks 3 of diff of height
-    _ForkManager.fork_results(_ledger.get());
+    _ForkManager.fork_results();
     throw std::runtime_error("Owner not correct");
   }
 
@@ -66,7 +66,7 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
     } else {
       /// add it to
       _ledger->fork_add_block(block);
-      _ForkManager.fork_results(_ledger.get());
+      _ForkManager.fork_results();
       throw std::runtime_error(
           {"Fork " + std::to_string(static_cast<uint8_t>(r))});
     }

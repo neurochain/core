@@ -58,6 +58,7 @@ class Ledger {
   virtual bool get_block(const messages::BlockHeight height,
                          messages::Block *block) = 0;
   virtual bool push_block(const messages::Block &block) = 0;
+  virtual bool delete_block(const messages::Hash &id) = 0;
   virtual bool for_each(const Filter &filter, Functor functor) = 0;
 
   virtual bool fork_add_block(const messages::Block &b) = 0;

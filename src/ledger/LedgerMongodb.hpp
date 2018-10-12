@@ -206,6 +206,23 @@ class LedgerMongodb : public Ledger {
     return true;
   }
 
+  bool delete_block(const messages::Hash &id) {
+    auto delete_block_query = bss::document{} << "id" << messages::to_bson(id)
+                                              << bss::finalize;
+    auto res = _blocks.delete_one(delete_block_query.view());
+    if (res) {
+      auto delete_transaction_query = bss::document{} << "blockId"
+                                                      << messages::to_bson(id)
+                                                      << bss::finalize;
+      auto res_transaction =
+          _transactions.delete_many(delete_transaction_query.view());
+      if (res_transaction) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   bool get_transaction(messages::Hash &id, messages::Transaction *transaction) {
     auto query_transaction = bss::document{} << "id" << messages::to_bson(id)
                                              << bss::finalize;

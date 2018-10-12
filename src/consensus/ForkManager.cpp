@@ -4,7 +4,8 @@
 namespace neuro {
 namespace consensus {
 
-ForkManager::ForkManager() {
+ForkManager::ForkManager(std::shared_ptr<ledger::Ledger> ledger)
+    : _ledger(ledger) {
   // ctor
 }
 
@@ -81,29 +82,45 @@ ForkManager::ForkStatus ForkManager::fork_status(
   return ForkStatus::Non_Fork;
 }
 
-void ForkManager::fork_results(ledger::Ledger *ledger) {
+void ForkManager::fork_results() {
   //! load block 0
   messages::Block block0;
-  ledger->get_block(0, &block0);
+  _ledger->get_block(0, &block0);
   ForkTree forktree(block0, 0, ForkTree::MainBranch);
 
   //! Load all Main Block in trees
-  int32_t h = ledger->height();
+  int32_t h = _ledger->height();
   for (int32_t i = 1; i <= h; i++) {
     messages::Block block;
-    ledger->get_block(i, &block);
+    _ledger->get_block(i, &block);
     if (!forktree.find_add(block, ForkTree::MainBranch)) {
       throw std::runtime_error("Not found block ");
     }
   }
 
-  ledger->fork_for_each([&](messages::Block &block) {
+  _ledger->fork_for_each([&](messages::Block &block) {
     if (!forktree.find_add(block, ForkTree::ForkBranch)) {
       throw std::runtime_error("Not found block ");
     }
   });
 
   std::cout << forktree << std::endl;
+  forktree.update_branch();
+  std::cout << forktree << std::endl;
+
+  forktree.for_each([&](messages::Block block, ForkTree::BranchType old,
+                        ForkTree::BranchType apply) {
+    if (old == apply) {
+      if (old == ForkTree::ForkBranch) {
+        auto block_id = block.header().id();
+        _ledger->fork_delete_block(block_id);
+        _ledger->push_block(block);
+      } else {
+        _ledger->delete_block(block.header().id());
+        _ledger->fork_add_block(block);
+      }
+    }
+  });
 }
 
 }  // namespace consensus

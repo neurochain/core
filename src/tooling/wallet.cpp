@@ -168,4 +168,4 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 }  // namespace neuro
-int main(int argc, char *argv[]) { return main(argc, argv); }
+int main(int argc, char *argv[]) { return neuro::main(argc, argv); }
