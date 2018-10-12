@@ -1,0 +1,25 @@
+FROM ubuntu:18.10
+
+MAINTAINER trax Omar Givernaud
+LABEL Description "test linux ubuntu"
+
+RUN apt-get update -y
+RUN adduser  --disabled-password --gecos "" neuro
+ 
+# Install Packages
+RUN apt-get install -y git wget tar cmake
+RUN apt-get install -y python-pip 
+RUN /usr/bin/ssh-keygen -A
+
+WORKDIR /home/neuro
+RUN chown neuro:neuro -R .
+RUN chmod 700 -R . 
+
+WORKDIR /home/neuro/
+COPY times3.py .
+RUN chmod +x times3.py && chown neuro:neuro times3.py 
+USER neuro
+RUN pip install gcovr requests
+
+EXPOSE 22
+
