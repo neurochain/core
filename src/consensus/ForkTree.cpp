@@ -14,7 +14,8 @@ uint64_t ForkTree::score() {
   uint64_t s = 0;
   for (auto trx : _entry.transactions()) {
     for (auto output : trx.outputs()) {
-      s += output.value().value();  // std::atol(output.value().value().c_str());
+      s +=
+          output.value().value();  // std::atol(output.value().value().c_str());
     }
   }
   return s;

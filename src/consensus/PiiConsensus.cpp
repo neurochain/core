@@ -5,8 +5,8 @@ namespace neuro {
 namespace consensus {
 
 PiiConsensus::PiiConsensus(std::shared_ptr<ledger::Ledger> ledger,
-                           uint32_t block_assembly) :
-    _ledger(ledger), _valide_block(true) {
+                           uint32_t block_assembly)
+    : _ledger(ledger), _valide_block(true) {
   // load all block from
   _assembly_blocks = block_assembly;
   bool save_valide = _valide_block;
@@ -27,7 +27,7 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
   _ledger->get_block(_ledger->height(), &last_block);
 
   ///!< verif time
-  //auto &last_block_header = last_block.header();
+  // auto &last_block_header = last_block.header();
   // int32_t time_of_block =
   //     last_block_header.timestamp().data() -
   //     (last_block_header.timestamp().data() % _block_time) +
@@ -67,7 +67,8 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
       /// add it to
       _ledger->fork_add_block(block);
       _ForkManager.fork_results(_ledger.get());
-      throw std::runtime_error({"Fork " + std::to_string(static_cast<uint8_t>(r))});
+      throw std::runtime_error(
+          {"Fork " + std::to_string(static_cast<uint8_t>(r))});
     }
   }
 
@@ -115,7 +116,7 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
       for (const auto &output : _output)
         _piithx.push_back(
             Transaction{input.first, output.first,
-                           (input.second / somme_Inputs) * output.second, 1});
+                        (input.second / somme_Inputs) * output.second, 1});
   }
 
   addBlocks(_piithx);

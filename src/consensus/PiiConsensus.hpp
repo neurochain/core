@@ -3,15 +3,15 @@
 
 #include <memory>
 
-#include "common/types.hpp"
 #include "Consensus.hpp"
 #include "ForkManager.hpp"
 #include "Pii.hpp"
+#include "common/types.hpp"
 
 namespace neuro {
 namespace ledger {
 class Ledger;
-}  // ledger
+}  // namespace ledger
 
 namespace consensus {
 
@@ -34,7 +34,8 @@ class PiiConsensus : public Pii, public Consensus {
   uint32_t ramdon_at(int index, uint64_t nonce) const;
 
  public:
-  PiiConsensus(std::shared_ptr<ledger::Ledger> ledger) : PiiConsensus(ledger, 2000) {}
+  PiiConsensus(std::shared_ptr<ledger::Ledger> ledger)
+      : PiiConsensus(ledger, 2000) {}
   PiiConsensus(std::shared_ptr<ledger::Ledger> ledger, uint32_t block_assembly);
 
   void add_block(const neuro::messages::Block &block);

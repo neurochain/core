@@ -19,7 +19,6 @@ namespace consensus {
 ///
 class Pii {
  public:
-  
   ///
   /// \struct piiThx "pii.h"
   /// \brief a simple struct of "transaction interaction" between 2 addr
@@ -49,7 +48,7 @@ class Pii {
     std::unordered_map<Address, PiiData> entropie_Tij;
 
     Calculus() : entropie(1), sum_inputs(0), sum_outputs(0) {}
-    Calculus(const Calculus &) = default;
+    Calculus(const Calculus&) = default;
 
     void update(const double new_entropie) {
       entropie = new_entropie;
@@ -72,7 +71,7 @@ class Pii {
   /**
    *   \brief
    */
-  Pii(){}
+  Pii() {}
 
   /**
    * \brief add new piiThx

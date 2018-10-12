@@ -30,8 +30,7 @@ class Wallet {
   std::unique_ptr<messages::Hasher> _address;
 
  public:
-  Wallet(const std::string &pathpriv,
-	 const std::string &pathpub,
+  Wallet(const std::string &pathpriv, const std::string &pathpub,
          std::shared_ptr<ledger::Ledger> ledger)
       : _ledger(ledger) {
     _ecc = std::make_unique<crypto::Ecc>(pathpriv, pathpub);

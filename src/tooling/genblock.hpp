@@ -4,10 +4,10 @@
 #include "crypto/Ecc.hpp"
 #include "crypto/Hash.hpp"
 
+#include "ledger/Ledger.hpp"
 #include "messages.pb.h"
 #include "messages/Hasher.hpp"
 #include "messages/Message.hpp"
-#include "ledger/Ledger.hpp"
 
 #include <fstream>
 #include <iostream>
@@ -19,7 +19,9 @@ namespace neuro {
 namespace tooling {
 namespace genblock {
 
-bool genblock_from_last_db_block(messages::Block &block, std::shared_ptr<ledger::Ledger> ledger, const uint64_t seed,
+bool genblock_from_last_db_block(
+    messages::Block &block, std::shared_ptr<ledger::Ledger> ledger,
+    const uint64_t seed,
     std::optional<neuro::messages::KeyPub> author = std::nullopt,
     const int32_t last_height = 0, const int max_trx = 20,
     const int max_trail = 5) {

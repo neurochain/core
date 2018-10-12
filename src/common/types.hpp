@@ -23,8 +23,8 @@ enum class ProtocolType { PROTOBUF2, JSON, BSON };
 }  // namespace networking
 
 namespace consensus {
-  using Address = std::string;
-}  // consensus
+using Address = std::string;
+}  // namespace consensus
 
 using std::int16_t;
 using std::int32_t;

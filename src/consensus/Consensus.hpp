@@ -10,7 +10,6 @@ namespace consensus {
 
 class Consensus {
  public:
-  
   /**
    * \brief Add block for PII calcul
    * \param [in] block block to add
@@ -21,8 +20,7 @@ class Consensus {
    * \brief Add blocks for PII calcul
    * \param [in] bs array of block
    */
-  virtual void add_blocks(
-      const std::vector<messages::Block *> &blocks) = 0;
+  virtual void add_blocks(const std::vector<messages::Block *> &blocks) = 0;
 
   /**
    * \brief Get the next addr to build block
@@ -35,8 +33,7 @@ class Consensus {
    * \param [in] bh the block header
    * \return false if the owner is not the right one
    */
-  virtual bool check_owner(
-      const messages::BlockHeader &block_header) const = 0;
+  virtual bool check_owner(const messages::BlockHeader &block_header) const = 0;
 };
 
 }  // namespace consensus

@@ -42,7 +42,6 @@ void Pii::calcul() {
     double epr2 = epr1;
     Calculus& m = p.second;
     for (const auto& l : m.entropie_Tij) {
-
       if (m.sum_outputs > 0 && l.second.mtin != 0 && l.second.nbinput != 0) {
         epr1 += std::log(l.second.mtin) * (l.second.nbinput / m.sum_outputs) *
                 std::log2(l.second.nbinput / m.sum_outputs);
@@ -59,10 +58,11 @@ void Pii::calcul() {
 
   // Order it
   std::vector<std::pair<std::string, Calculus> > sorted_pii(_entropies.begin(),
-                                                             _entropies.end());
-  std::sort(sorted_pii.begin(), sorted_pii.end(), [](const auto& a, const auto& b) {
-    return a.second.entropie > b.second.entropie;
-  });
+                                                            _entropies.end());
+  std::sort(sorted_pii.begin(), sorted_pii.end(),
+            [](const auto& a, const auto& b) {
+              return a.second.entropie > b.second.entropie;
+            });
 
   int i = 0;
   for (auto& p : sorted_pii) {
@@ -81,17 +81,18 @@ std::string Pii::operator()(uint32_t index) const {
 
 void Pii::show_results() {
   std::vector<std::pair<std::string, Calculus> > sorted_pii(_entropies.begin(),
-                                                             _entropies.end());
-  std::sort(sorted_pii.begin(), sorted_pii.end(), [](const auto& a, const auto& b) {
-    return a.second.entropie > b.second.entropie;
-  });
+                                                            _entropies.end());
+  std::sort(sorted_pii.begin(), sorted_pii.end(),
+            [](const auto& a, const auto& b) {
+              return a.second.entropie > b.second.entropie;
+            });
 
   int i = 0;
   for (auto& p : sorted_pii) {
     std::cout << p.first << ":" << p.second.entropie;
     std::cout << std::endl;
     i++;
-    if (i > 57) break; // TODO remove magic number
+    if (i > 57) break;  // TODO remove magic number
   }
 }
 
