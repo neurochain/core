@@ -67,6 +67,8 @@ class Ledger {
   virtual void fork_test() = 0;
   virtual bool get_transaction(messages::Hash &id,
                                messages::Transaction *transaction) = 0;
+  virtual bool add_transaction(const messages::Transaction &transaction) = 0;
+  virtual bool delete_transaction(const messages::Hash &id) = 0;
 
   // helpers
 

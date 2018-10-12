@@ -148,7 +148,9 @@ int main(int argc, char *argv[]) {
       }*/
 
   ledger->fork_test();  ///!< Delete Fork branche
+
   consensus::PiiConsensus _PiiConsensus(ledger, 10);
+
   messages::Block block11;
 
   crypto::Ecc _ecc({"../keys/key_3.priv"}, {"../keys/key_3.pub"});

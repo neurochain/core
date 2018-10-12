@@ -240,6 +240,25 @@ class LedgerMongodb : public Ledger {
     return false;
   }
 
+  bool add_transaction(const messages::Transaction &transaction) {
+    auto bson_transaction = messages::to_bson(transaction);
+    auto res = _transactions.insert_one(std::move(bson_transaction));
+    if (res) {
+      return true;
+    }
+    return false;
+  }
+
+  bool delete_transaction(const messages::Hash &id) {
+    auto query_transaction = bss::document{} << "id" << messages::to_bson(id)
+                                             << bss::finalize;
+    auto res = _transactions.delete_one(query_transaction.view());
+    if (res) {
+      return true;
+    }
+    return false;
+  }
+
   bool for_each(const Filter &filter, Functor functor) {
     if (!filter.output()) {
       return false;

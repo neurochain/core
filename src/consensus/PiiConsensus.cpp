@@ -25,7 +25,6 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
   neuro::messages::Block last_block, prev_block;
   ///!< compare heigth with ledger
   _ledger->get_block(_ledger->height(), &last_block);
-
   ///!< verif time
   // auto &last_block_header = last_block.header();
   // int32_t time_of_block =
@@ -45,7 +44,6 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
        throw std::runtime_error("Owner of time");
        return ;
    }*/
-
   ///!< verif block suppose Correct Calcul of PII
   if (_valide_block && !check_owner(block.header())) {
     _ledger->fork_add_block(block);
@@ -56,7 +54,6 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
 
   ///!< get prev block from this
   _ledger->get_block(block.header().previous_block_hash(), &prev_block);
-
   if (_valide_block) {
     ForkManager::ForkStatus r = _ForkManager.fork_status(
         block.header(), prev_block.header(), last_block.header());

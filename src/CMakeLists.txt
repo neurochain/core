@@ -94,6 +94,8 @@ add_library(consensus
     ./consensus/Pii.cpp
     ./consensus/PiiConsensus.hpp
     ./consensus/PiiConsensus.cpp
+    ./consensus/TransactionPool.hpp
+    ./consensus/TransactionPool.cpp
 )
 
 target_link_libraries(consensus

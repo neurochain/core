@@ -110,7 +110,7 @@ void ForkManager::fork_results() {
 
   forktree.for_each([&](messages::Block block, ForkTree::BranchType old,
                         ForkTree::BranchType apply) {
-    if (old == apply) {
+    if (old != apply) {
       if (old == ForkTree::ForkBranch) {
         auto block_id = block.header().id();
         _ledger->fork_delete_block(block_id);

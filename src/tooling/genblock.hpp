@@ -19,20 +19,19 @@ namespace neuro {
 namespace tooling {
 namespace genblock {
 
-bool genblock_from_last_db_block(
-    messages::Block &block, std::shared_ptr<ledger::Ledger> ledger,
-    const uint64_t seed,
+bool genblock_from_block(
+    messages::Block &block, messages::Block &last_block, const uint64_t seed,
     std::optional<neuro::messages::KeyPub> author = std::nullopt,
     const int32_t last_height = 0, const int max_trx = 20,
     const int max_trail = 5) {
-  uint32_t height = last_height;
+  /*uint32_t height = last_height;
   if (height == 0) {
     height = ledger->height();
   }
   neuro::messages::Block last_block;
   if (!ledger->get_block(height, &last_block)) {
     return false;
-  }
+  }*/
 
   neuro::messages::BlockHeader *header = block.mutable_header();
 
@@ -132,6 +131,25 @@ bool genblock_from_last_db_block(
   header->mutable_id()->CopyFrom(blockid);
 
   return true;
+}
+
+bool genblock_from_last_db_block(
+    messages::Block &block, std::shared_ptr<ledger::Ledger> ledger,
+    const uint64_t seed,
+    std::optional<neuro::messages::KeyPub> author = std::nullopt,
+    const int32_t last_height = 0, const int max_trx = 20,
+    const int max_trail = 5) {
+  uint32_t height = last_height;
+  if (height == 0) {
+    height = ledger->height();
+  }
+  neuro::messages::Block last_block;
+  if (!ledger->get_block(height, &last_block)) {
+    return false;
+  }
+
+  return genblock_from_block(block, last_block, seed, author, last_height,
+                             max_trx, max_trail);
 }
 
 }  // namespace genblock
