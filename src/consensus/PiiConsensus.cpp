@@ -1,9 +1,9 @@
-#include "PiiSus.h"
+#include "PiiConsensus.hpp"
 
 namespace neuro {
 namespace consensus {
 
-PiiSus::PiiSus(ledger::LedgerMongodb &l, uint32_t block_assembly) : _ledger(l),
+PiiConsensus::PiiConsensus(ledger::LedgerMongodb &ledger, uint32_t block_assembly) : _ledger(ledger),
     _valide_block(true) {
     // cotr
     // load all block from
@@ -20,9 +20,9 @@ PiiSus::PiiSus(ledger::LedgerMongodb &l, uint32_t block_assembly) : _ledger(l),
     _valide_block = save_valide;
 }
 
-void PiiSus::add_block(const neuro::messages::Block &b) {
+void PiiConsensus::add_block(const neuro::messages::Block &block) {
     ///!< verif block suppose Correct Calcul of PII
-    if (_valide_block && !check_owner(b.header())) {
+    if (_valide_block && !check_owner(block.header())) {
         throw std::runtime_error("Erreur of Owner");
         return;  // TO DO
     }
@@ -31,19 +31,19 @@ void PiiSus::add_block(const neuro::messages::Block &b) {
     ///!< compare heigth with ledger
     _ledger.get_block(_ledger.height(), &last_block);
     ///!< get prev block from this
-    _ledger.get_block(b.header().previous_block_hash(), &prev_block);
+    _ledger.get_block(block.header().previous_block_hash(), &prev_block);
 
     if ( _valide_block ) {
-        ForkSus::ForkStatus r = _forksus.fork_status(
-                                    b.header(),
+        Forkmanager::ForkStatus r = _Forkmanager.fork_status(
+                                    block.header(),
                                     prev_block.header(),
                                     last_block.header());
-        if ( r == ForkSus::ForkStatus::Non_Fork ) {
-            _ledger.push_block(b);
+        if ( r == Forkmanager::ForkStatus::Non_Fork ) {
+            _ledger.push_block(block);
         } else {
             /// add it to
-            _ledger.fork_add_block(b);
-            _forksus.fork_results(_ledger);
+            _ledger.fork_add_block(block);
+            _Forkmanager.fork_results(_ledger);
             throw std::runtime_error({"Fork " + std::to_string(r) } );
         }
     }
@@ -51,14 +51,15 @@ void PiiSus::add_block(const neuro::messages::Block &b) {
     ///!< build PiiTransaction for intermider calcule
     std::vector<PiiTransaction> _piithx;
     std::vector<std::pair<std::string, uint64_t> > _output, _input;
+
     ///!< From https://developers.google.com/protocol-buffers/docs/cpptutorial
-    for (int j = 0; j < b.transactions_size(); j++) {
-        const neuro::messages::Transaction &thx = b.transactions(j);
+    for (int j = 0; j < block.transactions_size(); j++) {
+        const neuro::messages::Transaction &transaction = block.transactions(j);
         _output.clear();
         _input.clear();
         /* output first */
-        for (int jo = 0; jo < thx.outputs_size(); jo++) {
-            const neuro::messages::Output &output = thx.outputs(jo);
+        for (int jo = 0; jo < transaction.outputs_size(); jo++) {
+            const neuro::messages::Output &output = transaction.outputs(jo);
             _output.push_back({output.address().SerializeAsString(),
                                output.value().value() //std::atol(output.value().value().c_str())
                               }///!< ProtoBuf to JSON String for uint64_t fix
@@ -67,8 +68,8 @@ void PiiSus::add_block(const neuro::messages::Block &b) {
         /* inputs */
         double somme_Inputs = 0;
 
-        for (int ji = 0; ji < thx.inputs_size(); ji++) {
-            const neuro::messages::Input &input = thx.inputs(ji);
+        for (int ji = 0; ji < transaction.inputs_size(); ji++) {
+            const neuro::messages::Input &input = transaction.inputs(ji);
             // Get out ref and block header for time
             // std::unique_ptr<neuro::messages::Transaction> thinput =
             // std::make_unique<neuro::messages::Transaction>();
@@ -93,7 +94,7 @@ void PiiSus::add_block(const neuro::messages::Block &b) {
 
     addBlocks(_piithx);
 
-    _last_heigth_block = b.header().height();
+    _last_heigth_block = block.header().height();
     if (((_last_heigth_block+1) % _assembly_blocks) == 0) {
         std::cout << "I m in new assembly "<< std::endl;
         calcul();
@@ -101,12 +102,12 @@ void PiiSus::add_block(const neuro::messages::Block &b) {
     }
 }
 
-void PiiSus::add_blocks(const std::vector<neuro::messages::Block *> &bs) {
-    for (const auto block : bs)
+void PiiConsensus::add_blocks(const std::vector<neuro::messages::Block *> &blocks) {
+    for (const auto block : blocks)
         add_block(*block);
 }
 
-void PiiSus::random_from_hashs() {
+void PiiConsensus::random_from_hashs() {
     // Get all hash from 2000 block
     std::vector<std::string> _hash;
     for (uint32_t i = 0; i < _assembly_blocks; i++) {
@@ -121,7 +122,7 @@ void PiiSus::random_from_hashs() {
         _nonce_assembly += std::atoi(h.substr(0, 4).c_str());  ///!< just for fun oh
 }
 
-uint32_t PiiSus::ramdon_at(int index, uint64_t nonce) const {
+uint32_t PiiConsensus::ramdon_at(int index, uint64_t nonce) const {
     std::srand(nonce);
     int r = std::rand();
     for (int i = 0; i < index; i++)
@@ -130,19 +131,19 @@ uint32_t PiiSus::ramdon_at(int index, uint64_t nonce) const {
     return static_cast<uint32_t>(r % _assembly_blocks);
 }
 
-std::string PiiSus::get_next_owner() const {
+std::string PiiConsensus::get_next_owner() const {
     return operator()(
                ramdon_at((_last_heigth_block + 1) % _assembly_blocks, _nonce_assembly));
 }
 
-bool PiiSus::check_owner(const neuro::messages::BlockHeader &bh) const {
+bool PiiConsensus::check_owner(const neuro::messages::BlockHeader &blockheader) const {
 
 
     std::string owner_p = operator()(
-                              ramdon_at(bh.height() % _assembly_blocks
+                              ramdon_at(blockheader.height() % _assembly_blocks
                                         , _nonce_assembly
                                        ));
-    Buffer buf(bh.author().raw_data());
+    Buffer buf(blockheader.author().raw_data());
     messages::Address author_addr(buf);
 
     /** for debug

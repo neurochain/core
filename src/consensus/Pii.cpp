@@ -1,4 +1,4 @@
-#include "Pii.h"
+#include "Pii.hpp"
 namespace neuro {
 namespace consensus {
 
@@ -7,31 +7,31 @@ Pii::Pii() {
   _Entropies.clear();
 }
 
-void Pii::addBlock(const PiiTransaction& p) {
-  auto& pfrom = _Entropies[p.from];
-  auto& pto = _Entropies[p.to];
-  auto& tij1 = pfrom.entropie_Tij[p.to];
-  auto& tij2 = pto.entropie_Tij[p.from];
+void Pii::addBlock(const PiiTransaction& piitransaction) {
+  auto& pfrom = _Entropies[piitransaction.from];
+  auto& pto = _Entropies[piitransaction.to];
+  auto& tij1 = pfrom.entropie_Tij[piitransaction.to];
+  auto& tij2 = pto.entropie_Tij[piitransaction.from];
   tij1.nbinput++;
-  tij1.mtin += p.ncc * p.timencc * std::sqrt(pto.entropie);
+  tij1.mtin += piitransaction.ncc * piitransaction.timencc * std::sqrt(pto.entropie);
   tij2.nboutput++;
-  tij2.mtout += p.ncc * p.timencc * std::sqrt(pfrom.entropie);
+  tij2.mtout += piitransaction.ncc * piitransaction.timencc * std::sqrt(pfrom.entropie);
   pfrom.sum_outputs++;
   pto.sum_inputs++;
 }
 
-void Pii::addBlocks(const std::vector<PiiTransaction>& thx) {
+void Pii::addBlocks(const std::vector<PiiTransaction>& piitransactions) {
   // for( const piiThx &p: thx_)
   //    addBlock(p);
-  for (const PiiTransaction& p : thx) {
-    auto& pfrom = _Entropies[p.from];
-    auto& pto = _Entropies[p.to];
-    auto& tij1 = pfrom.entropie_Tij[p.to];
-    auto& tij2 = pto.entropie_Tij[p.from];
+  for (const PiiTransaction& piitransaction : piitransactions) {
+    auto& pfrom = _Entropies[piitransaction.from];
+    auto& pto = _Entropies[piitransaction.to];
+    auto& tij1 = pfrom.entropie_Tij[piitransaction.to];
+    auto& tij2 = pto.entropie_Tij[piitransaction.from];
     tij1.nbinput++;
-    tij1.mtin += p.ncc * p.timencc * std::sqrt(pto.entropie);
+    tij1.mtin += piitransaction.ncc * piitransaction.timencc * std::sqrt(pto.entropie);
     tij2.nboutput++;
-    tij2.mtout += p.ncc * p.timencc * std::sqrt(pfrom.entropie);
+    tij2.mtout += piitransaction.ncc * piitransaction.timencc * std::sqrt(pfrom.entropie);
     pfrom.sum_outputs++;
     pto.sum_inputs++;
   }
@@ -88,9 +88,6 @@ void Pii::showresultat() {
   int i = 0;
   for (auto& p : orderpii) {
     std::cout << p.first << ":" << p.second.entropie;
-    /*for(const auto&l : p.second.Erps)
-        std::cout << std::get<0>(l) <<
-       "["<<std::get<1>(l)<<":"<<std::get<2>(l)<<"] | ";*/
     std::cout << std::endl;
     i++;
     if (i > 57) break;

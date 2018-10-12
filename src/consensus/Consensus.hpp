@@ -9,16 +9,14 @@
 namespace neuro{
 namespace consensus{
 
-
-
 class Consensus
 {
     public:
         /**
         * \brief Add block for PII calcul
-        * \param [in] b block to add
+        * \param [in] block block to add
         */
-        virtual void add_block(const neuro::messages::Block &b) = 0;
+        virtual void add_block(const neuro::messages::Block &block) = 0;
 
         /**
         * \brief Add blocks for PII calcul
@@ -37,7 +35,7 @@ class Consensus
         * \param [in] bh the block header
         * \return false if the owner is not the right one
         */
-        virtual bool check_owner(const neuro::messages::BlockHeader &bh) const = 0;
+        virtual bool check_owner(const neuro::messages::BlockHeader &blockheader) const = 0;
 
 };
 

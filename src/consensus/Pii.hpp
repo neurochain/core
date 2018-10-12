@@ -56,9 +56,9 @@ public:
         PiiCalculus() : entropie(1), sum_inputs(0), sum_outputs(0) {}
         PiiCalculus(PiiCalculus const& ) = default;
 
-        void update(double y)
+        void update(double new_entropie)
         {
-            entropie = y;
+            entropie = new_entropie;
             sum_inputs = sum_outputs = 0;
             entropie_Tij.clear();
         }
@@ -85,13 +85,13 @@ public:
     * \brief add new piiThx
     * \param ptx the transaction interaction
     */
-    void addBlock(const PiiTransaction &ptx);
+    void addBlock(const PiiTransaction &piitransaction);
 
     /**
     *  \brief add more piiThx
     *  \param [in] vpt vector of piiTHx
     */
-    void addBlocks(const std::vector<PiiTransaction> &vpt);
+    void addBlocks(const std::vector<PiiTransaction> &piitransactions);
 
     /**
     *   \brief Run the calcule of PII ( last step :) )

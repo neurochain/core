@@ -1,22 +1,22 @@
-#include "ForkSus.h"
+#include "Forkmanager.hpp"
 
 namespace neuro {
 namespace consensus {
 
-ForkSus::ForkSus() {
+Forkmanager::Forkmanager() {
     // ctor
 }
 
-ForkSus::~ForkSus() {
+Forkmanager::~Forkmanager() {
     // dto
 }
 
-ForkSus::ForkStatus ForkSus::fork_status(
-    const neuro::messages::BlockHeader &bh,
-    const neuro::messages::BlockHeader &prev_bh,
-    const neuro::messages::BlockHeader &last_bh) {
-    int32_t blockHeight = bh.height(), prevHeight = prev_bh.height(),
-            last_height = last_bh.height();
+Forkmanager::ForkStatus Forkmanager::fork_status(
+    const neuro::messages::BlockHeader &blockheader,
+    const neuro::messages::BlockHeader &prev_blockheader,
+    const neuro::messages::BlockHeader &last_blockheader) {
+    int32_t blockHeight = blockheader.height(), prevHeight = prev_blockheader.height(),
+            last_height = last_blockheader.height();
     ///
     /// Fork Generator
     ///
@@ -31,8 +31,8 @@ ForkSus::ForkStatus ForkSus::fork_status(
         }
 
         if (prevHeight == blockHeight - 1) {
-            if (last_bh.author().SerializeAsString() ==
-                    bh.author().SerializeAsString()) {
+            if (last_blockheader.author().SerializeAsString() ==
+                    blockheader.author().SerializeAsString()) {
                 return ForkStatus::Dual_Block;
             } else {
                 throw std::runtime_error("Fork with diff owner see H1");
@@ -49,8 +49,8 @@ ForkSus::ForkStatus ForkSus::fork_status(
 
     if (blockHeight > last_height + 1) {
         ///!< keep block ???? and valide owner
-        if (prev_bh.has_height()) { /// We have prev block
-            if (prev_bh.height() != last_height) {
+        if (prev_blockheader.has_height()) { /// We have prev block
+            if (prev_blockheader.height() != last_height) {
                 ///!< used old block see H3
                 return ForkStatus::Separate_Block;
             } else {
@@ -63,7 +63,7 @@ ForkSus::ForkStatus ForkSus::fork_status(
     }
 
     if (blockHeight == last_height + 1) { ///!< nice one
-        if (prev_bh.has_height()) {
+        if (prev_blockheader.has_height()) {
             if (prevHeight != last_height) {
                 ///!< cancel it  see H3
                 return ForkStatus::Fork_Time;
@@ -80,11 +80,12 @@ ForkSus::ForkStatus ForkSus::fork_status(
 }
 
 
-void ForkSus::fork_results( neuro::ledger::LedgerMongodb &ledger) {
+void Forkmanager::fork_results( neuro::ledger::LedgerMongodb &ledger) {
        //! load block 0
-       neuro::messages::Block b0;
-       ledger.get_block(0, &b0);
-       Forktree forktree(b0 ,0 , Forktree::MainBranch);
+       neuro::messages::Block block0;
+       ledger.get_block(0, &block0);
+       Forktree forktree(block0 ,0 , Forktree::MainBranch);
+
        //! Load all Main Block in trees
        int32_t h = ledger.height();
        for(int32_t i = 1; i<=h ; i++)
@@ -97,12 +98,13 @@ void ForkSus::fork_results( neuro::ledger::LedgerMongodb &ledger) {
             }
        }
 
-       ledger.fork_for_each([&](neuro::messages::Block &b){
-            if ( !forktree.find_add(b, Forktree::ForkBranch))
+       ledger.fork_for_each([&](neuro::messages::Block &block){
+            if ( !forktree.find_add(block, Forktree::ForkBranch))
             {
                 throw std::runtime_error("Not found block ");
             }
        });
+
 
        std::cout << forktree << std::endl;
 
