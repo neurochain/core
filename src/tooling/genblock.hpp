@@ -86,7 +86,7 @@ bool genblock_from_last_db_block(messages::Block &block,
         const neuro::messages::Transaction &sender = last_block.transactions(rinput);
         const neuro::messages::Transaction &recevied = last_block.transactions(routput);
 
-        int32_t num_output = 0; // To used rand
+        int32_t num_output = 0; // To use rand
         uint64_t total_ncc = sender.outputs(num_output).value().value();//std::atol(sender.outputs(num_output).value().value().c_str());
         if ( total_ncc < 2 ) {
             break;
@@ -118,6 +118,10 @@ bool genblock_from_last_db_block(messages::Block &block,
 
         new_trans->mutable_fees()->set_value(0);
     }
+
+    neuro::Buffer buffake("123456"); // #1 fix require id in header of block
+    neuro::messages::Hasher fake_id(buffake);
+    header->mutable_id()->CopyFrom(fake_id);
 
     neuro::Buffer bufid;
     neuro::messages::to_buffer(block,&bufid);

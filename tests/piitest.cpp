@@ -4,7 +4,7 @@
 #include "src/ledger/LedgerMongodb.hpp"
 #include "src/messages/Message.hpp"
 #include "src/tooling/genblock.hpp"
-#include "src/consensus/PiiSus.h"
+#include "src/consensus/PiiConsensus.hpp"
 
 namespace neuro {
 namespace test {
@@ -20,7 +20,7 @@ TEST(PiiTest, Pii_1_assembly) {
     //ledger::LedgerMongodb _ledger(database);
     _ledger = std::make_unique<ledger::LedgerMongodb>(database);
 
-    neuro::consensus::PiiSus _piisus(*_ledger,10);
+    neuro::consensus::PiiConsensus _piisus(*_ledger,10);
 
     neuro::messages::Hash next_id, owner_id;
     messages::from_json("{\"type\":\"SHA256\",\"data\":\"vHf7HIWFjkUrcgDx4+ZPbqkcbSAPDeX6opHVnuR5lc0=\"}", &next_id);
@@ -35,7 +35,7 @@ TEST(PiiTest, Pii_1_assembly) {
 
 TEST(PiiTest, Pii_next_owner) {
 
-    neuro::consensus::PiiSus _piisus(*_ledger,10);
+    neuro::consensus::PiiConsensus _piisus(*_ledger,10);
 
     neuro::messages::Block block11;
 
@@ -63,7 +63,6 @@ TEST(PiiTest, Pii_next_owner) {
 
 
     neuro::messages::Hash next_addr;
-//    messages::from_json("{\"type\":\"SHA256\",\"data\":\"2XFWRkUWhaC2J0ghedz7c6IxiSO0rqEEqR37YDGGAPE=\"}", &next_addr);
     messages::from_json("{\"type\":\"SHA256\",\"data\":\"vHf7HIWFjkUrcgDx4+ZPbqkcbSAPDeX6opHVnuR5lc0=\"}", &next_addr);
 
     auto addr = neuro::Buffer{lastblock.header().author().raw_data()};
@@ -78,7 +77,7 @@ TEST(PiiTest, Pii_next_owner) {
 
 TEST(PiiTest, Pii_first_fork) {
 
-    neuro::consensus::PiiSus _piisus(*_ledger,10);
+    neuro::consensus::PiiConsensus _piisus(*_ledger,10);
     neuro::messages::Block block11;
 
     crypto::Ecc _ecc({ "../../keys/key_3.priv" }, { "../../keys/key_3.pub" });
@@ -99,10 +98,6 @@ TEST(PiiTest, Pii_first_fork) {
 
     ASSERT_THROW(_piisus.add_block(block11), std::runtime_error) ;
 }
-
-
-
-
 
 }  // namespace test
 }  // namespace neuro

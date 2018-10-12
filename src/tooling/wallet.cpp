@@ -7,7 +7,7 @@
 #include "messages/Hasher.hpp"
 #include "messages/Message.hpp"
 #include "tooling/genblock.hpp"
-#include "consensus/PiiSus.h"
+#include "consensus/PiiConsensus.hpp"
 
 #include <sys/stat.h>
 #include <iostream>
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
 
 
     _ledger.fork_test(); ///!< Delete Fork branche
-    neuro::consensus::PiiSus _piisus(_ledger,10);
+    neuro::consensus::PiiConsensus _PiiConsensus(_ledger,10);
     neuro::messages::Block block11;
 
     crypto::Ecc _ecc({ "../keys/key_3.priv" }, { "../keys/key_3.pub" });
@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
         9
     );
 
-    _piisus.add_block(block11);
+    _PiiConsensus.add_block(block11);
 
     return 0;
 }

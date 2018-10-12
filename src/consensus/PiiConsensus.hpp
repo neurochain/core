@@ -27,6 +27,7 @@ class PiiConsensus : public Pii, public Consensus
         bool _valide_block;
         uint32_t _last_heigth_block;
         uint64_t _nonce_assembly = -1 ;
+        int32_t _block_time = 15;
 
         Forkmanager _Forkmanager;
 

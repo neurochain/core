@@ -21,23 +21,47 @@ PiiConsensus::PiiConsensus(ledger::LedgerMongodb &ledger, uint32_t block_assembl
 }
 
 void PiiConsensus::add_block(const neuro::messages::Block &block) {
-    ///!< verif block suppose Correct Calcul of PII
-    if (_valide_block && !check_owner(block.header())) {
-        throw std::runtime_error("Erreur of Owner");
-        return;  // TO DO
-    }
 
     neuro::messages::Block last_block, prev_block;
     ///!< compare heigth with ledger
     _ledger.get_block(_ledger.height(), &last_block);
+
+    ///!< verif time
+    auto & last_block_header = last_block.header();
+    int32_t time_of_block = last_block_header.timestamp().data() - (last_block_header.timestamp().data() % _block_time )
+                            + (block.header().height() - last_block_header.height() ) * _block_time;
+
+    int32_t time_block = std::time(nullptr); //! # T1 used the time of real reception of block
+    //block.header().timestamp().data();
+
+   /* if ( (time_of_block > time_block)
+            || time_of_block < time_block + _block_time  ) {
+        // time_out
+        _ledger.fork_add_block(block);
+        // don't run for result conflie
+        throw std::runtime_error("Owner of time");
+        return ;
+    }*/
+
+    ///!< verif block suppose Correct Calcul of PII
+    if (_valide_block && !check_owner(block.header())) {
+        _ledger.fork_add_block(block);
+        // possible do this after n blocks 3 of diff of height
+        _Forkmanager.fork_results(_ledger);
+        throw std::runtime_error("Owner not correct");
+        return;  // TO DO
+    }
+
+
     ///!< get prev block from this
     _ledger.get_block(block.header().previous_block_hash(), &prev_block);
 
     if ( _valide_block ) {
         Forkmanager::ForkStatus r = _Forkmanager.fork_status(
-                                    block.header(),
-                                    prev_block.header(),
-                                    last_block.header());
+                                        block.header(),
+                                        prev_block.header(),
+                                        last_block.header());
+
         if ( r == Forkmanager::ForkStatus::Non_Fork ) {
             _ledger.push_block(block);
         } else {

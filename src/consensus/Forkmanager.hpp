@@ -19,7 +19,7 @@ class Forkmanager {
   public:
     enum ForkStatus {
         Non_Fork = 0, ///!< life is good
-        Dual_Block, ///!< the same owenr do 2 version of block :)
+        Dual_Block, ///!< the same owenr do 2 version of block
         VS_Block,  ///!< 1 of owner is fake by PII cal : the H1 is the caluclet of Pii is just
         Fork_Time,
         Olb_Block,
