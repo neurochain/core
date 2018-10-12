@@ -76,6 +76,14 @@ bool EccPub::save(Buffer *buffer) const {
   return true;
 }
 
+bool EccPub::save(messages::KeyPub *key_pub) const {
+  key_pub->set_type(messages::KeyType::ECP256K1);
+  std::string s;
+  _key.Save(CryptoPP::StringSink(s).Ref());
+  key_pub->set_raw_data(s);
+  return true;
+}
+
 bool EccPub::verify(const Buffer &data, const uint8_t *signature,
                     const std::size_t size) const {
   CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA256>::Verifier verifier(_key);

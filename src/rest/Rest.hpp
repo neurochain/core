@@ -2,6 +2,7 @@
 #define NEURO_SRC_REST_HPP
 
 #include "common/types.hpp"
+#include "crypto/Sign.hpp"
 #include "ledger/Ledger.hpp"
 
 #include <thread>
@@ -23,6 +24,11 @@ class Rest {
   std::thread _thread;
   std::string get_address_transactions(std::shared_ptr<ledger::Ledger> ledger,
                                        const std::string &address) const;
+  messages::Transaction build_transaction(
+      const messages::TransactionToPublish &transaction_to_publish) const;
+  void publish_transaction(messages::Transaction &transaction) const;
+  messages::Hasher load_hash(const std::string &hash_str) const;
+  messages::GeneratedKeys generate_keys() const;
 
  public:
   Rest(const Port port, std::shared_ptr<ledger::Ledger> ledger);

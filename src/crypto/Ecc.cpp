@@ -23,6 +23,11 @@ Ecc::Ecc(const std::string &filepath_private,
       _key_private(_prng, filepath_private),
       _key_public(filepath_public) {}
 
+Ecc::Ecc(const EccPriv &ecc_priv, const EccPub &ecc_pub)
+    : _prng(std::make_shared<CryptoPP::AutoSeededRandomPool>()),
+      _key_private(ecc_priv),
+      _key_public(ecc_pub) {}
+
 const EccPriv &Ecc::private_key() const { return _key_private; }
 const EccPub &Ecc::public_key() const { return _key_public; }
 EccPriv *Ecc::mutable_private_key() { return &_key_private; }

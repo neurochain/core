@@ -64,5 +64,11 @@ bool operator==(const Packet &a, const Packet &b) {
   return json_a == json_b;
 }
 
+void hash_transaction(Transaction *transaction) {
+  Buffer transaction_serialized;
+  messages::to_buffer(*transaction, &transaction_serialized);
+  transaction->mutable_id()->CopyFrom(Hasher(transaction_serialized));
+}
+
 }  // namespace messages
 }  // namespace neuro
