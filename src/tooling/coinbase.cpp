@@ -27,7 +27,7 @@ messages::Transaction coinbase(const crypto::EccPub &key_pub,
   auto output = transaction.add_outputs();
   output->mutable_address()->CopyFrom(address);
   output->mutable_value()->CopyFrom(ncc);
-  transaction.mutable_fees()->set_value(0);//"0");
+  transaction.mutable_fees()->set_value(0);  //"0");
 
   return transaction;
 }
@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
   const auto ncc = vm["ncc"].as<uint64_t>();
 
   messages::NCCSDF nccsdf;
-  nccsdf.set_value(ncc);//std::to_string(ncc));
+  nccsdf.set_value(ncc);  // std::to_string(ncc));
   crypto::EccPub key_pub(keypath);
   messages::Transaction transaction = coinbase(key_pub, nccsdf);
 

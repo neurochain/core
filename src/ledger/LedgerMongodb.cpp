@@ -4,19 +4,17 @@
 namespace neuro {
 namespace ledger {
 
-LedgerMongodb::LedgerMongodb(const std::string &url,
-                             const std::string &db_name )
+LedgerMongodb::LedgerMongodb(const std::string &url, const std::string &db_name)
     : _uri(url),
       _client(_uri),
       _db(_client[db_name]),
       _blocks(_db.collection("blocks")),
       _transactions(_db.collection("transactions")),
-      _blocks_forks(_db.collection("blocksfork")) {
-}
+      _blocks_forks(_db.collection("blocksfork")) {}
 
 LedgerMongodb::LedgerMongodb(messages::config::Database &db)
-    : LedgerMongodb (db.url(), db.db_name()) {
-    init_block0(db);
+    : LedgerMongodb(db.url(), db.db_name()) {
+  init_block0(db);
 }
 
 //   messages::BlockHeight LedgerMongodb::height() const {

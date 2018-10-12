@@ -86,10 +86,10 @@ target_link_libraries(core
 
 add_library(consensus
     ./consensus/Consensus.hpp
-    ./consensus/Forktree.hpp
-    ./consensus/Forktree.cpp
-    ./consensus/Forkmanager.hpp
-    ./consensus/Forkmanager.cpp
+    ./consensus/ForkTree.hpp
+    ./consensus/ForkTree.cpp
+    ./consensus/ForkManager.hpp
+    ./consensus/ForkManager.cpp
     ./consensus/Pii.hpp
     ./consensus/Pii.cpp
     ./consensus/PiiConsensus.hpp

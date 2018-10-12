@@ -2,7 +2,6 @@ syntax = "proto2";
 
 package neuro.messages;
 
-import "common.proto";
 import "messages.proto";
 
 message Transactions {

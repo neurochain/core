@@ -3,7 +3,8 @@
 namespace neuro {
 namespace crypto {
 
-bool sign (const std::vector<const EccPriv *>key_privs, messages::Transaction *transaction) {
+bool sign(const std::vector<const EccPriv *> key_privs,
+          messages::Transaction *transaction) {
   Buffer transaction_serialized;
   messages::to_buffer(*transaction, &transaction_serialized);
 
@@ -15,5 +16,5 @@ bool sign (const std::vector<const EccPriv *>key_privs, messages::Transaction *t
   return true;
 }
 
-}  // crypto
-}  // neuro
+}  // namespace crypto
+}  // namespace neuro

@@ -3,10 +3,10 @@
 
 #include <functional>
 #include <optional>
+#include "crypto/Hash.hpp"
 #include "ledger/Filter.hpp"
 #include "messages.pb.h"
 #include "rest.pb.h"
-#include "crypto/Hash.hpp"
 
 namespace neuro {
 namespace ledger {
@@ -14,7 +14,7 @@ namespace ledger {
 class Ledger {
  public:
   using Functor = std::function<bool(const messages::Transaction)>;
-  using Functor_block = std::function<void(messages::Block&)>;
+  using Functor_block = std::function<void(messages::Block &)>;
 
   class Filter {
    private:
@@ -48,6 +48,7 @@ class Ledger {
 
  private:
  public:
+  Ledger() {}
   virtual messages::BlockHeight height() const = 0;
   virtual bool get_block_header(const messages::BlockID &id,
                                 messages::BlockHeader *header) = 0;
@@ -58,19 +59,25 @@ class Ledger {
                          messages::Block *block) = 0;
   virtual bool push_block(const messages::Block &block) = 0;
   virtual bool for_each(const Filter &filter, Functor functor) = 0;
-
+  
+  virtual bool fork_add_block(const messages::Block &b) = 0;
+  virtual bool fork_delete_block(messages::Hash &id) = 0;
+  virtual void fork_for_each(Functor_block functor) = 0;
+  virtual void fork_test() = 0;
+  virtual bool get_transaction(messages::Hash &id, messages::Transaction *transaction) = 0;
+  
   // helpers
 
-  messages::Transactions list_transactions (const messages::Address &address) {
+  messages::Transactions list_transactions(const messages::Address &address) {
     Filter filter;
     filter.output_key_id(address);
     messages::Transactions transactions;
 
-    for_each (filter,
-	      [&transactions] (const messages::Transaction &transaction) -> bool {
-		transactions.add_transactions()->CopyFrom(transaction);
-		return true;
-	      });
+    for_each(filter,
+             [&transactions](const messages::Transaction &transaction) -> bool {
+               transactions.add_transactions()->CopyFrom(transaction);
+               return true;
+             });
 
     return transactions;
   }

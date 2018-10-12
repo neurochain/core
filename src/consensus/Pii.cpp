@@ -2,72 +2,73 @@
 namespace neuro {
 namespace consensus {
 
-Pii::Pii() {
-  // ctor
-  _Entropies.clear();
-}
-
-void Pii::addBlock(const PiiTransaction& piitransaction) {
-  auto& pfrom = _Entropies[piitransaction.from];
-  auto& pto = _Entropies[piitransaction.to];
+void Pii::addBlock(const Transaction& piitransaction) {
+  auto& pfrom = _entropies[piitransaction.from];
+  auto& pto = _entropies[piitransaction.to];
   auto& tij1 = pfrom.entropie_Tij[piitransaction.to];
   auto& tij2 = pto.entropie_Tij[piitransaction.from];
   tij1.nbinput++;
-  tij1.mtin += piitransaction.ncc * piitransaction.timencc * std::sqrt(pto.entropie);
+  tij1.mtin +=
+      piitransaction.ncc * piitransaction.timencc * std::sqrt(pto.entropie);
   tij2.nboutput++;
-  tij2.mtout += piitransaction.ncc * piitransaction.timencc * std::sqrt(pfrom.entropie);
+  tij2.mtout +=
+      piitransaction.ncc * piitransaction.timencc * std::sqrt(pfrom.entropie);
   pfrom.sum_outputs++;
   pto.sum_inputs++;
 }
 
-void Pii::addBlocks(const std::vector<PiiTransaction>& piitransactions) {
+void Pii::addBlocks(const std::vector<Transaction>& piitransactions) {
   // for( const piiThx &p: thx_)
   //    addBlock(p);
-  for (const PiiTransaction& piitransaction : piitransactions) {
-    auto& pfrom = _Entropies[piitransaction.from];
-    auto& pto = _Entropies[piitransaction.to];
+  for (const auto& piitransaction : piitransactions) {
+    auto& pfrom = _entropies[piitransaction.from];
+    auto& pto = _entropies[piitransaction.to];
     auto& tij1 = pfrom.entropie_Tij[piitransaction.to];
     auto& tij2 = pto.entropie_Tij[piitransaction.from];
     tij1.nbinput++;
-    tij1.mtin += piitransaction.ncc * piitransaction.timencc * std::sqrt(pto.entropie);
+    tij1.mtin +=
+        piitransaction.ncc * piitransaction.timencc * std::sqrt(pto.entropie);
     tij2.nboutput++;
-    tij2.mtout += piitransaction.ncc * piitransaction.timencc * std::sqrt(pfrom.entropie);
+    tij2.mtout +=
+        piitransaction.ncc * piitransaction.timencc * std::sqrt(pfrom.entropie);
     pfrom.sum_outputs++;
     pto.sum_inputs++;
   }
 }
 
 void Pii::calcul() {
-  for (auto& p : _Entropies) {
-    double epr1 = 0, epr2 = epr1;
-    PiiCalculus& m = p.second;
+  for (auto& p : _entropies) {
+    double epr1 = 0;
+    double epr2 = epr1;
+    Calculus& m = p.second;
     for (const auto& l : m.entropie_Tij) {
-      //
+
       if (m.sum_outputs > 0 && l.second.mtin != 0 && l.second.nbinput != 0) {
         epr1 += std::log(l.second.mtin) * (l.second.nbinput / m.sum_outputs) *
                 std::log2(l.second.nbinput / m.sum_outputs);
       }
-      //
+
       if (m.sum_inputs > 0 && l.second.mtout != 0 && l.second.nboutput != 0) {
         epr2 += std::log(l.second.mtout) * (l.second.nboutput / m.sum_inputs) *
                 std::log2(l.second.nboutput / m.sum_inputs);
       }
     }
     p.second.update(std::max(1.0, -0.5 * (epr1 + epr2)));
-    //p.second.update(-0.5 * (epr1 + epr2));
+    // p.second.update(-0.5 * (epr1 + epr2));
   }
 
   // Order it
-  std::vector<std::pair<std::string, PiiCalculus> > orderpii(_Entropies.begin(),
-                                                             _Entropies.end());
-  std::sort(orderpii.begin(), orderpii.end(), [](const auto& a, const auto& b) {
+  std::vector<std::pair<std::string, Calculus> > sorted_pii(_entropies.begin(),
+                                                             _entropies.end());
+  std::sort(sorted_pii.begin(), sorted_pii.end(), [](const auto& a, const auto& b) {
     return a.second.entropie > b.second.entropie;
   });
 
   int i = 0;
-  for (auto& p : orderpii) {
+  for (auto& p : sorted_pii) {
     _owner_ordered.push_back(p.first);
-    //std::cout << "p[" <<  i << "]=" << p.first << " = " << p.second.entropie << std::endl;
+    // std::cout << "p[" <<  i << "]=" << p.first << " = " << p.second.entropie
+    // << std::endl;
     i++;
     if (i > _assembly_owners) break;
   }
@@ -78,19 +79,19 @@ std::string Pii::operator()(uint32_t index) const {
   return std::string("");
 }
 
-void Pii::showresultat() {
-  std::vector<std::pair<std::string, PiiCalculus> > orderpii(_Entropies.begin(),
-                                                             _Entropies.end());
-  std::sort(orderpii.begin(), orderpii.end(), [](const auto& a, const auto& b) {
+void Pii::show_results() {
+  std::vector<std::pair<std::string, Calculus> > sorted_pii(_entropies.begin(),
+                                                             _entropies.end());
+  std::sort(sorted_pii.begin(), sorted_pii.end(), [](const auto& a, const auto& b) {
     return a.second.entropie > b.second.entropie;
   });
 
   int i = 0;
-  for (auto& p : orderpii) {
+  for (auto& p : sorted_pii) {
     std::cout << p.first << ":" << p.second.entropie;
     std::cout << std::endl;
     i++;
-    if (i > 57) break;
+    if (i > 57) break; // TODO remove magic number
   }
 }
 

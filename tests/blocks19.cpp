@@ -8,25 +8,22 @@
 namespace neuro {
 namespace test {
 
-TEST(Blocks, Set_Block1_9){
-  neuro::messages::config::Config _config;
+TEST(Blocks, Set_Block1_9) {
+  messages::config::Config _config;
   messages::from_json_file("../../bot1.json", &_config);
 
   auto database = _config.database();
-  neuro::ledger::LedgerMongodb _ledger(database);
+  auto ledger = std::make_shared<ledger::LedgerMongodb>(database);
 
-  for(int i = 1;i < 10;++i)
-  {
-    neuro::messages::Block _block;
-    _block.Clear();
-    neuro::tooling::genblock::genblock_from_last_db_block(_block,
-            _ledger, 1);
+  for (int i = 1; i < 10; ++i) {
+    messages::Block block;
+    block.Clear();
+    tooling::genblock::genblock_from_last_db_block(block, ledger, 1);
 
-
-    _ledger.push_block(_block);
+    ledger->push_block(block);
   }
 
-  ASSERT_EQ(9 , _ledger.height());
+  ASSERT_EQ(9, ledger->height());
 }
 
 }  // namespace test
