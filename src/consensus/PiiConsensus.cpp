@@ -46,6 +46,7 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
    }*/
   ///!< verif block suppose Correct Calcul of PII
   if (_valide_block && !check_owner(block.header())) {
+    std::cout << "Owner not correct" << std::endl;
     _ledger->fork_add_block(block);
     // possible do this after n blocks 3 of diff of height
     _ForkManager.fork_results();
@@ -62,10 +63,9 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
       _ledger->push_block(block);
     } else {
       /// add it to
+      std::cout << "Fork " << std::endl;
       _ledger->fork_add_block(block);
       _ForkManager.fork_results();
-      throw std::runtime_error(
-          {"Fork " + std::to_string(static_cast<uint8_t>(r))});
     }
   }
 
@@ -181,6 +181,17 @@ bool PiiConsensus::check_owner(
   std::cout << "Height -- " << bh.height() << std::endl;
   */
   return (author_addr.SerializeAsString() == owner_p);
+}
+
+void PiiConsensus::show_owner(uint32_t start, uint32_t how) {
+  for (uint32_t i = start; i < start + how; ++i) {
+    messages::Hash owner_addr;
+    owner_addr.ParseFromString(operator()(ramdon_at(i, _nonce_assembly)));
+
+    std::string t;
+    messages::to_json(owner_addr, &t);
+    std::cout << t << std::endl;
+  }
 }
 
 }  // namespace consensus

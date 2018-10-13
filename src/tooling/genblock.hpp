@@ -21,9 +21,9 @@ namespace genblock {
 
 bool genblock_from_block(
     messages::Block &block, messages::Block &last_block, const uint64_t seed,
+    int32_t height,
     std::optional<neuro::messages::KeyPub> author = std::nullopt,
-    const int32_t last_height = 0, const int max_trx = 20,
-    const int max_trail = 5) {
+    const int max_trx = 20, const int max_trail = 5) {
   /*uint32_t height = last_height;
   if (height == 0) {
     height = ledger->height();
@@ -43,8 +43,8 @@ bool genblock_from_block(
 
   header->mutable_previous_block_hash()->CopyFrom(last_block.header().id());
   header->mutable_timestamp()->set_data(last_block.header().timestamp().data() +
-                                        1);
-  header->set_height(last_block.header().height() + 1);
+                                        15);
+  header->set_height(height);
 
   // DO Transaction
   std::srand(seed);
@@ -118,6 +118,12 @@ bool genblock_from_block(
         total_ncc - how_ncc);  // std::to_string(total_ncc-how_ncc));
 
     new_trans->mutable_fees()->set_value(0);
+    /*
+    std::cout << " --- AAA --- " << std::endl;
+    Buffer buf;
+    messages::to_buffer(*new_trans, &buf);
+    messages::Hasher newit(buf);
+    new_trans->mutable_id()->CopyFrom(newit);*/
   }
 
   neuro::Buffer buffake("123456");  // #1 fix require id in header of block
@@ -135,7 +141,7 @@ bool genblock_from_block(
 
 bool genblock_from_last_db_block(
     messages::Block &block, std::shared_ptr<ledger::Ledger> ledger,
-    const uint64_t seed,
+    const uint64_t seed, const int32_t new_height,
     std::optional<neuro::messages::KeyPub> author = std::nullopt,
     const int32_t last_height = 0, const int max_trx = 20,
     const int max_trail = 5) {
@@ -148,7 +154,7 @@ bool genblock_from_last_db_block(
     return false;
   }
 
-  return genblock_from_block(block, last_block, seed, author, last_height,
+  return genblock_from_block(block, last_block, seed, new_height, author,
                              max_trx, max_trail);
 }
 

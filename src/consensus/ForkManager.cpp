@@ -87,40 +87,42 @@ void ForkManager::fork_results() {
   messages::Block block0;
   _ledger->get_block(0, &block0);
   ForkTree forktree(block0, 0, ForkTree::MainBranch);
-
+  uint64_t main_score = 0, fork_score = 0;
   //! Load all Main Block in trees
   int32_t h = _ledger->height();
   for (int32_t i = 1; i <= h; i++) {
     messages::Block block;
-    _ledger->get_block(i, &block);
-    if (!forktree.find_add(block, ForkTree::MainBranch)) {
-      throw std::runtime_error("Not found block ");
+    if (_ledger->get_block(i, &block)) {
+      if (!forktree.find_add(block, ForkTree::MainBranch, main_score)) {
+        throw std::runtime_error("Not found block ");
+      }
     }
   }
 
   _ledger->fork_for_each([&](messages::Block &block) {
-    if (!forktree.find_add(block, ForkTree::ForkBranch)) {
+    if (!forktree.find_add(block, ForkTree::ForkBranch, fork_score)) {
       throw std::runtime_error("Not found block ");
     }
   });
 
-  std::cout << forktree << std::endl;
-  forktree.update_branch();
-  std::cout << forktree << std::endl;
+  if (fork_score > main_score) {
+    forktree.update_branch();
+    std::cout << forktree << std::endl;
 
-  forktree.for_each([&](messages::Block block, ForkTree::BranchType old,
-                        ForkTree::BranchType apply) {
-    if (old != apply) {
-      if (old == ForkTree::ForkBranch) {
-        auto block_id = block.header().id();
-        _ledger->fork_delete_block(block_id);
-        _ledger->push_block(block);
-      } else {
-        _ledger->delete_block(block.header().id());
-        _ledger->fork_add_block(block);
+    forktree.for_each([&](messages::Block block, ForkTree::BranchType old,
+                          ForkTree::BranchType apply) {
+      if (old != apply) {
+        if (old == ForkTree::ForkBranch) {
+          auto block_id = block.header().id();
+          _ledger->fork_delete_block(block_id);
+          _ledger->push_block(block);
+        } else {
+          _ledger->delete_block(block.header().id());
+          _ledger->fork_add_block(block);
+        }
       }
-    }
-  });
+    });
+  }
 }
 
 }  // namespace consensus

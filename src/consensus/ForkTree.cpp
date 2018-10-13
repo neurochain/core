@@ -21,9 +21,10 @@ uint64_t ForkTree::score() {
   return s;
 }
 
-void ForkTree::add(neuro::messages::Block &fork_block, BranchType branch) {
+uint64_t ForkTree::add(neuro::messages::Block &fork_block, BranchType branch) {
   auto nfork = std::make_shared<ForkTree>(fork_block, _weight, branch);
   _tree.push_back(nfork);
+  return nfork->_weight;
 }
 
 /*
@@ -32,14 +33,15 @@ void add(ForkTree &fork)
     _tree.push_back(fork);
 }*/
 
-bool ForkTree::find_add(neuro::messages::Block &fork_block, BranchType branch) {
+bool ForkTree::find_add(neuro::messages::Block &fork_block, BranchType branch,
+                        uint64_t &scoreofadd) {
   if (equalme(fork_block.header().previous_block_hash())) {
-    add(fork_block, branch);
+    scoreofadd = add(fork_block, branch);
     return true;
   }
 
   for (auto node : _tree) {
-    if (node->find_add(fork_block, branch)) {
+    if (node->find_add(fork_block, branch, scoreofadd)) {
       return true;
     }
   }
@@ -50,6 +52,13 @@ void ForkTree::for_each(Functor functor) {
   functor(_entry, _branch_origin, _branch_apply);
   for (auto p : _tree) {
     p->for_each(functor);
+  }
+}
+
+void ForkTree::set_branch(BranchType branch) {
+  _branch_apply = branch;
+  for (auto p : _tree) {
+    p->set_branch(branch);
   }
 }
 
@@ -67,7 +76,7 @@ uint64_t ForkTree::update_branch() {
   int i = 0, max_i = -1;
   for (auto p : _tree) {
     auto res = p->update_branch();
-    if (max_score < res) {
+    if (max_score <= res) {
       max_score = res;
       max_i = i;
     }
@@ -97,12 +106,11 @@ std::string ForkTree::printtree(const std::string &prefix, bool isLeft) {
 
   std::stringstream ss;
   ss << prefix;
-
   ss << (isLeft ? "├──" : "└──");
 
   // print the value of the node
   ss << _entry.header().height();
-  if (_tree.size() == 0) {
+  if (true) {  //_tree.size() == 0) {
     ss << ":" << ((_branch_origin == MainBranch) ? "Main" : "Fork") << ":"
        << ((_branch_apply == MainBranch) ? "Main" : "Fork") << ":" << _weight;
   }

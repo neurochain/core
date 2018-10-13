@@ -34,9 +34,10 @@ class ForkTree {
   ForkTree(neuro::messages::Block &block, uint64_t w = 0,
            BranchType branch = ForkBranch);
 
-  void add(neuro::messages::Block &fork_block, BranchType branch);
-  bool find_add(neuro::messages::Block &fork_block, BranchType branch);
-  void set_branch(BranchType branch = ForkBranch) { _branch_apply = branch; }
+  uint64_t add(neuro::messages::Block &fork_block, BranchType branch);
+  bool find_add(neuro::messages::Block &fork_block, BranchType branch,
+                uint64_t &scoreofadd);
+  void set_branch(BranchType branch = ForkBranch);
   uint64_t update_branch();
   void for_each(Functor functor);
 

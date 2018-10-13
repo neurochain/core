@@ -72,24 +72,40 @@ class Wallet {
     }
   }
 
-  void testgenblock() {
-    messages::Block block1;
-    tooling::genblock::genblock_from_last_db_block(block1, _ledger, 1);
-
-    Buffer buftmp;
-    messages::to_buffer(block1, &buftmp);
-
-    messages::Hasher testrand(buftmp);
-
-    std::string t;
-    messages::to_json(testrand, &t);
-
-    std::cout << t << std::endl;
-
-    _ledger->push_block(block1);
-  }
   ~Wallet() {}
 };
+
+messages::KeyPub load_key_pub(int i) {
+  crypto::Ecc _ecc({"../keys/key_" + std::to_string(i) + ".priv"},
+                   {"../keys/key_" + std::to_string(i) + ".pub"});
+  Buffer key_pub_raw;
+  _ecc.mutable_public_key()->save(&key_pub_raw);
+
+  messages::KeyPub author;
+  author.set_type(messages::KeyType::ECP256K1);
+  author.set_raw_data(key_pub_raw.data(), key_pub_raw.size());
+  return author;
+}
+
+void load_id_transaction(neuro::messages::Block *block) {
+  for (int i = 0; i < block->transactions_size(); ++i) {
+    neuro::messages::Transaction *transaction = block->mutable_transactions(i);
+    if (!transaction->has_id()) {
+      neuro::messages::Transaction _transaction(*transaction);
+      _transaction.clear_id();
+      _transaction.clear_block_id();
+
+      Buffer buf;
+      messages::to_buffer(_transaction, &buf);
+      messages::Hasher newit(buf);
+      transaction->mutable_id()->CopyFrom(newit);
+    }
+
+    if (!transaction->has_block_id()) {
+      transaction->mutable_block_id()->CopyFrom(block->header().id());
+    }
+  }
+}
 
 int main(int argc, char *argv[]) {
   po::options_description desc("Allowed options");
@@ -128,12 +144,6 @@ int main(int argc, char *argv[]) {
 
   auto db = _config.database();
   auto ledger = std::make_shared<ledger::LedgerMongodb>(db);
-
-  // Wallet w(keyprivPath, keypubPath, _ledger);
-  // w.getTransactions();
-  // w.getLastBlockHeigth();
-  // w.showlastBlock();
-  // w.testgenblock();
   /*
       for(int i = 0; i < 10 ; i++){
           crypto::Ecc ecc({"../keys/key_" + std::to_string(i) + ".priv"
@@ -150,22 +160,64 @@ int main(int argc, char *argv[]) {
   ledger->fork_test();  ///!< Delete Fork branche
 
   consensus::PiiConsensus _PiiConsensus(ledger, 10);
+  //_PiiConsensus.show_owner(0, 10);
+
+  messages::Block block10;
+  ledger->get_block(10, &block10);
 
   messages::Block block11;
-
-  crypto::Ecc _ecc({"../keys/key_3.priv"}, {"../keys/key_3.pub"});
-  Buffer key_pub_raw;
-  _ecc.mutable_public_key()->save(&key_pub_raw);
-
-  messages::KeyPub author;
-  author.set_type(messages::KeyType::ECP256K1);
-  author.set_raw_data(key_pub_raw.data(), key_pub_raw.size());
-
+  auto author11 = load_key_pub(8);
   tooling::genblock::genblock_from_last_db_block(
-      block11, ledger, std::time(nullptr),
-      std::make_optional<messages::KeyPub>(author), 9);
-
+      block11, ledger, 0, 11, std::make_optional<messages::KeyPub>(author11),
+      9);
   _PiiConsensus.add_block(block11);
+
+  load_id_transaction(&block11);
+  messages::Block block12;
+  auto author12 = load_key_pub(4);
+  tooling::genblock::genblock_from_block(block12, block11, 0, 12, author12);
+  _PiiConsensus.add_block(block12);
+
+  messages::Block block13;
+  auto author13 = load_key_pub(1);
+  tooling::genblock::genblock_from_block(block13, block10, 0, 13, author13);
+  _PiiConsensus.add_block(block13);
+
+  messages::Block block14;
+  auto author14 = load_key_pub(3);
+  tooling::genblock::genblock_from_last_db_block(
+      block14, ledger, 0, 14, std::make_optional<messages::KeyPub>(author14),
+      13);
+  _PiiConsensus.add_block(block14);
+
+  messages::Block block15;
+  tooling::genblock::genblock_from_last_db_block(
+      block15, ledger, 0, 15, std::make_optional<messages::KeyPub>(author13),
+      14);
+  _PiiConsensus.add_block(block15);
+
+  load_id_transaction(&block15);
+
+  messages::Block block16;
+  auto author16 = load_key_pub(8);
+  tooling::genblock::genblock_from_last_db_block(
+      block16, ledger, 0, 16, std::make_optional<messages::KeyPub>(author16),
+      15);
+  _PiiConsensus.add_block(block16);
+
+  messages::Block block17;
+  auto author17 = load_key_pub(6);
+  tooling::genblock::genblock_from_last_db_block(
+      block17, ledger, 0, 17, std::make_optional<messages::KeyPub>(author17),
+      15);
+  _PiiConsensus.add_block(block17);
+
+  messages::Block block18;
+  auto author18 = load_key_pub(9);
+  tooling::genblock::genblock_from_last_db_block(
+      block18, ledger, 0, 18, std::make_optional<messages::KeyPub>(author18),
+      16);
+  _PiiConsensus.add_block(block18);
 
   return 0;
 }

@@ -42,6 +42,7 @@ class PiiConsensus : public Pii, public Consensus {
   Address get_next_owner() const;
 
   bool check_owner(const neuro::messages::BlockHeader &blockheader) const;
+  void show_owner(uint32_t start, uint32_t how = 10);
 };
 
 }  // namespace consensus

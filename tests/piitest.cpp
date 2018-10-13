@@ -9,7 +9,7 @@
 namespace neuro {
 namespace test {
 
-std::shared_ptr<ledger::LedgerMongodb> _ledger;
+std::shared_ptr<ledger::Ledger> _ledger;
 
 TEST(PiiTest, Pii_1_assembly) {
   neuro::messages::config::Config _config;
@@ -47,7 +47,7 @@ TEST(PiiTest, Pii_next_owner) {
   author.set_raw_data(key_pub_raw.data(), key_pub_raw.size());
 
   neuro::tooling::genblock::genblock_from_last_db_block(
-      block11, _ledger, 0, std::make_optional<neuro::messages::KeyPub>(author));
+      block11, _ledger, 0, 10 , std::make_optional<neuro::messages::KeyPub>(author));
 
   _piisus.add_block(block11);
 
@@ -81,10 +81,12 @@ TEST(PiiTest, Pii_first_fork) {
   author.set_raw_data(key_pub_raw.data(), key_pub_raw.size());
 
   neuro::tooling::genblock::genblock_from_last_db_block(
-      block11, _ledger, 0, std::make_optional<neuro::messages::KeyPub>(author),
+      block11, _ledger, 0, 10, std::make_optional<neuro::messages::KeyPub>(author),
       9);
 
-  ASSERT_THROW(_piisus.add_block(block11), std::runtime_error);
+  messages::Block blockfork;
+  ASSERT_TRUE(_ledger->get_block(10,&blockfork));
+  //ASSERT_THROW(_piisus.add_block(block11), std::runtime_error);
 }
 
 }  // namespace test

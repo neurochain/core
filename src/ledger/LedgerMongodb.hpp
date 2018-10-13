@@ -228,8 +228,8 @@ class LedgerMongodb : public Ledger {
                                              << bss::finalize;
 
     mongocxx::options::find findoption;
-    auto projection_transaction = bss::document{};
-    projection_transaction << "_id" << 0;  ///!< remove _id objectID
+    auto projection_transaction = bss::document{} << "_id" << 0
+                                                  << bss::finalize;
     findoption.projection(projection_transaction.view());
 
     auto res = _transactions.find_one(query_transaction.view(), findoption);
@@ -257,6 +257,27 @@ class LedgerMongodb : public Ledger {
       return true;
     }
     return false;
+  }
+
+  int get_transaction_pool(messages::Block &block) {
+    auto query_transaction_pool =
+        bss::document{} << "blockId " << bss::open_document << "$exists"
+                        << false << bss::close_document << bss::finalize;
+
+    mongocxx::options::find findoption;
+    auto projection_transaction = bss::document{} << "_id" << 0
+                                                  << bss::finalize;
+    findoption.projection(projection_transaction.view());
+    //! add filter for order transaction here #Trx1
+
+    int transactions_num = 0;
+    auto cursor = _transactions.find(query_transaction_pool.view());
+    for (auto &bson_transaction : cursor) {
+      auto *transaction = block.add_transactions();
+      messages::from_bson(bson_transaction, transaction);
+      transactions_num++;
+    }
+    return transactions_num;
   }
 
   bool for_each(const Filter &filter, Functor functor) {
@@ -322,8 +343,28 @@ class LedgerMongodb : public Ledger {
    * Functions for forks
    */
 
-  bool fork_add_block(const messages::Block &b) {
-    auto bson_block = messages::to_bson(b);
+  bool fork_add_block(const messages::Block &block) {
+    messages::Block block_updated(block);
+    for (int i = 0; i < block_updated.transactions_size(); ++i) {
+      neuro::messages::Transaction *transaction =
+          block_updated.mutable_transactions(i);
+      if (!transaction->has_id()) {
+        neuro::messages::Transaction _transaction(*transaction);
+        _transaction.clear_id();
+        _transaction.clear_block_id();
+
+        Buffer buf;
+        messages::to_buffer(_transaction, &buf);
+        messages::Hasher newit(buf);
+        transaction->mutable_id()->CopyFrom(newit);
+      }
+
+      if (!transaction->has_block_id()) {
+        transaction->mutable_block_id()->CopyFrom(block.header().id());
+      }
+    }
+
+    auto bson_block = messages::to_bson(block_updated);
     auto res = _blocks_forks.insert_one(std::move(bson_block));
     if (res) {
       return true;  //(res->result().inserted_count () == 1);
@@ -332,7 +373,7 @@ class LedgerMongodb : public Ledger {
   }
 
   bool fork_delete_block(messages::Hash &id) {
-    auto query_block = bss::document{} << "id" << messages::to_bson(id)
+    auto query_block = bss::document{} << "header.id" << messages::to_bson(id)
                                        << bss::finalize;
     auto res = _blocks_forks.delete_one(query_block.view());
     if (res) {
