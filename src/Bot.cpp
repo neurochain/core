@@ -545,7 +545,7 @@ void Bot::subscribe(const messages::Type type,
   _subscriber.subscribe(type, callback);
 }
 
-void Bot::join() { this->keep_max_connections(); }
+  void Bot::join() { _networking->join(); }
 
 Bot::~Bot() {
   _subscriber.unsubscribe();
