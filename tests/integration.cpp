@@ -13,7 +13,7 @@ std::stringstream botconf(const std::string &max_connections,
                           const std::string &listening_port,
                           const std::vector<std::string> &ports) {
   std::stringstream conf;
-  conf << "{"
+  conf << "{\"database\": {\"url\": \"mongodb://mongo:27017/neuro\", \"db_name\": \"neuro\", \"block0_format\": \"PROTO\", \"block0_path\": \"../../block.0.bp\"},"
        << "    \"logs\": {"
        << "        \"severity\": \"debug\","
        << "        \"to_stdout\": true"
@@ -106,10 +106,10 @@ class Integration : public ::testing::Test {
   //       std::make_shared<Bot>(conf2),
   //       std::make_shared<Bot>(conf3)};
 
-  //   bots[1]->keep_max_connections();
+  //   bot1->keep_max_connections();
   //   bots[2]->keep_max_connections();
   //   std::this_thread::sleep_for(100ms);
-  //   bots[0]->keep_max_connections();
+  //   bot0->keep_max_connections();
   //   std::this_thread::sleep_for(200ms);
   //   bots[3]->keep_max_connections();
   //   std::this_thread::sleep_for(100ms);
@@ -142,22 +142,29 @@ TEST(COIN, simple_interaction) {
 
   // { Bot bot(conf2); }
   // return true;
+  std::cout << __LINE__ << std::endl;
 
   Listener listener;
   std::vector<std::shared_ptr<Bot>> bots;
-  bots.emplace_back(std::make_shared<Bot>(conf0));
-  bots.emplace_back(std::make_shared<Bot>(conf1));
+  auto bot0 = std::make_shared<Bot>(conf0);
+  std::cout << __LINE__ << std::endl;
+  auto bot1 = std::make_shared<Bot>(conf1);
+  std::cout << __LINE__ << std::endl;
 
-  messages::Subscriber subscriber0(bots[0]->queue());
-  messages::Subscriber subscriber1(bots[1]->queue());
+  messages::Subscriber subscriber0(bot0->queue());
+  messages::Subscriber subscriber1(bot1->queue());
+  std::cout << __LINE__ << std::endl;
 
   int bot_id = 0;
+  std::cout << __LINE__ << std::endl;
 
   std::cout << conf1.str() << std::endl;
+  std::cout << __LINE__ << std::endl;
 
   for (const auto &bot : bots) {
     std::cout << bot_id++ << " bot_id " << bot.get() << std::endl;
   }
+  std::cout << __LINE__ << std::endl;
 
   subscriber0.subscribe(
       messages::Type::kHello,
@@ -181,19 +188,22 @@ TEST(COIN, simple_interaction) {
       });
 
   std::this_thread::sleep_for(1s);
-  bots[0]->keep_max_connections();
-  bots[1]->keep_max_connections();
-
+  std::cout << __LINE__ << std::endl;
+  bot0->keep_max_connections();
+  bot1->keep_max_connections();
+  std::cout << __LINE__ << std::endl;
   std::this_thread::sleep_for(500ms);
+  std::cout << __LINE__ << std::endl;
 
   for (const auto &bot : bots) {
     bot->status();
   }
+  std::cout << __LINE__ << std::endl;
 
   std::this_thread::sleep_for(15s);
   // auto message = std::make_shared<messages::Message>();
   // message->add_bodies()->mutable_hello();
-  // bots[0]->networking()->send(message, networking::ProtocolType::PROTOBUF2);
+  // bot0->networking()->send(message, networking::ProtocolType::PROTOBUF2);
 
   std::this_thread::sleep_for(500ms);
   ASSERT_TRUE(listener.validated());
