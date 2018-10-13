@@ -181,6 +181,7 @@ int main(int argc, char *argv[]) {
                           });*/
 
   consensus::PiiConsensus _PiiConsensus(ledger, 10);
+  _PiiConsensus.show_results();
   _PiiConsensus.show_owner(0, 10);
 
   messages::Block block10;
@@ -199,27 +200,29 @@ int main(int argc, char *argv[]) {
   load_id_transaction(&block11);
   messages::Block block12;
   auto author12 = load_key_pub(4);
-  tooling::genblock::genblock_from_block(block12, block11, 0, 12, author12);
+  tooling::genblock::genblock_from_block(block12, block11, std::time(nullptr),
+                                         12, author12);
   _PiiConsensus.add_block(block12);
 
   std::cout << "Block 13 " << std::endl;
   messages::Block block13;
   auto author13 = load_key_pub(1);
-  tooling::genblock::genblock_from_block(block13, block10, 0, 13, author13);
+  tooling::genblock::genblock_from_block(block13, block10, std::time(nullptr),
+                                         13, author13);
   _PiiConsensus.add_block(block13);
   std::cout << "Block 14 " << std::endl;
 
   messages::Block block14;
   auto author14 = load_key_pub(3);
   tooling::genblock::genblock_from_last_db_block(
-      block14, ledger, 0, 14, std::make_optional<messages::KeyPub>(author14),
-      13);
+      block14, ledger, std::time(nullptr), 14,
+      std::make_optional<messages::KeyPub>(author14), 13);
   _PiiConsensus.add_block(block14);
   std::cout << "Block 15 " << std::endl;
   messages::Block block15;
   tooling::genblock::genblock_from_last_db_block(
-      block15, ledger, 0, 15, std::make_optional<messages::KeyPub>(author13),
-      14);
+      block15, ledger, std::time(nullptr), 15,
+      std::make_optional<messages::KeyPub>(author13), 14);
   _PiiConsensus.add_block(block15);
 
   load_id_transaction(&block15);
@@ -227,23 +230,34 @@ int main(int argc, char *argv[]) {
   messages::Block block16;
   auto author16 = load_key_pub(8);
   tooling::genblock::genblock_from_last_db_block(
-      block16, ledger, 0, 16, std::make_optional<messages::KeyPub>(author16),
-      15);
+      block16, ledger, std::time(nullptr), 16,
+      std::make_optional<messages::KeyPub>(author16), 15);
   _PiiConsensus.add_block(block16);
   std::cout << "Block 17 " << std::endl;
   messages::Block block17;
   auto author17 = load_key_pub(6);
   tooling::genblock::genblock_from_last_db_block(
-      block17, ledger, 0, 17, std::make_optional<messages::KeyPub>(author17),
-      15);
+      block17, ledger, std::time(nullptr), 17,
+      std::make_optional<messages::KeyPub>(author17), 15);
   _PiiConsensus.add_block(block17);
   std::cout << "Block 18 " << std::endl;
   messages::Block block18;
   auto author18 = load_key_pub(9);
   tooling::genblock::genblock_from_last_db_block(
-      block18, ledger, 0, 18, std::make_optional<messages::KeyPub>(author18),
-      16);
+      block18, ledger, std::time(nullptr), 18,
+      std::make_optional<messages::KeyPub>(author18), 16);
   _PiiConsensus.add_block(block18);
+
+  std::cout << "Block 19 " << std::endl;
+  messages::Block block19;
+  auto author19 = load_key_pub(2);
+  tooling::genblock::genblock_from_last_db_block(
+      block19, ledger, std::time(nullptr), 19,
+      std::make_optional<messages::KeyPub>(author19), 18);
+  _PiiConsensus.add_block(block19);
+
+  _PiiConsensus.show_results();
+  _PiiConsensus.show_owner(0, 10);
 
   return 0;
 }

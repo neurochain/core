@@ -82,7 +82,7 @@ ForkManager::ForkStatus ForkManager::fork_status(
   return ForkStatus::Non_Fork;
 }
 
-void ForkManager::fork_results() {
+bool ForkManager::fork_results() {
   //! load block 0
   messages::Block block0;
   _ledger->get_block(0, &block0);
@@ -122,7 +122,9 @@ void ForkManager::fork_results() {
         }
       }
     });
+    return true;
   }
+  return false;
 }
 
 }  // namespace consensus

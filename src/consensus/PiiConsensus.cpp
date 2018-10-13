@@ -9,14 +9,20 @@ PiiConsensus::PiiConsensus(std::shared_ptr<ledger::Ledger> ledger,
     : _ledger(ledger), _ForkManager(ledger), _valide_block(true) {
   // load all block from
   _assembly_blocks = block_assembly;
+  init();
+}
+
+void PiiConsensus::init() {
   bool save_valide = _valide_block;
   _valide_block = false;
-
+  _entropies.clear();
+  _owner_ordered.clear();
   int height = _ledger->height();
   for (int i = 0; i <= height; ++i) {
     messages::Block block;
-    _ledger->get_block(i, &block);
-    add_block(block);
+    if (_ledger->get_block(i, &block)) {
+      add_block(block);
+    }
   }
   _valide_block = save_valide;
 }
@@ -49,7 +55,9 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
     std::cout << "Owner not correct" << std::endl;
     _ledger->fork_add_block(block);
     // possible do this after n blocks 3 of diff of height
-    _ForkManager.fork_results();
+    if (_ForkManager.fork_results()) {
+      init();
+    }
     throw std::runtime_error("Owner not correct");
   }
 
@@ -65,7 +73,9 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
       /// add it to
       std::cout << "Fork " << std::endl;
       _ledger->fork_add_block(block);
-      _ForkManager.fork_results();
+      if (_ForkManager.fork_results()) {
+        init();
+      }
     }
   }
 
@@ -109,11 +119,13 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
       somme_Inputs += add;
     }
 
-    for (const auto &input : _input)
-      for (const auto &output : _output)
+    for (const auto &input : _input) {
+      for (const auto &output : _output) {
         _piithx.push_back(
             Transaction{input.first, output.first,
                         (input.second / somme_Inputs) * output.second, 1});
+      }
+    }
   }
 
   addBlocks(_piithx);
@@ -124,7 +136,7 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
     calcul();
     random_from_hashs();
   }
-}
+}  // namespace consensus
 
 void PiiConsensus::add_blocks(
     const std::vector<neuro::messages::Block *> &blocks) {
@@ -137,8 +149,9 @@ void PiiConsensus::random_from_hashs() {
   for (uint32_t i = 0; i < _assembly_blocks; i++) {
     neuro::messages::Block b;
     ///!< assembly_blocks/2 is juste pour test
-    _ledger->get_block(_last_heigth_block - i - _assembly_blocks / 2, &b);
-    _hash.push_back(b.header().id().data());
+    if (_ledger->get_block(_last_heigth_block - i - _assembly_blocks / 2, &b)) {
+      _hash.push_back(b.header().id().data());
+    }
   }
 
   _nonce_assembly = 0;

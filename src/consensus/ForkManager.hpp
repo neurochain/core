@@ -41,7 +41,7 @@ class ForkManager {
                          const messages::BlockHeader &prev_blockheader,
                          const messages::BlockHeader &last_blockheader);
 
-  void fork_results();
+  bool fork_results();
 };
 
 }  // namespace consensus

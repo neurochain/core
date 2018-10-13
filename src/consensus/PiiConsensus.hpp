@@ -31,6 +31,7 @@ class PiiConsensus : public Pii, public Consensus {
 
   void random_from_hashs();
   uint32_t ramdon_at(int index, uint64_t nonce) const;
+  void init();
 
  public:
   PiiConsensus(std::shared_ptr<ledger::Ledger> ledger)
