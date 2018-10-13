@@ -13,7 +13,7 @@ build_job:ubuntu_18_04_release:
     - cd build
     - cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/root -DCMAKE_BUILD_TYPE=Release ..
     - cmake --build .
-    - python3 ../tooling/times3.py ctest --output-on-failure 
+    - python3 ../utils/dockers/times3.py ctest --output-on-failure 
   artifacts:
     paths:
       - build
@@ -29,7 +29,7 @@ build_job:ubuntu_18_04:
     - cd build
     - cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/root -DCMAKE_BUILD_TYPE=Debug ..
     - cmake --build .
-    - python3 ../tooling/times3.py ctest --output-on-failure
+    - python3 ../utils/dockers/times3.py ctest --output-on-failure
     - cd .. && python3 -m gcovr -p -r . --html -o coverage.html
   artifacts:
     paths:
@@ -47,7 +47,7 @@ build_job:debian_9:
     - cd build
     - cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/root -DCMAKE_BUILD_TYPE=Release .. 
     - cmake --build .
-    - python3 ../tooling/times3.py ctest --output-on-failure 
+    - python3 ../utils/dockers/times3.py ctest --output-on-failure 
   artifacts:
     paths:
       - build
