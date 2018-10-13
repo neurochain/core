@@ -71,6 +71,7 @@ pages:
 
 .bot_build: &bot_build |
   function bot_build() {
+    echo "Building in $1"
     mkdir build || echo k
     cd build
     cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/root -DCMAKE_BUILD_TYPE=$1 ..
