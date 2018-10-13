@@ -35,6 +35,7 @@ class EccPub {
   bool load(const messages::KeyPub &keypub);
   bool save(Buffer *buffer) const;
   Buffer save() const;
+  bool save(messages::KeyPub *key_pub) const;
   bool verify(const Buffer &data, const uint8_t *signature,
               const std::size_t size) const;
   bool verify(const Buffer &data, const Buffer &signature) const;

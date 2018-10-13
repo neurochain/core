@@ -2,9 +2,31 @@ syntax = "proto2";
 
 package neuro.messages;
 
-import "common.proto";
 import "messages.proto";
+import "common.proto";
 
 message Transactions {
   repeated Transaction transactions = 1;
+}
+
+message UnspentTransaction {
+  required bytes transaction_id = 1;
+  required string value = 2;
+}
+
+message UnspentTransactions {
+  repeated UnspentTransaction unspent_transactions = 1;
+}
+
+message TransactionToPublish {
+  repeated bytes transactions_ids = 1;
+  repeated Output outputs = 2;
+  required bytes key_priv = 3;
+  optional NCCSDF fees = 4;
+}
+
+message GeneratedKeys {
+  required KeyPriv key_priv = 1;
+  required KeyPub key_pub = 2;
+  required Hash address = 3;
 }

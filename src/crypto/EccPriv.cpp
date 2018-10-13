@@ -35,6 +35,14 @@ bool EccPriv::save(Buffer *buffer) const {
   return true;
 }
 
+bool EccPriv::save(messages::KeyPriv *key_priv) const {
+  std::string s;
+  key_priv->set_type(messages::KeyType::ECP256K1);
+  _key.Save(CryptoPP::StringSink(s).Ref());
+  key_priv->set_data(s);
+  return true;
+}
+
 bool EccPriv::load(const std::string &filepath) {
   CryptoPP::FileSource fs(filepath.c_str(), true);
   _key.Load(fs);

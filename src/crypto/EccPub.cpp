@@ -48,7 +48,7 @@ bool EccPub::load(const uint8_t *data, const std::size_t size) {
 bool EccPub::load(const messages::KeyPub &keypub) {
   if (keypub.has_raw_data()) {
     const auto &raw_data = keypub.raw_data();
-    // load(raw_data.data(), raw_data.size());
+    load(reinterpret_cast<const uint8_t *>(raw_data.data()), raw_data.size());
   } else if (keypub.has_hex_data()) {
     const auto &hex_data = keypub.hex_data();
     Buffer tmp(hex_data, Buffer::InputType::HEX);
@@ -73,6 +73,14 @@ bool EccPub::save(Buffer *buffer) const {
   std::string s;
   _key.Save(CryptoPP::StringSink(s).Ref());
   buffer->copy(s);
+  return true;
+}
+
+bool EccPub::save(messages::KeyPub *key_pub) const {
+  key_pub->set_type(messages::KeyType::ECP256K1);
+  std::string s;
+  _key.Save(CryptoPP::StringSink(s).Ref());
+  key_pub->set_raw_data(s);
   return true;
 }
 

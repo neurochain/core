@@ -57,5 +57,18 @@ std::ostream &operator<<(std::ostream &os, const Packet &packet) {
   return os;
 }
 
+bool operator==(const Packet &a, const Packet &b) {
+  std::string json_a, json_b;
+  to_json(a, &json_a);
+  to_json(b, &json_b);
+  return json_a == json_b;
+}
+
+void hash_transaction(Transaction *transaction) {
+  Buffer transaction_serialized;
+  messages::to_buffer(*transaction, &transaction_serialized);
+  transaction->mutable_id()->CopyFrom(Hasher(transaction_serialized));
+}
+
 }  // namespace messages
 }  // namespace neuro
