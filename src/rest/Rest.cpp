@@ -24,10 +24,10 @@ Rest::Rest(const Port port, std::shared_ptr<ledger::Ledger> ledger,
       _ledger(ledger),
       _networking(networking),
       _config(config),
-      _server(O_POOL),
-      _root(&_server) {
-  LOG_INFO << "Listening at http://localhost:" << port;
-
+      _server(O_POOL) {
+  LOG_INFO << "Listening at http://localhost:" << _port;
+  _server.setPort(_port);
+  _root = std::make_unique<Onion::Url>(&_server);
   const auto list_transactions_route = [this](Onion::Request &req,
                                               Onion::Response &res) {
     const auto address = req.query("address", "");
@@ -57,19 +57,20 @@ Rest::Rest(const Port port, std::shared_ptr<ledger::Ledger> ledger,
     return OCS_PROCESSED;
   };
 
-  _root.add("list_transactions", list_transactions_route);
-  _root.add("publish_transaction", publish_transaction_route);
-  _root.add("generate_keys", generate_keys_route);
-  _root.add("^static/", onion_handler_export_local_new("static"));
-  _root.add("", Onion::Shortcuts::static_file("static/index.html"));
-  _root.add("index.html", Onion::Shortcuts::static_file("static/index.html"));
-  _root.add("asset-manifest.json",
-            Onion::Shortcuts::static_file("static/asset-manifest.json"));
-  _root.add("favicon.ico", Onion::Shortcuts::static_file("static/favicon.ico"));
-  _root.add("manifest.json",
-            Onion::Shortcuts::static_file("static/manifest.json"));
-  _root.add("service-worker.js",
-            Onion::Shortcuts::static_file("static/service-worker.js"));
+  _root->add("list_transactions", list_transactions_route);
+  _root->add("publish_transaction", publish_transaction_route);
+  _root->add("generate_keys", generate_keys_route);
+  _root->add("^static/", onion_handler_export_local_new("static"));
+  _root->add("", Onion::Shortcuts::static_file("static/index.html"));
+  _root->add("index.html", Onion::Shortcuts::static_file("static/index.html"));
+  _root->add("asset-manifest.json",
+             Onion::Shortcuts::static_file("static/asset-manifest.json"));
+  _root->add("favicon.ico",
+             Onion::Shortcuts::static_file("static/favicon.ico"));
+  _root->add("manifest.json",
+             Onion::Shortcuts::static_file("static/manifest.json"));
+  _root->add("service-worker.js",
+             Onion::Shortcuts::static_file("static/service-worker.js"));
   _thread = std::thread([this]() { _server.listen(); });
 }
 

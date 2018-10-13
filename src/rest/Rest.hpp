@@ -6,6 +6,7 @@
 #include "ledger/Ledger.hpp"
 #include "networking/Networking.hpp"
 
+#include <memory>
 #include <thread>
 
 #include <onion/onion.hpp>
@@ -22,7 +23,7 @@ class Rest {
   messages::config::Config _config;
 
   Onion::Onion _server;
-  Onion::Url _root;
+  std::unique_ptr<Onion::Url> _root;
 
   std::thread _thread;
   std::string get_address_transactions(std::shared_ptr<ledger::Ledger> ledger,
