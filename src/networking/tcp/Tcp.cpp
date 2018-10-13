@@ -118,6 +118,7 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
 
 void Tcp::_run() {
   boost::system::error_code ec;
+  std::lock_guard<std::mutex> lock_queue(_stopping_mutex);
   if (_stopping) {
     return;
   }
@@ -129,6 +130,7 @@ void Tcp::_run() {
 }
 
 void Tcp::_stop() {
+  std::lock_guard<std::mutex> lock_queue(_stopping_mutex);
   _stopping = true;
   _io_service.stop();
   while (!_io_service.stopped()) {
