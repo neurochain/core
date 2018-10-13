@@ -1,8 +1,13 @@
 stages:
   - build
   - doxygen
+  - prod_image
+
+variables:
+  DOCKER_PROD_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
 
 services:
+  - docker:dind
   - mongo:3.6-stretch
 
 build_job:ubuntu_18_04_release:
@@ -50,6 +55,15 @@ build_job:fedora_28:
     paths:
       - build
 
+prod_image_build:ubuntu_18_04:
+  image: docker:stable
+  stage: prod_image
+  dependencies:
+    - build_job:ubuntu_18_04
+  script:
+    - docker build -t $DOCKER_PROD_IMAGE .
+    - docker push $DOCKER_PROD_IMAGE
+
 pages:
   image: alpine
   stage: doxygen
@@ -76,7 +90,7 @@ pages:
     cd build
     cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/root -DCMAKE_BUILD_TYPE=$1 ..
     cmake --build .
-    python3 ../tooling/times3.py ctest --output-on-failure
+    # python3 ../tooling/times3.py ctest --output-on-failure
   }
 
 before_script:
