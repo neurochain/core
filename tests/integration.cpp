@@ -13,7 +13,9 @@ std::stringstream botconf(const std::string &max_connections,
                           const std::string &listening_port,
                           const std::vector<std::string> &ports) {
   std::stringstream conf;
-  conf << "{\"database\": {\"url\": \"mongodb://mongo:27017/neuro\", \"db_name\": \"neuro\", \"block0_format\": \"PROTO\", \"block0_path\": \"../../block.0.bp\"},"
+  conf << "{\"database\": {\"url\": \"mongodb://mongo:27017/neuro\", "
+          "\"db_name\": \"neuro\", \"block0_format\": \"PROTO\", "
+          "\"block0_path\": \"../../block.0.bp\"},"
        << "    \"logs\": {"
        << "        \"severity\": \"debug\","
        << "        \"to_stdout\": true"

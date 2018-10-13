@@ -194,7 +194,6 @@ bool Bot::init() {
 
   _tcp_config = networking_conf->mutable_tcp();
   LOG_INFO << "Loaded networking" << std::endl;
-  
 
   for (auto &peer : *_tcp_config->mutable_peers()) {
     peer.set_status(messages::Peer::REACHABLE);
@@ -202,7 +201,7 @@ bool Bot::init() {
   }
 
   std::cout << __FUNCTION__ << ":" << __LINE__ << std::endl;
-  
+
   _tcp = std::make_shared<networking::Tcp>(_queue, _keys);
   std::cout << __FUNCTION__ << ":" << __LINE__ << std::endl;
   auto port = _tcp_config->port();
@@ -561,7 +560,10 @@ void Bot::subscribe(const messages::Type type,
   _subscriber.subscribe(type, callback);
 }
 
-  void Bot::join() { std::cout << "JOIN" << std::endl; _networking->join(); }
+void Bot::join() {
+  std::cout << "JOIN" << std::endl;
+  _networking->join();
+}
 
 Bot::~Bot() {
   _subscriber.unsubscribe();
