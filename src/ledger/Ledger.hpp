@@ -23,6 +23,9 @@ class Ledger {
     std::optional<messages::Address> _output;
     std::optional<messages::Hash> _block_id;
 
+    std::optional<messages::Hash> _transaction_id;
+    std::optional<int32_t> _output_id;
+
    public:
     void lower_bound(const messages::BlockHeight &height) {
       _lower_height = std::make_optional<messages::BlockHeight>(height);
@@ -36,6 +39,14 @@ class Ledger {
       _output = std::make_optional<decltype(output)>(output);
     }
 
+    void input_transaction_id(const messages::Hash &transaction_id) {
+      _transaction_id = std::make_optional<messages::Hash>(transaction_id);
+    }
+
+    void output_id(const uint32_t outputid) {
+      _output_id = std::make_optional<uint32_t>(outputid);
+    }
+
     std::optional<const messages::BlockHeight> lower_height() const {
       return _lower_height;
     }
@@ -44,6 +55,11 @@ class Ledger {
     }
     std::optional<const messages::Address> output() const { return _output; }
     std::optional<const messages::Hash> block_id() const { return _block_id; }
+
+    std::optional<const messages::Hash> input_transaction_id() const {
+      return _transaction_id;
+    }
+    std::optional<const int32_t> output_id() const { return _output_id; }
   };
 
  private:

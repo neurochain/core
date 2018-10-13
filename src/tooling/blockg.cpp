@@ -38,7 +38,7 @@ void coinbase(const crypto::EccPub &key_pub, const messages::NCCSDF &ncc,
   auto output = transaction.add_outputs();
   output->mutable_address()->CopyFrom(address);
   output->mutable_value()->CopyFrom(ncc);
-  transaction.mutable_fees()->set_value("0");
+  transaction.mutable_fees()->set_value(0);
   // return transaction;
 }
 
@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
 
   LOG_INFO << "Load 1 ...";
   messages::NCCSDF nccsdf;
-  nccsdf.set_value(std::to_string(ncc));
+  nccsdf.set_value(ncc);
   auto db = _config.database();
   ledger::LedgerMongodb ledger(db);
   block0(bots, keypath, nccsdf, ledger);

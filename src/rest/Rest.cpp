@@ -112,7 +112,7 @@ std::string Rest::get_address_transactions(
         auto unspent_transaction =
             unspent_transactions.add_unspent_transactions();
         unspent_transaction->set_transaction_id(output.address().data());
-        unspent_transaction->set_value(output.value().value());
+        unspent_transaction->set_value(std::to_string(output.value().value()));
       }
     }
   }

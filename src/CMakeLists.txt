@@ -66,6 +66,9 @@ add_library(core
   ./ledger/LedgerMongodb.cpp
   ./ledger/Transaction.hpp
   ./Bot.hpp
+  rest/Rest.cpp
+  rest/Rest.hpp
+
   )
 
 target_link_libraries(core
@@ -83,6 +86,25 @@ target_link_libraries(core
   ${LIBMONGOCXX_STATIC_LIBRARIES}
 )
 
+add_library(consensus
+    ./consensus/Consensus.hpp
+    ./consensus/ForkTree.hpp
+    ./consensus/ForkTree.cpp
+    ./consensus/ForkManager.hpp
+    ./consensus/ForkManager.cpp
+    ./consensus/Pii.hpp
+    ./consensus/Pii.cpp
+    ./consensus/PiiConsensus.hpp
+    ./consensus/PiiConsensus.cpp
+    ./consensus/TransactionPool.hpp
+    ./consensus/TransactionPool.cpp
+)
+
+target_link_libraries(consensus
+    core
+)
+
+
 add_executable(main
   main.cpp
   )
@@ -95,6 +117,10 @@ target_link_libraries(main
   Boost::system
   Boost::filesystem
   Boost::thread
+
+  libonion::onion
+  libonion::onioncpp
+
 
   protobuf::libprotobuf
   ${LIBMONGOCXX_STATIC_LIBRARIES}
@@ -122,7 +148,7 @@ add_executable(blockg
   tooling/blockg.cpp
   )
 target_link_libraries(blockg
-  core
+  consensus
   Boost::program_options
   )
 
@@ -130,7 +156,7 @@ add_executable(wallet
   tooling/wallet.cpp
   )
 target_link_libraries(wallet
-  core
+  consensus
   Boost::program_options
   )
 
@@ -143,15 +169,5 @@ target_link_libraries(transaction
   Boost::program_options
   )
 
-add_executable(rest
-  rest/rest.cpp
-  )
-
-target_link_libraries(rest
-  libonion::onion
-  libonion::onioncpp
-  cryptopp-static
-  core
-  )
-
 include_directories(${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/src ${LIBMONGOCXX_STATIC_INCLUDE_DIRS})
+

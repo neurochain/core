@@ -1,8 +1,6 @@
 #ifndef NEURO_SRC_CRYPTO_ECCPRIV_HPP
 #define NEURO_SRC_CRYPTO_ECCPRIV_HPP
 
-#include <filters.h>
-#include <sha3.h>
 #include <memory>
 
 #include "EccPub.hpp"

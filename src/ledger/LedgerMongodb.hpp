@@ -277,7 +277,7 @@ class LedgerMongodb : public Ledger {
   }
 
   bool for_each(const Filter &filter, Functor functor) {
-    if (!filter.output()) {
+    if (!filter.output() && !filter.input_transaction_id()) {
       return false;
     }
 
@@ -314,6 +314,15 @@ class LedgerMongodb : public Ledger {
     if (filter.output()) {
       const auto bson = messages::to_bson(*filter.output());
       query_transaction << "outputs.address" << bson;
+    }
+
+    if (filter.input_transaction_id()) {
+      query_transaction << "inputs.id"
+                        << messages::to_bson(*filter.input_transaction_id());
+    }
+
+    if (filter.output_id()) {
+      query_transaction << "inputs.outputId" << *filter.output_id();
     }
 
     // auto cursor_block = _blocks.find(query_block.view());

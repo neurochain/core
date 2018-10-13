@@ -47,7 +47,8 @@ TEST(PiiTest, Pii_next_owner) {
   author.set_raw_data(key_pub_raw.data(), key_pub_raw.size());
 
   neuro::tooling::genblock::genblock_from_last_db_block(
-      block11, _ledger, 0, 10 , std::make_optional<neuro::messages::KeyPub>(author));
+      block11, _ledger, 0, 10,
+      std::make_optional<neuro::messages::KeyPub>(author));
 
   _piisus.add_block(block11);
 
@@ -81,12 +82,12 @@ TEST(PiiTest, Pii_first_fork) {
   author.set_raw_data(key_pub_raw.data(), key_pub_raw.size());
 
   neuro::tooling::genblock::genblock_from_last_db_block(
-      block11, _ledger, 0, 10, std::make_optional<neuro::messages::KeyPub>(author),
-      9);
+      block11, _ledger, 0, 10,
+      std::make_optional<neuro::messages::KeyPub>(author), 9);
 
   messages::Block blockfork;
-  ASSERT_TRUE(_ledger->get_block(10,&blockfork));
-  //ASSERT_THROW(_piisus.add_block(block11), std::runtime_error);
+  ASSERT_TRUE(_ledger->get_block(10, &blockfork));
+  // ASSERT_THROW(_piisus.add_block(block11), std::runtime_error);
 }
 
 }  // namespace test
