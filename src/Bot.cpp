@@ -166,9 +166,10 @@ bool Bot::init() {
   _ledger = std::make_shared<ledger::LedgerMongodb>(db_config.url(),
                                                     db_config.db_name());
 
-  if (!_config.has_rest()) {
+  if (_config.has_rest()) {
     const auto rest_config = _config.rest();
-    _rest = std::make_shared<rest::Rest>(rest_config.port(), _ledger);
+    _rest = std::make_shared<rest::Rest>(rest_config.port(), _ledger,
+                                         _networking, _config);
   }
 
   auto networking_conf = _config.mutable_networking();

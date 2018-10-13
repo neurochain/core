@@ -1,3 +1,5 @@
+#include <onion/exportlocal.h>
+#include <onion/extrahandlers.hpp>
 #include <onion/request.hpp>
 #include <onion/response.hpp>
 #include "ledger/Ledger.hpp"
@@ -15,8 +17,15 @@
 namespace neuro {
 namespace rest {
 
-Rest::Rest(const Port port, std::shared_ptr<ledger::Ledger> ledger)
-    : _port(port), _ledger(ledger), _server(O_POOL), _root(&_server) {
+Rest::Rest(const Port port, std::shared_ptr<ledger::Ledger> ledger,
+           std::shared_ptr<networking::Networking> networking,
+           messages::config::Config &config)
+    : _port(port),
+      _ledger(ledger),
+      _networking(networking),
+      _config(config),
+      _server(O_POOL),
+      _root(&_server) {
   LOG_INFO << "Listening at http://localhost:" << port;
 
   const auto list_transactions_route = [this](Onion::Request &req,
@@ -41,7 +50,7 @@ Rest::Rest(const Port port, std::shared_ptr<ledger::Ledger> ledger)
 
   const auto generate_keys_route = [this](Onion::Request &req,
                                           Onion::Response &res) {
-    messages::GeneratedKeys generated_keys;
+    messages::GeneratedKeys generated_keys = generate_keys();
     std::string json;
     messages::to_json(generated_keys, &json);
     res << json;
@@ -51,6 +60,16 @@ Rest::Rest(const Port port, std::shared_ptr<ledger::Ledger> ledger)
   _root.add("list_transactions", list_transactions_route);
   _root.add("publish_transaction", publish_transaction_route);
   _root.add("generate_keys", generate_keys_route);
+  _root.add("^static/", onion_handler_export_local_new("static"));
+  _root.add("", Onion::Shortcuts::static_file("static/index.html"));
+  _root.add("index.html", Onion::Shortcuts::static_file("static/index.html"));
+  _root.add("asset-manifest.json",
+            Onion::Shortcuts::static_file("static/asset-manifest.json"));
+  _root.add("favicon.ico", Onion::Shortcuts::static_file("static/favicon.ico"));
+  _root.add("manifest.json",
+            Onion::Shortcuts::static_file("static/manifest.json"));
+  _root.add("service-worker.js",
+            Onion::Shortcuts::static_file("static/service-worker.js"));
   _thread = std::thread([this]() { _server.listen(); });
 }
 
@@ -120,6 +139,7 @@ messages::Transaction Rest::build_transaction(
 
   // Hash transaction
   messages::hash_transaction(&transaction);
+  //_networking->send(transaction, networking::ProtocolType::PROTOBUF2);
 
   return transaction;
 }

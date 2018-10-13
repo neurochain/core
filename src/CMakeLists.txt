@@ -147,15 +147,4 @@ target_link_libraries(transaction
   Boost::program_options
   )
 
-add_executable(rest
-  rest/rest.cpp
-  )
-
-target_link_libraries(rest
-  libonion::onion
-  libonion::onioncpp
-  cryptopp-static
-  core
-  )
-
 include_directories(${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/src ${LIBMONGOCXX_STATIC_INCLUDE_DIRS})

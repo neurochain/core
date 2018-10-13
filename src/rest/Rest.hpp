@@ -4,6 +4,7 @@
 #include "common/types.hpp"
 #include "crypto/Sign.hpp"
 #include "ledger/Ledger.hpp"
+#include "networking/Networking.hpp"
 
 #include <thread>
 
@@ -17,6 +18,8 @@ class Rest {
  private:
   const Port _port;
   std::shared_ptr<ledger::Ledger> _ledger;
+  std::shared_ptr<networking::Networking> _networking;
+  messages::config::Config _config;
 
   Onion::Onion _server;
   Onion::Url _root;
@@ -31,7 +34,9 @@ class Rest {
   messages::GeneratedKeys generate_keys() const;
 
  public:
-  Rest(const Port port, std::shared_ptr<ledger::Ledger> ledger);
+  Rest(const Port port, std::shared_ptr<ledger::Ledger> ledger,
+       std::shared_ptr<networking::Networking> networking,
+       messages::config::Config &config);
 
   void join();
   void stop();
