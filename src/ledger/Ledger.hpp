@@ -83,14 +83,13 @@ class Ledger {
       const messages::Hasher &transaction_id,
       const messages::Address &address) {
     // TODO get transaction
-    messages::Transaction transaction;
-    auto outputs = transaction.outputs();
     std::vector<messages::Output> result;
-    for (int i = 0; i < transaction.outputs_size(); ++i) {
-      auto output = transaction.mutable_outputs(i);
-      if (output->address() == address) {
-        output->set_output_id(i);
-        result.push_back(*output);
+    messages::Transaction transaction;
+    auto outputs = transaction.mutable_outputs();
+    for (auto it(outputs->begin()); it != outputs->end(); it++) {
+      if (it->address() == address) {
+        it->set_output_id(std::distance(it, outputs->begin()));
+        result.push_back(*it);
       }
     }
     return result;
