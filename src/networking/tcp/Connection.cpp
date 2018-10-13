@@ -68,10 +68,6 @@ void Connection::read_body() {
         std::cout << this << " received message " << _buffer << std::endl;
         std::cout << this << " verifying with ";
         const auto ks = key_pub.raw_data();
-        for (int i = 0; i < ks.size(); i++) {
-          printf("%02x", (uint8_t)ks[i]);
-        }
-        std::cout << std::endl;
 
         const auto check = ecc_pub.verify(_buffer, header_pattern->signature,
                                           sizeof(header_pattern->signature));

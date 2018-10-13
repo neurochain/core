@@ -23,6 +23,8 @@ class EccPriv {
           const std::string &filepath);
   bool save(const std::string &filepath) const;
   bool save(Buffer *buffer) const;
+  messages::KeyPub save() const;
+  bool save(messages::KeyPriv *key_priv) const;
   bool load(const Buffer &buffer);
   bool load(const std::string &filepath);
   static constexpr std::size_t sign_length() { return 64; /* TODO  magic */ }

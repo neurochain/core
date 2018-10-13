@@ -33,6 +33,10 @@ class Buffer : public std::vector<uint8_t> {
   Buffer(const Buffer &) = default;
   Buffer(Buffer &&) = default;
   Buffer(size_type count, uint8_t v) : std::vector<uint8_t>(count, v) {}
+  Buffer(const uint8_t *data, const std::size_t size) { copy(data, size); }
+  Buffer(const char *data, const std::size_t size) {
+    copy(reinterpret_cast<const uint8_t *>(data), size);
+  }
   Buffer(const std::string &string)
       : std::vector<uint8_t>(string.cbegin(), string.cend()) {}
 

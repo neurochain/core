@@ -34,6 +34,10 @@ void to_json(const Packet &packet, std::string *output);
 bsoncxx::document::value to_bson(const Packet &packet);
 std::ostream &operator<<(std::ostream &os, const Packet &packet);
 
+bool operator==(const Packet &a, const Packet &b);
+
+void hash_transaction(Transaction *transaction);
+
 }  // namespace messages
 }  // namespace neuro
 

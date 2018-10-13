@@ -25,6 +25,8 @@ class Ecc {
   Ecc();
   Ecc(const std::string &filepath_private, const std::string &filepath_public);
 
+  Ecc(const EccPriv &ecc_priv, const EccPub &ecc_pub);
+
   const EccPriv &private_key() const;
   const EccPub &public_key() const;
 

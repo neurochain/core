@@ -21,8 +21,10 @@ enum KeyType {
 
 message KeyPub {
   required KeyType type = 1 [ default = ECP256K1 ];
-  optional bytes raw_data = 2; // use OneOf
-  optional string hex_data = 3;
+  oneof data {
+    bytes raw_data = 2;
+    string hex_data = 3;
+  }
 }
 
 message KeyPriv {
@@ -36,12 +38,6 @@ message Hash {
   required Type type = 1 [ default = SHA256 ];
   required bytes data = 2;
 }
-
-message Signature {
-  required KeyType type = 1;
-  required bytes data = 2;
-}
-
 
 message Peer {
   enum Status {

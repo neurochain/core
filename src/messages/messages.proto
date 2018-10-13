@@ -41,12 +41,19 @@ message Input {
   required int32 output_id = 2;
   required int32 key_id = 3;
   optional Hash block_id = 4;
+  optional int32 signature_id = 5;
 }
 
 message Output {
   required Hash address = 1;
   required NCCSDF value = 2;
   optional bytes data = 3;
+  optional int32 output_id = 4;
+}
+
+message Signature {
+  required Hash signature = 1;
+  required KeyPub key_pub = 2;
 }
 
 message Transaction {

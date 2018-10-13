@@ -1,0 +1,24 @@
+FROM debian:sid
+
+MAINTAINER trax Omar Givernaud
+LABEL Description "compile linux debian"
+
+RUN apt-get update -y
+RUN adduser  --disabled-password --gecos "" neuro
+ 
+# Install Packages
+RUN apt-get install -y build-essential git cmake pkg-config wget tar python3 python3-pip
+RUN python3 -m pip install requests
+RUN /usr/bin/ssh-keygen -A
+
+WORKDIR /home/neuro
+RUN chown neuro:neuro -R .
+RUN chmod 700 -R . 
+
+WORKDIR /home/neuro/
+USER neuro 
+
+RUN git clone https://gitlab.com/neurochaintech/core.git && mkdir core/build && cd core/build && cmake -DCMAKE_BUILD_TYPE=Release ..
+
+EXPOSE 22
+

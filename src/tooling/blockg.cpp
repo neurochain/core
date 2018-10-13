@@ -38,12 +38,13 @@ void coinbase(const crypto::EccPub &key_pub, const messages::NCCSDF &ncc,
   auto output = transaction.add_outputs();
   output->mutable_address()->CopyFrom(address);
   output->mutable_value()->CopyFrom(ncc);
-  transaction.mutable_fees()->set_value(0);  //"0");
-                                             // return transaction;
+  transaction.mutable_fees()->set_value("0");
+  // return transaction;
 }
 
 void block0(uint32_t bots, const std::string &pathdir, messages::NCCSDF &nccsdf,
-            const std::string &outfile, ledger::LedgerMongodb &ledger) {
+            ledger::LedgerMongodb &ledger) {
+  LOG_INFO << "In Block 0";
   messages::Block b;
   messages::BlockHeader *header = b.mutable_header();
 
@@ -80,7 +81,7 @@ void block0(uint32_t bots, const std::string &pathdir, messages::NCCSDF &nccsdf,
   ledger.push_block(b);
 
   std::ofstream blockfile0;
-  blockfile0.open(outfile);
+  blockfile0.open("block.0.bp");
   blockfile0 << b.SerializeAsString();
   blockfile0.close();
 }
@@ -89,10 +90,10 @@ int main(int argc, char *argv[]) {
   po::options_description desc("Allowed options");
   desc.add_options()("help,h", "Produce help message.")(
       "wallet,w", po::value<uint32_t>()->default_value(100),
-      "Number of Wallet in BLock 0")(
+      "Nombre of Wallet in BLock 0")(
       "keyspath,k", po::value<std::string>()->default_value("keys"),
       "File path for keys (appending .pub or .priv)")(
-      "ncc,n", po::value<int64_t>()->default_value(1000),
+      "ncc,n", po::value<uint64_t>()->default_value(1000),
       "How many ncc you want")(
       "configuration,c", po::value<std::string>()->default_value("bot.json"),
       "Configuration path.");
@@ -133,6 +134,8 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
+  return 0;
+
   std::string keypath = vm["keyspath"].as<std::string>();
   if (!exists_file(keypath)) {
     std::cout << "create dir : " << std::endl;
@@ -142,18 +145,14 @@ int main(int argc, char *argv[]) {
 
   LOG_INFO << "Load 1 ...";
   uint32_t bots = vm["wallet"].as<uint32_t>();
-  int64_t ncc = vm["ncc"].as<int64_t>();
+  uint64_t ncc = vm["ncc"].as<uint64_t>();
 
   LOG_INFO << "Load 1 ...";
   messages::NCCSDF nccsdf;
-  nccsdf.set_value(ncc);  // std::to_string(ncc));
+  nccsdf.set_value(std::to_string(ncc));
   auto db = _config.database();
-
-  LOG_INFO << "Load 2 ...";
-  ledger::LedgerMongodb ledger(_config.database().url(),
-                               _config.database().db_name());
-  LOG_INFO << "Load 3 ...";
-  block0(bots, keypath, nccsdf, _config.database().block0_path(), ledger);
+  ledger::LedgerMongodb ledger(db);
+  block0(bots, keypath, nccsdf, ledger);
 
   return 0;
 }
