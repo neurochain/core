@@ -58,6 +58,10 @@ build_job:fedora_28:
 prod_image_build:ubuntu_18_04:
   image: docker:stable
   stage: prod_image
+  variables:
+    DOCKER_DRIVER: overlay2
+  services:
+    - docker:stable-dind
   dependencies:
     - build_job:ubuntu_18_04
   script:
