@@ -17,15 +17,16 @@
 namespace neuro {
 namespace rest {
 
-Rest::Rest(const Port port, std::shared_ptr<ledger::Ledger> ledger,
+Rest::Rest(std::shared_ptr<ledger::Ledger> ledger,
            std::shared_ptr<networking::Networking> networking,
-           messages::config::Config &config)
-    : _port(port),
-      _ledger(ledger),
+           const messages::config::Rest &config)
+    : _ledger(ledger),
       _networking(networking),
       _config(config),
+      _port(_config.port()),
+      _static_path(_config.static_path()),
       _server(O_POOL) {
-  LOG_INFO << "Listening at http://localhost:" << _port;
+  LOG_INFO << "Listening at http://127.0.0.1:" << _port;
   _server.setPort(_port);
   _server.setHostname("127.0.0.1");
   _root = std::make_unique<Onion::Url>(&_server);
@@ -61,18 +62,30 @@ Rest::Rest(const Port port, std::shared_ptr<ledger::Ledger> ledger,
   _root->add("list_transactions", list_transactions_route);
   _root->add("publish_transaction", publish_transaction_route);
   _root->add("generate_keys", generate_keys_route);
-  _root->add("^static/", onion_handler_export_local_new("static"));
-  _root->add("", Onion::Shortcuts::static_file("static/index.html"));
-  _root->add("index.html", Onion::Shortcuts::static_file("static/index.html"));
-  _root->add("asset-manifest.json",
-             Onion::Shortcuts::static_file("static/asset-manifest.json"));
-  _root->add("favicon.ico",
-             Onion::Shortcuts::static_file("static/favicon.ico"));
-  _root->add("manifest.json",
-             Onion::Shortcuts::static_file("static/manifest.json"));
-  _root->add("service-worker.js",
-             Onion::Shortcuts::static_file("static/service-worker.js"));
+  serve_folder("^static/", "static");
+  serve_file("", "index.html");
+  serve_file("index.html");
+  serve_file("asset-manifest.json");
+  serve_file("favicon.ico");
+  serve_file("manifest.json");
+  serve_file("service-worker.js");
   _thread = std::thread([this]() { _server.listen(); });
+}
+
+void Rest::serve_file(const std::string filename) {
+  LOG_INFO << "STATIC_PATH " << _static_path;
+  _root->add(filename,
+             Onion::Shortcuts::static_file((_static_path + filename).c_str()));
+}
+
+void Rest::serve_file(const std::string route, const std::string filename) {
+  _root->add(route,
+             Onion::Shortcuts::static_file((_static_path + filename).c_str()));
+}
+
+void Rest::serve_folder(const std::string route, const std::string foldername) {
+  _root->add(route, onion_handler_export_local_new(
+                        (_static_path + foldername).c_str()));
 }
 
 messages::Hasher Rest::load_hash(const std::string &hash_str) const {
