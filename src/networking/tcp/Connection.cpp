@@ -44,7 +44,9 @@ void Connection::read_body() {
 
         for (const auto &body : message->bodies()) {
           const auto type = get_type(body);
+          std::cout << this << " TYPE " << type << std::endl;
           if (type == messages::Type::kHello) {
+            std::cout << this << " read hello" << std::endl;
             if (_remote_peer->has_key_pub()) {
               // TODO check pub key
 
@@ -54,18 +56,22 @@ void Connection::read_body() {
               terminate();
               return;
             } else {
+              std::cout << this << "coin " << body.hello() << std::endl;
               _remote_peer->mutable_key_pub()->CopyFrom(body.hello().key_pub());
+              std::cout << this << "coin " << *_remote_peer << std::endl;
             }
           }
         }
 
         crypto::EccPub ecc_pub;
         const auto key_pub = _remote_peer->key_pub();
+        std::cout << this << " received message " << _buffer << std::endl;
+        std::cout << this << " verifying with ";
         const auto ks = key_pub.raw_data();
-
-        ecc_pub.load(
-            reinterpret_cast<const uint8_t *>(key_pub.raw_data().data()),
-            key_pub.raw_data().size());
+        for (int i = 0; i < ks.size(); i++) {
+          printf("%02x", (uint8_t)ks[i]);
+        }
+        std::cout << std::endl;
 
         const auto check = ecc_pub.verify(_buffer, header_pattern->signature,
                                           sizeof(header_pattern->signature));

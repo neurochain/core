@@ -1,7 +1,6 @@
 #ifndef NEURO_SRC_LEDGERMONGODB_HPP
 #define NEURO_SRC_LEDGERMONGODB_HPP
 
-#include "common/logger.hpp"
 #include "config.pb.h"
 #include "ledger/Ledger.hpp"
 #include "ledger/mongo.hpp"
@@ -20,15 +19,12 @@ class LedgerMongodb : public Ledger {
   mutable mongocxx::collection _transactions;
   mutable mongocxx::collection _blocks_forks;
 
+  void remove_OID(mongocxx::options::find &filter) {}
   bool get_block_header(const bsoncxx::document::view &block,
                         messages::BlockHeader *header) {
     messages::from_bson(block, header);
     return true;
   }
-
-  // bool
-  // get_block(const bsoncxx::document::view &bson_block,
-  //           messages::Block *block);
 
   bool get_transactions_from_block(const bsoncxx::document::view &id,
                                    messages::Block *block) {

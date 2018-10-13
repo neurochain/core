@@ -73,8 +73,6 @@ void block0(uint32_t bots, const std::string &pathdir, messages::NCCSDF &nccsdf,
     coinbase(ecc.public_key(), nccsdf, *transaction);
   }
 
-  header->mutable_id()->set_data("");
-
   // const auto tmp = crypto::hash_sha3_256( b.SerializeAsString() );
   neuro::Buffer tmpbuffer(b.SerializeAsString());
   messages::Hasher hash_id(tmpbuffer);
