@@ -151,7 +151,9 @@ bool genblock_from_last_db_block(
   }
   neuro::messages::Block last_block;
   if (!ledger->get_block(height, &last_block)) {
-    return false;
+    if (!ledger->fork_get_block(height, &last_block)) {
+      return false;
+    }
   }
 
   return genblock_from_block(block, last_block, seed, new_height, author,

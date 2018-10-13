@@ -404,6 +404,40 @@ class LedgerMongodb : public Ledger {
     }
   }
 
+  bool fork_get_block(const messages::BlockID &id, messages::Block *block) {
+    auto query = bss::document{} << "header.id" << messages::to_bson(id)
+                                 << bss::finalize;
+
+    mongocxx::options::find findoption;
+    auto projection_transaction = bss::document{};
+    projection_transaction << "_id" << 0;  ///!< remove _id objectID
+    findoption.projection(projection_transaction.view());
+    const auto res = _blocks_forks.find_one(std::move(query), findoption);
+    if (!res) {
+      return false;
+    }
+
+    messages::from_bson(res->view(), block);
+    return true;
+  }
+
+  bool fork_get_block(const messages::BlockHeight height,
+                      messages::Block *block) {
+    auto query = bss::document{} << "header.height" << height << bss::finalize;
+
+    mongocxx::options::find findoption;
+    auto projection_transaction = bss::document{};
+    projection_transaction << "_id" << 0;  ///!< remove _id objectID
+    findoption.projection(projection_transaction.view());
+    const auto res = _blocks_forks.find_one(std::move(query), findoption);
+    if (!res) {
+      return false;
+    }
+
+    messages::from_bson(res->view(), block);
+    return true;
+  }
+
   void fork_test() {
     auto query_block = bss::document{} << bss::finalize;
     _blocks_forks.delete_many(query_block.view());

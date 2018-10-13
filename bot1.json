@@ -12,12 +12,9 @@
       }
   },
   "database": {
-      "url" : "mongodb://127.0.0.1:27017/neuro",
+      "url" : "mongodb://mongo:27017/neuro",
       "db_name" : "neuro",
       "block0_format": "PROTO",
       "block0_path" : "../../block.0.bp"
-  },
-  "rest":{
-	"port" : 8080
-	}
+  }
 }
