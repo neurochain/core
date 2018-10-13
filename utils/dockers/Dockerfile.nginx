@@ -1,0 +1,14 @@
+FROM ubuntu:18.04
+
+MAINTAINER trax Omar Givernaud
+LABEL Description "reverse proxy"
+
+RUN apt update 
+RUN apt install -y nginx
+RUN apt-get update
+RUN apt-get install -y  software-properties-common
+RUN add-apt-repository ppa:certbot/certbot
+RUN apt-get update
+RUN apt-get install -y python-certbot-nginx
+
+
