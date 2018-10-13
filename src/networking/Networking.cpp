@@ -67,7 +67,13 @@ void Networking::join() {
   }
 }
 
-Networking::~Networking() { _queue->quit(); }
+Networking::~Networking() {
+  LOG_DEBUG << this << " Networking killing";
+  stop();
+  LOG_DEBUG << this << " Networking killing2";
+  _queue->quit();
+  LOG_DEBUG << this << " Networking killed";
+}
 
 }  // namespace networking
 }  // namespace neuro

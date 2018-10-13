@@ -168,6 +168,8 @@ bool Bot::init() {
   }
   LOG_DEBUG << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__;
 
+  subscribe();
+
   const auto db_config = _config.database();
   // _ledger = std::make_shared<ledger::LedgerMongodb>(db_config.url(),
   //                                                   db_config.db_name());
@@ -375,6 +377,8 @@ void Bot::handler_world(const messages::Header &header,
 
 void Bot::handler_hello(const messages::Header &header,
                         const messages::Body &body) {
+  std::cout << this << " " << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__
+            << std::endl;
   if (!body.has_hello()) {
     LOG_WARNING << this
                 << " SomeThing wrong. Got a call to handler_hello with "
@@ -519,6 +523,8 @@ bool Bot::next_to_connect(messages::Peer **peer) {
 }
 
 void Bot::keep_max_connections() {
+  LOG_DEBUG << this << " " << __FILE__ << ":" << __FUNCTION__ << ":"
+            << __LINE__;
   std::size_t peers_size = 0;
   peers_size = _tcp_config->peers().size();
 
@@ -568,6 +574,11 @@ void Bot::join() {
 Bot::~Bot() {
   _subscriber.unsubscribe();
   LOG_DEBUG << this << " From Bot destructor" << &_subscriber;
+  LOG_DEBUG << this << " " << _queue.use_count();
+  LOG_DEBUG << this << " " << _networking.use_count();
+  LOG_DEBUG << this << " " << _keys.use_count();
+  LOG_DEBUG << this << " " << _ledger.use_count();
+  LOG_DEBUG << this << " " << _rest.use_count();
 }
 
 }  // namespace neuro

@@ -1,5 +1,6 @@
 #include "crypto/EccPriv.hpp"
 #include <iomanip>
+#include "messages/Message.hpp"
 
 namespace neuro {
 namespace crypto {
@@ -89,10 +90,9 @@ bool EccPriv::operator==(const EccPriv &key) const {
 }
 
 std::ostream &operator<<(std::ostream &os, const EccPriv &priv) {
-  std::ios_base::fmtflags f(os.flags());
-
-  os << std::hex << priv._key.GetPrivateExponent();
-  os.flags(f);
+  messages::KeyPriv k;
+  priv.save(&k);
+  os << k;
   return os;
 }
 

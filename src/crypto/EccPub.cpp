@@ -1,6 +1,7 @@
 #include "crypto/EccPub.hpp"
 #include <iomanip>
 #include <iostream>
+#include "messages/Message.hpp"
 
 namespace neuro {
 namespace crypto {
@@ -104,13 +105,10 @@ bool EccPub::operator==(const EccPub &key) const {
   return (queue0 == queue1);
 }
 
-std::ostream &operator<<(std::ostream &os, const EccPub &k) {
-  std::string s;
-  std::ios_base::fmtflags f(os.flags());
-  k._key.Save(CryptoPP::StringSink(s).Ref());
-  Buffer b(s);
-  os << std::hex << b;
-  os.flags(f);
+std::ostream &operator<<(std::ostream &os, const EccPub &pub) {
+  messages::KeyPub k;
+  pub.save(&k);
+  os << k;
   return os;
 }
 }  // namespace crypto

@@ -9,41 +9,6 @@
 namespace neuro {
 using namespace std::chrono_literals;
 
-std::stringstream botconf(const std::string &max_connections,
-                          const std::string &listening_port,
-                          const std::vector<std::string> &ports) {
-  std::stringstream conf;
-  conf << "{\"database\": {\"url\": \"mongodb://mongo:27017/neuro\", "
-          "\"db_name\": \"neuro\", \"block0_format\": \"PROTO\", "
-          "\"block0_path\": \"../../block.0.bp\"},"
-       << "    \"logs\": {"
-       << "        \"severity\": \"debug\","
-       << "        \"to_stdout\": true"
-       << "    },"
-       << "    \"networking\" : {"
-       << "        \"max_connections\" : " << max_connections << " ,"
-       << "        \"tcp\" : {"
-       << "            \"port\" : " << listening_port << ",";
-  conf << " \"peers\": [";
-  if (!ports.empty()) {
-    std::size_t i;
-    for (i = 0; i < ports.size() - 1; i++) {
-      conf << "  {\"endpoint\" : \"127.0.0.1\", \"port\" : " << ports[i]
-           << "},";
-    }
-    conf << "  {\"endpoint\" : \"127.0.0.1\", \"port\" : " << ports[i] << "}";
-  }
-  conf << "]";
-  conf << "        }"
-       << "    },"
-       << "    \"selection_method\" :\"simple\", "
-       << "    \"keep_status\" :\"connected\", "
-       << "    \"key_pub_path\" :\"\", "
-       << "    \"key_priv_path\" :\"\" "
-       << "}";
-  return conf;
-}
-
 class Listener {
  private:
   bool _received_connection0{false};
@@ -138,29 +103,16 @@ class Integration : public ::testing::Test {
 };
 
 TEST(COIN, simple_interaction) {
-  auto conf0 = botconf("3", "1337", {});
-  auto conf1 = botconf("3", "1338", {"1337", "1339"});
-  auto conf2 = botconf("3", "1339", {"1337", "1338"});
-
-  // { Bot bot(conf2); }
-  // return true;
-  std::cout << __LINE__ << std::endl;
-
   Listener listener;
   std::vector<std::shared_ptr<Bot>> bots;
-  auto bot0 = std::make_shared<Bot>(conf0);
-  std::cout << __LINE__ << std::endl;
-  auto bot1 = std::make_shared<Bot>(conf1);
-  std::cout << __LINE__ << std::endl;
+  auto bot0 = std::make_shared<Bot>("tests/bot0.json");
+  auto bot1 = std::make_shared<Bot>("tests/bot1.json");
 
   messages::Subscriber subscriber0(bot0->queue());
   messages::Subscriber subscriber1(bot1->queue());
   std::cout << __LINE__ << std::endl;
 
   int bot_id = 0;
-  std::cout << __LINE__ << std::endl;
-
-  std::cout << conf1.str() << std::endl;
   std::cout << __LINE__ << std::endl;
 
   for (const auto &bot : bots) {
@@ -202,7 +154,7 @@ TEST(COIN, simple_interaction) {
   }
   std::cout << __LINE__ << std::endl;
 
-  std::this_thread::sleep_for(15s);
+  std::this_thread::sleep_for(30s);
   // auto message = std::make_shared<messages::Message>();
   // message->add_bodies()->mutable_hello();
   // bot0->networking()->send(message, networking::ProtocolType::PROTOBUF2);
@@ -210,8 +162,7 @@ TEST(COIN, simple_interaction) {
   std::this_thread::sleep_for(500ms);
   ASSERT_TRUE(listener.validated());
 
-  std::this_thread::sleep_for(500ms);
-  LOG_DEBUG << this << " About to go out";
+  LOG_DEBUG << " About to go out";
 }
 
 }  // namespace neuro

@@ -118,7 +118,6 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
 
 void Tcp::_run() {
   boost::system::error_code ec;
-  std::lock_guard<std::mutex> lock_queue(_stopping_mutex);
   if (_stopping) {
     return;
   }
@@ -233,7 +232,7 @@ bool Tcp::disconnected(const Connection::ID id, std::shared_ptr<Peer> peer) {
 Tcp::~Tcp() {
   std::lock_guard<std::mutex> lock_queue(_connection_mutex);
   _stop();
-  LOG_DEBUG << this << " TCP Killing: ";
+  LOG_DEBUG << this << " TCP killed";
 }
 
 }  // namespace networking
