@@ -104,7 +104,7 @@ bool Bot::update_ledger() {
 
   auto message = std::make_shared<messages::Message>();
   auto header = message->mutable_header();
-  const auto id = fill_header(header);
+  fill_header(header);
   // auto height = last_header->mutable_height();
   // get_block->set_height(last_header->height()+1);
   // get_block->set_count(10);
@@ -226,7 +226,7 @@ void Bot::handler_connection(const messages::Header &header,
   LOG_DEBUG << this << " Got a connection to " << peer;
   // send hello msg
   auto message = std::make_shared<messages::Message>();
-  const auto id = fill_header(message->mutable_header());
+  fill_header(message->mutable_header());
 
   message->mutable_header()->mutable_peer()->CopyFrom(peer);
   auto hello = message->add_bodies()->mutable_hello();

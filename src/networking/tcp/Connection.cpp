@@ -68,10 +68,6 @@ void Connection::read_body() {
         std::cout << this << " received message " << _buffer << std::endl;
         std::cout << this << " verifying with ";
         const auto ks = key_pub.raw_data();
-        for (int i = 0; i < ks.size(); i++) {
-          printf("%02x", (uint8_t)ks[i]);
-        }
-        std::cout << std::endl;
 
         ecc_pub.load(
             reinterpret_cast<const uint8_t *>(key_pub.raw_data().data()),
