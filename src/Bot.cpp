@@ -168,8 +168,7 @@ bool Bot::init() {
 
   if (_config.has_rest()) {
     const auto rest_config = _config.rest();
-    _rest = std::make_shared<rest::Rest>(rest_config.port(), _ledger,
-                                         _networking, _config);
+    _rest = std::make_shared<rest::Rest>(_ledger, _networking, rest_config);
   }
 
   auto networking_conf = _config.mutable_networking();
@@ -545,7 +544,7 @@ void Bot::subscribe(const messages::Type type,
   _subscriber.subscribe(type, callback);
 }
 
-  void Bot::join() { _networking->join(); }
+void Bot::join() { _networking->join(); }
 
 Bot::~Bot() {
   _subscriber.unsubscribe();
