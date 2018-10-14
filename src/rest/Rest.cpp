@@ -221,9 +221,9 @@ messages::GeneratedKeys Rest::generate_keys() const {
 messages::Transaction Rest::build_faucet_transaction(
     const std::string address_str, const uint64_t amount) {
   // Set transactions_ids
-  const messages::Hasher address = load_hash(address_str);
+  auto bot_address = messages::Hasher(_keys->public_key());
   messages::UnspentTransactions unspent_transactions =
-      list_unspent_transactions(address);
+      list_unspent_transactions(bot_address);
   messages::TransactionToPublish transaction_to_publish;
   for (auto unspent_transaction : unspent_transactions.unspent_transactions()) {
     auto transaction_id = transaction_to_publish.add_transactions_ids();
