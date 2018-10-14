@@ -6,7 +6,7 @@ namespace consensus {
 
 PiiConsensus::PiiConsensus(std::shared_ptr<ledger::Ledger> ledger,
                            uint32_t block_assembly)
-    : _ledger(ledger), _ForkManager(ledger), _valide_block(true) {
+    : _ledger(ledger), _transaction_pool(_ledger),  _ForkManager(ledger),  _valide_block(true) {
   // load all block from
   _assembly_blocks = block_assembly;
   init();
@@ -18,7 +18,6 @@ void PiiConsensus::init() {
   _entropies.clear();
   _owner_ordered.clear();
   int height = _ledger->height();
-  std::cout << " Call Init " << height << std::endl;
   for (int i = 0; i <= height; ++i) {
     messages::Block block;
     if (_ledger->get_block(i, &block)) {
@@ -26,6 +25,10 @@ void PiiConsensus::init() {
     }
   }
   _valide_block = save_valide;
+}
+
+void PiiConsensus::add_transaction(const messages::Transaction &transaction){
+    _transaction_pool.add_transactions(transaction);
 }
 
 void PiiConsensus::add_block(const neuro::messages::Block &block) {
@@ -211,10 +214,14 @@ void PiiConsensus::show_owner(uint32_t start, uint32_t how) {
     messages::Hash owner_addr;
     owner_addr.ParseFromString(operator()(ramdon_at(i, _nonce_assembly)));
 
-    std::string t;
-    messages::to_json(owner_addr, &t);
-    std::cout << t << std::endl;
+    std::cout << owner_addr << std::endl;
   }
+}
+
+void PiiConsensus::add_wallet_keys(const crypto::Ecc *wallet){
+    const auto buf = wallet->public_key().save();
+    messages::Address addr(buf);
+    _wallets_keys[addr.SerializeAsString()] = wallet;
 }
 
 }  // namespace consensus

@@ -10,6 +10,7 @@ namespace consensus {
 
 class Consensus {
  public:
+  virtual void add_transaction(const messages::Transaction &transaction) = 0;
   /**
    * \brief Add block for PII calcul
    * \param [in] block block to add

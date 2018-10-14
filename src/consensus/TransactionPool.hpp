@@ -20,11 +20,11 @@ class TransactionPool {
  public:
   TransactionPool(std::shared_ptr<ledger::Ledger> ledger);
 
-  bool add_transactions(messages::Transaction &transaction);
-  void delete_transactions(messages::Transaction &transaction);
+  bool add_transactions(const messages::Transaction &transaction);
+  void delete_transactions(const messages::Transaction &transaction);
 
   bool build_block(messages::Block &block, messages::BlockHeight height,
-                   crypto::Ecc &author, uint64_t rewarde = 10);
+                   const crypto::Ecc &author, uint64_t rewarde = 10);
   void coinbase(messages::Transaction *transaction,
                 const messages::Address &addr, const messages::NCCSDF &ncc);
 };
