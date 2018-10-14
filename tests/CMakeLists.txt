@@ -21,7 +21,6 @@ configure_file("configs/bot2.json.in" "${CMAKE_CURRENT_BINARY_DIR}/bot2.json" @O
 set(ProtoFiles "networking/proto/Messages.proto")
 PROTOBUF_GENERATE_CPP(ProtoSources ProtoHeaders ${ProtoFiles})
 
-add_test(integration integration)
 add_executable(integration
   integration.cpp
   )
@@ -75,5 +74,11 @@ target_link_libraries(piitest
     GTest::main
     consensus
 )
+
+add_test(integration integration)
+add_test(dbreset  dbreset)
+add_test(block0	  block0)
+add_test(blocks19 blocks19)
+add_test(piitest  piitest)
 
 include_directories(${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/src ${LIBMONGOCXX_STATIC_INCLUDE_DIRS})
