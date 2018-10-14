@@ -27,8 +27,8 @@ class Rest {
   std::unique_ptr<Onion::Url> _root;
 
   std::thread _thread;
-  std::string get_address_transactions(std::shared_ptr<ledger::Ledger> ledger,
-                                       const std::string &address) const;
+  std::string list_transactions(std::shared_ptr<ledger::Ledger> ledger,
+                                const std::string &address) const;
   messages::Transaction build_transaction(
       const messages::TransactionToPublish &transaction_to_publish) const;
   void publish_transaction(messages::Transaction &transaction) const;

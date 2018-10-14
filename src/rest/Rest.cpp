@@ -34,7 +34,7 @@ Rest::Rest(std::shared_ptr<ledger::Ledger> ledger,
                                               Onion::Response &res) {
     const auto address = req.query("address", "");
     LOG_INFO << "ADDRESS " << address;
-    res << get_address_transactions(_ledger, address);
+    res << list_transactions(_ledger, address);
     return OCS_PROCESSED;
   };
 
@@ -95,9 +95,8 @@ messages::Hasher Rest::load_hash(const std::string &hash_str) const {
   return result;
 }
 
-std::string Rest::get_address_transactions(
-    std::shared_ptr<ledger::Ledger> ledger,
-    const std::string &address_str) const {
+std::string Rest::list_transactions(std::shared_ptr<ledger::Ledger> ledger,
+                                    const std::string &address_str) const {
   auto buffer = Buffer(address_str);
 
   messages::UnspentTransactions unspent_transactions;
@@ -148,12 +147,20 @@ messages::Transaction Rest::build_transaction(
   transaction.mutable_outputs()->CopyFrom(transaction_to_publish.outputs());
   transaction.mutable_fees()->CopyFrom(transaction_to_publish.fees());
 
-  // Sign transaction
+  // Sign the transaction
   crypto::sign(keys, &transaction);
 
-  // Hash transaction
+  // Hash the transaction
   messages::hash_transaction(&transaction);
-  //_networking->send(transaction, networking::ProtocolType::PROTOBUF2);
+
+  // TODO Add the transaction to the transaction pool
+
+  // Send the transaction on the network
+  auto message = std::make_shared<messages::Message>();
+  messages::fill_header(message->mutable_header());
+  auto body = message->add_bodies();
+  body->mutable_transaction()->CopyFrom(transaction);
+  _networking->send(message, networking::ProtocolType::PROTOBUF2);
 
   return transaction;
 }

@@ -75,15 +75,6 @@ bool Bot::load_keys(const messages::config::Config &config) {
   return true;
 }
 
-int32_t Bot::fill_header(messages::Header *header) {
-  int32_t id = std::rand();
-  header->set_version(MessageVersion);
-  header->mutable_ts()->set_data(std::time(nullptr));
-  header->set_id(id);
-
-  return id;
-}
-
 void Bot::handler_ledger(const messages::Header &header,
                          const messages::Body &body) {
   // TODO send to concensus
@@ -104,7 +95,7 @@ bool Bot::update_ledger() {
 
   auto message = std::make_shared<messages::Message>();
   auto header = message->mutable_header();
-  fill_header(header);
+  messages::fill_header(header);
   // auto height = last_header->mutable_height();
   // get_block->set_height(last_header->height()+1);
   // get_block->set_count(10);
@@ -225,7 +216,7 @@ void Bot::handler_connection(const messages::Header &header,
   LOG_DEBUG << this << " Got a connection to " << peer;
   // send hello msg
   auto message = std::make_shared<messages::Message>();
-  fill_header(message->mutable_header());
+  messages::fill_header(message->mutable_header());
 
   message->mutable_header()->mutable_peer()->CopyFrom(peer);
   auto hello = message->add_bodies()->mutable_hello();

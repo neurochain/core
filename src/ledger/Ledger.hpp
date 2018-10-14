@@ -95,6 +95,10 @@ class Ledger {
   // helpers
 
   messages::Transactions list_transactions(const messages::Address &address) {
+    std::cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n";
+    std::string json;
+    to_json(address, &json);
+    std::cout << json << "\n";
     Filter filter;
     filter.output_key_id(address);
     messages::Transactions transactions;
@@ -105,21 +109,25 @@ class Ledger {
                return true;
              });
 
+    std::string transactions_json;
+    to_json(transactions, &transactions_json);
+    std::cout << "TRANSACTIONS:" << transactions_json << "\n";
     return transactions;
   }
 
   bool is_unspent_output(const messages::Transaction &transaction,
                          const int output_id) {
+    return true;
     Filter filter;
     filter.input_transaction_id(transaction.id());
     filter.output_id(output_id);
 
-    bool has_match = false;
+    bool no_match = true;
     for_each(filter, [&](const messages::Transaction _) {
-      has_match = true;
+      no_match = false;
       return true;
     });
-    return has_match;
+    return no_match;
   }
 
   std::vector<messages::Output> get_outputs_for_address(
