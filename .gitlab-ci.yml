@@ -34,28 +34,28 @@ build_job:ubuntu_18_04_release:
       - build
 
 
-build_job:debian_9:
-  image: registry.gitlab.com/neurochaintech/core/debian:sid
-  stage: build
-  tags:
-    - cpp
-  script:
-    - bot_build "Release"
-  artifacts:
-    paths:
-      - build
-
-build_job:fedora_28:
-  image: registry.gitlab.com/neurochaintech/core/fedora:28
-  stage: build
-  tags:
-    - cpp
-  script:
-    - bot_build "Release"
-  artifacts:
-    paths:
-      - build
-
+#build_job:debian_9:
+#  image: registry.gitlab.com/neurochaintech/core/debian:sid
+#  stage: build
+#  tags:
+#    - cpp
+#  script:
+#    - bot_build "Release"
+#  artifacts:
+#    paths:
+#      - build
+#
+#build_job:fedora_28:
+#  image: registry.gitlab.com/neurochaintech/core/fedora:28
+#  stage: build
+#  tags:
+#    - cpp
+#  script:
+#    - bot_build "Release"
+#  artifacts:
+#    paths:
+#      - build
+#
 prod_image_build:ubuntu_18_04:
   image: docker:stable
   stage: prod_image
