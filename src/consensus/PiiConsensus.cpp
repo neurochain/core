@@ -18,6 +18,7 @@ void PiiConsensus::init() {
   _entropies.clear();
   _owner_ordered.clear();
   int height = _ledger->height();
+  std::cout << " Call Init " << height << std::endl;
   for (int i = 0; i <= height; ++i) {
     messages::Block block;
     if (_ledger->get_block(i, &block)) {
@@ -57,8 +58,9 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
     // possible do this after n blocks 3 of diff of height
     if (_ForkManager.fork_results()) {
       init();
+      return;
     }
-    throw std::runtime_error("Owner not correct");
+    // throw std::runtime_error("Owner not correct");
   }
 
   ///!< get prev block from this
@@ -75,6 +77,7 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
       _ledger->fork_add_block(block);
       if (_ForkManager.fork_results()) {
         init();
+        return;
       }
     }
   }
@@ -109,12 +112,20 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
       // #error  TO DO get transaction
       uint64_t add = 0;
       auto inputid = input.id();
+
       if (_ledger->get_transaction(inputid, &thinput)) {
         const neuro::messages::Output &thxouput =
             thinput.outputs(input.output_id());
         add = thxouput.value()
                   .value();  // std::atol(thxouput.value().value().c_str());
+
         _input.push_back({thxouput.address().SerializeAsString(), add});
+      } else {
+        if (inputid.data().size() > 0) {
+          std::string hl;
+          messages::to_json(inputid, &hl);
+          throw std::runtime_error({"Transaction not found " + hl});
+        }
       }
       somme_Inputs += add;
     }
@@ -132,7 +143,6 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
 
   _last_heigth_block = block.header().height();
   if (((_last_heigth_block + 1) % _assembly_blocks) == 0) {
-    std::cout << "I m in new assembly " << std::endl;
     calcul();
     random_from_hashs();
   }
