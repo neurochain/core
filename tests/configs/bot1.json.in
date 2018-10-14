@@ -31,9 +31,9 @@
     },
     "database": {
 	"url": "mongodb://mongo:27017/neuro",
-	"db_name": "neuro",
+	"db_name": "neuro1338",
 	"block0_format": "PROTO",
-	"block0_path": "@CMAKE_BINARY_DIR@/block.0.bp"
+	"block0_path": "block.0.bp"
     },
     "rest": {
 	"port": 8081
