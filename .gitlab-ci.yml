@@ -92,6 +92,7 @@ pages:
 .bot_build: &bot_build |
   function bot_build() {
     echo "Building in $1"
+    set -ex 
     export BUILD_TYPE=$1
     mkdir build || echo k
     cd build
