@@ -1,4 +1,5 @@
 #include "messages/Message.hpp"
+#include "common/logger.hpp"
 
 namespace neuro {
 namespace messages {
@@ -12,6 +13,9 @@ bool from_buffer(const Buffer &buffer, Packet *packet) {
 bool from_json(const std::string &json, Packet *packet) {
   google::protobuf::util::JsonParseOptions options;
   auto r = google::protobuf::util::JsonStringToMessage(json, packet, options);
+  if (!r.ok()) {
+    LOG_ERROR << "Could not parse json " << r;
+  }
   return r.ok();
 }
 

@@ -154,7 +154,7 @@ TEST(COIN, simple_interaction) {
   }
   std::cout << __LINE__ << std::endl;
 
-  std::this_thread::sleep_for(30s);
+  std::this_thread::sleep_for(3s);
   // auto message = std::make_shared<messages::Message>();
   // message->add_bodies()->mutable_hello();
   // bot0->networking()->send(message, networking::ProtocolType::PROTOBUF2);

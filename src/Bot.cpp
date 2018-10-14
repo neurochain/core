@@ -32,7 +32,11 @@ Bot::Bot(const std::string &configuration_path)
     : _queue(std::make_shared<messages::Queue>()),
       _networking(std::make_shared<networking::Networking>(_queue)),
       _subscriber(_queue) {
-  messages::from_json_file(configuration_path, &_config);
+  if (!messages::from_json_file(configuration_path, &_config)) {
+    std::string s = "Coult not parse configuration file " + configuration_path +
+                    " from " + boost::filesystem::current_path().native();
+    throw std::runtime_error(s);
+  }
   if (!init()) {
     throw std::runtime_error("Could not create bot from configuration file");
   }

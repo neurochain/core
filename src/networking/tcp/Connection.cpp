@@ -50,15 +50,12 @@ void Connection::read_body() {
             if (_remote_peer->has_key_pub()) {
               // TODO check pub key
 
-              LOG_ERROR << this
-                        << " Peer key does not match one in configuration "
+              LOG_ERROR << this << " Hello message does not provide pub key"
                         << *_remote_peer;
               terminate();
               return;
             } else {
-              std::cout << this << "coin " << body.hello() << std::endl;
               _remote_peer->mutable_key_pub()->CopyFrom(body.hello().key_pub());
-              std::cout << this << "coin " << *_remote_peer << std::endl;
             }
           }
         }
