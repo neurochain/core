@@ -7,7 +7,7 @@ RUN apt-get update -y
 RUN adduser  --disabled-password --gecos "" neuro
 
 # Install Packages
-RUN apt-get install -y build-essential git cmake subversion  pkg-config wget tar python3 python3-pip
+RUN apt-get install -y build-essential git cmake subversion  pkg-config wget tar python3 python3-pip mongodb-server
 RUN python3 -m pip install requests
 RUN python3 -m pip install gcovr
 RUN /usr/bin/ssh-keygen -A

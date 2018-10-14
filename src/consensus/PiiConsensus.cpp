@@ -4,9 +4,14 @@
 namespace neuro {
 namespace consensus {
 
-PiiConsensus::PiiConsensus(std::shared_ptr<ledger::Ledger> ledger,
-                           uint32_t block_assembly)
-    : _ledger(ledger), _ForkManager(ledger), _valide_block(true) {
+PiiConsensus::PiiConsensus(boost::asio::io_context &io,
+                           std::shared_ptr<ledger::Ledger> ledger,
+                           int32_t block_assembly)
+    : _ledger(ledger),
+      _transaction_pool(_ledger),
+      _ForkManager(ledger),
+      _valide_block(true),
+      _timer_of_block_time(io) {
   // load all block from
   _assembly_blocks = block_assembly;
   init();
@@ -18,7 +23,6 @@ void PiiConsensus::init() {
   _entropies.clear();
   _owner_ordered.clear();
   int height = _ledger->height();
-  std::cout << " Call Init " << height << std::endl;
   for (int i = 0; i <= height; ++i) {
     messages::Block block;
     if (_ledger->get_block(i, &block)) {
@@ -28,23 +32,42 @@ void PiiConsensus::init() {
   _valide_block = save_valide;
 }
 
+void PiiConsensus::add_transaction(const messages::Transaction &transaction) {
+  _transaction_pool.add_transactions(transaction);
+}
+
+bool PiiConsensus::block_in_ledger(const messages::Hash &id) {
+  messages::Block block;
+  if (!_ledger->get_block(id, &block)) {
+    if (!_ledger->fork_get_block(id, &block)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 void PiiConsensus::add_block(const neuro::messages::Block &block) {
   neuro::messages::Block last_block, prev_block;
   ///!< compare heigth with ledger
+  ///!< fix same id block in the ledger
+  if (_valide_block && block_in_ledger(block.header().id())) {
+    return;
+  }
+
   _ledger->get_block(_ledger->height(), &last_block);
   ///!< verif time
   // auto &last_block_header = last_block.header();
   // int32_t time_of_block =
   //     last_block_header.timestamp().data() -
-  //     (last_block_header.timestamp().data() % _block_time) +
-  //     (block.header().height() - last_block_header.height()) * _block_time;
+  //     (last_block_header.timestamp().data() % BLOCK_PERIODE) +
+  //     (block.header().height() - last_block_header.height()) * BLOCK_PERIODE;
 
   // int32_t time_block =
   //     std::time(nullptr);  //! # T1 used the time of real reception of block
   // block.header().timestamp().data();
 
   /* if ( (time_of_block > time_block)
-           || time_of_block < time_block + _block_time  ) {
+           || time_of_block < time_block + BLOCK_PERIODE  ) {
        // time_out
        _ledger->fork_add_block(block);
        // don't run for result conflie
@@ -143,6 +166,7 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
 
   _last_heigth_block = block.header().height();
   if (((_last_heigth_block + 1) % _assembly_blocks) == 0) {
+    std::cout << "I am in calcul of assembly" << std::endl;
     calcul();
     random_from_hashs();
   }
@@ -156,7 +180,7 @@ void PiiConsensus::add_blocks(
 void PiiConsensus::random_from_hashs() {
   // Get all hash from 2000 block
   std::vector<std::string> _hash;
-  for (uint32_t i = 0; i < _assembly_blocks; i++) {
+  for (int32_t i = 0; i < _assembly_blocks; i++) {
     neuro::messages::Block b;
     ///!< assembly_blocks/2 is juste pour test
     if (_ledger->get_block(_last_heigth_block - i - _assembly_blocks / 2, &b)) {
@@ -188,6 +212,7 @@ bool PiiConsensus::check_owner(
     const neuro::messages::BlockHeader &blockheader) const {
   std::string owner_p = operator()(
       ramdon_at(blockheader.height() % _assembly_blocks, _nonce_assembly));
+
   Buffer buf(blockheader.author().raw_data());
   messages::Address author_addr(buf);
 
@@ -211,10 +236,14 @@ void PiiConsensus::show_owner(uint32_t start, uint32_t how) {
     messages::Hash owner_addr;
     owner_addr.ParseFromString(operator()(ramdon_at(i, _nonce_assembly)));
 
-    std::string t;
-    messages::to_json(owner_addr, &t);
-    std::cout << t << std::endl;
+    std::cout << owner_addr << std::endl;
   }
+}
+
+void PiiConsensus::add_wallet_keys(const crypto::Ecc *wallet) {
+  const auto buf = wallet->public_key().save();
+  messages::Address addr(buf);
+  _wallets_keys[addr.SerializeAsString()] = wallet;
 }
 
 }  // namespace consensus

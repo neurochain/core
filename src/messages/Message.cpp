@@ -82,5 +82,13 @@ int32_t fill_header(messages::Header *header) {
   return id;
 }
 
+int32_t fill_header_reply(const messages::Header &header_request,
+                          messages::Header *header_reply) {
+  const auto id = fill_header(header_reply);
+  header_reply->set_request_id(header_request.id());
+  header_reply->mutable_peer()->CopyFrom(header_request.peer());
+  return id;
+}
+
 }  // namespace messages
 }  // namespace neuro

@@ -9,13 +9,16 @@ TransactionPool::TransactionPool(std::shared_ptr<ledger::Ledger> ledger)
   // ctor
 }
 
-bool TransactionPool::add_transactions(messages::Transaction &transaction) {
+bool TransactionPool::add_transactions(
+    const messages::Transaction &transaction) {
   if (transaction.has_id()) {
     messages::Transaction oldtrans;
     auto id_transaction = transaction.id();
     if (_ledger->get_transaction(id_transaction, &oldtrans)) {
       return false;
     }
+  } else {
+    return false;
   }
 
   messages::Transaction trans(transaction);
@@ -31,13 +34,14 @@ bool TransactionPool::add_transactions(messages::Transaction &transaction) {
   return true;
 }
 
-void TransactionPool::delete_transactions(messages::Transaction &transaction) {
+void TransactionPool::delete_transactions(
+    const messages::Transaction &transaction) {
   _ledger->delete_transaction(transaction.id());
 }
 
 bool TransactionPool::build_block(messages::Block &block,
                                   messages::BlockHeight height,
-                                  crypto::Ecc &author, uint64_t rewarde) {
+                                  const crypto::Ecc &author, uint64_t rewarde) {
   /// TO DO
 
   // Get author pubkey and address ---oliv
@@ -74,8 +78,9 @@ bool TransactionPool::build_block(messages::Block &block,
   return false;
 }
 
-void coinbase(messages::Transaction *transaction, const messages::Hasher &addr,
-              const messages::NCCSDF &ncc) {
+void TransactionPool::coinbase(messages::Transaction *transaction,
+                               const messages::Hasher &addr,
+                               const messages::NCCSDF &ncc) {
   auto input = transaction->add_inputs();
 
   auto input_id = input->mutable_id();
