@@ -105,8 +105,8 @@ class Integration : public ::testing::Test {
 TEST(COIN, simple_interaction) {
   Listener listener;
   std::vector<std::shared_ptr<Bot>> bots;
-  auto bot0 = std::make_shared<Bot>("tests/bot0.json");
-  auto bot1 = std::make_shared<Bot>("tests/bot1.json");
+  auto bot0 = std::make_shared<Bot>("bot0.json");
+  auto bot1 = std::make_shared<Bot>("bot1.json");
 
   messages::Subscriber subscriber0(bot0->queue());
   messages::Subscriber subscriber1(bot1->queue());

@@ -204,7 +204,8 @@ int main(int argc, char *argv[]) {
                           });*/
   crypto::Ecc ecc({"../keys/key_0.priv"}, {"../keys/key_0.pub"});
   auto _wallet = std::vector{&ecc};
-  consensus::PiiConsensus _PiiConsensus(ledger, 10);
+  boost::asio::io_context io;
+  consensus::PiiConsensus _PiiConsensus(io, ledger, 10);
   _PiiConsensus.show_results();
   _PiiConsensus.show_owner(0, 10);
 

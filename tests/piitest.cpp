@@ -18,8 +18,8 @@ TEST(PiiTest, Pii_1_assembly) {
   auto database = _config.database();
   // ledger::LedgerMongodb _ledger(database);
   _ledger = std::make_shared<ledger::LedgerMongodb>(database);
-
-  neuro::consensus::PiiConsensus _piisus(_ledger, 10);
+  boost::asio::io_context io;
+  neuro::consensus::PiiConsensus _piisus(io, _ledger, 10);
 
   neuro::messages::Hash next_id, owner_id;
   messages::from_json(
@@ -27,6 +27,7 @@ TEST(PiiTest, Pii_1_assembly) {
       "ZPbqkcbSAPDeX6opHVnuR5lc0=\"}",
       &next_id);
 
+  std::cout << " out " << _piisus.get_next_owner() << std::endl;
   owner_id.ParseFromString(_piisus.get_next_owner());
 
   ASSERT_TRUE(next_id.type() == owner_id.type() &&
@@ -34,7 +35,8 @@ TEST(PiiTest, Pii_1_assembly) {
 }
 
 TEST(PiiTest, Pii_next_owner) {
-  neuro::consensus::PiiConsensus _piisus(_ledger, 10);
+  boost::asio::io_context io;
+  neuro::consensus::PiiConsensus _piisus(io, _ledger, 10);
 
   neuro::messages::Block block11;
 
@@ -70,7 +72,8 @@ TEST(PiiTest, Pii_next_owner) {
 }
 
 TEST(PiiTest, Pii_first_fork) {
-  neuro::consensus::PiiConsensus _piisus(_ledger, 10);
+  boost::asio::io_context io;
+  neuro::consensus::PiiConsensus _piisus(io, _ledger, 10);
   neuro::messages::Block block11;
 
   crypto::Ecc _ecc({"../../keys/key_3.priv"}, {"../../keys/key_3.pub"});

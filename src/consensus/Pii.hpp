@@ -65,7 +65,7 @@ class Pii {
   std::unordered_map<std::string, Calculus> _entropies;
   std::vector<std::string> _owner_ordered;
   int _assembly_owners = ASSEMBLY_MEMBERS_COUNT;
-  uint32_t _assembly_blocks;
+  int32_t _assembly_blocks;
 
  public:
   /**

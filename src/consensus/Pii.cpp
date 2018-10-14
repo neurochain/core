@@ -70,8 +70,6 @@ void Pii::calcul() {
   int i = 0;
   for (auto& p : sorted_pii) {
     _owner_ordered.push_back(p.first);
-    // std::cout << "p[" <<  i << "]=" << p.first << " = " << p.second.entropie
-    // << std::endl;
     i++;
     if (i > _assembly_owners) break;
   }
@@ -79,6 +77,7 @@ void Pii::calcul() {
 
 std::string Pii::operator()(uint32_t index) const {
   if (_owner_ordered.size() > index) return _owner_ordered[index];
+
   return std::string("");
 }
 

@@ -395,6 +395,7 @@ class LedgerMongodb : public Ledger {
     auto projection_transaction = bss::document{};
     projection_transaction << "_id" << 0;  ///!< remove _id objectID
     findoption.projection(projection_transaction.view());
+    findoption.sort(bss::document{} << "header.height" << 1 << bss::finalize);
 
     auto cursor_block = _blocks_forks.find(query_block.view(), findoption);
 
