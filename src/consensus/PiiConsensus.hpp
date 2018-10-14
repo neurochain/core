@@ -42,11 +42,11 @@ class PiiConsensus : public Pii, public Consensus {
   boost::asio::steady_timer _timer_of_block_time;
 
  public:
-  PiiConsensus(boost::asio::io_context &io,
+  PiiConsensus(std::shared_ptr<boost::asio::io_context> io_context,
                std::shared_ptr<ledger::Ledger> ledger)
-      : PiiConsensus(io, ledger, ASSEMBLY_BLOCKS_COUNT) {}
+      : PiiConsensus(io_context, ledger, ASSEMBLY_BLOCKS_COUNT) {}
 
-  PiiConsensus(boost::asio::io_context &io,
+  PiiConsensus(std::shared_ptr<boost::asio::io_context> io_context,
                std::shared_ptr<ledger::Ledger> ledger, int32_t block_assembly);
 
   void add_transaction(const messages::Transaction &transaction);

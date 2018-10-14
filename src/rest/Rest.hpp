@@ -36,7 +36,7 @@ class Rest {
   void publish_transaction(messages::Transaction &transaction) const;
   messages::Hasher load_hash(const std::string &hash_str) const;
   messages::GeneratedKeys generate_keys() const;
-  messages::Transaction build_faucet_transaction(const std::string address,
+  messages::Transaction build_faucet_transaction(const std::string &address,
                                                  const uint64_t amount);
   void serve_file(const std::string filename);
   void serve_file(const std::string route, const std::string filename);

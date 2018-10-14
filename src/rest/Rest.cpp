@@ -219,7 +219,7 @@ messages::GeneratedKeys Rest::generate_keys() const {
 }
 
 messages::Transaction Rest::build_faucet_transaction(
-    const std::string address_str, const uint64_t amount) {
+    const std::string &address_str, const uint64_t amount) {
   // Set transactions_ids
   auto bot_address = messages::Hasher(_keys->public_key());
   messages::UnspentTransactions unspent_transactions =
@@ -232,6 +232,8 @@ messages::Transaction Rest::build_faucet_transaction(
 
   // Set outputs
   auto output = transaction_to_publish.add_outputs();
+  const messages::Hasher address = load_hash(address_str);
+
   output->mutable_address()->CopyFrom(address);
   output->mutable_value()->set_value(amount);
 

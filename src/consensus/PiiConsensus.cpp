@@ -4,14 +4,14 @@
 namespace neuro {
 namespace consensus {
 
-PiiConsensus::PiiConsensus(boost::asio::io_context &io,
+PiiConsensus::PiiConsensus(std::shared_ptr<boost::asio::io_context> io,
                            std::shared_ptr<ledger::Ledger> ledger,
                            int32_t block_assembly)
     : _ledger(ledger),
       _transaction_pool(_ledger),
       _ForkManager(ledger),
       _valide_block(true),
-      _timer_of_block_time(io) {
+      _timer_of_block_time(*io) {
   // load all block from
   _assembly_blocks = block_assembly;
   init();

@@ -15,7 +15,8 @@ namespace neuro {
 Bot::Bot(std::istream &bot_stream)
     : _queue(std::make_shared<messages::Queue>()),
       _networking(std::make_shared<networking::Networking>(_queue)),
-      _subscriber(_queue) {
+      _subscriber(_queue),
+      _io_context(std::make_shared<boost::asio::io_context>()) {
   std::string tmp;
   std::stringstream ss;
   while (!bot_stream.eof()) {
@@ -32,7 +33,8 @@ Bot::Bot(std::istream &bot_stream)
 Bot::Bot(const std::string &configuration_path)
     : _queue(std::make_shared<messages::Queue>()),
       _networking(std::make_shared<networking::Networking>(_queue)),
-      _subscriber(_queue) {
+      _subscriber(_queue),
+      _io_context(std::make_shared<boost::asio::io_context>()) {
   if (!messages::from_json_file(configuration_path, &_config)) {
     std::string s = "Coult not parse configuration file " + configuration_path +
                     " from " + boost::filesystem::current_path().native();
@@ -246,7 +248,7 @@ bool Bot::init() {
     return false;
   }
 
-  _consensus = std::make_shared<consensus::PiiConsensus>(_ledger);
+  _consensus = std::make_shared<consensus::PiiConsensus>(_io_context, _ledger);
 
   update_ledger();
 

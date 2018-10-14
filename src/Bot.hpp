@@ -36,6 +36,7 @@ class Bot {
   std::shared_ptr<ledger::Ledger> _ledger;
   std::shared_ptr<rest::Rest> _rest;
   std::shared_ptr<consensus::Consensus> _consensus;
+  std::shared_ptr<boost::asio::io_context> _io_context;
 
   // for the peers
   messages::config::Tcp *_tcp_config;
