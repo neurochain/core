@@ -30,7 +30,7 @@
 	}
     },
     "database": {
-	"url": "mongodb://mongo:27017/neuro",
+	"url": "mongodb://localhost:27017/neuro",
 	"db_name": "neuro1337",
 	"block0_format": "PROTO",
 	"block0_path": "@CMAKE_BINARY_DIR@/block.0.bp"
