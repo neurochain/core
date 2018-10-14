@@ -15,7 +15,6 @@ Bot::Bot(std::istream &bot_stream)
     : _queue(std::make_shared<messages::Queue>()),
       _networking(std::make_shared<networking::Networking>(_queue)),
       _subscriber(_queue) {
-  LOG_DEBUG << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__;
   std::string tmp;
   std::stringstream ss;
   while (!bot_stream.eof()) {
@@ -23,20 +22,16 @@ Bot::Bot(std::istream &bot_stream)
     ss << tmp;
   }
   tmp = ss.str();
-  LOG_DEBUG << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__;
   messages::from_json(tmp, &_config);
   if (!init()) {
     throw std::runtime_error("Could not create bot from configuration file");
   }
-
-  LOG_INFO << "Initialization completed";
 }
 
 Bot::Bot(const std::string &configuration_path)
     : _queue(std::make_shared<messages::Queue>()),
       _networking(std::make_shared<networking::Networking>(_queue)),
       _subscriber(_queue) {
-  LOG_DEBUG << __FUNCTION__;
   messages::from_json_file(configuration_path, &_config);
   if (!init()) {
     throw std::runtime_error("Could not create bot from configuration file");
@@ -159,15 +154,12 @@ bool Bot::init() {
   if (_config.has_logs()) {
     log::from_config(_config.logs());
   }
-  LOG_DEBUG << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__;
 
   load_keys(_config);
   if (!_config.has_database()) {
     LOG_ERROR << "Missing db configuration";
     return false;
   }
-  LOG_DEBUG << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__;
-
   subscribe();
 
   const auto db_config = _config.database();
@@ -176,14 +168,10 @@ bool Bot::init() {
   LOG_INFO << "Loaded ledger" << std::endl;
   if (_config.has_rest()) {
     const auto rest_config = _config.rest();
-    _rest = std::make_shared<rest::Rest>(rest_config.port(), _ledger,
-                                         _networking, _config);
-    LOG_INFO << "Loaded rest module" << std::endl;
+    _rest = std::make_shared<rest::Rest>(_ledger, _networking, rest_config);
   }
 
-  LOG_DEBUG << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__;
   auto networking_conf = _config.mutable_networking();
-  LOG_DEBUG << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__;
 
   _selection_method = _config.selection_method();
   _keep_status = _config.keep_status();
@@ -195,21 +183,15 @@ bool Bot::init() {
   }
 
   _tcp_config = networking_conf->mutable_tcp();
-  LOG_INFO << "Loaded networking" << std::endl;
 
   for (auto &peer : *_tcp_config->mutable_peers()) {
     peer.set_status(messages::Peer::REACHABLE);
     LOG_DEBUG << this << " Peer: " << peer;
   }
 
-  std::cout << __FUNCTION__ << ":" << __LINE__ << std::endl;
-
   _tcp = std::make_shared<networking::Tcp>(_queue, _keys);
-  std::cout << __FUNCTION__ << ":" << __LINE__ << std::endl;
   auto port = _tcp_config->port();
-  std::cout << __FUNCTION__ << ":" << __LINE__ << std::endl;
   _tcp->accept(port);
-  std::cout << __FUNCTION__ << ":" << __LINE__ << std::endl;
   LOG_INFO << this << " Accepting connections on port " << port;
   _networking->push(_tcp);
   if (_tcp_config->peers().empty()) {
@@ -377,8 +359,6 @@ void Bot::handler_world(const messages::Header &header,
 
 void Bot::handler_hello(const messages::Header &header,
                         const messages::Body &body) {
-  std::cout << this << " " << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__
-            << std::endl;
   if (!body.has_hello()) {
     LOG_WARNING << this
                 << " SomeThing wrong. Got a call to handler_hello with "
@@ -523,8 +503,6 @@ bool Bot::next_to_connect(messages::Peer **peer) {
 }
 
 void Bot::keep_max_connections() {
-  LOG_DEBUG << this << " " << __FILE__ << ":" << __FUNCTION__ << ":"
-            << __LINE__;
   std::size_t peers_size = 0;
   peers_size = _tcp_config->peers().size();
 
@@ -566,19 +544,11 @@ void Bot::subscribe(const messages::Type type,
   _subscriber.subscribe(type, callback);
 }
 
-void Bot::join() {
-  std::cout << "JOIN" << std::endl;
-  _networking->join();
-}
+  void Bot::join() { _networking->join(); }
 
 Bot::~Bot() {
   _subscriber.unsubscribe();
   LOG_DEBUG << this << " From Bot destructor" << &_subscriber;
-  LOG_DEBUG << this << " " << _queue.use_count();
-  LOG_DEBUG << this << " " << _networking.use_count();
-  LOG_DEBUG << this << " " << _keys.use_count();
-  LOG_DEBUG << this << " " << _ledger.use_count();
-  LOG_DEBUG << this << " " << _rest.use_count();
 }
 
 }  // namespace neuro

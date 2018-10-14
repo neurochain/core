@@ -17,10 +17,11 @@ namespace rest {
 
 class Rest {
  private:
-  const Port _port;
   std::shared_ptr<ledger::Ledger> _ledger;
   std::shared_ptr<networking::Networking> _networking;
-  messages::config::Config _config;
+  messages::config::Rest _config;
+  Port _port;
+  std::string _static_path;
 
   Onion::Onion _server;
   std::unique_ptr<Onion::Url> _root;
@@ -33,11 +34,14 @@ class Rest {
   void publish_transaction(messages::Transaction &transaction) const;
   messages::Hasher load_hash(const std::string &hash_str) const;
   messages::GeneratedKeys generate_keys() const;
+  void serve_file(const std::string filename);
+  void serve_file(const std::string route, const std::string filename);
+  void serve_folder(const std::string route, const std::string foldername);
 
  public:
-  Rest(const Port port, std::shared_ptr<ledger::Ledger> ledger,
+  Rest(std::shared_ptr<ledger::Ledger> ledger,
        std::shared_ptr<networking::Networking> networking,
-       messages::config::Config &config);
+       const messages::config::Rest &config);
 
   void join();
   void stop();
