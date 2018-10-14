@@ -163,7 +163,8 @@ bool Bot::init() {
 
   if (_config.has_rest()) {
     const auto rest_config = _config.rest();
-    _rest = std::make_shared<rest::Rest>(_ledger, _networking, rest_config);
+    _rest =
+        std::make_shared<rest::Rest>(_ledger, _networking, _keys, rest_config);
   }
 
   auto networking_conf = _config.mutable_networking();

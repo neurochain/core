@@ -7,21 +7,16 @@
 #include "common/logger.hpp"
 #include "rest/Rest.hpp"
 
-/*
- * TODO
- * send transaction _networking->send(transaction, ProtocolType::PROTOBUF2)
- * get transaction by id
- * remove spent transactions
- */
-
 namespace neuro {
 namespace rest {
 
 Rest::Rest(std::shared_ptr<ledger::Ledger> ledger,
            std::shared_ptr<networking::Networking> networking,
+           std::shared_ptr<crypto::Ecc> keys,
            const messages::config::Rest &config)
     : _ledger(ledger),
       _networking(networking),
+      _keys(keys),
       _config(config),
       _port(_config.port()),
       _static_path(_config.static_path()),
@@ -34,7 +29,7 @@ Rest::Rest(std::shared_ptr<ledger::Ledger> ledger,
                                               Onion::Response &res) {
     const auto address = req.query("address", "");
     LOG_INFO << "ADDRESS " << address;
-    res << list_transactions(_ledger, address);
+    res << list_transactions(address);
     return OCS_PROCESSED;
   };
 
@@ -62,9 +57,25 @@ Rest::Rest(std::shared_ptr<ledger::Ledger> ledger,
     return OCS_PROCESSED;
   };
 
+  const auto faucet_send_route = [this](Onion::Request &req,
+                                        Onion::Response &res) {
+    const auto faucet_amount = _config.faucet_amount();
+    const auto address = req.query("address", "");
+    LOG_INFO << "ADDRESS " << address;
+    messages::Transaction transaction =
+        build_faucet_transaction(address, faucet_amount);
+    std::string json;
+    messages::to_json(transaction, &json);
+    res << json;
+    return OCS_PROCESSED;
+  };
+
   _root->add("list_transactions", list_transactions_route);
   _root->add("publish_transaction", publish_transaction_route);
   _root->add("generate_keys", generate_keys_route);
+  if (_config.has_faucet_amount()) {
+    _root->add("faucet_send", faucet_send_route);
+  }
   serve_folder("^static/", "static");
   serve_file("", "index.html");
   serve_file("index.html");
@@ -98,17 +109,14 @@ messages::Hasher Rest::load_hash(const std::string &hash_str) const {
   return result;
 }
 
-std::string Rest::list_transactions(std::shared_ptr<ledger::Ledger> ledger,
-                                    const std::string &address_str) const {
-  auto buffer = Buffer(address_str);
-
+messages::UnspentTransactions Rest::list_unspent_transactions(
+    const messages::Address &address) const {
   messages::UnspentTransactions unspent_transactions;
-  messages::Hasher address = load_hash(address_str);
-  auto transactions = ledger->list_transactions(address).transactions();
+  auto transactions = _ledger->list_transactions(address).transactions();
   for (auto transaction : transactions) {
     for (int i = 0; i < transaction.outputs_size(); ++i) {
       auto output = transaction.outputs(i);
-      if (ledger->is_unspent_output(transaction, i) &&
+      if (_ledger->is_unspent_output(transaction, i) &&
           output.address() == address) {
         auto unspent_transaction =
             unspent_transactions.add_unspent_transactions();
@@ -117,6 +125,13 @@ std::string Rest::list_transactions(std::shared_ptr<ledger::Ledger> ledger,
       }
     }
   }
+  return unspent_transactions;
+}
+
+std::string Rest::list_transactions(const std::string &address_str) const {
+  const messages::Hasher address = load_hash(address_str);
+  messages::UnspentTransactions unspent_transactions =
+      list_unspent_transactions(address);
   std::string result;
   messages::to_json(unspent_transactions, &result);
   return result;
@@ -201,6 +216,35 @@ messages::GeneratedKeys Rest::generate_keys() const {
   generated_keys.mutable_address()->CopyFrom(
       messages::Hasher(ecc.public_key()));
   return generated_keys;
+}
+
+messages::Transaction Rest::build_faucet_transaction(
+    const std::string address_str, const uint64_t amount) {
+  // Set transactions_ids
+  const messages::Hasher address = load_hash(address_str);
+  messages::UnspentTransactions unspent_transactions =
+      list_unspent_transactions(address);
+  messages::TransactionToPublish transaction_to_publish;
+  for (auto unspent_transaction : unspent_transactions.unspent_transactions()) {
+    auto transaction_id = transaction_to_publish.add_transactions_ids();
+    *transaction_id = unspent_transaction.transaction_id();
+  }
+
+  // Set outputs
+  auto output = transaction_to_publish.add_outputs();
+  output->mutable_address()->CopyFrom(address);
+  output->mutable_value()->set_value(amount);
+
+  // Set key_priv
+  messages::KeyPriv key_priv;
+  _keys->private_key().save(&key_priv);
+  transaction_to_publish.set_key_priv(key_priv.data());
+
+  // Set fees
+  transaction_to_publish.mutable_fees()->set_value(0);
+
+  messages::Transaction transaction = build_transaction(transaction_to_publish);
+  return transaction;
 }
 
 void Rest::join() { _thread.join(); }
