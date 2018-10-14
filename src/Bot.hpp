@@ -10,7 +10,7 @@
 #include "networking/Networking.hpp"
 #include "networking/tcp/Tcp.hpp"
 #include "rest/Rest.hpp"
-
+#include "consensus/Consensus.hpp"
 namespace neuro {
 
 class Bot {
@@ -35,6 +35,7 @@ class Bot {
   messages::Subscriber _subscriber;
   std::shared_ptr<ledger::Ledger> _ledger;
   std::shared_ptr<rest::Rest> _rest;
+  std::shared_ptr<consensus::Consensus> _consensus;
 
   // for the peers
   messages::config::Tcp *_tcp_config;
@@ -64,6 +65,7 @@ class Bot {
                       const messages::Body &body);
   bool next_to_connect(messages::Peer **out_peer);
   bool load_keys(const messages::config::Config &config);
+  bool load_networking(messages::config::Config *config);
   void subscribe();
   bool update_ledger();
 

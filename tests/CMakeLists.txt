@@ -72,7 +72,7 @@ add_executable(piitest
 
 target_link_libraries(piitest
     GTest::main
-    consensus
+    core
 )
 
 add_test(integration integration)

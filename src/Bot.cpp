@@ -8,6 +8,7 @@
 #include "common/logger.hpp"
 #include "common/types.hpp"
 #include "messages/Subscriber.hpp"
+#include "consensus/PiiConsensus.hpp"
 
 namespace neuro {
 
@@ -145,6 +146,36 @@ void Bot::subscribe() {
       });
 }
 
+bool Bot::load_networking(messages::config::Config *config) {
+  auto networking_conf = config->mutable_networking();
+  _selection_method = config->selection_method();
+  _keep_status = config->keep_status();
+  _max_connections = networking_conf->max_connections();
+
+  if (!networking_conf->has_tcp()) {
+    LOG_ERROR << "Missing tcp configuration";
+    return false;
+  }
+
+  auto tcpconfig = networking_conf->mutable_tcp();
+
+  for (auto &peer : *tcpconfig->mutable_peers()) {
+    peer.set_status(messages::Peer::REACHABLE);
+    LOG_DEBUG << this << " Peer: " << peer;
+  }
+
+  _tcp = std::make_shared<networking::Tcp>(_queue, _keys);
+  auto port = tcpconfig->port();
+  _tcp->accept(port);
+  LOG_INFO << this << " Accepting connections on port " << port;
+  _networking->push(_tcp);
+  if (tcpconfig->peers().empty()) {
+    LOG_WARNING << this << " There is no information about peers";
+  }
+
+  return true;
+}
+  
 bool Bot::init() {
   if (_config.has_logs()) {
     log::from_config(_config.logs());
@@ -161,42 +192,20 @@ bool Bot::init() {
   _ledger = std::make_shared<ledger::LedgerMongodb>(db_config.url(),
                                                     db_config.db_name());
 
-  if (_config.has_rest()) {
+  if (!_config.has_rest()) {
+    LOG_INFO << "Missing rest configuration, not loading module";
+  } else {
     const auto rest_config = _config.rest();
     _rest = std::make_shared<rest::Rest>(_ledger, _networking, rest_config);
   }
 
-  auto networking_conf = _config.mutable_networking();
-
-  _selection_method = _config.selection_method();
-  _keep_status = _config.keep_status();
-  _max_connections = networking_conf->max_connections();
-
-  if (!networking_conf->has_tcp()) {
-    LOG_ERROR << "Missing tcp configuration";
+  if (!_config.has_networking() || !load_networking(&_config)) {
+    LOG_ERROR << "Could not load networking";
     return false;
   }
 
-  _tcp_config = networking_conf->mutable_tcp();
-
-  for (auto &peer : *_tcp_config->mutable_peers()) {
-    peer.set_status(messages::Peer::REACHABLE);
-    LOG_DEBUG << this << " Peer: " << peer;
-  }
-
-  _tcp = std::make_shared<networking::Tcp>(_queue, _keys);
-  auto port = _tcp_config->port();
-  _tcp->accept(port);
-  LOG_INFO << this << " Accepting connections on port " << port;
-  _networking->push(_tcp);
-  if (_tcp_config->peers().empty()) {
-    LOG_WARNING << this << " There is no information about peers";
-  }
-
-  // _subscriber.subscribe(messages::Type::kConnectionReady,
-  //                        std::bind(&Bot::handler_connection, this,
-  //                        std::placeholders::_1, std::placeholders::_2));
-
+  _consensus = std::make_shared<consensus::PiiConsensus>(_ledger);
+  
   return true;
 }
 
