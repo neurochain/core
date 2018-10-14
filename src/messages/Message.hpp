@@ -37,6 +37,7 @@ std::ostream &operator<<(std::ostream &os, const Packet &packet);
 bool operator==(const Packet &a, const Packet &b);
 
 void hash_transaction(Transaction *transaction);
+int32_t fill_header(messages::Header *header);
 
 }  // namespace messages
 }  // namespace neuro

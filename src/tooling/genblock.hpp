@@ -145,15 +145,22 @@ bool genblock_from_last_db_block(
     std::optional<neuro::messages::KeyPub> author = std::nullopt,
     const int32_t last_height = 0, const int max_trx = 20,
     const int max_trail = 5) {
-  uint32_t height = last_height;
+  int32_t height = last_height;
   if (height == 0) {
     height = ledger->height();
   }
   neuro::messages::Block last_block;
   if (!ledger->get_block(height, &last_block)) {
     if (!ledger->fork_get_block(height, &last_block)) {
+      throw std::runtime_error({"Not found block - " + std::to_string(height)});
       return false;
     }
+  }
+
+  if (last_block.header().height() != height) {
+    throw std::runtime_error({"Not found block 2 - " + std::to_string(height) +
+                              " - " +
+                              std::to_string(last_block.header().height())});
   }
 
   return genblock_from_block(block, last_block, seed, new_height, author,

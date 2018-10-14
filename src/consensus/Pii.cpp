@@ -37,10 +37,13 @@ void Pii::addBlocks(const std::vector<Transaction>& piitransactions) {
 }
 
 void Pii::calcul() {
+  int ij = 0;
   for (auto& p : _entropies) {
     double epr1 = 0;
     double epr2 = epr1;
     Calculus& m = p.second;
+
+    ij++;
     for (const auto& l : m.entropie_Tij) {
       if (m.sum_outputs > 0 && l.second.mtin != 0 && l.second.nbinput != 0) {
         epr1 += std::log(l.second.mtin) * (l.second.nbinput / m.sum_outputs) *
@@ -52,8 +55,8 @@ void Pii::calcul() {
                 std::log2(l.second.nboutput / m.sum_inputs);
       }
     }
-    // p.second.update(std::max(1.0, -0.5 * (epr1 + epr2)));
-    p.second.update(-0.5 * (epr1 + epr2));
+    p.second.update(std::max(1.0, -0.5 * (epr1 + epr2)));
+    // p.second.update(-0.5 * (epr1 + epr2));
   }
 
   // Order it
@@ -89,11 +92,7 @@ void Pii::show_results() {
 
   int i = 0;
   for (auto& p : sorted_pii) {
-    std::string t;
-    messages::Hash id;
-    id.ParseFromString(p.first);
-    messages::to_json(id, &t);
-    std::cout << t << ":" << p.second.entropie;
+    std::cout << humaineaddre(p.first) << ":" << p.second.entropie;
     std::cout << std::endl;
     i++;
     if (i > _assembly_owners) break;  // TODO remove magic number

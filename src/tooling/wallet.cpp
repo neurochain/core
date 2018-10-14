@@ -145,17 +145,40 @@ int main(int argc, char *argv[]) {
   auto db = _config.database();
   auto ledger = std::make_shared<ledger::LedgerMongodb>(db);
   /*
-      for(int i = 0; i < 10 ; i++){
-          crypto::Ecc ecc({"../keys/key_" + std::to_string(i) + ".priv"
-     },{"../keys/key_" + std::to_string(i) + ".pub"}); Buffer buf;
-          ecc.public_key().save(&buf);
+        for(int i = 0; i < 1 ; i++){
+            crypto::Ecc ecc({"../keys/key_" + std::to_string(i) + ".priv"
+       },{"../keys/key_" + std::to_string(i) + ".pub"});
 
-          messages::Address addr(buf);
-          std::string t;
-          messages::to_json(addr,&t);
+            Buffer buf;
+            ecc.public_key().save(&buf);
 
-          std::cout << i << " - " << t << std::endl;
-      }*/
+            messages::Address addr(buf);
+            std::string t;
+            messages::to_json(addr,&t);
+
+            std::cout << i << " - " << t << std::endl;
+
+            messages::KeyPub keypub;
+            keypub.set_type(messages::KeyType::ECP256K1);
+            keypub.set_raw_data(buf.data(),buf.size());
+
+            t = "";
+            messages::to_json(keypub,&t);
+            std::cout << i << " - " << t << std::endl;
+
+
+            Buffer bufp;
+            ecc.private_key().save(&bufp);
+
+            messages::KeyPriv keypriv;
+            keypriv.set_type(messages::KeyType::ECP256K1);
+            keypriv.set_data(bufp.data(),bufp.size());
+
+            t = "";
+            messages::to_json(keypriv,&t);
+            std::cout << i << " - " << t << std::endl;
+
+        }*/
 
   ledger->fork_test();  ///!< Delete Fork branche$
                         /** filter test
@@ -218,6 +241,7 @@ int main(int argc, char *argv[]) {
       block14, ledger, std::time(nullptr), 14,
       std::make_optional<messages::KeyPub>(author14), 13);
   _PiiConsensus.add_block(block14);
+
   std::cout << "Block 15 " << std::endl;
   messages::Block block15;
   tooling::genblock::genblock_from_last_db_block(

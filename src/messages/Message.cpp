@@ -74,5 +74,13 @@ void hash_transaction(Transaction *transaction) {
   transaction->mutable_id()->CopyFrom(Hasher(transaction_serialized));
 }
 
+int32_t fill_header(messages::Header *header) {
+  int32_t id = std::rand();
+  header->set_version(MessageVersion);
+  header->mutable_ts()->set_data(std::time(nullptr));
+  header->set_id(id);
+  return id;
+}
+
 }  // namespace messages
 }  // namespace neuro

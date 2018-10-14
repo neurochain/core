@@ -110,16 +110,17 @@ class Ledger {
 
   bool is_unspent_output(const messages::Transaction &transaction,
                          const int output_id) {
+    return true;
     Filter filter;
     filter.input_transaction_id(transaction.id());
     filter.output_id(output_id);
 
-    bool has_match = false;
+    bool no_match = true;
     for_each(filter, [&](const messages::Transaction _) {
-      has_match = true;
+      no_match = false;
       return true;
     });
-    return has_match;
+    return no_match;
   }
 
   std::vector<messages::Output> get_outputs_for_address(

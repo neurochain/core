@@ -96,6 +96,14 @@ class Pii {
   std::string operator()(uint32_t index) const;
 
   void show_results();
+
+  std::string humaineaddre(const std::string message) {
+    messages::Address addr;
+    addr.ParseFromString(message);
+    std::string t;
+    messages::to_json(addr, &t);
+    return t;
+  }
 };
 
 }  // namespace consensus

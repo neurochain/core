@@ -65,7 +65,6 @@ class Bot {
   bool next_to_connect(messages::Peer **out_peer);
   bool load_keys(const messages::config::Config &config);
   void subscribe();
-  int32_t fill_header(messages::Header *header);
   bool update_ledger();
 
  public:
