@@ -46,7 +46,10 @@ Rest::Rest(std::shared_ptr<ledger::Ledger> ledger,
     messages::TransactionToPublish transaction_to_publish;
     messages::from_json(post_data, &transaction_to_publish);
     auto transaction = build_transaction(transaction_to_publish);
-    res << "publish_transactions";
+    publish_transaction(transaction);
+    std::string json;
+    messages::to_json(transaction, &json);
+    res << json;
     return OCS_PROCESSED;
   };
 
@@ -109,7 +112,7 @@ std::string Rest::list_transactions(std::shared_ptr<ledger::Ledger> ledger,
           output.address() == address) {
         auto unspent_transaction =
             unspent_transactions.add_unspent_transactions();
-        unspent_transaction->set_transaction_id(output.address().data());
+        unspent_transaction->set_transaction_id(transaction.id().data());
         unspent_transaction->set_value(std::to_string(output.value().value()));
       }
     }
@@ -133,18 +136,37 @@ messages::Transaction Rest::build_transaction(
   const auto ecc = crypto::Ecc(key_priv, key_pub);
   std::vector<const crypto::Ecc *> keys = {&ecc};
 
+  uint64_t inputs_ncc = 0;
+  uint64_t outputs_ncc = 0;
+  auto outputs_to_publish = transaction_to_publish.outputs();
+  for (auto output : outputs_to_publish) {
+    outputs_ncc += output.value().value();
+  }
+
   // Process the outputs and lookup their output_id to build the inputs
-  for (auto transaction_id_str : transaction_to_publish.transactions_ids()) {
-    auto transaction_id = load_hash(transaction_id_str);
+  auto transaction_ids = transaction_to_publish.transactions_ids();
+  for (auto transaction_id_str : transaction_ids) {
+    messages::Hasher transaction_id;
+    transaction_id.set_type(messages::Hash_Type_SHA256);
+    transaction_id.set_data(transaction_id_str);
     auto outputs = _ledger->get_outputs_for_address(transaction_id, address);
     for (auto output : outputs) {
       auto input = transaction.add_inputs();
       input->mutable_id()->CopyFrom(transaction_id);
       input->set_output_id(output.output_id());
+      inputs_ncc += output.value().value();
     }
   }
 
   transaction.mutable_outputs()->CopyFrom(transaction_to_publish.outputs());
+
+  // Add change output
+  if (outputs_ncc < inputs_ncc) {
+    auto change = transaction.add_outputs();
+    change->mutable_value()->set_value(inputs_ncc - outputs_ncc);
+    change->mutable_address()->CopyFrom(address);
+  }
+
   transaction.mutable_fees()->CopyFrom(transaction_to_publish.fees());
 
   // Sign the transaction
@@ -153,6 +175,10 @@ messages::Transaction Rest::build_transaction(
   // Hash the transaction
   messages::hash_transaction(&transaction);
 
+  return transaction;
+}
+
+void Rest::publish_transaction(messages::Transaction &transaction) const {
   // TODO Add the transaction to the transaction pool
 
   // Send the transaction on the network
@@ -161,8 +187,6 @@ messages::Transaction Rest::build_transaction(
   auto body = message->add_bodies();
   body->mutable_transaction()->CopyFrom(transaction);
   _networking->send(message, networking::ProtocolType::PROTOBUF2);
-
-  return transaction;
 }
 
 messages::GeneratedKeys Rest::generate_keys() const {
@@ -178,8 +202,6 @@ messages::GeneratedKeys Rest::generate_keys() const {
       messages::Hasher(ecc.public_key()));
   return generated_keys;
 }
-
-void Rest::publish_transaction(messages::Transaction &transaction) const {}
 
 void Rest::join() { _thread.join(); }
 

@@ -95,10 +95,6 @@ class Ledger {
   // helpers
 
   messages::Transactions list_transactions(const messages::Address &address) {
-    std::cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n";
-    std::string json;
-    to_json(address, &json);
-    std::cout << json << "\n";
     Filter filter;
     filter.output_key_id(address);
     messages::Transactions transactions;
@@ -109,9 +105,6 @@ class Ledger {
                return true;
              });
 
-    std::string transactions_json;
-    to_json(transactions, &transactions_json);
-    std::cout << "TRANSACTIONS:" << transactions_json << "\n";
     return transactions;
   }
 
