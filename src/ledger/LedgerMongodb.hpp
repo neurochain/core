@@ -51,7 +51,7 @@ class LedgerMongodb : public Ledger {
     return get_transactions_from_block(bson_id.view(), block);
   }
 
-  void init_block0(messages::config::Database &db) {
+  void init_block0(const messages::config::Database &db) {
     messages::Block block0;
     if (!get_block(0, &block0)) {
       messages::Block block0file;
@@ -81,7 +81,7 @@ class LedgerMongodb : public Ledger {
 
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);
-  LedgerMongodb(messages::config::Database &db);
+  LedgerMongodb(const messages::config::Database &db);
 
   ~LedgerMongodb() {}
 
@@ -219,7 +219,8 @@ class LedgerMongodb : public Ledger {
     return false;
   }
 
-  bool get_transaction(messages::Hash &id, messages::Transaction *transaction) {
+  bool get_transaction(const messages::Hash &id,
+                       messages::Transaction *transaction) {
     auto query_transaction = bss::document{} << "id" << messages::to_bson(id)
                                              << bss::finalize;
 

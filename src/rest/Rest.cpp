@@ -73,7 +73,6 @@ Rest::Rest(std::shared_ptr<ledger::Ledger> ledger,
 }
 
 void Rest::serve_file(const std::string filename) {
-  LOG_INFO << "STATIC_PATH " << _static_path;
   _root->add(filename,
              Onion::Shortcuts::static_file((_static_path + filename).c_str()));
 }

@@ -86,7 +86,7 @@ class Ledger {
   virtual bool fork_get_block(const messages::BlockHeight height,
                               messages::Block *block) = 0;
   virtual void fork_test() = 0;
-  virtual bool get_transaction(messages::Hash &id,
+  virtual bool get_transaction(const messages::Hash &id,
                                messages::Transaction *transaction) = 0;
   virtual bool add_transaction(const messages::Transaction &transaction) = 0;
   virtual bool delete_transaction(const messages::Hash &id) = 0;
@@ -109,17 +109,25 @@ class Ledger {
   }
 
   bool is_unspent_output(const messages::Transaction &transaction,
-                         int output_id) {
-    // TODO
-    return true;
+                         const int output_id) {
+    Filter filter;
+    filter.input_transaction_id(transaction.id());
+    filter.output_id(output_id);
+
+    bool has_match = false;
+    for_each(filter, [&](const messages::Transaction _) {
+      has_match = true;
+      return true;
+    });
+    return has_match;
   }
 
   std::vector<messages::Output> get_outputs_for_address(
       const messages::Hasher &transaction_id,
       const messages::Address &address) {
-    // TODO get transaction
-    std::vector<messages::Output> result;
     messages::Transaction transaction;
+    get_transaction(transaction_id, &transaction);
+    std::vector<messages::Output> result;
     auto outputs = transaction.mutable_outputs();
     for (auto it(outputs->begin()); it != outputs->end(); it++) {
       if (it->address() == address) {

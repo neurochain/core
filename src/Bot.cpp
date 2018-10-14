@@ -163,8 +163,7 @@ bool Bot::init() {
   }
 
   const auto db_config = _config.database();
-  _ledger = std::make_shared<ledger::LedgerMongodb>(db_config.url(),
-                                                    db_config.db_name());
+  _ledger = std::make_shared<ledger::LedgerMongodb>(db_config);
 
   if (_config.has_rest()) {
     const auto rest_config = _config.rest();

@@ -12,7 +12,7 @@ LedgerMongodb::LedgerMongodb(const std::string &url, const std::string &db_name)
       _transactions(_db.collection("transactions")),
       _blocks_forks(_db.collection("blocksfork")) {}
 
-LedgerMongodb::LedgerMongodb(messages::config::Database &db)
+LedgerMongodb::LedgerMongodb(const messages::config::Database &db)
     : LedgerMongodb(db.url(), db.db_name()) {
   init_block0(db);
 }
