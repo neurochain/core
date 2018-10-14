@@ -7,6 +7,7 @@
 #include <random>
 #include "common/logger.hpp"
 #include "common/types.hpp"
+#include "consensus/PiiConsensus.hpp"
 #include "messages/Subscriber.hpp"
 
 namespace neuro {
@@ -78,11 +79,42 @@ bool Bot::load_keys(const messages::config::Config &config) {
   return true;
 }
 
-void Bot::handler_ledger(const messages::Header &header,
-                         const messages::Body &body) {
+void Bot::handler_get_block(const messages::Header &header,
+                            const messages::Body &body) {
+  LOG_DEBUG << this << " Got a get_block message";
+  const auto get_block = body.get_block();
+
+  auto message = std::make_shared<messages::Message>();
+  auto header_reply = message->mutable_header();
+  messages::fill_header_reply(header, header_reply);
+
+  if (get_block.has_hash()) {
+    LOG_ERROR << " get_block by hash not implemented";  // TODO
+  } else if (get_block.has_height()) {
+    const auto height = get_block.height();
+    for (auto i = 0u; i < get_block.count(); ++i) {
+      auto block = message->add_bodies()->mutable_block();
+      _ledger->get_block(height + i, block);
+    }
+  } else {
+    LOG_ERROR << this << " get_block message ill-formed";
+    return;
+  }
+
+  _networking->send_unicast(message, networking::ProtocolType::PROTOBUF2);
+}
+
+void Bot::handler_block(const messages::Header &header,
+                        const messages::Body &body) {
+  _consensus->add_block(body.block());
+  update_ledger();
+}
+
+void Bot::handler_transaction(const messages::Header &header,
+                              const messages::Body &body) {
   // TODO send to concensus
 
-  update_ledger();
+  // update_ledger();
 }
 
 bool Bot::update_ledger() {
@@ -99,10 +131,12 @@ bool Bot::update_ledger() {
   auto message = std::make_shared<messages::Message>();
   auto header = message->mutable_header();
   messages::fill_header(header);
-  // auto height = last_header->mutable_height();
-  // get_block->set_height(last_header->height()+1);
-  // get_block->set_count(10);
-  // _networking->send(message, ProtocolType::PROTOBUF2);
+
+  const auto height = last_header.height();
+  auto get_block = message->add_bodies()->mutable_get_block();
+  get_block->set_height(height + 1);
+  get_block->set_count(1);
+  _networking->send(message, networking::ProtocolType::PROTOBUF2);
 
   return false;
 }
@@ -135,20 +169,58 @@ void Bot::subscribe() {
   _subscriber.subscribe(
       messages::Type::kTransaction,
       [this](const messages::Header &header, const messages::Body &body) {
-        this->handler_ledger(header, body);
+        this->handler_transaction(header, body);
       });
 
   _subscriber.subscribe(
       messages::Type::kBlock,
       [this](const messages::Header &header, const messages::Body &body) {
-        this->handler_ledger(header, body);
+        this->handler_block(header, body);
       });
+
+  _subscriber.subscribe(
+      messages::Type::kGetBlock,
+      [this](const messages::Header &header, const messages::Body &body) {
+        this->handler_get_block(header, body);
+      });
+}
+
+bool Bot::load_networking(messages::config::Config *config) {
+  auto networking_conf = config->mutable_networking();
+  _selection_method = config->selection_method();
+  _keep_status = config->keep_status();
+  _max_connections = networking_conf->max_connections();
+
+  if (!networking_conf->has_tcp()) {
+    LOG_ERROR << "Missing tcp configuration";
+    return false;
+  }
+
+  auto tcpconfig = networking_conf->mutable_tcp();
+
+  for (auto &peer : *tcpconfig->mutable_peers()) {
+    peer.set_status(messages::Peer::REACHABLE);
+    LOG_DEBUG << this << " Peer: " << peer;
+  }
+
+  _tcp = std::make_shared<networking::Tcp>(_queue, _keys);
+  auto port = tcpconfig->port();
+  _tcp->accept(port);
+  LOG_INFO << this << " Accepting connections on port " << port;
+  _networking->push(_tcp);
+  if (tcpconfig->peers().empty()) {
+    LOG_WARNING << this << " There is no information about peers";
+  }
+
+  return true;
 }
 
 bool Bot::init() {
   if (_config.has_logs()) {
     log::from_config(_config.logs());
   }
+
+  _tcp_config = _config.mutable_networking()->mutable_tcp();
 
   load_keys(_config);
   if (!_config.has_database()) {
@@ -161,41 +233,21 @@ bool Bot::init() {
   _ledger = std::make_shared<ledger::LedgerMongodb>(db_config.url(),
                                                     db_config.db_name());
 
-  if (_config.has_rest()) {
+  if (!_config.has_rest()) {
+    LOG_INFO << "Missing rest configuration, not loading module";
+  } else {
     const auto rest_config = _config.rest();
     _rest = std::make_shared<rest::Rest>(_ledger, _networking, rest_config);
   }
 
-  auto networking_conf = _config.mutable_networking();
-
-  _selection_method = _config.selection_method();
-  _keep_status = _config.keep_status();
-  _max_connections = networking_conf->max_connections();
-
-  if (!networking_conf->has_tcp()) {
-    LOG_ERROR << "Missing tcp configuration";
+  if (!_config.has_networking() || !load_networking(&_config)) {
+    LOG_ERROR << "Could not load networking";
     return false;
   }
 
-  _tcp_config = networking_conf->mutable_tcp();
+  _consensus = std::make_shared<consensus::PiiConsensus>(_ledger);
 
-  for (auto &peer : *_tcp_config->mutable_peers()) {
-    peer.set_status(messages::Peer::REACHABLE);
-    LOG_DEBUG << this << " Peer: " << peer;
-  }
-
-  _tcp = std::make_shared<networking::Tcp>(_queue, _keys);
-  auto port = _tcp_config->port();
-  _tcp->accept(port);
-  LOG_INFO << this << " Accepting connections on port " << port;
-  _networking->push(_tcp);
-  if (_tcp_config->peers().empty()) {
-    LOG_WARNING << this << " There is no information about peers";
-  }
-
-  // _subscriber.subscribe(messages::Type::kConnectionReady,
-  //                        std::bind(&Bot::handler_connection, this,
-  //                        std::placeholders::_1, std::placeholders::_2));
+  update_ledger();
 
   return true;
 }
@@ -380,7 +432,8 @@ void Bot::handler_hello(const messages::Header &header,
     }
   }
 
-  message->mutable_header()->CopyFrom(header);
+  auto header_reply = message->mutable_header();
+  messages::fill_header_reply(header, header_reply);
   world->set_accepted(accepted);
 
   Buffer key_pub_buffer;
