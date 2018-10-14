@@ -11,8 +11,8 @@ namespace neuro {
 namespace ledger {
 
 class LedgerMongodb : public Ledger {
-private:
-  static  mongocxx::instance _instance;
+ private:
+  static mongocxx::instance _instance;
   mutable mongocxx::uri _uri;
   mutable mongocxx::client _client;
   mutable mongocxx::database _db;

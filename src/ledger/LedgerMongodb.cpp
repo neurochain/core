@@ -20,8 +20,8 @@ LedgerMongodb::LedgerMongodb(messages::config::Database &db)
   init_block0(db);
 }
 
-mongocxx::instance LedgerMongodb::_instance {};
-  
+mongocxx::instance LedgerMongodb::_instance{};
+
 //   messages::BlockHeight LedgerMongodb::height() const {
 //   auto query = bss::document{} << bss::finalize;
 //   auto options = mongocxx::options::find{};
