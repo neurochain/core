@@ -44,7 +44,7 @@ Officially supported now (in the CI):
 Best effort (we tried, it worked): 
 * mac osX
 
-Comming: 
+Coming:
 * Windows X
 
 
