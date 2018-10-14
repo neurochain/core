@@ -2,6 +2,7 @@
 #define NEURO_SRC_BOT_HPP
 
 #include <memory>
+#include "consensus/Consensus.hpp"
 #include "crypto/Ecc.hpp"
 #include "ledger/LedgerMongodb.hpp"
 #include "messages/Message.hpp"
@@ -10,7 +11,6 @@
 #include "networking/Networking.hpp"
 #include "networking/tcp/Tcp.hpp"
 #include "rest/Rest.hpp"
-#include "consensus/Consensus.hpp"
 namespace neuro {
 
 class Bot {
@@ -61,8 +61,13 @@ class Bot {
                           const messages::Body &body);
   void handler_deconnection(const messages::Header &header,
                             const messages::Body &body);
-  void handler_ledger(const messages::Header &header,
-                      const messages::Body &body);
+  void handler_transaction(const messages::Header &header,
+                           const messages::Body &body);
+  void handler_block(const messages::Header &header,
+                     const messages::Body &body);
+  void handler_get_block(const messages::Header &header,
+                         const messages::Body &body);
+
   bool next_to_connect(messages::Peer **out_peer);
   bool load_keys(const messages::config::Config &config);
   bool load_networking(messages::config::Config *config);
