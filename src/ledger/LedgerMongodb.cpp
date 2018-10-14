@@ -9,14 +9,11 @@ LedgerMongodb::LedgerMongodb(const std::string &url, const std::string &db_name)
       _client(_uri),
       _db(_client[db_name]),
       _blocks(_db.collection("blocks")),
-      _transactions(_db.collection("transactions")) {}
+      _transactions(_db.collection("transactions")),
+      _blocks_forks(_db.collection("blocksfork")) {}
 
-LedgerMongodb::LedgerMongodb(messages::config::Database &db)
-    : _uri((std::string)db.url()),
-      _client(_uri),
-      _db(_client[(std::string)db.db_name()]),
-      _blocks(_db.collection("blocks")),
-      _transactions(_db.collection("transactions")) {
+LedgerMongodb::LedgerMongodb(const messages::config::Database &db)
+    : LedgerMongodb(db.url(), db.db_name()) {
   init_block0(db);
 }
 

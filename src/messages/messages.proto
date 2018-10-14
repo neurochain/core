@@ -32,11 +32,8 @@ message Roots {
 }
 
 message GetBlock {
-  oneof id {
-    Hash hash = 1;
-    uint32 height = 2;
-  }
-  optional int32 count = 3;
+  optional Hash hash = 1;
+  optional uint32 height = 2;
 }
 
 message Input {
@@ -63,12 +60,14 @@ message Transaction {
   repeated Input inputs = 1;
   repeated Output outputs = 2;
   repeated Signature signatures = 3;
-  optional NCCSDF fees = 4;
-  optional Hash id = 5;
+  repeated KeyPub key_pubs = 4;
+  optional NCCSDF fees = 5;
+  optional Hash id = 6;
+  optional Hash block_id = 7;
 }
 
 message BlockHeader {
-  optional Hash id = 1;
+  required Hash id = 1;
   required Timestamp timestamp = 2;
   required Hash previous_block_hash = 3;
   required KeyPub author = 5;

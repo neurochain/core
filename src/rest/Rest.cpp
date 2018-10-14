@@ -73,7 +73,6 @@ Rest::Rest(std::shared_ptr<ledger::Ledger> ledger,
 }
 
 void Rest::serve_file(const std::string filename) {
-  LOG_INFO << "STATIC_PATH " << _static_path;
   _root->add(filename,
              Onion::Shortcuts::static_file((_static_path + filename).c_str()));
 }
@@ -112,7 +111,7 @@ std::string Rest::get_address_transactions(
         auto unspent_transaction =
             unspent_transactions.add_unspent_transactions();
         unspent_transaction->set_transaction_id(output.address().data());
-        unspent_transaction->set_value(output.value().value());
+        unspent_transaction->set_value(std::to_string(output.value().value()));
       }
     }
   }

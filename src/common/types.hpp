@@ -22,6 +22,10 @@ enum class ProtocolType { PROTOBUF2, JSON, BSON };
 
 }  // namespace networking
 
+namespace consensus {
+using Address = std::string;
+}  // namespace consensus
+
 using std::int16_t;
 using std::int32_t;
 using std::int64_t;
@@ -36,6 +40,7 @@ using Port = uint16_t;
 using Ports = std::vector<Port>;
 const int32_t MessageVersion = 1;
 const uint8_t BLOCK_PERIODE = 30;
+const int32_t ASSEMBLY_MEMBERS_COUNT = 557;
 // using Peers = google::protobuf::RepeatedPtrField<neuro::messages::Peer>;
 
 namespace crypto {

@@ -38,7 +38,7 @@ void coinbase(const crypto::EccPub &key_pub, const messages::NCCSDF &ncc,
   auto output = transaction.add_outputs();
   output->mutable_address()->CopyFrom(address);
   output->mutable_value()->CopyFrom(ncc);
-  transaction.mutable_fees()->set_value("0");
+  transaction.mutable_fees()->set_value(0);
   // return transaction;
 }
 
@@ -48,26 +48,22 @@ void block0(uint32_t bots, const std::string &pathdir, messages::NCCSDF &nccsdf,
   messages::Block b;
   messages::BlockHeader *header = b.mutable_header();
 
-  LOG_INFO << "Ecc owner block0";
   crypto::Ecc ecc;
   Buffer key_pub_raw;
   ecc.mutable_public_key()->save(&key_pub_raw);
 
-  LOG_INFO << "Header block0";
   messages::KeyPub *author = header->mutable_author();
   author->set_type(messages::KeyType::ECP256K1);
   author->set_raw_data(key_pub_raw.data(), key_pub_raw.size());
 
   header->mutable_timestamp()->set_data(time(0));
 
-  LOG_INFO << "Prev block0";
   auto previons_block_hash = header->mutable_previous_block_hash();
   previons_block_hash->set_data("");  ///!< load 0
   previons_block_hash->set_type(messages::Hash::Type::Hash_Type_SHA256);
 
   header->set_height(0);
 
-  LOG_INFO << "Bot(s) block0";
   ///!< bots generateur
   for (uint32_t i = 0; i < bots; ++i) {
     // gen i keys
@@ -81,10 +77,7 @@ void block0(uint32_t bots, const std::string &pathdir, messages::NCCSDF &nccsdf,
   // const auto tmp = crypto::hash_sha3_256( b.SerializeAsString() );
   neuro::Buffer tmpbuffer(b.SerializeAsString());
   messages::Hasher hash_id(tmpbuffer);
-  auto id = header->mutable_id();
-  id->CopyFrom(hash_id);
-  id->set_type(messages::Hash::SHA256);
-
+  header->mutable_id()->CopyFrom(hash_id);
   ledger.push_block(b);
 
   std::ofstream blockfile0;
@@ -136,9 +129,12 @@ int main(int argc, char *argv[]) {
   LOG_INFO << "Load DB ...";
 
   if (!_config.has_database()) {
-    LOG_INFO << "Database configuration required";
+    // ledger_ = std::make_shared<ledger::LedgerMongodb>(_config.db().url(),
+    LOG_INFO << "Database require";
     return 1;
   }
+
+  return 0;
 
   std::string keypath = vm["keyspath"].as<std::string>();
   if (!exists_file(keypath)) {
@@ -147,11 +143,13 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
+  LOG_INFO << "Load 1 ...";
   uint32_t bots = vm["wallet"].as<uint32_t>();
   uint64_t ncc = vm["ncc"].as<uint64_t>();
 
+  LOG_INFO << "Load 1 ...";
   messages::NCCSDF nccsdf;
-  nccsdf.set_value(std::to_string(ncc));
+  nccsdf.set_value(ncc);
   auto db = _config.database();
   ledger::LedgerMongodb ledger(db);
   block0(bots, keypath, nccsdf, ledger);

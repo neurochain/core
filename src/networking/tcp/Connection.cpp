@@ -1,5 +1,4 @@
 #include "networking/tcp/Connection.hpp"
-#include <chrono>
 #include "common/logger.hpp"
 #include "messages/Queue.hpp"
 #include "networking/tcp/Tcp.hpp"
@@ -7,7 +6,6 @@
 namespace neuro {
 namespace networking {
 namespace tcp {
-using namespace std::chrono_literals;
 
 std::shared_ptr<tcp::socket> Connection::socket() { return _socket; }
 
@@ -67,18 +65,10 @@ void Connection::read_body() {
 
         crypto::EccPub ecc_pub;
         const auto key_pub = _remote_peer->key_pub();
-        std::cout << this << " super coin coin " << std::endl;
-        std::cout << this << " verifying with " << _remote_peer->key_pub()
-                  << std::endl;
-        ;
-        std::cout << this << " verifying with " << key_pub << std::endl;
-        ;
 
         ecc_pub.load(
             reinterpret_cast<const uint8_t *>(key_pub.raw_data().data()),
             key_pub.raw_data().size());
-
-        std::cout << this << " ecc_pub loaded" << std::endl;
 
         const auto check = ecc_pub.verify(_buffer, header_pattern->signature,
                                           sizeof(header_pattern->signature));
@@ -87,20 +77,14 @@ void Connection::read_body() {
           LOG_ERROR << "Bad signature, dropping message";
           read_header();
         }
-        std::cout << this << " " << __FILE__ << ":" << __FUNCTION__ << ":"
-                  << __LINE__ << std::endl;
 
         header->mutable_peer()->CopyFrom(*_remote_peer);
         auto signature = header->mutable_signature();
-        std::cout << this << " " << __FILE__ << ":" << __FUNCTION__ << ":"
-                  << __LINE__ << std::endl;
         signature->set_type(messages::Hash::SHA256);
         signature->set_data(header_pattern->signature,
                             sizeof(header_pattern->signature));
         this->_queue->publish(message);
-        std::cout << this << " " << __FILE__ << ":" << __FUNCTION__ << ":"
-                  << __LINE__ << std::endl;
-        std::this_thread::sleep_for(500ms);
+
         read_header();
       });
 }

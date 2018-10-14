@@ -1,8 +1,13 @@
 stages:
   - build
   - doxygen
+  - prod_image
+
+variables:
+  DOCKER_PROD_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
 
 services:
+  - docker:dind
   - mongo:3.6-stretch
 
 build_job:ubuntu_18_04_release:
@@ -50,6 +55,20 @@ build_job:fedora_28:
     paths:
       - build
 
+prod_image_build:ubuntu_18_04:
+  image: docker:stable
+  stage: prod_image
+  variables:
+    DOCKER_DRIVER: overlay2
+  services:
+    - docker:stable-dind
+  dependencies:
+    - build_job:ubuntu_18_04
+  script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+    - docker build -f Dockerfile -t $DOCKER_PROD_IMAGE .
+    - docker push $DOCKER_PROD_IMAGE
+
 pages:
   image: alpine
   stage: doxygen
@@ -81,3 +100,4 @@ pages:
 
 before_script:
   - *bot_build
+

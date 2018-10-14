@@ -11,7 +11,7 @@ message Timestamp {
 }
 
 message NCCSDF {
-  required string value = 1;
+  required uint64 value = 1;
 }
 
 enum KeyType {

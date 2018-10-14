@@ -14,12 +14,17 @@ namespace ledger {
 class Ledger {
  public:
   using Functor = std::function<bool(const messages::Transaction)>;
+  using Functor_block = std::function<void(messages::Block &)>;
+
   class Filter {
    private:
     std::optional<messages::BlockHeight> _lower_height;
     std::optional<messages::BlockHeight> _upper_height;
     std::optional<messages::Address> _output;
     std::optional<messages::Hash> _block_id;
+
+    std::optional<messages::Hash> _transaction_id;
+    std::optional<int32_t> _output_id;
 
    public:
     void lower_bound(const messages::BlockHeight &height) {
@@ -34,6 +39,14 @@ class Ledger {
       _output = std::make_optional<decltype(output)>(output);
     }
 
+    void input_transaction_id(const messages::Hash &transaction_id) {
+      _transaction_id = std::make_optional<messages::Hash>(transaction_id);
+    }
+
+    void output_id(const uint32_t outputid) {
+      _output_id = std::make_optional<uint32_t>(outputid);
+    }
+
     std::optional<const messages::BlockHeight> lower_height() const {
       return _lower_height;
     }
@@ -42,10 +55,16 @@ class Ledger {
     }
     std::optional<const messages::Address> output() const { return _output; }
     std::optional<const messages::Hash> block_id() const { return _block_id; }
+
+    std::optional<const messages::Hash> input_transaction_id() const {
+      return _transaction_id;
+    }
+    std::optional<const int32_t> output_id() const { return _output_id; }
   };
 
  private:
  public:
+  Ledger() {}
   virtual messages::BlockHeight height() const = 0;
   virtual bool get_block_header(const messages::BlockID &id,
                                 messages::BlockHeader *header) = 0;
@@ -54,8 +73,24 @@ class Ledger {
                          messages::Block *block) = 0;
   virtual bool get_block(const messages::BlockHeight height,
                          messages::Block *block) = 0;
+
   virtual bool push_block(const messages::Block &block) = 0;
+  virtual bool delete_block(const messages::Hash &id) = 0;
   virtual bool for_each(const Filter &filter, Functor functor) = 0;
+
+  virtual bool fork_add_block(const messages::Block &b) = 0;
+  virtual bool fork_delete_block(messages::Hash &id) = 0;
+  virtual void fork_for_each(Functor_block functor) = 0;
+  virtual bool fork_get_block(const messages::BlockID &id,
+                              messages::Block *block) = 0;
+  virtual bool fork_get_block(const messages::BlockHeight height,
+                              messages::Block *block) = 0;
+  virtual void fork_test() = 0;
+  virtual bool get_transaction(const messages::Hash &id,
+                               messages::Transaction *transaction) = 0;
+  virtual bool add_transaction(const messages::Transaction &transaction) = 0;
+  virtual bool delete_transaction(const messages::Hash &id) = 0;
+  virtual int get_transaction_pool(messages::Block &block) = 0;
 
   // helpers
 
@@ -74,17 +109,25 @@ class Ledger {
   }
 
   bool is_unspent_output(const messages::Transaction &transaction,
-                         int output_id) {
-    // TODO
-    return true;
+                         const int output_id) {
+    Filter filter;
+    filter.input_transaction_id(transaction.id());
+    filter.output_id(output_id);
+
+    bool has_match = false;
+    for_each(filter, [&](const messages::Transaction _) {
+      has_match = true;
+      return true;
+    });
+    return has_match;
   }
 
   std::vector<messages::Output> get_outputs_for_address(
       const messages::Hasher &transaction_id,
       const messages::Address &address) {
-    // TODO get transaction
-    std::vector<messages::Output> result;
     messages::Transaction transaction;
+    get_transaction(transaction_id, &transaction);
+    std::vector<messages::Output> result;
     auto outputs = transaction.mutable_outputs();
     for (auto it(outputs->begin()); it != outputs->end(); it++) {
       if (it->address() == address) {
