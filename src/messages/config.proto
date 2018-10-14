@@ -22,7 +22,7 @@ message Logs {
 
 message Rest {
   required int32 port = 1;
-  required string static_path = 2;
+  optional string static_path = 2;
 }
 
 message Database {
