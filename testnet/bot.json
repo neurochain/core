@@ -1,0 +1,24 @@
+{
+    "key_pub_path": "/home/neuro/conf/key.pub",
+    "key_priv_path": "/home/neuro/conf/key.priv",
+    "logs": {
+	"severity": "debug",
+	"to_stdout": true
+    },
+    "networking": {
+	"max_connections": 3,
+	"tcp": {
+	    "port": 1337,
+	    "peers": []
+	}
+    },
+    "database": {
+	"url": "mongodb://mongo:27017/neuro",
+	"db_name": "neuro",
+	"block0_format": "PROTO",
+	"block0_path": "/home/neuro/conf/data.0.testnet"
+    },
+    "rest": {
+	"port": 8080
+    }
+}

@@ -1,0 +1,49 @@
+{
+    "key_pub_path": "/home/neuro/conf/key.pub",
+    "key_priv_path": "/home/neuro/conf/key.priv",
+    "logs": {
+	"severity": "debug",
+	"to_stdout": true
+    },
+    "networking": {
+	"max_connections": 3,
+	"tcp": {
+	    "port": 1337,
+	    "peers": [
+		{
+		    "endpoint": "boot0.test.neurochaintech.io",
+		    "port": 1337,
+		    "keyPub": {
+			"type": "ECP256K1",
+			"rawData":"MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABJixMU4GhNhiJJQ8hCU7GiOAEH7hZmnsq90prLYH//WkCoGumvj9//2Qn88zGco/UbObTHC6K1qJwhtBLKKtLDY=",
+		    }
+		},
+		{
+		    "endpoint": "boot1.test.neurochaintech.io",
+		    "port": 1337,
+		    "keyPub": {
+			"type": "ECP256K1",
+			"rawData":"MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABBPaDgHM5r7M5e1PHG7jOOkH6fpDWMHEJPjmcyGDXs1OwMeNpRG2EMsd6OjJIPv9tCXFFePlY3g4Cm3bIYT5RV8=",
+		    }
+		},
+		{
+		    "endpoint": "boot2.test.neurochaintech.io",
+		    "port": 1337,
+		    "keyPub": {
+			"type": "ECP256K1",
+			"rawData":"MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABMYoeUhxA17X6l2PB9M9jhOAfMzNSJt++PAGOrRWntjUAY3PgPyNsbDk5Rc0OXRmFgJidkBuDbOlTs1iPpUwc0c=",
+		    }
+		}
+	    ]
+	}
+    },
+    "database": {
+	"url": "mongodb://mongo:27017/neuro",
+	"db_name": "neuro",
+	"block0_format": "PROTO",
+	"block0_path": "/home/neuro/conf/data.0.testnet"
+    },
+    "rest": {
+	"port": 8080
+    }
+}

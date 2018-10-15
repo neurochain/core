@@ -4,8 +4,8 @@
 #include "src/consensus/PiiConsensus.hpp"
 #include "src/ledger/LedgerMongodb.hpp"
 #include "src/messages/Message.hpp"
-#include "src/tooling/genblock.hpp"
 #include "src/networking/Networking.hpp"
+#include "src/tooling/genblock.hpp"
 
 namespace neuro {
 namespace test {
@@ -20,7 +20,8 @@ TEST(PiiTest, Pii_1_assembly) {
   // ledger::LedgerMongodb _ledger(database);
   _ledger = std::make_shared<ledger::LedgerMongodb>(database);
   auto io = std::make_shared<boost::asio::io_context>();
-  neuro::consensus::PiiConsensus _piisus(io, _ledger, 10,std::make_shared<networking::Networking>());
+  neuro::consensus::PiiConsensus _piisus(
+      io, _ledger, 10, std::make_shared<networking::Networking>());
   _piisus.show_results();
 
   neuro::messages::Hash next_id, owner_id;
@@ -32,7 +33,7 @@ TEST(PiiTest, Pii_1_assembly) {
   owner_id.ParseFromString(_piisus.owner_at(10));
 
   std::cout << owner_id << std::endl;
-    ASSERT_TRUE(true);
+  ASSERT_TRUE(true);
   /*ASSERT_TRUE(next_id.type() == owner_id.type() &&
               next_id.data() == owner_id.data());*/
 }
@@ -43,7 +44,7 @@ TEST(PiiTest, Pii_rand) {
   _piisus.show_results();
 
   neuro::messages::Hash owner_id;
-    owner_id.ParseFromString(_piisus.owner_at(10));
+  owner_id.ParseFromString(_piisus.owner_at(10));
 
   std::cout << owner_id << std::endl;
 
@@ -61,15 +62,13 @@ TEST(PiiTest, Pii_rand) {
       block11, _ledger, 0, 5,
       std::make_optional<neuro::messages::KeyPub>(author));
 
-
-    neuro::messages::Block block12;
-
+  neuro::messages::Block block12;
 
   neuro::tooling::genblock::genblock_from_last_db_block(
       block12, _ledger, 0, 5,
       std::make_optional<neuro::messages::KeyPub>(author));
 
-   ASSERT_EQ(block11,block12);
+  ASSERT_EQ(block11, block12);
 }
 
 /*
