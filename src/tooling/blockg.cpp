@@ -21,7 +21,8 @@ inline bool exists_file(const std::string &name) {
 }
 
 void coinbase(const crypto::EccPub &key_pub, const messages::NCCSDF &ncc,
-              messages::Transaction &transaction) {
+              messages::Transaction &transaction,
+              std::string datavalue) {
     // messages::Transaction transaction;
     Buffer key_pub_raw;
     key_pub.save(&key_pub_raw);
@@ -38,8 +39,8 @@ void coinbase(const crypto::EccPub &key_pub, const messages::NCCSDF &ncc,
     auto output = transaction.add_outputs();
     output->mutable_address()->CopyFrom(address);
     output->mutable_value()->CopyFrom(ncc);
-    std::string h("trax killed me");
-    output->set_data(h);
+    //std::string h("trax killed me");
+    output->set_data(datavalue);
     transaction.mutable_fees()->set_value(0);
     // return transaction;
 }
@@ -73,7 +74,7 @@ void block0(uint32_t bots, const std::string &pathdir, messages::NCCSDF &nccsdf,
         ecc.save({pathdir + "/key_" + std::to_string(i) + ".priv"},
         {pathdir + "/key_" + std::to_string(i) + ".pub"});
         messages::Transaction *transaction = b.add_transactions();
-        coinbase(ecc.public_key(), nccsdf, *transaction);
+        coinbase(ecc.public_key(), nccsdf, *transaction, "");
     }
 
     // const auto tmp = crypto::hash_sha3_256( b.SerializeAsString() );
@@ -97,6 +98,12 @@ void testnet_blockg(uint32_t bots, const std::string &pathdir, messages::NCCSDF 
 
     Buffer key_pub_raw = ecc.mutable_public_key()->save();
 
+    crypto::Ecc ecc_save;
+    ecc_save.save({pathdir + "/key_faucet_save.priv"},
+    {pathdir + "/key_faucet_save.pub"});
+
+    Buffer key_pub_raw_save = ecc_save.mutable_public_key()->save();
+
     messages::BlockHeader *header = blockfaucet.mutable_header();
 
     messages::KeyPub *author = header->mutable_author();
@@ -107,10 +114,15 @@ void testnet_blockg(uint32_t bots, const std::string &pathdir, messages::NCCSDF 
     previons_block_hash->set_data("");  ///!< load 0
     previons_block_hash->set_type(messages::Hash::Type::Hash_Type_SHA256);
 
-    header->mutable_timestamp()->set_data(1539640800);
+    header->mutable_timestamp()->set_data(std::time(nullptr) + 3600); // 1539640800);
+    header->set_height(0);
+
 
     messages::Transaction *transaction = blockfaucet.add_transactions();
-    coinbase(ecc.public_key(), nccsdf, *transaction);
+    coinbase(ecc.public_key(), nccsdf, *transaction, "trax killed me");
+
+    messages::Transaction *transaction2 = blockfaucet.add_transactions();
+    coinbase(ecc_save.public_key(), nccsdf, *transaction2, "what olivier ?");
 
     neuro::Buffer t23("riados");
     messages::Hasher hash_id_tmp(t23);

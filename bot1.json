@@ -16,9 +16,5 @@
       "db_name" : "neuro",
       "block0_format": "PROTO",
       "block0_path" : "../../data.0.testnet"
-  },
-  "rest":{
-      "port" : 8080,
-      "static_path" : "../../web/"
   }
 }

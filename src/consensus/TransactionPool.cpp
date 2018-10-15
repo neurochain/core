@@ -1,5 +1,6 @@
 #include "TransactionPool.hpp"
 #include "ledger/Ledger.hpp"
+#include "common/logger.hpp"
 
 namespace neuro {
 namespace consensus {
@@ -43,14 +44,18 @@ void TransactionPool::add_transactions(
     const google::protobuf::RepeatedPtrField<neuro::messages::Transaction>
         &transactions) {
   for (const auto &p : transactions) {
+   if ( p.has_id()){ // TO DO add it if
     add_transactions(p);
+    }
   }
 }
 void TransactionPool::delete_transactions(
     const google::protobuf::RepeatedPtrField<neuro::messages::Transaction>
         &transactions) {
   for (const auto &p : transactions) {
+    if ( p.has_id()){
     delete_transactions(p.id());
+    }
   }
 }
 
@@ -89,6 +94,13 @@ bool TransactionPool::build_block(messages::Block &block,
 
   _ledger->get_transaction_pool(block);
 
+  Buffer buffake("123456");
+  messages::Address id_block_fake(buffake);
+  blockheader->mutable_id()->CopyFrom(id_block_fake);
+
+  Buffer buf(block.SerializeAsString());
+  messages::Address id_block(buf);
+  blockheader->mutable_id()->CopyFrom(id_block);
   //! signed block #block1
   return false;
 }
@@ -102,11 +114,18 @@ void TransactionPool::coinbase(messages::Transaction *transaction,
   input_id->set_type(messages::Hash::SHA256);
   input_id->set_data("");
   input->set_output_id(0);
+  input->set_key_id(0);
 
   auto output = transaction->add_outputs();
   output->mutable_address()->CopyFrom(addr);
   output->mutable_value()->CopyFrom(ncc);
   transaction->mutable_fees()->set_value(0);  //"0");
+
+  Buffer buf(transaction->SerializeAsString());
+  messages::Address id(buf);
+  transaction->mutable_id()->CopyFrom(id);
+
+
 }
 }  // namespace consensus
 }  // namespace neuro

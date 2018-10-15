@@ -2,6 +2,7 @@
 #define PiiConsensus_H
 
 #include <boost/asio.hpp>
+#include <boost/bind.hpp>
 #include <memory>
 
 #include "Consensus.hpp"
@@ -26,7 +27,7 @@ namespace consensus {
 class PiiConsensus : public Pii, public Consensus {
  private:
   std::shared_ptr<ledger::Ledger> _ledger;
-  std::map<const Address, const crypto::Ecc *> _wallets_keys;
+  std::map<const Address, std::shared_ptr<crypto::Ecc> > _wallets_keys;
   TransactionPool _transaction_pool;
 
   ForkManager _ForkManager;
@@ -41,6 +42,7 @@ class PiiConsensus : public Pii, public Consensus {
   bool block_in_ledger(const messages::Hash &id);
   boost::asio::steady_timer _timer_of_block_time;
 
+  void timer_func();
  public:
   PiiConsensus(std::shared_ptr<boost::asio::io_context> io_context,
                std::shared_ptr<ledger::Ledger> ledger)
@@ -59,7 +61,7 @@ class PiiConsensus : public Pii, public Consensus {
   bool check_owner(const neuro::messages::BlockHeader &blockheader) const;
   std::string owner_at(int32_t index);
 
-  void add_wallet_keys(const crypto::Ecc *wallet);
+  void add_wallet_keys(const std::shared_ptr<crypto::Ecc> wallet);
 };
 
 }  // namespace consensus

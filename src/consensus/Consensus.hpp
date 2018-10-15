@@ -2,7 +2,7 @@
 #define CONSENSUS_H
 
 #include <vector>
-
+#include "crypto/Ecc.hpp"
 #include "messages/Message.hpp"
 
 namespace neuro {
@@ -40,6 +40,9 @@ class Consensus {
    * \return false if the owner is not the right one
    */
   virtual bool check_owner(const messages::BlockHeader &block_header) const = 0;
+
+  virtual void add_wallet_keys(const std::shared_ptr<crypto::Ecc> wallet)= 0;
+
 };
 
 }  // namespace consensus

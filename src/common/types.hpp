@@ -39,7 +39,7 @@ using std::uint8_t;
 using Port = uint16_t;
 using Ports = std::vector<Port>;
 const int32_t MessageVersion = 1;
-const uint8_t BLOCK_PERIODE = 30;
+const uint8_t BLOCK_PERIODE = 15;
 const int32_t ASSEMBLY_MEMBERS_COUNT = 557;
 const int32_t ASSEMBLY_BLOCKS_COUNT = 2000;
 const int32_t MESSAGE_TTL = 60;

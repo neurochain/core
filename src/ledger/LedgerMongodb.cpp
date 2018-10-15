@@ -80,8 +80,8 @@ void LedgerMongodb::init_block0(const messages::config::Database &db) {
 
 void LedgerMongodb::remove_all() {
   _blocks.delete_many(bss::document{} << bss::finalize);
-  //_blocks_forks.delete_many(bss::document{}.view());
-  //_transactions.delete_many(bss::document{}.view());
+  _blocks_forks.delete_many(bss::document{}.view());
+  _transactions.delete_many(bss::document{}.view());
 }
 
 messages::BlockHeight LedgerMongodb::height() const {
