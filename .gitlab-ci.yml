@@ -98,6 +98,8 @@ pages:
     cd build
     cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/root -DCMAKE_BUILD_TYPE=$1 ..
     cmake --build .
+    mkdir /tmp/db && nohup mongod --dbpath /tmp/db & 
+    mongo mongodb://localhost:27017/neuro --eval "db.coin.find();"
     python3 ../utils/dockers/times3.py ctest -V
   }
 
