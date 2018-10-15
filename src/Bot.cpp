@@ -235,20 +235,20 @@ bool Bot::init() {
   _ledger = std::make_shared<ledger::LedgerMongodb>(db_config.url(),
                                                     db_config.db_name());
 
-  if (!_config.has_rest()) {
-    LOG_INFO << "Missing rest configuration, not loading module";
-  } else {
-    const auto rest_config = _config.rest();
-    _rest =
-        std::make_shared<rest::Rest>(_ledger, _networking, _keys, rest_config);
-  }
-
   if (!_config.has_networking() || !load_networking(&_config)) {
     LOG_ERROR << "Could not load networking";
     return false;
   }
 
   _consensus = std::make_shared<consensus::PiiConsensus>(_io_context, _ledger);
+
+  if (!_config.has_rest()) {
+    LOG_INFO << "Missing rest configuration, not loading module";
+  } else {
+    const auto rest_config = _config.rest();
+    _rest = std::make_shared<rest::Rest>(_ledger, _networking, _keys,
+                                         _consensus, rest_config);
+  }
 
   update_ledger();
 

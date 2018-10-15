@@ -2,6 +2,7 @@
 #define NEURO_SRC_REST_HPP
 
 #include "common/types.hpp"
+#include "consensus/Consensus.hpp"
 #include "crypto/Sign.hpp"
 #include "ledger/Ledger.hpp"
 #include "networking/Networking.hpp"
@@ -20,6 +21,7 @@ class Rest {
   std::shared_ptr<ledger::Ledger> _ledger;
   std::shared_ptr<networking::Networking> _networking;
   std::shared_ptr<crypto::Ecc> _keys;
+  std::shared_ptr<consensus::Consensus> _consensus;
   messages::config::Rest _config;
   Port _port;
   std::string _static_path;
@@ -36,8 +38,8 @@ class Rest {
   void publish_transaction(messages::Transaction &transaction) const;
   messages::Hasher load_hash(const std::string &hash_str) const;
   messages::GeneratedKeys generate_keys() const;
-  messages::Transaction build_faucet_transaction(const std::string &address,
-                                                 const uint64_t amount);
+  messages::Transaction build_faucet_transaction(
+      const messages::Address &address, const uint64_t amount);
   void serve_file(const std::string filename);
   void serve_file(const std::string route, const std::string filename);
   void serve_folder(const std::string route, const std::string foldername);
@@ -45,7 +47,9 @@ class Rest {
  public:
   Rest(std::shared_ptr<ledger::Ledger> ledger,
        std::shared_ptr<networking::Networking> networking,
-       std::shared_ptr<crypto::Ecc> keys, const messages::config::Rest &config);
+       std::shared_ptr<crypto::Ecc> keys,
+       std::shared_ptr<consensus::Consensus> consensus,
+       const messages::config::Rest &config);
 
   void join();
   void stop();

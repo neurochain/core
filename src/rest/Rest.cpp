@@ -13,10 +13,12 @@ namespace rest {
 Rest::Rest(std::shared_ptr<ledger::Ledger> ledger,
            std::shared_ptr<networking::Networking> networking,
            std::shared_ptr<crypto::Ecc> keys,
+           std::shared_ptr<consensus::Consensus> consensus,
            const messages::config::Rest &config)
     : _ledger(ledger),
       _networking(networking),
       _keys(keys),
+      _consensus(consensus),
       _config(config),
       _port(_config.port()),
       _static_path(_config.static_path()),
@@ -60,14 +62,22 @@ Rest::Rest(std::shared_ptr<ledger::Ledger> ledger,
   const auto faucet_send_route = [this](Onion::Request &req,
                                         Onion::Response &res) {
     const auto faucet_amount = _config.faucet_amount();
-    const auto address = req.query("address", "");
-    LOG_INFO << "ADDRESS " << address;
-    messages::Transaction transaction =
-        build_faucet_transaction(address, faucet_amount);
-    std::string json;
-    messages::to_json(transaction, &json);
-    res << json;
-    return OCS_PROCESSED;
+    const auto address_str = req.query("address", "");
+    LOG_INFO << "ADDRESS " << address_str;
+    const messages::Address address = load_hash(address_str);
+    if (_ledger->has_received_transaction(address)) {
+      res << "{\"error\": \"The given address has already received some "
+             "coins.\"";
+      return OCS_PROCESSED;
+    } else {
+      messages::Transaction transaction =
+          build_faucet_transaction(address, faucet_amount);
+      publish_transaction(transaction);
+      std::string json;
+      messages::to_json(transaction, &json);
+      res << json;
+      return OCS_PROCESSED;
+    }
   };
 
   _root->add("list_transactions", list_transactions_route);
@@ -169,6 +179,7 @@ messages::Transaction Rest::build_transaction(
       auto input = transaction.add_inputs();
       input->mutable_id()->CopyFrom(transaction_id);
       input->set_output_id(output.output_id());
+      input->set_key_id(0);
       inputs_ncc += output.value().value();
     }
   }
@@ -194,7 +205,8 @@ messages::Transaction Rest::build_transaction(
 }
 
 void Rest::publish_transaction(messages::Transaction &transaction) const {
-  // TODO Add the transaction to the transaction pool
+  // Add the transaction to the transaction pool
+  _consensus->add_transaction(transaction);
 
   // Send the transaction on the network
   auto message = std::make_shared<messages::Message>();
@@ -219,7 +231,7 @@ messages::GeneratedKeys Rest::generate_keys() const {
 }
 
 messages::Transaction Rest::build_faucet_transaction(
-    const std::string &address_str, const uint64_t amount) {
+    const messages::Address &address, const uint64_t amount) {
   // Set transactions_ids
   auto bot_address = messages::Hasher(_keys->public_key());
   messages::UnspentTransactions unspent_transactions =
@@ -232,8 +244,6 @@ messages::Transaction Rest::build_faucet_transaction(
 
   // Set outputs
   auto output = transaction_to_publish.add_outputs();
-  const messages::Hasher address = load_hash(address_str);
-
   output->mutable_address()->CopyFrom(address);
   output->mutable_value()->set_value(amount);
 
