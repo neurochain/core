@@ -114,12 +114,12 @@ class Ledger {
     filter.input_transaction_id(transaction.id());
     filter.output_id(output_id);
 
-    bool no_match = true;
-    for_each(filter, [&](const messages::Transaction _) {
-      no_match = false;
+    bool match = false;
+    for_each(filter, [&](const messages::Transaction) {
+      match = true;
       return false;
     });
-    return no_match;
+    return !match;
   }
 
   std::vector<messages::Output> get_outputs_for_address(
@@ -131,7 +131,7 @@ class Ledger {
     auto outputs = transaction.mutable_outputs();
     for (auto it(outputs->begin()); it != outputs->end(); it++) {
       if (it->address() == address) {
-        it->set_output_id(std::distance(it, outputs->begin()));
+        it->set_output_id(std::distance(outputs->begin(), it));
         result.push_back(*it);
       }
     }

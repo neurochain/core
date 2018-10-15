@@ -122,12 +122,13 @@ messages::Hasher Rest::load_hash(const std::string &hash_str) const {
 messages::UnspentTransactions Rest::list_unspent_transactions(
     const messages::Address &address) const {
   messages::UnspentTransactions unspent_transactions;
+
   auto transactions = _ledger->list_transactions(address).transactions();
   for (auto transaction : transactions) {
-    for (int i = 0; i < transaction.outputs_size(); ++i) {
+    for (int i = 0; i < transaction.outputs_size(); i++) {
       auto output = transaction.outputs(i);
-      if (_ledger->is_unspent_output(transaction, i) &&
-          output.address() == address) {
+      if (output.address() == address &&
+          _ledger->is_unspent_output(transaction, i)) {
         auto unspent_transaction =
             unspent_transactions.add_unspent_transactions();
         unspent_transaction->set_transaction_id(transaction.id().data());
