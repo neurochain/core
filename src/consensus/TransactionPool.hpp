@@ -21,10 +21,17 @@ class TransactionPool {
   TransactionPool(std::shared_ptr<ledger::Ledger> ledger);
 
   bool add_transactions(const messages::Transaction &transaction);
-  void delete_transactions(const messages::Transaction &transaction);
+  void delete_transactions(const messages::Hash &transaction);
+
+  void add_transactions(
+      const google::protobuf::RepeatedPtrField<neuro::messages::Transaction>
+          &transactions);
+  void delete_transactions(
+      const google::protobuf::RepeatedPtrField<neuro::messages::Transaction>
+          &transactions);
 
   bool build_block(messages::Block &block, messages::BlockHeight height,
-                   const crypto::Ecc &author, uint64_t rewarde = 10);
+                   const crypto::Ecc *author, uint64_t rewarde = 10);
   void coinbase(messages::Transaction *transaction,
                 const messages::Address &addr, const messages::NCCSDF &ncc);
 };

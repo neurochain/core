@@ -35,18 +35,33 @@ bool TransactionPool::add_transactions(
 }
 
 void TransactionPool::delete_transactions(
-    const messages::Transaction &transaction) {
-  _ledger->delete_transaction(transaction.id());
+    const messages::Hash &transaction_id) {
+  _ledger->delete_transaction(transaction_id);
+}
+
+void TransactionPool::add_transactions(
+    const google::protobuf::RepeatedPtrField<neuro::messages::Transaction>
+        &transactions) {
+  for (const auto &p : transactions) {
+    add_transactions(p);
+  }
+}
+void TransactionPool::delete_transactions(
+    const google::protobuf::RepeatedPtrField<neuro::messages::Transaction>
+        &transactions) {
+  for (const auto &p : transactions) {
+    delete_transactions(p.id());
+  }
 }
 
 bool TransactionPool::build_block(messages::Block &block,
                                   messages::BlockHeight height,
-                                  const crypto::Ecc &author, uint64_t rewarde) {
+                                  const crypto::Ecc *author, uint64_t rewarde) {
   /// TO DO
 
   // Get author pubkey and address ---oliv
   Buffer key_pub_data;
-  author.public_key().save(&key_pub_data);
+  author->public_key().save(&key_pub_data);
 
   messages::KeyPub author_keypub;
   author_keypub.set_type(messages::KeyType::ECP256K1);

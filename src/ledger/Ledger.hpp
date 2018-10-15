@@ -79,7 +79,7 @@ class Ledger {
   virtual bool for_each(const Filter &filter, Functor functor) = 0;
 
   virtual bool fork_add_block(const messages::Block &b) = 0;
-  virtual bool fork_delete_block(messages::Hash &id) = 0;
+  virtual bool fork_delete_block(const messages::Hash &id) = 0;
   virtual void fork_for_each(Functor_block functor) = 0;
   virtual bool fork_get_block(const messages::BlockID &id,
                               messages::Block *block) = 0;

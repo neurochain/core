@@ -1,21 +1,21 @@
 #include "ForkTree.hpp"
+#include "messages/Message.hpp"
 namespace neuro {
 namespace consensus {
 
 ForkTree::ForkTree(neuro::messages::Block &block, uint64_t w,
                    BranchType branch) {
-  _entry.CopyFrom(block);
-  _weight = w + score();
+  _entry.CopyFrom(block.header().id());
+  _weight = w + score(block);
   _branch_origin = branch;
   _tree.clear();
 }
 
-uint64_t ForkTree::score() {
+uint64_t ForkTree::score(const neuro::messages::Block &block) {
   uint64_t s = 0;
-  for (auto trx : _entry.transactions()) {
+  for (auto trx : block.transactions()) {
     for (auto output : trx.outputs()) {
-      s +=
-          output.value().value();  // std::atol(output.value().value().c_str());
+      s += output.value().value();
     }
   }
   return s;
@@ -35,7 +35,7 @@ void add(ForkTree &fork)
 
 bool ForkTree::find_add(neuro::messages::Block &fork_block, BranchType branch,
                         uint64_t &scoreofadd) {
-  if (equalme(fork_block.header().previous_block_hash())) {
+  if (_entry == fork_block.header().previous_block_hash()) {
     scoreofadd = add(fork_block, branch);
     return true;
   }
@@ -88,13 +88,10 @@ uint64_t ForkTree::update_branch() {
 }
 
 inline bool ForkTree::equalme(const neuro::messages::Hash &block_id) {
-  return (_entry.header().id().data() == block_id.data());
+  return (_entry == block_id);
 }
 
 std::ostream &operator<<(std::ostream &os, ForkTree &node_tree) {
-  /*os << b._entry.header().height() << "->";
-  for(auto k : b._tree)
-      os << *k;*/
   os << node_tree.printtree("", false);
   return os;
 }
@@ -103,19 +100,16 @@ std::string ForkTree::printtree(const std::string &prefix, bool isLeft) {
   if (_tree.size() == 1) {
     return _tree[0]->printtree(prefix, isLeft);
   }
-
   std::stringstream ss;
   ss << prefix;
   ss << (isLeft ? "├──" : "└──");
-
   // print the value of the node
-  ss << _entry.header().height();
+  ss << _entry;
   if (true) {  //_tree.size() == 0) {
     ss << ":" << ((_branch_origin == MainBranch) ? "Main" : "Fork") << ":"
        << ((_branch_apply == MainBranch) ? "Main" : "Fork") << ":" << _weight;
   }
   ss << std::endl;
-
   // enter the next tree level - left and right branch
   int p = _tree.size();
   int i = 0;

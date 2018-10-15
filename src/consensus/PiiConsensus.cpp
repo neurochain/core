@@ -9,7 +9,7 @@ PiiConsensus::PiiConsensus(std::shared_ptr<boost::asio::io_context> io,
                            int32_t block_assembly)
     : _ledger(ledger),
       _transaction_pool(_ledger),
-      _ForkManager(ledger),
+      _ForkManager(ledger, _transaction_pool),
       _valide_block(true),
       _timer_of_block_time(*io) {
   // load all block from
@@ -32,6 +32,33 @@ void PiiConsensus::init() {
   _valide_block = save_valide;
 }
 
+int32_t PiiConsensus::next_height_by_time() const {
+  messages::Block last_block;
+  _ledger->get_block(_ledger->height(), &last_block);
+  auto &last_block_header = last_block.header();
+  int32_t time_now = std::time(nullptr);
+  int32_t height = ((time_now - time_now % BLOCK_PERIODE) -
+                    (last_block_header.timestamp().data() -
+                     last_block_header.timestamp().data() % BLOCK_PERIODE)) /
+                   BLOCK_PERIODE;
+
+  return height;
+}
+
+// TO DO Test
+void PiiConsensus::build_block() {
+  int32_t next_height = next_height_by_time();
+  if (next_height < 1) {
+    return;
+  }
+  std::string next_owner = get_next_owner();
+  if (auto it = _wallets_keys.find(next_owner); it != _wallets_keys.end()) {
+    messages::Block blocks;
+    _transaction_pool.build_block(blocks, next_height, it->second, 200);
+    _transaction_pool.delete_transactions(blocks.transactions());
+  }
+}
+
 void PiiConsensus::add_transaction(const messages::Transaction &transaction) {
   _transaction_pool.add_transactions(transaction);
 }
@@ -48,12 +75,11 @@ bool PiiConsensus::block_in_ledger(const messages::Hash &id) {
 
 void PiiConsensus::add_block(const neuro::messages::Block &block) {
   neuro::messages::Block last_block, prev_block;
-  ///!< compare heigth with ledger
   ///!< fix same id block in the ledger
-  if (_valide_block && block_in_ledger(block.header().id())) {
+  /*if (_valide_block && block_in_ledger(block.header().id())) {
     return;
-  }
-
+  }*/
+  ///!< compare heigth with ledger
   _ledger->get_block(_ledger->height(), &last_block);
   ///!< verif time
   // auto &last_block_header = last_block.header();
@@ -76,7 +102,6 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
    }*/
   ///!< verif block suppose Correct Calcul of PII
   if (_valide_block && !check_owner(block.header())) {
-    std::cout << "Owner not correct" << std::endl;
     _ledger->fork_add_block(block);
     // possible do this after n blocks 3 of diff of height
     if (_ForkManager.fork_results()) {
@@ -143,12 +168,6 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
                   .value();  // std::atol(thxouput.value().value().c_str());
 
         _input.push_back({thxouput.address().SerializeAsString(), add});
-      } else {
-        if (inputid.data().size() > 0) {
-          std::string hl;
-          messages::to_json(inputid, &hl);
-          throw std::runtime_error({"Transaction not found " + hl});
-        }
       }
       somme_Inputs += add;
     }
@@ -166,7 +185,7 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
 
   _last_heigth_block = block.header().height();
   if (((_last_heigth_block + 1) % _assembly_blocks) == 0) {
-    std::cout << "I am in calcul of assembly" << std::endl;
+    std::cout << "I a m in consensus calcul" << std::endl;
     calcul();
     random_from_hashs();
   }
@@ -204,8 +223,11 @@ uint32_t PiiConsensus::ramdon_at(int index, uint64_t nonce) const {
 }
 
 Address PiiConsensus::get_next_owner() const {
-  return operator()(
-      ramdon_at((_last_heigth_block + 1) % _assembly_blocks, _nonce_assembly));
+  int32_t next_height = next_height_by_time();
+  if (next_height < 0) {
+    next_height = _last_heigth_block + 1;
+  }
+  return operator()(ramdon_at(next_height % _assembly_blocks, _nonce_assembly));
 }
 
 bool PiiConsensus::check_owner(
@@ -231,13 +253,8 @@ bool PiiConsensus::check_owner(
   return (author_addr.SerializeAsString() == owner_p);
 }
 
-void PiiConsensus::show_owner(uint32_t start, uint32_t how) {
-  for (uint32_t i = start; i < start + how; ++i) {
-    messages::Hash owner_addr;
-    owner_addr.ParseFromString(operator()(ramdon_at(i, _nonce_assembly)));
-
-    std::cout << owner_addr << std::endl;
-  }
+std::string PiiConsensus::owner_at(int32_t index) {
+  return operator()(ramdon_at(index % _assembly_blocks, _nonce_assembly));
 }
 
 void PiiConsensus::add_wallet_keys(const crypto::Ecc *wallet) {

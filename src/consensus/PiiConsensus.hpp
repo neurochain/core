@@ -49,13 +49,15 @@ class PiiConsensus : public Pii, public Consensus {
   PiiConsensus(std::shared_ptr<boost::asio::io_context> io_context,
                std::shared_ptr<ledger::Ledger> ledger, int32_t block_assembly);
 
+  int32_t next_height_by_time() const;
+  void build_block();
   void add_transaction(const messages::Transaction &transaction);
   void add_block(const neuro::messages::Block &block);
   void add_blocks(const std::vector<neuro::messages::Block *> &blocks);
   Address get_next_owner() const;
 
   bool check_owner(const neuro::messages::BlockHeader &blockheader) const;
-  void show_owner(uint32_t start, uint32_t how = 10);
+  std::string owner_at(int32_t index);
 
   void add_wallet_keys(const crypto::Ecc *wallet);
 };

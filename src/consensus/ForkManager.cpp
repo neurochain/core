@@ -4,8 +4,8 @@
 namespace neuro {
 namespace consensus {
 
-ForkManager::ForkManager(std::shared_ptr<ledger::Ledger> ledger)
-    : _ledger(ledger) {
+ForkManager::ForkManager(std::shared_ptr<ledger::Ledger> ledger, TransactionPool &transaction_pool)
+    : _ledger(ledger), _transaction_pool(transaction_pool) {
   // ctor
 }
 
@@ -30,7 +30,9 @@ ForkManager::ForkStatus ForkManager::fork_status(
   if (blockHeight == last_height) {
     ///!< the prev block hash is the same , impossible why
     if (prevHeight == blockHeight) {
-      throw std::runtime_error("the prev block hash is the same height");
+      throw std::runtime_error(
+          "the prev block hash is the same height");  // TO DO remove throw for
+                                                      // best solutions
     }
 
     if (prevHeight == blockHeight - 1) {
@@ -38,7 +40,9 @@ ForkManager::ForkStatus ForkManager::fork_status(
           blockheader.author().SerializeAsString()) {
         return ForkStatus::Dual_Block;
       } else {
-        throw std::runtime_error("Fork with diff owner see H1");
+        throw std::runtime_error(
+            "Fork with diff owner see H1");  // TO DO remove throw for best
+                                             // solutions
         return ForkStatus::VS_Block;
       }
     }
@@ -94,31 +98,41 @@ bool ForkManager::fork_results() {
     messages::Block block;
     if (_ledger->get_block(i, &block)) {
       if (!forktree.find_add(block, ForkTree::MainBranch, main_score)) {
-        throw std::runtime_error("Not found block ");
+        throw std::runtime_error(
+            "Not found block ");  // TO DO remove throw for best solutions
       }
     }
   }
 
   _ledger->fork_for_each([&](messages::Block &block) {
     if (!forktree.find_add(block, ForkTree::ForkBranch, fork_score)) {
-      throw std::runtime_error("Not found block ");
+      throw std::runtime_error(
+          "Not found block ");  // TO DO remove throw for best solutions
     }
   });
 
   if (fork_score > main_score) {
     forktree.update_branch();
-    std::cout << forktree << std::endl;
 
-    forktree.for_each([&](messages::Block block, ForkTree::BranchType old,
+    forktree.for_each([&](const messages::Hash &block_id,
+                          ForkTree::BranchType old,
                           ForkTree::BranchType apply) {
       if (old != apply) {
         if (old == ForkTree::ForkBranch) {
-          auto block_id = block.header().id();
+          messages::Block block;
+          _ledger->fork_get_block(block_id, &block);
           _ledger->fork_delete_block(block_id);
           _ledger->push_block(block);
+
+          _transaction_pool.delete_transactions(block.transactions());
+
         } else {
-          _ledger->delete_block(block.header().id());
+          messages::Block block;
+          _ledger->get_block(block_id, &block);
+          _ledger->delete_block(block_id);
           _ledger->fork_add_block(block);
+
+          _transaction_pool.add_transactions(block.transactions());
         }
       }
     });

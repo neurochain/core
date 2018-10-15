@@ -15,10 +15,10 @@ class ForkTree {
   enum BranchType { ForkBranch = 0, MainBranch };
   using trees = std::vector<std::shared_ptr<ForkTree>>;
   using Functor =
-      std::function<void(const messages::Block, BranchType, BranchType)>;
+      std::function<void(const messages::Hash &, BranchType, BranchType)>;
 
  private:
-  neuro::messages::Block _entry;
+  neuro::messages::Hash _entry;
   BranchType _branch_origin, _branch_apply;
 
   uint64_t _weight;
@@ -26,7 +26,7 @@ class ForkTree {
 
   std::string printtree(const std::string &prefix, bool isLeft);
   inline bool equalme(const neuro::messages::Hash &block_id);
-  uint64_t score();
+  uint64_t score(const neuro::messages::Block &block);
 
  public:
   ForkTree() = default;

@@ -2,6 +2,7 @@
 #define NEURO_SRC_CONCENSUS_FORKMANAGER_HPP
 
 #include "ForkTree.hpp"
+#include "TransactionPool.hpp"
 #include "messages.pb.h"
 
 namespace neuro {
@@ -32,9 +33,9 @@ class ForkManager {
 
  private:
   std::shared_ptr<ledger::Ledger> _ledger;
-
+  TransactionPool &_transaction_pool;
  public:
-  ForkManager(std::shared_ptr<ledger::Ledger> ledger);
+  ForkManager(std::shared_ptr<ledger::Ledger> ledger, TransactionPool &transaction_pool);
   virtual ~ForkManager();
 
   ForkStatus fork_status(const messages::BlockHeader &blockheader,

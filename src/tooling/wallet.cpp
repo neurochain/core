@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
   auto io = std::shared_ptr<boost::asio::io_context>();
   consensus::PiiConsensus _PiiConsensus(io, ledger, 10);
   _PiiConsensus.show_results();
-  _PiiConsensus.show_owner(0, 10);
+  //_PiiConsensus.show_owner(0, 10);
 
   messages::Block block10;
   ledger->get_block(10, &block10);
@@ -283,7 +283,7 @@ int main(int argc, char *argv[]) {
   _PiiConsensus.add_block(block19);
 
   _PiiConsensus.show_results();
-  _PiiConsensus.show_owner(0, 10);
+  // _PiiConsensus.show_owner(0, 10);
 
   return 0;
 }
