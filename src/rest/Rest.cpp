@@ -13,10 +13,12 @@ namespace rest {
 Rest::Rest(std::shared_ptr<ledger::Ledger> ledger,
            std::shared_ptr<networking::Networking> networking,
            std::shared_ptr<crypto::Ecc> keys,
+           std::shared_ptr<consensus::Consensus> consensus,
            const messages::config::Rest &config)
     : _ledger(ledger),
       _networking(networking),
       _keys(keys),
+      _consensus(consensus),
       _config(config),
       _port(_config.port()),
       _static_path(_config.static_path()),
@@ -70,6 +72,7 @@ Rest::Rest(std::shared_ptr<ledger::Ledger> ledger,
     } else {
       messages::Transaction transaction =
           build_faucet_transaction(address, faucet_amount);
+      publish_transaction(transaction);
       std::string json;
       messages::to_json(transaction, &json);
       res << json;
@@ -176,6 +179,7 @@ messages::Transaction Rest::build_transaction(
       auto input = transaction.add_inputs();
       input->mutable_id()->CopyFrom(transaction_id);
       input->set_output_id(output.output_id());
+      input->set_key_id(0);
       inputs_ncc += output.value().value();
     }
   }
@@ -201,7 +205,8 @@ messages::Transaction Rest::build_transaction(
 }
 
 void Rest::publish_transaction(messages::Transaction &transaction) const {
-  // TODO Add the transaction to the transaction pool
+  // Add the transaction to the transaction pool
+  _consensus->add_transaction(transaction);
 
   // Send the transaction on the network
   auto message = std::make_shared<messages::Message>();
