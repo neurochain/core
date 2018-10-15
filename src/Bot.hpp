@@ -37,6 +37,7 @@ class Bot {
   std::shared_ptr<rest::Rest> _rest;
   std::shared_ptr<consensus::Consensus> _consensus;
   std::shared_ptr<boost::asio::io_context> _io_context;
+  std::unordered_set<int32_t> _request_ids;
 
   // for the peers
   messages::config::Tcp *_tcp_config;

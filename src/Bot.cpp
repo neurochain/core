@@ -89,7 +89,7 @@ void Bot::handler_get_block(const messages::Header &header,
 
   auto message = std::make_shared<messages::Message>();
   auto header_reply = message->mutable_header();
-  messages::fill_header_reply(header, header_reply);
+  const auto id = messages::fill_header_reply(header, header_reply);
 
   if (get_block.has_hash()) {
     LOG_ERROR << " get_block by hash not implemented";  // TODO
@@ -104,6 +104,7 @@ void Bot::handler_get_block(const messages::Header &header,
     return;
   }
 
+  _request_ids.insert(id);
   _networking->send_unicast(message, networking::ProtocolType::PROTOBUF2);
 }
 
@@ -111,6 +112,19 @@ void Bot::handler_block(const messages::Header &header,
                         const messages::Body &body) {
   _consensus->add_block(body.block());
   update_ledger();
+
+  if (header.has_request_id()) {
+    auto got = _request_ids.find(header.request_id());
+    if (got != _request_ids.end()) {
+      return;
+    }
+  }
+
+  auto message = std::make_shared<messages::Message>();
+  auto header_reply = message->mutable_header();
+  messages::fill_header(header_reply);
+  message->add_bodies()->mutable_block()->CopyFrom(body.block());
+  _networking->send(message, networking::ProtocolType::PROTOBUF2);
 }
 
 void Bot::handler_transaction(const messages::Header &header,
