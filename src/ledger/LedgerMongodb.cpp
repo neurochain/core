@@ -232,13 +232,14 @@ bool LedgerMongodb::delete_transaction(const messages::Hash &id) {
 
 int LedgerMongodb::get_transaction_pool(messages::Block &block) {
   auto query_transaction_pool =
-      bss::document{} << "blockId " << bss::open_document << "$exists" << false
+      bss::document{} << "blockId " << bss::open_document << "\"$exists\"" << 0
                       << bss::close_document << bss::finalize;
 
   // TO DO add filter for order transaction here #Trx1
 
   int transactions_num = 0;
-  auto cursor = _transactions.find(query_transaction_pool.view(), remove_OID());
+  auto cursor =
+      _transactions.find(std::move(query_transaction_pool), remove_OID());
   for (auto &bson_transaction : cursor) {
     auto *transaction = block.add_transactions();
     messages::from_bson(bson_transaction, transaction);

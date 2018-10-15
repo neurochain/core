@@ -43,10 +43,6 @@ int32_t PiiConsensus::next_height_by_time() const {
   auto &last_block_header = last_block.header();
   int32_t time_now = std::time(nullptr);
 
-  int32_t t1 = time_now - time_now % BLOCK_PERIODE;
-  int32_t t2 = last_block_header.timestamp().data() -
-               last_block_header.timestamp().data() % BLOCK_PERIODE;
-
   int32_t height = ((time_now - time_now % BLOCK_PERIODE) -
                     (last_block_header.timestamp().data() -
                      last_block_header.timestamp().data() % BLOCK_PERIODE)) /
@@ -65,6 +61,7 @@ void PiiConsensus::timer_func() {
   _timer_of_block_time.expires_at(_timer_of_block_time.expiry() +
                                   boost::asio::chrono::seconds(next_time));
   _timer_of_block_time.async_wait(boost::bind(&PiiConsensus::timer_func, this));
+  LOG_INFO << "Next Time " << std::to_string(next_time);
 }
 // TO DO Test
 void PiiConsensus::build_block() {
@@ -88,9 +85,14 @@ void PiiConsensus::build_block() {
 
   auto it = _wallets_keys.find(next_owner);
   if (it != _wallets_keys.end()) {
+    std::cout << "build it" << std::endl;
     messages::Block blocks;
     _transaction_pool.build_block(blocks, next_height, it->second.get(),
                                   858993459200lu);
+
+    std::string ss;
+    messages::to_json(blocks, &ss);
+    std::cout << ss << std::endl;
     _transaction_pool.delete_transactions(blocks.transactions());
 
     add_block(blocks);
@@ -148,6 +150,7 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
   ///!< verif block suppose Correct Calcul of PII
   if (_valide_block && !check_owner(block.header())) {
     _ledger->fork_add_block(block);
+    LOG_INFO << "Fix Owner plz";
     // possible do this after n blocks 3 of diff of height
     if (_ForkManager.fork_results()) {
       init();
@@ -164,6 +167,7 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
 
     if (r == ForkManager::ForkStatus::Non_Fork) {
       _ledger->push_block(block);
+      LOG_INFO << "Push to Ledger";
     } else {
       /// add it to
       std::cout << "Fork " << std::endl;
@@ -277,8 +281,20 @@ Address PiiConsensus::get_next_owner() const {
 
 bool PiiConsensus::check_owner(
     const neuro::messages::BlockHeader &blockheader) const {
-  std::string owner_p = operator()(
-      ramdon_at(blockheader.height() % _assembly_blocks, _nonce_assembly));
+  std::string owner_p;
+  if (blockheader.height() < ASSEMBLY_BLOCKS_COUNT) {
+    // Fixed 1 assembly block generator
+    messages::Hash result;
+    messages::from_json(
+        "{\"type\": \"SHA256\", \"data\": "
+        "\"z5iMSrp79h/zueBTSzitqJW8rNXh4zEdYY96sl3tzkE=\"}",
+        &result);
+    owner_p = result.SerializeAsString();
+
+  } else {
+    owner_p = operator()(
+        ramdon_at(blockheader.height() % _assembly_blocks, _nonce_assembly));
+  }
 
   Buffer buf(blockheader.author().raw_data());
   messages::Address author_addr(buf);
