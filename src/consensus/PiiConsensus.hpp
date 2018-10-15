@@ -11,6 +11,7 @@
 #include "TransactionPool.hpp"
 #include "common/types.hpp"
 #include "crypto/Ecc.hpp"
+#include "networking/Networking.hpp"
 
 namespace neuro {
 namespace ledger {
@@ -27,6 +28,7 @@ namespace consensus {
 class PiiConsensus : public Pii, public Consensus {
  private:
   std::shared_ptr<ledger::Ledger> _ledger;
+  std::shared_ptr<networking::Networking> _network;
   std::map<const Address, std::shared_ptr<crypto::Ecc> > _wallets_keys;
   TransactionPool _transaction_pool;
 
@@ -45,11 +47,12 @@ class PiiConsensus : public Pii, public Consensus {
   void timer_func();
  public:
   PiiConsensus(std::shared_ptr<boost::asio::io_context> io_context,
-               std::shared_ptr<ledger::Ledger> ledger)
-      : PiiConsensus(io_context, ledger, ASSEMBLY_BLOCKS_COUNT) {}
+               std::shared_ptr<ledger::Ledger> ledger,
+               std::shared_ptr<networking::Networking> network)
+      : PiiConsensus(io_context, ledger, network, ASSEMBLY_BLOCKS_COUNT) {}
 
   PiiConsensus(std::shared_ptr<boost::asio::io_context> io_context,
-               std::shared_ptr<ledger::Ledger> ledger, int32_t block_assembly);
+               std::shared_ptr<ledger::Ledger> ledger, std::shared_ptr<networking::Networking> network,int32_t block_assembly);
 
   int32_t next_height_by_time() const;
   void build_block();

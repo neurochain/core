@@ -5,6 +5,7 @@
 #include "src/ledger/LedgerMongodb.hpp"
 #include "src/messages/Message.hpp"
 #include "src/tooling/genblock.hpp"
+#include "src/networking/Networking.hpp"
 
 namespace neuro {
 namespace test {
@@ -19,7 +20,7 @@ TEST(PiiTest, Pii_1_assembly) {
   // ledger::LedgerMongodb _ledger(database);
   _ledger = std::make_shared<ledger::LedgerMongodb>(database);
   auto io = std::make_shared<boost::asio::io_context>();
-  neuro::consensus::PiiConsensus _piisus(io, _ledger, 10);
+  neuro::consensus::PiiConsensus _piisus(io, _ledger, 10,std::make_shared<networking::Networking>());
   _piisus.show_results();
 
   neuro::messages::Hash next_id, owner_id;

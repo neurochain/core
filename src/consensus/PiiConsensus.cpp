@@ -8,8 +8,10 @@ namespace consensus {
 
 PiiConsensus::PiiConsensus(std::shared_ptr<boost::asio::io_context> io,
                            std::shared_ptr<ledger::Ledger> ledger,
+                           std::shared_ptr<networking::Networking> network,
                            int32_t block_assembly)
     : _ledger(ledger),
+    _network(network),
       _transaction_pool(_ledger),
       _ForkManager(ledger, _transaction_pool),
       _valide_block(true),
@@ -76,7 +78,7 @@ void PiiConsensus::build_block() {
     if ( next_height < ASSEMBLY_BLOCKS_COUNT ) {
         // Fixed 1 assembly block generator
         messages::Hash result;
-        messages::from_json("{\"type\": \"SHA256\", \"data\": \"KwP1T7FjQoLC5akyxQ5mdO/CuZA5XiaKf8G8zoHHePE=\"}", &result);
+        messages::from_json("{\"type\": \"SHA256\", \"data\": \"z5iMSrp79h/zueBTSzitqJW8rNXh4zEdYY96sl3tzkE=\"}", &result);
         next_owner = result.SerializeAsString();
         std::cout << humaineaddre(next_owner) << std::endl;
     } else {
@@ -94,6 +96,13 @@ void PiiConsensus::build_block() {
         _transaction_pool.delete_transactions(blocks.transactions());
         LOG_INFO << "I build the next block " << std::to_string(blocks.header().height());
         add_block(blocks);
+
+        //auto message =
+        auto message = std::make_shared<messages::Message>();
+        auto header = message->mutable_header();
+        messages::fill_header(header);
+        message->add_bodies()->mutable_block()->CopyFrom(blocks);
+        _network->send(message, networking::ProtocolType::PROTOBUF2);
 
     }
 }

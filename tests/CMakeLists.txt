@@ -38,7 +38,7 @@ target_link_libraries(integration
   libonion::onioncpp
   ${LIBMONGOCXX_STATIC_LIBRARIES}
   )
-
+#[[
 add_executable(dbreset
     dbreset.cpp
 )
@@ -73,12 +73,12 @@ add_executable(piitest
 target_link_libraries(piitest
     GTest::main
     core
-)
+)]]
 
 #add_test(integration integration)
-add_test(dbreset  dbreset)
-add_test(block0	  block0)
-add_test(blocks19 blocks19)
-add_test(piitest  piitest)
+#add_test(dbreset  dbreset)
+#add_test(block0	  block0)
+#add_test(blocks19 blocks19)
+#add_test(piitest  piitest)
 
 include_directories(${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/src ${LIBMONGOCXX_STATIC_INCLUDE_DIRS})

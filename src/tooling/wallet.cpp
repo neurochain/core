@@ -178,12 +178,12 @@ int main(int argc, char *argv[]) {
             messages::to_json(keypriv,&t);
             std::cout << i << " - " << t << std::endl;
 
-        }*/
+        }*
 
   ledger->fork_test();  ///!< Delete Fork branche$
                         /** filter test
                           ledger::Ledger::Filter filter;
-                      
+
                           messages::Hash id_transaction;
                           messages::from_json(
                               "{\"type\":\"SHA256\",\"data\":\"rYfXEdh9/"
@@ -192,20 +192,20 @@ int main(int argc, char *argv[]) {
                           std::string tt;
                           messages::to_json(id_transaction, &tt);
                           std::cout << "ID = " << tt << std::endl;
-                      
+
                           filter.input_transaction_id(id_transaction);
                           filter.output_id(0);
-                      
+
                           ledger->for_each(filter, [&](const messages::Transaction t) {
                             std::string str;
                             messages::to_json(t, &str);
                             std::cout << str << std::endl;
                             return true;
-                          });*/
+                          });*
   crypto::Ecc ecc({"../keys/key_0.priv"}, {"../keys/key_0.pub"});
   auto _wallet = std::vector{&ecc};
   auto io = std::shared_ptr<boost::asio::io_context>();
-  consensus::PiiConsensus _PiiConsensus(io, ledger, 10);
+  consensus::PiiConsensus _PiiConsensus(io, ledger, std::make_shared<networking::Networking>(), 10);
   _PiiConsensus.show_results();
   //_PiiConsensus.show_owner(0, 10);
 
@@ -284,7 +284,7 @@ int main(int argc, char *argv[]) {
 
   _PiiConsensus.show_results();
   // _PiiConsensus.show_owner(0, 10);
-
+*/
   return 0;
 }
 }  // namespace neuro
