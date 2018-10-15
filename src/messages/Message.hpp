@@ -8,7 +8,6 @@
 #include "common/types.hpp"
 #include "crypto/EccPriv.hpp"
 #include "messages.pb.h"
-#include "messages/Hasher.hpp"
 #include "mongo/mongo.hpp"
 
 namespace neuro {
@@ -19,7 +18,6 @@ using BlockID = decltype(((BlockHeader *)nullptr)->id());
 using TransactionID = decltype(((Transaction *)nullptr)->id());
 using Packet = google::protobuf::Message;
 using Type = Body::BodyCase;
-using Address = Hasher;
 
 Type get_type(const Body &body);
 

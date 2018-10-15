@@ -6,10 +6,12 @@
 #include <chrono>
 #include <condition_variable>
 #include <functional>
+#include <map>
+#include <memory>
 #include <mutex>
 #include <queue>
-#include <set>
 #include <thread>
+#include <unordered_set>
 
 #include "common/logger.hpp"
 #include "messages/Message.hpp"
@@ -59,7 +61,7 @@ class Queue {
 
  private:
   bool _started{false};
-  std::set<Subscriber *> _subscribers;
+  std::unordered_set<Subscriber *> _subscribers;
   /*!
     \var std::queue<std::shared_ptr<const messages::Message>> _queue
     \brief Main queue with all the messages::Message that has been pushed
@@ -71,6 +73,12 @@ class Queue {
   std::atomic<bool> _quitting{false};
   std::thread _main_thread;
   std::condition_variable _condition;
+
+  std::unordered_set<std::shared_ptr<Buffer>> _seen_messages_hash;
+  std::map<std::time_t, std::shared_ptr<Buffer>> _message_hash_by_ts;
+
+  // bool clear_history();
+  bool is_new_messages(std::shared_ptr<const messages::Message> message);
 
  public:
   Queue();

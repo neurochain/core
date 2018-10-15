@@ -6,6 +6,7 @@
 #include "crypto/Hash.hpp"
 #include "ledger/Filter.hpp"
 #include "messages.pb.h"
+#include "messages/Address.hpp"
 #include "rest.pb.h"
 
 namespace neuro {
@@ -53,7 +54,7 @@ class Ledger {
     std::optional<const messages::BlockHeight> upper_height() const {
       return _upper_height;
     }
-    std::optional<const messages::Address> output() const { return _output; }
+    const std::optional<messages::Address> output() const { return _output; }
     std::optional<const messages::Hash> block_id() const { return _block_id; }
 
     std::optional<const messages::Hash> input_transaction_id() const {
@@ -114,12 +115,12 @@ class Ledger {
     filter.input_transaction_id(transaction.id());
     filter.output_id(output_id);
 
-    bool no_match = true;
-    for_each(filter, [&](const messages::Transaction _) {
-      no_match = false;
+    bool match = false;
+    for_each(filter, [&](const messages::Transaction) {
+      match = true;
       return false;
     });
-    return no_match;
+    return !match;
   }
 
   std::vector<messages::Output> get_outputs_for_address(
@@ -131,7 +132,7 @@ class Ledger {
     auto outputs = transaction.mutable_outputs();
     for (auto it(outputs->begin()); it != outputs->end(); it++) {
       if (it->address() == address) {
-        it->set_output_id(std::distance(it, outputs->begin()));
+        it->set_output_id(std::distance(outputs->begin(), it));
         result.push_back(*it);
       }
     }
