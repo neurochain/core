@@ -5,6 +5,7 @@
 #include "crypto/Ecc.hpp"
 #include "crypto/EccPub.hpp"
 #include "messages.pb.h"
+#include "messages/Address.hpp"
 #include "messages/Message.hpp"
 
 namespace neuro {

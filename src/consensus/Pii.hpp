@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "common/types.hpp"
+#include "messages/Address.hpp"
 #include "messages/Message.hpp"
 
 namespace neuro {

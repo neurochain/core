@@ -6,6 +6,7 @@
 #include "crypto/Hash.hpp"
 #include "ledger/Filter.hpp"
 #include "messages.pb.h"
+#include "messages/Address.hpp"
 #include "rest.pb.h"
 
 namespace neuro {
@@ -53,7 +54,7 @@ class Ledger {
     std::optional<const messages::BlockHeight> upper_height() const {
       return _upper_height;
     }
-    std::optional<const messages::Address> output() const { return _output; }
+    const std::optional<messages::Address> output() const { return _output; }
     std::optional<const messages::Hash> block_id() const { return _block_id; }
 
     std::optional<const messages::Hash> input_transaction_id() const {
