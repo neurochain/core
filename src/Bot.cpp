@@ -89,7 +89,7 @@ void Bot::handler_get_block(const messages::Header &header,
 
   auto message = std::make_shared<messages::Message>();
   auto header_reply = message->mutable_header();
-  messages::fill_header_reply(header, header_reply);
+  auto id = messages::fill_header_reply(header, header_reply);
 
   if (get_block.has_hash()) {
     LOG_ERROR << " get_block by hash not implemented";  // TODO
@@ -254,7 +254,8 @@ bool Bot::init() {
     return false;
   }
 
-  _consensus = std::make_shared<consensus::PiiConsensus>(_io_context, _ledger);
+  _consensus = std::make_shared<consensus::PiiConsensus>(_io_context, _ledger,
+                                                         _networking);
   auto ecc = std::make_shared<crypto::Ecc>("keys/key_faucet.priv",
                                            "keys/key_faucet.pub");
   _consensus->add_wallet_keys(ecc);
