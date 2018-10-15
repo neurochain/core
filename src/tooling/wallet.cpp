@@ -196,17 +196,16 @@ int main(int argc, char *argv[]) {
                           filter.input_transaction_id(id_transaction);
                           filter.output_id(0);
 
-                          ledger->for_each(filter, [&](const messages::Transaction t) {
-                            std::string str;
-                            messages::to_json(t, &str);
+                          ledger->for_each(filter, [&](const
+  messages::Transaction t) { std::string str; messages::to_json(t, &str);
                             std::cout << str << std::endl;
                             return true;
                           });*
   crypto::Ecc ecc({"../keys/key_0.priv"}, {"../keys/key_0.pub"});
   auto _wallet = std::vector{&ecc};
   auto io = std::shared_ptr<boost::asio::io_context>();
-  consensus::PiiConsensus _PiiConsensus(io, ledger, std::make_shared<networking::Networking>(), 10);
-  _PiiConsensus.show_results();
+  consensus::PiiConsensus _PiiConsensus(io, ledger,
+  std::make_shared<networking::Networking>(), 10); _PiiConsensus.show_results();
   //_PiiConsensus.show_owner(0, 10);
 
   messages::Block block10;

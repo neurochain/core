@@ -45,6 +45,7 @@ class PiiConsensus : public Pii, public Consensus {
   boost::asio::steady_timer _timer_of_block_time;
 
   void timer_func();
+
  public:
   PiiConsensus(std::shared_ptr<boost::asio::io_context> io_context,
                std::shared_ptr<ledger::Ledger> ledger,
@@ -52,7 +53,9 @@ class PiiConsensus : public Pii, public Consensus {
       : PiiConsensus(io_context, ledger, network, ASSEMBLY_BLOCKS_COUNT) {}
 
   PiiConsensus(std::shared_ptr<boost::asio::io_context> io_context,
-               std::shared_ptr<ledger::Ledger> ledger, std::shared_ptr<networking::Networking> network,int32_t block_assembly);
+               std::shared_ptr<ledger::Ledger> ledger,
+               std::shared_ptr<networking::Networking> network,
+               int32_t block_assembly);
 
   int32_t next_height_by_time() const;
   void build_block();

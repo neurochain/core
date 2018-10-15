@@ -34,8 +34,10 @@ class ForkManager {
  private:
   std::shared_ptr<ledger::Ledger> _ledger;
   TransactionPool &_transaction_pool;
+
  public:
-  ForkManager(std::shared_ptr<ledger::Ledger> ledger, TransactionPool &transaction_pool);
+  ForkManager(std::shared_ptr<ledger::Ledger> ledger,
+              TransactionPool &transaction_pool);
   virtual ~ForkManager();
 
   ForkStatus fork_status(const messages::BlockHeader &blockheader,

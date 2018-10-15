@@ -37,7 +37,7 @@ void Pii::addBlocks(const std::vector<Transaction>& piitransactions) {
 }
 
 void Pii::calcul() {
- std::cout << "Calcul " << std::endl;
+  std::cout << "Calcul " << std::endl;
   int ij = 0;
   for (auto& p : _entropies) {
     double epr1 = 0;

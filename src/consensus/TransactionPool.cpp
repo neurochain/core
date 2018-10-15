@@ -1,6 +1,6 @@
 #include "TransactionPool.hpp"
-#include "ledger/Ledger.hpp"
 #include "common/logger.hpp"
+#include "ledger/Ledger.hpp"
 
 namespace neuro {
 namespace consensus {
@@ -44,8 +44,8 @@ void TransactionPool::add_transactions(
     const google::protobuf::RepeatedPtrField<neuro::messages::Transaction>
         &transactions) {
   for (const auto &p : transactions) {
-   if ( p.has_id()){ // TO DO add it if
-    add_transactions(p);
+    if (p.has_id()) {  // TO DO add it if
+      add_transactions(p);
     }
   }
 }
@@ -53,8 +53,8 @@ void TransactionPool::delete_transactions(
     const google::protobuf::RepeatedPtrField<neuro::messages::Transaction>
         &transactions) {
   for (const auto &p : transactions) {
-    if ( p.has_id()){
-    delete_transactions(p.id());
+    if (p.has_id()) {
+      delete_transactions(p.id());
     }
   }
 }
@@ -124,8 +124,6 @@ void TransactionPool::coinbase(messages::Transaction *transaction,
   Buffer buf(transaction->SerializeAsString());
   messages::Address id(buf);
   transaction->mutable_id()->CopyFrom(id);
-
-
 }
 }  // namespace consensus
 }  // namespace neuro

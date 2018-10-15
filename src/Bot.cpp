@@ -255,11 +255,10 @@ bool Bot::init() {
   }
 
   _consensus = std::make_shared<consensus::PiiConsensus>(_io_context, _ledger);
-  auto ecc = std::make_shared<crypto::Ecc>("keys/key_faucet.priv", "keys/key_faucet.pub");
+  auto ecc = std::make_shared<crypto::Ecc>("keys/key_faucet.priv",
+                                           "keys/key_faucet.pub");
   _consensus->add_wallet_keys(ecc);
   std::thread([this]() { _io_context->run(); }).detach();
-
-
 
   if (!_config.has_rest()) {
     LOG_INFO << "Missing rest configuration, not loading module";
