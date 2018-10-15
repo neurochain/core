@@ -110,7 +110,6 @@ class Ledger {
 
   bool is_unspent_output(const messages::Transaction &transaction,
                          const int output_id) {
-    return true;
     Filter filter;
     filter.input_transaction_id(transaction.id());
     filter.output_id(output_id);
@@ -118,7 +117,7 @@ class Ledger {
     bool no_match = true;
     for_each(filter, [&](const messages::Transaction _) {
       no_match = false;
-      return true;
+      return false;
     });
     return no_match;
   }
@@ -137,6 +136,18 @@ class Ledger {
       }
     }
     return result;
+  }
+
+  bool has_received_transaction(const messages::Address &address) {
+    Filter filter;
+    filter.output_key_id(address);
+
+    bool match = false;
+    for_each(filter, [&](const messages::Transaction _) {
+      match = true;
+      return false;
+    });
+    return match;
   }
 
   virtual ~Ledger() {}

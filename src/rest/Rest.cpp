@@ -60,14 +60,21 @@ Rest::Rest(std::shared_ptr<ledger::Ledger> ledger,
   const auto faucet_send_route = [this](Onion::Request &req,
                                         Onion::Response &res) {
     const auto faucet_amount = _config.faucet_amount();
-    const auto address = req.query("address", "");
-    LOG_INFO << "ADDRESS " << address;
-    messages::Transaction transaction =
-        build_faucet_transaction(address, faucet_amount);
-    std::string json;
-    messages::to_json(transaction, &json);
-    res << json;
-    return OCS_PROCESSED;
+    const auto address_str = req.query("address", "");
+    LOG_INFO << "ADDRESS " << address_str;
+    const messages::Address address = load_hash(address_str);
+    if (_ledger->has_received_transaction(address)) {
+      res << "{\"error\": \"The given address has already received some "
+             "coins.\"";
+      return OCS_PROCESSED;
+    } else {
+      messages::Transaction transaction =
+          build_faucet_transaction(address, faucet_amount);
+      std::string json;
+      messages::to_json(transaction, &json);
+      res << json;
+      return OCS_PROCESSED;
+    }
   };
 
   _root->add("list_transactions", list_transactions_route);
@@ -219,7 +226,7 @@ messages::GeneratedKeys Rest::generate_keys() const {
 }
 
 messages::Transaction Rest::build_faucet_transaction(
-    const std::string &address_str, const uint64_t amount) {
+    const messages::Address &address, const uint64_t amount) {
   // Set transactions_ids
   auto bot_address = messages::Hasher(_keys->public_key());
   messages::UnspentTransactions unspent_transactions =
@@ -232,8 +239,6 @@ messages::Transaction Rest::build_faucet_transaction(
 
   // Set outputs
   auto output = transaction_to_publish.add_outputs();
-  const messages::Hasher address = load_hash(address_str);
-
   output->mutable_address()->CopyFrom(address);
   output->mutable_value()->set_value(amount);
 
