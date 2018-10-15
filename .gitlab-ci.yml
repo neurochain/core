@@ -22,18 +22,18 @@ build_job:ubuntu_18_04:
       - coverage.html
       - build
 
-build_job:ubuntu_18_04_release:
-  image: registry.gitlab.com/neurochaintech/core/ubuntu:18.04
-  stage: build
-  tags:
-    - cpp
-  script:
-    - bot_build "Release"
-  artifacts:
-    paths:
-      - build
-
-
+#build_job:ubuntu_18_04_release:
+#  image: registry.gitlab.com/neurochaintech/core/ubuntu:18.04
+#  stage: build
+#  tags:
+#    - cpp
+#  script:
+#    - bot_build "Release"
+#  artifacts:
+#    paths:
+#      - build
+#
+#
 #build_job:debian_9:
 #  image: registry.gitlab.com/neurochaintech/core/debian:sid
 #  stage: build
