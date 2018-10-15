@@ -266,7 +266,7 @@ bool Bot::init() {
     _rest = std::make_shared<rest::Rest>(_ledger, _networking, _keys,
                                          _consensus, rest_config);
   }
-
+  keep_max_connections();
   update_ledger();
 
   return true;
