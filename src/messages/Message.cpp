@@ -1,5 +1,6 @@
 #include "messages/Message.hpp"
 #include "common/logger.hpp"
+#include "messages/Hasher.hpp"
 
 namespace neuro {
 namespace messages {

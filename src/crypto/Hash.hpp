@@ -8,6 +8,7 @@ namespace neuro {
 namespace crypto {
 
 Buffer hash_sha3_256(const Buffer &data);
+void hash_sha3_256(const Buffer &data, Buffer *out);
 
 }  // namespace crypto
 }  // namespace neuro

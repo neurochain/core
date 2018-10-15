@@ -1,11 +1,44 @@
 #include "Queue.hpp"
 
+#include "messages/Hasher.hpp"
 #include "messages/Subscriber.hpp"
 
 namespace neuro {
 namespace messages {
 
 Queue::Queue() {}
+
+// bool Queue::clear_history() {
+//   const auto current_time = std::time(nullptr);
+//   std::vector<std::shared_ptr<Buffer>> to_be_erased;
+//   for (auto it = _message_hash_by_ts.lower_bound(current_time - MESSAGE_TTL),
+//             end = _message_hash_by_ts.end();
+//        it != end; ++it) {
+//     to_be_erased.emplace_back(*it);
+//   }
+// }
+
+bool Queue::is_new_messages(std::shared_ptr<const messages::Message> message) {
+  const auto raw_ts = message->header().ts().data();
+
+  if ((raw_ts - std::time(nullptr)) > MESSAGE_TTL) {
+    LOG_INFO << "Dropping message because is too old";
+    return false;
+  }
+
+  Hasher hasher(*message);
+  auto hash = hasher.raw();
+  auto got = _seen_messages_hash.find(hash);
+  if (got == _seen_messages_hash.end()) {
+    return false;
+  }
+
+  _seen_messages_hash.insert(hash);
+  _message_hash_by_ts.insert({raw_ts, hash});
+
+  // clear_history();
+  return true;
+}
 
 bool Queue::publish(std::shared_ptr<const messages::Message> message) {
   if (_quitting) {
