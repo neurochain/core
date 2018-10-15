@@ -129,9 +129,12 @@ void Bot::handler_block(const messages::Header &header,
 
 void Bot::handler_transaction(const messages::Header &header,
                               const messages::Body &body) {
-  // TODO send to concensus
-
-  // update_ledger();
+  _consensus->add_transaction(body.transaction());
+  auto message = std::make_shared<messages::Message>();
+  auto header_reply = message->mutable_header();
+  messages::fill_header(header_reply);
+  message->add_bodies()->mutable_transaction()->CopyFrom(body.transaction());
+  _networking->send(message, networking::ProtocolType::PROTOBUF2);
 }
 
 bool Bot::update_ledger() {
@@ -255,11 +258,9 @@ bool Bot::init() {
   }
 
   _consensus = std::make_shared<consensus::PiiConsensus>(_io_context, _ledger);
-  auto ecc = std::make_shared<crypto::Ecc>("keys/key_faucet.priv", "keys/key_faucet.pub");
-  _consensus->add_wallet_keys(ecc);
+  _consensus->add_wallet_keys(_keys);
+
   std::thread([this]() { _io_context->run(); }).detach();
-
-
 
   if (!_config.has_rest()) {
     LOG_INFO << "Missing rest configuration, not loading module";
