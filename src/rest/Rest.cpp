@@ -25,7 +25,7 @@ Rest::Rest(std::shared_ptr<ledger::Ledger> ledger,
       _server(O_POOL) {
   LOG_INFO << "Listening at http://127.0.0.1:" << _port;
   _server.setPort(_port);
-  _server.setHostname("127.0.0.1");
+  _server.setHostname("0.0.0.0");
   _root = std::make_unique<Onion::Url>(&_server);
   const auto list_transactions_route = [this](Onion::Request &req,
                                               Onion::Response &res) {
