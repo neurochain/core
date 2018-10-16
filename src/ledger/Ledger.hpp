@@ -151,6 +151,23 @@ class Ledger {
     return match;
   }
 
+  std::vector<messages::Block> get_last_blocks(const uint32_t nb_blocks) {
+    auto last_height = height();
+    messages::Block block;
+    get_block(last_height, &block);
+    auto blocks = std::vector<messages::Block>{block};
+    for (uint32_t i = 0; i < nb_blocks - 1; i++) {
+      messages::Hash previous_hash = block.header().previous_block_hash();
+      if (previous_hash.data().size() == 0) {
+        break;
+      }
+      get_block(previous_hash, &block);
+      blocks.push_back(block);
+    }
+    std::reverse(blocks.begin(), blocks.end());
+    return blocks;
+  }
+
   virtual ~Ledger() {}
 };
 
