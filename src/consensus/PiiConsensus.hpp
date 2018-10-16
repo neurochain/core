@@ -45,6 +45,7 @@ class PiiConsensus : public Pii, public Consensus {
   boost::asio::steady_timer _timer_of_block_time;
 
   void timer_func();
+  void ckeck_run_assembly(int32_t height);
 
  public:
   PiiConsensus(std::shared_ptr<boost::asio::io_context> io_context,

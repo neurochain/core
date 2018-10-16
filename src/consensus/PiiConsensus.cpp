@@ -33,6 +33,7 @@ void PiiConsensus::init() {
     if (_ledger->get_block(i, &block)) {
       add_block(block);
     }
+    ckeck_run_assembly(i);
   }
   _valide_block = save_valide;
 }
@@ -61,7 +62,7 @@ void PiiConsensus::timer_func() {
   _timer_of_block_time.expires_at(_timer_of_block_time.expiry() +
                                   boost::asio::chrono::seconds(next_time));
   _timer_of_block_time.async_wait(boost::bind(&PiiConsensus::timer_func, this));
-  LOG_INFO << "Next Time " << std::to_string(next_time);
+  LOG_INFO << "Next Time " << std::to_string(next_time) << "-"<< std::to_string(next_height_by_time());
 }
 // TO DO Test
 void PiiConsensus::build_block() {
@@ -90,9 +91,6 @@ void PiiConsensus::build_block() {
     _transaction_pool.build_block(blocks, next_height, it->second.get(),
                                   858993459200lu);
 
-    std::string ss;
-    messages::to_json(blocks, &ss);
-    std::cout << ss << std::endl;
     _transaction_pool.delete_transactions(blocks.transactions());
 
     add_block(blocks);
@@ -119,6 +117,15 @@ bool PiiConsensus::block_in_ledger(const messages::Hash &id) {
   }
   return true;
 }
+
+void PiiConsensus::ckeck_run_assembly(int32_t height){
+  if ((height % _assembly_blocks) == 0) {
+    LOG_INFO << "I a m in consensus calcul " << std::to_string(height) ;
+    calcul();
+    random_from_hashs();
+  }
+}
+
 
 void PiiConsensus::add_block(const neuro::messages::Block &block) {
   neuro::messages::Block last_block, prev_block;
@@ -150,7 +157,7 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
   ///!< verif block suppose Correct Calcul of PII
   if (_valide_block && !check_owner(block.header())) {
     _ledger->fork_add_block(block);
-    LOG_INFO << "Fix Owner plz";
+
     // possible do this after n blocks 3 of diff of height
     if (_ForkManager.fork_results()) {
       init();
@@ -217,6 +224,9 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
                   .value();  // std::atol(thxouput.value().value().c_str());
 
         _input.push_back({thxouput.address().SerializeAsString(), add});
+      }else{
+        _input.push_back({transaction.outputs(0).address().SerializeAsString(),
+                transaction.outputs(0).value().value()});
       }
       somme_Inputs += add;
     }
@@ -233,11 +243,7 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
   addBlocks(_piithx);
 
   _last_heigth_block = block.header().height();
-  if (((_last_heigth_block + 1) % _assembly_blocks) == 0) {
-    std::cout << "I a m in consensus calcul" << std::endl;
-    calcul();
-    random_from_hashs();
-  }
+  ckeck_run_assembly(_last_heigth_block + 1);
 }  // namespace consensus
 
 void PiiConsensus::add_blocks(

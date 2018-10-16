@@ -1,4 +1,5 @@
 #include "Pii.hpp"
+#include "common/logger.hpp"
 namespace neuro {
 namespace consensus {
 
@@ -27,17 +28,17 @@ void Pii::addBlocks(const std::vector<Transaction>& piitransactions) {
     auto& tij2 = pto.entropie_Tij[piitransaction.from];
     tij1.nbinput++;
     tij1.mtin +=
-        piitransaction.ncc * piitransaction.timencc * std::sqrt(pto.entropie);
+        piitransaction.ncc * piitransaction.timencc *  pto.entropie; //std::sqrt(pto.entropie); fix
     tij2.nboutput++;
     tij2.mtout +=
-        piitransaction.ncc * piitransaction.timencc * std::sqrt(pfrom.entropie);
+        piitransaction.ncc * piitransaction.timencc * pfrom.entropie;//std::sqrt(pfrom.entropie);
     pfrom.sum_outputs++;
     pto.sum_inputs++;
   }
 }
 
-void Pii::calcul() {
-  std::cout << "Calcul " << std::endl;
+void Pii::calcul(){
+   LOG_INFO << "Calcul " << std::to_string(_entropies.size());
   int ij = 0;
   for (auto& p : _entropies) {
     double epr1 = 0;
@@ -78,6 +79,7 @@ void Pii::calcul() {
 
 std::string Pii::operator()(uint32_t index) const {
   if (_owner_ordered.size() > index) return _owner_ordered[index];
+  else return _owner_ordered[index % _owner_ordered.size()];
 
   return std::string("");
 }
