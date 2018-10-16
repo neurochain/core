@@ -30,3 +30,7 @@ message GeneratedKeys {
   required KeyPub key_pub = 2;
   required Hash address = 3;
 }
+
+message Blocks {
+  repeated Block blocks = 1;
+}

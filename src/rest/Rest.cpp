@@ -23,7 +23,6 @@ Rest::Rest(std::shared_ptr<ledger::Ledger> ledger,
       _port(_config.port()),
       _static_path(_config.static_path()),
       _server(O_POOL) {
-  LOG_INFO << "Listening at http://127.0.0.1:" << _port;
   _server.setPort(_port);
   _server.setHostname("0.0.0.0");
   _root = std::make_unique<Onion::Url>(&_server);
@@ -80,12 +79,63 @@ Rest::Rest(std::shared_ptr<ledger::Ledger> ledger,
     }
   };
 
+  const auto get_transaction_route = [this](Onion::Request &req,
+                                            Onion::Response &res) {
+    const auto transaction_id_str = req.query("transaction_id", "");
+    const messages::Hasher transaction_id = load_hash(transaction_id_str);
+    messages::Transaction transaction;
+    _ledger->get_transaction(transaction_id, &transaction);
+    std::string json;
+    messages::to_json(transaction, &json);
+    res << json;
+    return OCS_PROCESSED;
+  };
+
+  const auto get_block_route = [this](Onion::Request &req,
+                                      Onion::Response &res) {
+    const auto block_id_str = req.query("block_id", "");
+    const messages::Hasher block_id = load_hash(block_id_str);
+    messages::Block block;
+    if (block_id_str != "") {
+      _ledger->get_block(block_id, &block);
+    } else {
+      const auto block_height_str = req.query("height", "");
+      if (block_height_str != "") {
+        int block_height = std::stoi(block_height_str);
+        _ledger->get_block(block_height, &block);
+      }
+    }
+    std::string json;
+    messages::to_json(block, &json);
+    res << json;
+    return OCS_PROCESSED;
+  };
+
+  const auto last_blocks_route = [this](Onion::Request &req,
+                                        Onion::Response &res) {
+    const auto nb_blocks_str = req.query("nb_blocks", "10");
+    int nb_blocks = std::stoi(nb_blocks_str);
+    std::vector<messages::Block> blocks_vector =
+        _ledger->get_last_blocks(nb_blocks);
+    messages::Blocks blocks;
+    for (auto block : blocks_vector) {
+      blocks.add_blocks()->CopyFrom(block);
+    }
+    std::string json;
+    messages::to_json(blocks, &json);
+    res << json;
+    return OCS_PROCESSED;
+  };
+
   _root->add("list_transactions", list_transactions_route);
   _root->add("publish_transaction", publish_transaction_route);
   _root->add("generate_keys", generate_keys_route);
   if (_config.has_faucet_amount()) {
     _root->add("faucet_send", faucet_send_route);
   }
+  _root->add("get_transaction", get_transaction_route);
+  _root->add("get_block", get_block_route);
+  _root->add("get_last_blocks", last_blocks_route);
   serve_folder("^static/", "static");
   serve_file("", "index.html");
   serve_file("index.html");
