@@ -4,7 +4,7 @@ stages:
   - prod_image
 
 variables:
-  DOCKER_PROD_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  DOCKER_PROD_IMAGE: $CI_REGISTRY_IMAGE:latest
 
 services:
   - docker:dind
