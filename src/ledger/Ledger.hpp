@@ -164,7 +164,6 @@ class Ledger {
       get_block(previous_hash, &block);
       blocks.push_back(block);
     }
-    std::reverse(blocks.begin(), blocks.end());
     return blocks;
   }
 
