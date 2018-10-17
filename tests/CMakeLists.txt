@@ -35,6 +35,7 @@ target_link_libraries(integration
   Boost::thread
   Boost::log
   libonion::onion
+  cpr::cpr
   libonion::onioncpp
   ${LIBMONGOCXX_STATIC_LIBRARIES}
   )
@@ -73,6 +74,7 @@ add_executable(piitest
 target_link_libraries(piitest
     GTest::main
     core
+    cpr::cpr
 )]]
 
 #add_test(integration integration)

@@ -63,4 +63,5 @@ message Config {
   optional Peer.Status keep_status = 6 [default = CONNECTED]; 
   optional SelectionMethod selection_method = 7 [default = SIMPLE];
   optional Rest rest = 8;
+  optional string connection_graph_uri = 9;
 }

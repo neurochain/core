@@ -90,6 +90,8 @@ target_link_libraries(core
   Boost::filesystem
   Boost::thread
 
+  cpr::cpr
+
   cryptopp-static
 
   protobuf::libprotobuf
@@ -112,6 +114,7 @@ target_link_libraries(main
   libonion::onion
   libonion::onioncpp
 
+  cpr::cpr
 
   protobuf::libprotobuf
   ${LIBMONGOCXX_STATIC_LIBRARIES}

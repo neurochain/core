@@ -44,6 +44,9 @@ find_package(libmongocxx-static CONFIG REQUIRED)
 hunter_add_package(libonion)
 find_package(libonion CONFIG REQUIRED)
 
+hunter_add_package(cpr)
+find_package(cpr CONFIG REQUIRED)
+
 add_subdirectory(src)
 add_subdirectory(tests)
 

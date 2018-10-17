@@ -1,4 +1,5 @@
 #include "Bot.hpp"
+#include <cpr/cpr.h>
 #include <algorithm>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
@@ -272,6 +273,29 @@ bool Bot::init() {
   return true;
 }
 
+void Bot::update_connection_graph() {
+  if (!_config.has_connection_graph_uri()) {
+    return;
+  }
+  std::string uri = _config.connection_graph_uri();
+  messages::ConnectionsGraph graph;
+  messages::Address own_address = messages::Hasher(_keys->public_key());
+  graph.mutable_own_address()->CopyFrom(own_address);
+  messages::Peers peers;
+  for (auto peer : _tcp_config->peers()) {
+    crypto::EccPub ecc_pub;
+    ecc_pub.load(peer.key_pub());
+    graph.add_peers_addresses()->CopyFrom(messages::Hasher(ecc_pub));
+  }
+
+  std::string json;
+  messages::to_json(graph, &json);
+  // if (_config->has
+  // "http://" +  + ":1717/"
+  cpr::Post(cpr::Url{uri}, cpr::Body{json},
+            cpr::Header{{"Content-Type", "text/plain"}});
+}
+
 void Bot::handler_connection(const messages::Header &header,
                              const messages::Body &body) {
   if (!header.has_peer()) {
@@ -310,6 +334,8 @@ void Bot::handler_connection(const messages::Header &header,
   std::cout << this << " setting pub key in hello " << tmp << std::endl;
 
   _networking->send_unicast(message, networking::ProtocolType::PROTOBUF2);
+
+  update_connection_graph();
 }
 
 void Bot::handler_deconnection(const messages::Header &header,
@@ -346,6 +372,8 @@ void Bot::handler_deconnection(const messages::Header &header,
   it->set_status(messages::Peer::UNREACHABLE);
 
   this->keep_max_connections();
+
+  update_connection_graph();
 }
 
 void Bot::handler_world(const messages::Header &header,

@@ -59,6 +59,7 @@ class Bot {
                      const messages::Body &body);
   void handler_world(const messages::Header &header,
                      const messages::Body &body);
+  void update_connection_graph();
   void handler_connection(const messages::Header &header,
                           const messages::Body &body);
   void handler_deconnection(const messages::Header &header,

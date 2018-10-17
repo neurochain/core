@@ -34,3 +34,8 @@ message GeneratedKeys {
 message Blocks {
   repeated Block blocks = 1;
 }
+
+message ConnectionsGraph {
+  required Hash own_address = 1;
+  repeated Hash peers_addresses = 2;
+}

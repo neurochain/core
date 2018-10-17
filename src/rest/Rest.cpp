@@ -2,9 +2,9 @@
 #include <onion/extrahandlers.hpp>
 #include <onion/request.hpp>
 #include <onion/response.hpp>
-#include "ledger/Ledger.hpp"
 
 #include "common/logger.hpp"
+#include "ledger/Ledger.hpp"
 #include "rest/Rest.hpp"
 
 namespace neuro {
@@ -26,6 +26,7 @@ Rest::Rest(std::shared_ptr<ledger::Ledger> ledger,
   _server.setPort(_port);
   _server.setHostname("0.0.0.0");
   _root = std::make_unique<Onion::Url>(&_server);
+
   const auto list_transactions_route = [this](Onion::Request &req,
                                               Onion::Response &res) {
     const auto address = req.query("address", "");
