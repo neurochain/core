@@ -17,17 +17,7 @@ PiiConsensus::PiiConsensus(std::shared_ptr<boost::asio::io_context> io,
       _valide_block(true),
       _timer_of_block_time(*io, boost::asio::chrono::seconds(1)) {
   // load all block from
-  _timer_of_block_time.async_wait([]() {
-    int32_t time_now = std::time(nullptr);
-    int32_t next_time =
-        BLOCK_PERIODE -
-        time_now % BLOCK_PERIODE;  // time_now - time_now % BLOCK_PERIODE +
-                                   // BLOCK_PERIODE;
-    _timer_of_block_time.expires_at(_timer_of_block_time.expiry() +
-                                    boost::asio::chrono::seconds(next_time));
-    _timer_of_block_time.async_wait(
-        boost::bind(&PiiConsensus::timer_func, this));
-  });
+  _timer_of_block_time.async_wait(boost::bind(&PiiConsensus::first_timer_func, this));
   _assembly_blocks = block_assembly;
   init();
 }
@@ -62,6 +52,17 @@ int32_t PiiConsensus::next_height_by_time() const {
                    BLOCK_PERIODE;
 
   return height;
+}
+
+void PiiConsensus::first_timer_func() {
+  int32_t time_now = std::time(nullptr);
+  int32_t next_time =
+      BLOCK_PERIODE -
+      time_now % BLOCK_PERIODE;  // time_now - time_now % BLOCK_PERIODE +
+                                 // BLOCK_PERIODE;
+  _timer_of_block_time.expires_at(_timer_of_block_time.expiry() +
+                                  boost::asio::chrono::seconds(next_time));
+  _timer_of_block_time.async_wait(boost::bind(&PiiConsensus::timer_func, this));
 }
 
 void PiiConsensus::timer_func() {
