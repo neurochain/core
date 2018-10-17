@@ -27,18 +27,18 @@ void Pii::addBlocks(const std::vector<Transaction>& piitransactions) {
     auto& tij1 = pfrom.entropie_Tij[piitransaction.to];
     auto& tij2 = pto.entropie_Tij[piitransaction.from];
     tij1.nbinput++;
-    tij1.mtin +=
-        piitransaction.ncc * piitransaction.timencc *  pto.entropie; //std::sqrt(pto.entropie); fix
+    tij1.mtin += piitransaction.ncc * piitransaction.timencc *
+                 pto.entropie;  // std::sqrt(pto.entropie); fix
     tij2.nboutput++;
-    tij2.mtout +=
-        piitransaction.ncc * piitransaction.timencc * pfrom.entropie;//std::sqrt(pfrom.entropie);
+    tij2.mtout += piitransaction.ncc * piitransaction.timencc *
+                  pfrom.entropie;  // std::sqrt(pfrom.entropie);
     pfrom.sum_outputs++;
     pto.sum_inputs++;
   }
 }
 
-void Pii::calcul(){
-   LOG_INFO << "Calcul " << std::to_string(_entropies.size());
+void Pii::calcul() {
+  LOG_INFO << "Calcul " << std::to_string(_entropies.size());
   int ij = 0;
   for (auto& p : _entropies) {
     double epr1 = 0;
@@ -70,6 +70,7 @@ void Pii::calcul(){
             });
 
   int i = 0;
+  _owner_ordered.clear();
   for (auto& p : sorted_pii) {
     _owner_ordered.push_back(p.first);
     i++;
@@ -78,13 +79,15 @@ void Pii::calcul(){
 }
 
 std::string Pii::operator()(uint32_t index) const {
-  if (_owner_ordered.size() > index) return _owner_ordered[index];
-  else return _owner_ordered[index % _owner_ordered.size()];
+  if (_owner_ordered.size() > index)
+    return _owner_ordered[index];
+  else
+    return _owner_ordered[index % _owner_ordered.size()];
 
   return std::string("");
 }
 
-void Pii::show_results() {
+void Pii::show_results() const {
   std::vector<std::pair<std::string, Calculus> > sorted_pii(_entropies.begin(),
                                                             _entropies.end());
   std::sort(sorted_pii.begin(), sorted_pii.end(),

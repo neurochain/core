@@ -31,9 +31,7 @@ ForkManager::ForkStatus ForkManager::fork_status(
   if (blockHeight == last_height) {
     ///!< the prev block hash is the same , impossible why
     if (prevHeight == blockHeight) {
-      throw std::runtime_error(
-          "the prev block hash is the same height");  // TO DO remove throw for
-                                                      // best solutions
+      return ForkStatus::Dual_Block;
     }
 
     if (prevHeight == blockHeight - 1) {
@@ -41,9 +39,6 @@ ForkManager::ForkStatus ForkManager::fork_status(
           blockheader.author().SerializeAsString()) {
         return ForkStatus::Dual_Block;
       } else {
-        throw std::runtime_error(
-            "Fork with diff owner see H1");  // TO DO remove throw for best
-                                             // solutions
         return ForkStatus::VS_Block;
       }
     }

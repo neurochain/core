@@ -94,7 +94,7 @@ bool TransactionPool::build_block(messages::Block &block,
 
   _ledger->get_transaction_pool(block);
 
-  Buffer buffake("123456");
+  Buffer buffake("");
   messages::Address id_block_fake(buffake);
   blockheader->mutable_id()->CopyFrom(id_block_fake);
 

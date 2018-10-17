@@ -17,7 +17,17 @@ PiiConsensus::PiiConsensus(std::shared_ptr<boost::asio::io_context> io,
       _valide_block(true),
       _timer_of_block_time(*io, boost::asio::chrono::seconds(1)) {
   // load all block from
-  _timer_of_block_time.async_wait(boost::bind(&PiiConsensus::timer_func, this));
+  _timer_of_block_time.async_wait([]() {
+    int32_t time_now = std::time(nullptr);
+    int32_t next_time =
+        BLOCK_PERIODE -
+        time_now % BLOCK_PERIODE;  // time_now - time_now % BLOCK_PERIODE +
+                                   // BLOCK_PERIODE;
+    _timer_of_block_time.expires_at(_timer_of_block_time.expiry() +
+                                    boost::asio::chrono::seconds(next_time));
+    _timer_of_block_time.async_wait(
+        boost::bind(&PiiConsensus::timer_func, this));
+  });
   _assembly_blocks = block_assembly;
   init();
 }
@@ -27,13 +37,15 @@ void PiiConsensus::init() {
   _valide_block = false;
   _entropies.clear();
   _owner_ordered.clear();
-  int height = _ledger->height();
+  int height = next_height_by_time();  // _ledger->height();
+
   for (int i = 0; i <= height; ++i) {
     messages::Block block;
     if (_ledger->get_block(i, &block)) {
       add_block(block);
+    } else {
+      ckeck_run_assembly(i);
     }
-    ckeck_run_assembly(i);
   }
   _valide_block = save_valide;
 }
@@ -62,7 +74,6 @@ void PiiConsensus::timer_func() {
   _timer_of_block_time.expires_at(_timer_of_block_time.expiry() +
                                   boost::asio::chrono::seconds(next_time));
   _timer_of_block_time.async_wait(boost::bind(&PiiConsensus::timer_func, this));
-  LOG_INFO << "Next Time " << std::to_string(next_time) << "-"<< std::to_string(next_height_by_time());
 }
 // TO DO Test
 void PiiConsensus::build_block() {
@@ -83,18 +94,15 @@ void PiiConsensus::build_block() {
   } else {
     next_owner = get_next_owner();
   }
-
   auto it = _wallets_keys.find(next_owner);
   if (it != _wallets_keys.end()) {
-    std::cout << "build it" << std::endl;
     messages::Block blocks;
-    _transaction_pool.build_block(blocks, next_height, it->second.get(),
-                                  858993459200lu);
-
+    int h = _transaction_pool.build_block(blocks, next_height, it->second.get(),
+                                          858993459200lu);
     _transaction_pool.delete_transactions(blocks.transactions());
 
+    LOG_INFO << "Build Block with : " << std::to_string(h) << " transactions";
     add_block(blocks);
-
     // auto message =
     auto message = std::make_shared<messages::Message>();
     auto header = message->mutable_header();
@@ -118,14 +126,13 @@ bool PiiConsensus::block_in_ledger(const messages::Hash &id) {
   return true;
 }
 
-void PiiConsensus::ckeck_run_assembly(int32_t height){
+void PiiConsensus::ckeck_run_assembly(int32_t height) {
   if ((height % _assembly_blocks) == 0) {
-    LOG_INFO << "I a m in consensus calcul " << std::to_string(height) ;
+    LOG_INFO << "Run PII " << std::to_string(height);
     calcul();
     random_from_hashs();
   }
 }
-
 
 void PiiConsensus::add_block(const neuro::messages::Block &block) {
   neuro::messages::Block last_block, prev_block;
@@ -174,7 +181,7 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
 
     if (r == ForkManager::ForkStatus::Non_Fork) {
       _ledger->push_block(block);
-      LOG_INFO << "Push to Ledger";
+      LOG_INFO << "Consensus : push to Ledger";
     } else {
       /// add it to
       std::cout << "Fork " << std::endl;
@@ -224,9 +231,10 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
                   .value();  // std::atol(thxouput.value().value().c_str());
 
         _input.push_back({thxouput.address().SerializeAsString(), add});
-      }else{
+      } else {
         _input.push_back({transaction.outputs(0).address().SerializeAsString(),
-                transaction.outputs(0).value().value()});
+                          transaction.outputs(0).value().value()});
+        add = transaction.outputs(0).value().value();
       }
       somme_Inputs += add;
     }

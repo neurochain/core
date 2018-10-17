@@ -30,6 +30,11 @@ class Pii {
     std::string to;   /*!< to the addr recever*/
     double ncc;       /*!< ncc the nombre of ncc*/
     uint64_t timencc; /*!< timencc time of ncc*/
+
+    friend std::ostream& operator<<(std::ostream& os, const Transaction& a) {
+      os << a.from << ":" << a.to << "[" << a.ncc << "," << a.timencc << "]";
+      return os;
+    }
   };
 
   /**
@@ -96,9 +101,9 @@ class Pii {
    */
   std::string operator()(uint32_t index) const;
 
-  void show_results();
+  void show_results() const;
 
-  std::string humaineaddre(const std::string message) {
+  std::string humaineaddre(const std::string message) const {
     messages::Address addr;
     addr.ParseFromString(message);
     std::string t;
