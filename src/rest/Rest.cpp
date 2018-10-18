@@ -112,8 +112,8 @@ Rest::Rest(std::shared_ptr<ledger::Ledger> ledger,
     return OCS_PROCESSED;
   };
 
-  const auto last_blocks_route = [this](Onion::Request &req,
-                                        Onion::Response &res) {
+  const auto get_last_blocks_route = [this](Onion::Request &req,
+                                            Onion::Response &res) {
     const auto nb_blocks_str = req.query("nb_blocks", "10");
     int nb_blocks = std::stoi(nb_blocks_str);
     std::vector<messages::Block> blocks_vector =
@@ -128,6 +128,18 @@ Rest::Rest(std::shared_ptr<ledger::Ledger> ledger,
     return OCS_PROCESSED;
   };
 
+  const auto total_nb_transactions_route = [this](Onion::Request &req,
+                                                  Onion::Response &res) {
+    res << _ledger->total_nb_transactions() << "\n";
+    return OCS_PROCESSED;
+  };
+
+  const auto total_nb_blocks_route = [this](Onion::Request &req,
+                                            Onion::Response &res) {
+    res << _ledger->total_nb_blocks() << "\n";
+    return OCS_PROCESSED;
+  };
+
   _root->add("list_transactions", list_transactions_route);
   _root->add("publish_transaction", publish_transaction_route);
   _root->add("generate_keys", generate_keys_route);
@@ -136,7 +148,9 @@ Rest::Rest(std::shared_ptr<ledger::Ledger> ledger,
   }
   _root->add("get_transaction", get_transaction_route);
   _root->add("get_block", get_block_route);
-  _root->add("get_last_blocks", last_blocks_route);
+  _root->add("get_last_blocks", get_last_blocks_route);
+  _root->add("total_nb_transactions", total_nb_transactions_route);
+  _root->add("total_nb_blocks", total_nb_blocks_route);
   serve_folder("^static/", "static");
   serve_file("", "index.html");
   serve_file("index.html");
