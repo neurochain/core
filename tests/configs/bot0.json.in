@@ -33,7 +33,7 @@
 	"url": "mongodb://localhost:27017/neuro",
 	"db_name": "neuro1337",
 	"block0_format": "PROTO",
-	"block0_path": "@CMAKE_BINARY_DIR@/block.0.bp"
+	"block0_path": "@CMAKE_BINARY_DIR@/data.0.testnet"
     },
     "rest": {
 	"port": 8080

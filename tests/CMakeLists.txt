@@ -10,13 +10,12 @@
 #file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/config/peers.json
 #  DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../block.0.bp
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../data.0.testnet
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 configure_file("configs/bot0.json.in" "${CMAKE_CURRENT_BINARY_DIR}/bot0.json" @ONLY)
 configure_file("configs/bot1.json.in" "${CMAKE_CURRENT_BINARY_DIR}/bot1.json" @ONLY)
 configure_file("configs/bot2.json.in" "${CMAKE_CURRENT_BINARY_DIR}/bot2.json" @ONLY)
-
 
 set(ProtoFiles "networking/proto/Messages.proto")
 PROTOBUF_GENERATE_CPP(ProtoSources ProtoHeaders ${ProtoFiles})
@@ -39,6 +38,8 @@ target_link_libraries(integration
   libonion::onioncpp
   ${LIBMONGOCXX_STATIC_LIBRARIES}
   )
+add_test(integration integration)
+
 #[[
 add_executable(dbreset
     dbreset.cpp

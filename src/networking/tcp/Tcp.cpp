@@ -108,7 +108,8 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
     _queue->publish(message);
     r.first->second.read();
   } else {
-    LOG_WARNING << "Could not create new connection to " << *peer;
+    LOG_WARNING << "Could not create new connection to " << *peer << " due to "
+                << error.message();
 
     body->mutable_connection_closed();
     peer_tmp->CopyFrom(*peer);
