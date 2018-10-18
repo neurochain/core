@@ -64,6 +64,10 @@ class LedgerMongodb : public Ledger {
 
   int get_transaction_pool(messages::Block &block);
 
+  int total_nb_transactions();
+
+  int total_nb_blocks();
+
   bool for_each(const Filter &filter, Functor functor);
 
   /**

@@ -290,8 +290,6 @@ void Bot::update_connection_graph() {
 
   std::string json;
   messages::to_json(graph, &json);
-  // if (_config->has
-  // "http://" +  + ":1717/"
   cpr::Post(cpr::Url{uri}, cpr::Body{json},
             cpr::Header{{"Content-Type", "text/plain"}});
 }
