@@ -131,12 +131,14 @@ Rest::Rest(std::shared_ptr<ledger::Ledger> ledger,
   const auto total_nb_transactions_route = [this](Onion::Request &req,
                                                   Onion::Response &res) {
     res << _ledger->total_nb_transactions() << "\n";
+    res << "{\"totalNbTransactions\":" << _ledger->total_nb_transactions()
+        << "}\n";
     return OCS_PROCESSED;
   };
 
   const auto total_nb_blocks_route = [this](Onion::Request &req,
                                             Onion::Response &res) {
-    res << _ledger->total_nb_blocks() << "\n";
+    res << "{\"totalNbBlocks\":" << _ledger->total_nb_blocks() << "}\n";
     return OCS_PROCESSED;
   };
 

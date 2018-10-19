@@ -73,6 +73,7 @@ void Connection::read_body() {
         if (!check) {
           LOG_ERROR << "Bad signature, dropping message";
           read_header();
+          return;
         }
 
         header->mutable_peer()->CopyFrom(*_remote_peer);
