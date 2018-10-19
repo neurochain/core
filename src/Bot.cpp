@@ -340,9 +340,7 @@ void Bot::handler_connection(const messages::Header &header,
     return;
   }
   auto peers = _tcp_config->mutable_peers();
-  auto it = std::find_if(peers->begin(), peers->end(), [&peer](const auto &el) {
-    return el.endpoint() == peer.endpoint() && el.port() == peer.port();
-  });
+  auto it = std::find(peers->begin(), peers->end(), peer);
   if (it != peers->end()) {
     it->set_connection_id(peer.connection_id());
   }
@@ -379,17 +377,8 @@ void Bot::handler_deconnection(const messages::Header &header,
   // find the peer in our list of peers and update its status
   // std::lock_guard<std::mutex> lock_connections(_mutex_connections);
   auto peers = _tcp_config->mutable_peers();
-  auto it = std::find_if(peers->begin(), peers->end(),
-                         [&remote_peer](const auto &el) {
-                           if ((remote_peer.endpoint() != el.endpoint()) ||
-                               !remote_peer.has_port() || !el.has_port()) {
-                             return false;
-                           }
-                           return remote_peer.port() == el.port();
-                         });
-
+  auto it = std::find(peers->begin(), peers->end(), remote_peer);
   _tcp->terminated(remote_peer.connection_id());
-
   auto old_status = remote_peer.status();
 
   if (it == peers->end()) {
@@ -431,9 +420,7 @@ void Bot::handler_world(const messages::Header &header,
       continue;
     }
 
-    if (std::find_if(peers->begin(), peers->end(), [&peer](const auto &it) {
-          return it.endpoint() == peer.endpoint() && it.port() == peer.port();
-        }) != peers->end()) {
+    if (std::find(peers->begin(), peers->end(), peer) != peers->end()) {
       continue;
     }
 
@@ -448,11 +435,7 @@ void Bot::handler_world(const messages::Header &header,
   auto peer_header = header.peer();
 
   // we should have it in our unconnected list because we told him "hello"
-  auto peer_it = std::find_if(
-      peers->begin(), peers->end(), [&peer_header](const auto &it) {
-        return it.endpoint() == peer_header.endpoint() &&
-               it.port() == peer_header.port();
-      });
+  auto peer_it = std::find(peers->begin(), peers->end(), peer_header);
 
   messages::Peer *remote_peer;
   if (peer_it == peers->end()) {
@@ -520,6 +503,7 @@ void Bot::handler_hello(const messages::Header &header,
         if (it.has_connection_id()) {
           return it.connection_id() == peer_header.connection_id();
         }
+        return false;
       });
   bool found = peer_it != peers->end();
   LOG_DEBUG << this << " in handler_hello found: " << found;
@@ -548,8 +532,11 @@ void Bot::handler_hello(const messages::Header &header,
 
   // update port by listen_port
   if (remote_peer->has_connection_id()) {
-    const auto connection = &_tcp->connection(remote_peer->connection_id());
-    remote_peer->set_port(connection->listen_port());
+    bool connection_found;
+    const auto &connection = _tcp->connection(remote_peer->connection_id(), connection_found);
+    if (connection_found) {
+      remote_peer->set_port(connection.listen_port());
+    }
   } else {
     // TODO check this;
     LOG_ERROR << this << " The peer does not have a connection_id !!";

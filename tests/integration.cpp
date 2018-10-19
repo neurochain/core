@@ -1,10 +1,10 @@
-#include <gtest/gtest.h>
-#include <chrono>
-#include <sstream>
-#include <thread>
 #include "Bot.hpp"
 #include "common/logger.hpp"
 #include "messages/Subscriber.hpp"
+#include <chrono>
+#include <gtest/gtest.h>
+#include <sstream>
+#include <thread>
 
 namespace neuro {
 using namespace std::chrono_literals;
@@ -49,6 +49,11 @@ public:
   }
 
   ~Listener() {
+    // std::cout << std::boolalpha << " >>> validation " <<
+    // _received_connection0 << " "
+    //           << _received_connection1 << " " << _received_hello << " "
+    //           << _received_world;
+
     LOG_DEBUG << "Entered the destructor";
     // EXPECT_TRUE(_received_connection0);
     // EXPECT_TRUE(_received_connection1);
@@ -102,41 +107,41 @@ public:
   // }
 };
 
- TEST(INTEGRATION, simple_interaction) {
-   Listener listener;
-   auto bot0 = std::make_shared<Bot>("bot0.json");
-   auto bot1 = std::make_shared<Bot>("bot1.json");
+TEST(INTEGRATION, simple_interaction) {
+  Listener listener;
+  auto bot0 = std::make_shared<Bot>("bot0.json");
+  auto bot1 = std::make_shared<Bot>("bot1.json");
 
-   messages::Subscriber subscriber0(bot0->queue());
-   messages::Subscriber subscriber1(bot1->queue());
+  messages::Subscriber subscriber0(bot0->queue());
+  messages::Subscriber subscriber1(bot1->queue());
 
-   subscriber0.subscribe(
-       messages::Type::kHello,
-       [&listener](const messages::Header &header, const messages::Body &body) {
-         listener.handler_hello(header, body);
-       });
-   subscriber1.subscribe(
-       messages::Type::kWorld,
-       [&listener](const messages::Header &header, const messages::Body &body) {
-         listener.handler_world(header, body);
-       });
-   subscriber0.subscribe(
-       messages::Type::kConnectionReady,
-       [&listener](const messages::Header &header, const messages::Body &body) {
-         listener.handler_connection0(header, body);
-       });
-   subscriber1.subscribe(
-       messages::Type::kConnectionReady,
-       [&listener](const messages::Header &header, const messages::Body &body) {
-         listener.handler_connection1(header, body);
-       });
+  subscriber0.subscribe(
+      messages::Type::kHello,
+      [&listener](const messages::Header &header, const messages::Body &body) {
+        listener.handler_hello(header, body);
+      });
+  subscriber1.subscribe(
+      messages::Type::kWorld,
+      [&listener](const messages::Header &header, const messages::Body &body) {
+        listener.handler_world(header, body);
+      });
+  subscriber0.subscribe(
+      messages::Type::kConnectionReady,
+      [&listener](const messages::Header &header, const messages::Body &body) {
+        listener.handler_connection0(header, body);
+      });
+  subscriber1.subscribe(
+      messages::Type::kConnectionReady,
+      [&listener](const messages::Header &header, const messages::Body &body) {
+        listener.handler_connection1(header, body);
+      });
 
-   std::this_thread::sleep_for(1s);
-   bot0->keep_max_connections();
-   bot1->keep_max_connections();
-   std::this_thread::sleep_for(500ms);
-   ASSERT_TRUE(listener.validated());
- }
+  std::this_thread::sleep_for(1s);
+  bot0->keep_max_connections();
+  bot1->keep_max_connections();
+  std::this_thread::sleep_for(500ms);
+  ASSERT_TRUE(listener.validated());
+}
 
 TEST(INTEGRATION, neighbors_propagation) {
   auto bot0 = std::make_shared<Bot>("bot0.json");
@@ -146,7 +151,6 @@ TEST(INTEGRATION, neighbors_propagation) {
   bot0->keep_max_connections();
   std::this_thread::sleep_for(500ms);
   bot1->keep_max_connections();
-  std::cout << __LINE__ << std::endl;
   std::this_thread::sleep_for(500ms);
   bot2->keep_max_connections();
   std::this_thread::sleep_for(2500ms);
