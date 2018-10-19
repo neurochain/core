@@ -229,10 +229,18 @@ bool LedgerMongodb::delete_transaction(const messages::Hash &id) {
   return false;
 }
 
+int LedgerMongodb::total_nb_transactions() {
+  auto query = bss::document{} << "blockId" << bss::open_document << "$exists"
+                               << 1 << bss::close_document << bss::finalize;
+  return _transactions.count(query.view());
+}
+
+int LedgerMongodb::total_nb_blocks() { return _blocks.count({}); }
+
 int LedgerMongodb::get_transaction_pool(messages::Block &block) {
-  auto query_transaction_pool =
-      bss::document{} << "blockId " << bss::open_document << "\"$exists\"" << 0
-                      << bss::close_document << bss::finalize;
+  auto query_transaction_pool = bss::document{}
+                                << "blockId" << bss::open_document << "$exists"
+                                << 0 << bss::close_document << bss::finalize;
 
   // TO DO add filter for order transaction here #Trx1
 
