@@ -87,6 +87,7 @@ class Bot {
 
   void stop();
   void join();
+  const std::vector<messages::Peer> connected_peers() const;
   Bot::Status status() const;
   void keep_max_connections();
   std::shared_ptr<networking::Networking> networking();

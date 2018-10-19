@@ -1,7 +1,7 @@
-#include <stdio.h>
 #include <chrono>
 #include <iomanip>
 #include <sstream>
+#include <stdio.h>
 #include <thread>
 #include <tuple>
 
@@ -17,13 +17,11 @@ using namespace std::chrono_literals;
 
 Tcp::Tcp(std::shared_ptr<messages::Queue> queue,
          std::shared_ptr<crypto::Ecc> keys)
-    : TransportLayer(queue, keys),
-      _io_service(),
-      _resolver(_io_service),
+    : TransportLayer(queue, keys), _io_service(), _resolver(_io_service),
       _current_connection_id(0) {}
 
 bool Tcp::connect(const bai::tcp::endpoint host, const Port port) {
-  return false;  // TODO
+  return false; // TODO
 }
 
 void Tcp::connect(std::shared_ptr<messages::Peer> peer) {
@@ -82,7 +80,6 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
                          const bool from_remote) {
   LOG_DEBUG << this << " It entered new_connection on TCP";
   std::lock_guard<std::mutex> lock_queue(_connection_mutex);
-  LOG_DEBUG << this << " It passed the lock on new_connection TCP";
 
   auto message = std::make_shared<messages::Message>();
   auto header = message->mutable_header();
@@ -102,9 +99,7 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
 
     connection_ready->set_from_remote(from_remote);
 
-    LOG_DEBUG << this << " Before copyfrom on new_connection TCP";
     peer_tmp->CopyFrom(*peer);
-    LOG_DEBUG << this << " Before publishing on new_connection TCP";
     _queue->publish(message);
     r.first->second.read();
   } else {
@@ -115,6 +110,15 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
     peer_tmp->CopyFrom(*peer);
     _queue->publish(message);
   }
+}
+
+const tcp::Connection &Tcp::connection(const Connection::ID id) const {
+  std::lock_guard<std::mutex> lock_queue(_connection_mutex);
+  auto got = _connections.find(id);
+  if (got == _connections.end()) {
+    LOG_ERROR << this << " Connection not found";
+  }
+  return got->second;
 }
 
 void Tcp::_run() {
@@ -134,10 +138,8 @@ void Tcp::_stop() {
   _stopping = true;
   _io_service.stop();
   while (!_io_service.stopped()) {
-    std::cout << this << " waiting ..." << std::endl;
     std::this_thread::sleep_for(10ms);
   }
-  LOG_DEBUG << this << " Finished the _stop() in tcp";
 }
 
 void Tcp::terminated(const Connection::ID id) {
@@ -153,7 +155,6 @@ void Tcp::terminated(const Connection::ID id) {
 bool Tcp::serialize(std::shared_ptr<messages::Message> message,
                     const ProtocolType protocol_type, Buffer *header_tcp,
                     Buffer *body_tcp) {
-  LOG_DEBUG << this << " Before reinterpret and signing";
   auto header_pattern =
       reinterpret_cast<tcp::HeaderPattern *>(header_tcp->data());
   message->mutable_header()->mutable_ts()->set_data(time(NULL));
@@ -236,5 +237,5 @@ Tcp::~Tcp() {
   LOG_DEBUG << this << " TCP killed";
 }
 
-}  // namespace networking
-}  // namespace neuro
+} // namespace networking
+} // namespace neuro

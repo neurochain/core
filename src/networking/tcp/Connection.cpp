@@ -47,6 +47,14 @@ void Connection::read_body() {
           std::cout << this << " TYPE " << type << std::endl;
           if (type == messages::Type::kHello) {
             std::cout << this << " read hello" << std::endl;
+            // set listening_port of remote peer
+            auto hello = body.hello();
+            if (hello.has_listen_port()) {
+              _listen_port = hello.listen_port();
+            } else {
+              LOG_WARNING << " Hello message does not provide listen_port";
+            }
+
             if (_remote_peer->has_key_pub()) {
               // TODO check pub key
 
@@ -132,6 +140,8 @@ const Port Connection::remote_port() const {
   return static_cast<Port>(endpoint.port());
 }
 
+const Port Connection::listen_port() const { return _listen_port; }
+
 std::shared_ptr<messages::Peer> Connection::remote_peer() {
   return _remote_peer;
 }
@@ -143,6 +153,6 @@ Connection::~Connection() {
   }
   LOG_DEBUG << this << " Connection killed";
 }
-}  // namespace tcp
-}  // namespace networking
-}  // namespace neuro
+} // namespace tcp
+} // namespace networking
+} // namespace neuro
