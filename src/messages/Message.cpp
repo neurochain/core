@@ -69,6 +69,10 @@ bool operator==(const Packet &a, const Packet &b) {
   return json_a == json_b;
 }
 
+bool operator==(const messages::Peer &a, const messages::Peer &b) {
+  return a.endpoint() == b.endpoint() && a.port() == b.port();
+}
+
 void hash_transaction(Transaction *transaction) {
   Buffer transaction_serialized;
   messages::to_buffer(*transaction, &transaction_serialized);

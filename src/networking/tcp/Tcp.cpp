@@ -112,12 +112,15 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
   }
 }
 
-const tcp::Connection &Tcp::connection(const Connection::ID id) const {
+const tcp::Connection &Tcp::connection(const Connection::ID id, bool &found) const {
   std::lock_guard<std::mutex> lock_queue(_connection_mutex);
   auto got = _connections.find(id);
   if (got == _connections.end()) {
     LOG_ERROR << this << " Connection not found";
+    found = false;
+    return _connections.end()->second;
   }
+  found = true;
   return got->second;
 }
 
