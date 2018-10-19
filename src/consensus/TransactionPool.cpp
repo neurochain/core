@@ -119,6 +119,7 @@ void TransactionPool::coinbase(messages::Transaction *transaction,
   auto output = transaction->add_outputs();
   output->mutable_address()->CopyFrom(addr);
   output->mutable_value()->CopyFrom(ncc);
+  output->set_data({"at " + std::to_string(std::time(nullptr))});
   transaction->mutable_fees()->set_value(0);  //"0");
 
   Buffer buf(transaction->SerializeAsString());

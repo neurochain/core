@@ -129,6 +129,15 @@ target_link_libraries(keygen
   Boost::program_options
   )
 
+add_executable(showkey
+  tooling/Showkey.cpp
+  )
+
+target_link_libraries(showkey
+  core
+  Boost::program_options
+  )
+
 add_executable(coinbase
   tooling/coinbase.cpp
   )

@@ -15,10 +15,16 @@ PiiConsensus::PiiConsensus(std::shared_ptr<boost::asio::io_context> io,
       _transaction_pool(_ledger),
       _ForkManager(ledger, _transaction_pool),
       _valide_block(true),
-      _timer_of_block_time(*io, boost::asio::chrono::seconds(1)) {
+      _timer_of_block_time(*io) {
   // load all block from
-  _timer_of_block_time.async_wait(
-      boost::bind(&PiiConsensus::first_timer_func, this));
+
+  int32_t time_now = std::time(nullptr);
+  int32_t next_time =
+      BLOCK_PERIODE -
+      time_now % BLOCK_PERIODE;  // time_now - time_now % BLOCK_PERIODE +
+  // BLOCK_PERIODE;
+  _timer_of_block_time.expires_after(boost::asio::chrono::seconds(next_time));
+  _timer_of_block_time.async_wait(boost::bind(&PiiConsensus::timer_func, this));
   _assembly_blocks = block_assembly;
   init();
 }
@@ -55,17 +61,6 @@ int32_t PiiConsensus::next_height_by_time() const {
   return height;
 }
 
-void PiiConsensus::first_timer_func() {
-  int32_t time_now = std::time(nullptr);
-  int32_t next_time =
-      BLOCK_PERIODE -
-      time_now % BLOCK_PERIODE;  // time_now - time_now % BLOCK_PERIODE +
-                                 // BLOCK_PERIODE;
-  _timer_of_block_time.expires_at(_timer_of_block_time.expiry() +
-                                  boost::asio::chrono::seconds(next_time));
-  _timer_of_block_time.async_wait(boost::bind(&PiiConsensus::timer_func, this));
-}
-
 void PiiConsensus::timer_func() {
   build_block();
   int32_t time_now = std::time(nullptr);
@@ -83,6 +78,12 @@ void PiiConsensus::build_block() {
   if (next_height < 1) {
     return;
   }
+
+  messages::Block block;
+  if (_ledger->get_block(next_height, &block)) {
+    return;
+  }
+
   std::string next_owner;
 
   if (next_height < ASSEMBLY_BLOCKS_COUNT) {
@@ -103,7 +104,8 @@ void PiiConsensus::build_block() {
                                           858993459200lu);
     _transaction_pool.delete_transactions(blocks.transactions());
 
-    LOG_INFO << "Build Block with : " << std::to_string(h) << " transactions";
+    LOG_INFO << "Build Block " << std::to_string(next_height)
+             << " with : " << std::to_string(h) << " transactions";
     add_block(blocks);
     // auto message =
     auto message = std::make_shared<messages::Message>();
@@ -130,7 +132,6 @@ bool PiiConsensus::block_in_ledger(const messages::Hash &id) {
 
 void PiiConsensus::ckeck_run_assembly(int32_t height) {
   if ((height % _assembly_blocks) == 0) {
-    LOG_INFO << "Run PII " << std::to_string(height);
     calcul();
     random_from_hashs();
   }
@@ -139,32 +140,19 @@ void PiiConsensus::ckeck_run_assembly(int32_t height) {
 void PiiConsensus::add_block(const neuro::messages::Block &block) {
   neuro::messages::Block last_block, prev_block;
   ///!< fix same id block in the ledger
-  /*if (_valide_block && block_in_ledger(block.header().id())) {
+  if (_valide_block && block_in_ledger(block.header().id())) {
     return;
-  }*/
+  }
+
+  int32_t height_now = next_height_by_time();
+
   ///!< compare heigth with ledger
   _ledger->get_block(_ledger->height(), &last_block);
   ///!< verif time
-  // auto &last_block_header = last_block.header();
-  // int32_t time_of_block =
-  //     last_block_header.timestamp().data() -
-  //     (last_block_header.timestamp().data() % BLOCK_PERIODE) +
-  //     (block.header().height() - last_block_header.height()) * BLOCK_PERIODE;
 
-  // int32_t time_block =
-  //     std::time(nullptr);  //! # T1 used the time of real reception of block
-  // block.header().timestamp().data();
-
-  /* if ( (time_of_block > time_block)
-           || time_of_block < time_block + BLOCK_PERIODE  ) {
-       // time_out
-       _ledger->fork_add_block(block);
-       // don't run for result conflie
-       throw std::runtime_error("Owner of time");
-       return ;
-   }*/
   ///!< verif block suppose Correct Calcul of PII
-  if (_valide_block && !check_owner(block.header())) {
+  if (_valide_block &&
+      (!check_owner(block.header()) || height_now != block.header().height())) {
     _ledger->fork_add_block(block);
 
     // possible do this after n blocks 3 of diff of height
@@ -183,10 +171,8 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
 
     if (r == ForkManager::ForkStatus::Non_Fork) {
       _ledger->push_block(block);
-      LOG_INFO << "Consensus : push to Ledger";
     } else {
       /// add it to
-      std::cout << "Fork " << std::endl;
       _ledger->fork_add_block(block);
       if (_ForkManager.fork_results()) {
         init();

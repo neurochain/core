@@ -44,7 +44,6 @@ class PiiConsensus : public Pii, public Consensus {
   bool block_in_ledger(const messages::Hash &id);
   boost::asio::steady_timer _timer_of_block_time;
 
-  void first_timer_func();
   void timer_func();
   void ckeck_run_assembly(int32_t height);
 
@@ -58,6 +57,8 @@ class PiiConsensus : public Pii, public Consensus {
                std::shared_ptr<ledger::Ledger> ledger,
                std::shared_ptr<networking::Networking> network,
                int32_t block_assembly);
+
+  ~PiiConsensus() { _timer_of_block_time.cancel(); }
 
   int32_t next_height_by_time() const;
   void build_block();

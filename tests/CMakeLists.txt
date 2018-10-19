@@ -78,7 +78,7 @@ target_link_libraries(piitest
     cpr::cpr
 )]]
 
-#add_test(integration integration)
+add_test(integration integration)
 #add_test(dbreset  dbreset)
 #add_test(block0	  block0)
 #add_test(blocks19 blocks19)
