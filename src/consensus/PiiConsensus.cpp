@@ -17,7 +17,8 @@ PiiConsensus::PiiConsensus(std::shared_ptr<boost::asio::io_context> io,
       _valide_block(true),
       _timer_of_block_time(*io, boost::asio::chrono::seconds(1)) {
   // load all block from
-  _timer_of_block_time.async_wait(boost::bind(&PiiConsensus::first_timer_func, this));
+  _timer_of_block_time.async_wait(
+      boost::bind(&PiiConsensus::first_timer_func, this));
   _assembly_blocks = block_assembly;
   init();
 }
