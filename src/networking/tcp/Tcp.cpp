@@ -134,7 +134,7 @@ void Tcp::_stop() {
   _stopping = true;
   _io_service.stop();
   while (!_io_service.stopped()) {
-    std::cout << this << " waiting ..." << std::endl;
+    LOG_INFO << this << " waiting ...";
     std::this_thread::sleep_for(10ms);
   }
   LOG_DEBUG << this << " Finished the _stop() in tcp";
