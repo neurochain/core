@@ -136,12 +136,30 @@ bool LedgerMongodb::get_block(const messages::BlockID &id,
   return res_state;
 }
 
+bool LedgerMongodb::get_block_by_previd(const messages::BlockID &previd,
+                                        messages::Block *block) {
+  auto previd_query = bss::document{} << "previousBlockHash"
+                                      << messages::to_bson(previd)
+                                      << bss::finalize;
+
+  const auto res = _blocks.find_one(std::move(previd_query), remove_OID());
+
+  if (!res) {
+    return false;
+  }
+
+  auto header = block->mutable_header();
+  get_block_header(res->view(), header);
+
+  get_transactions_from_block(res->view()["id"].get_document(), block);
+
+  return true;
+}
+
 bool LedgerMongodb::get_block(const messages::BlockHeight height,
                               messages::Block *block) {
   auto query = bss::document{} << "height" << height << bss::finalize;
-
-  auto findoption = remove_OID();
-  const auto res = _blocks.find_one(std::move(query), findoption);
+  const auto res = _blocks.find_one(std::move(query), remove_OID());
   if (!res) {
     return false;
   }

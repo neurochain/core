@@ -60,6 +60,10 @@ void Connection::read_body() {
           }
         }
 
+        if (!_remote_peer->has_key_pub()) {
+          LOG_ERROR << "Not Key pub set";
+          return;
+        }
         crypto::EccPub ecc_pub;
         const auto key_pub = _remote_peer->key_pub();
 

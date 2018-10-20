@@ -72,6 +72,8 @@ class Ledger {
   virtual bool get_last_block_header(messages::BlockHeader *block_header) = 0;
   virtual bool get_block(const messages::BlockID &id,
                          messages::Block *block) = 0;
+  virtual bool get_block_by_previd(const messages::BlockID &previd,
+                                   messages::Block *block) = 0;
   virtual bool get_block(const messages::BlockHeight height,
                          messages::Block *block) = 0;
 

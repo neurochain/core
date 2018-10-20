@@ -93,12 +93,23 @@ void Bot::handler_get_block(const messages::Header &header,
   auto id = messages::fill_header_reply(header, header_reply);
 
   if (get_block.has_hash()) {
-    LOG_ERROR << " get_block by hash not implemented";  // TODO
+    const auto previd = get_block.hash();
+    auto block = message->add_bodies()->mutable_block();
+    if (_ledger->get_block_by_previd(previd, block)) {
+      std::stringstream sstr;
+      sstr << previd;
+      LOG_ERROR << this << " get_block by prev id not found " << sstr.str();
+      return;
+    }
+
   } else if (get_block.has_height()) {
     const auto height = get_block.height();
     for (auto i = 0u; i < get_block.count(); ++i) {
       auto block = message->add_bodies()->mutable_block();
-      _ledger->get_block(height + i, block);
+      if (_ledger->get_block(height + i, block)) {
+        LOG_ERROR << this << " get_block by height not found";
+        return;
+      }
     }
   } else {
     LOG_ERROR << this << " get_block message ill-formed";
@@ -136,13 +147,16 @@ void Bot::handler_transaction(const messages::Header &header,
 }
 
 bool Bot::update_ledger() {
+  LOG_INFO << "Run Ledger Update";
+
   messages::BlockHeader last_header;
   if (!_ledger->get_last_block_header(&last_header)) {
     LOG_ERROR << "Ledger should have at least block0";
     return false;
   }
 
-  if ((last_header.timestamp().data() - time(nullptr)) < BLOCK_PERIODE) {
+  // TO DO #consensus change by height by time function
+  if ((std::time(nullptr) - last_header.timestamp().data()) < BLOCK_PERIODE) {
     return true;
   }
 
@@ -150,9 +164,12 @@ bool Bot::update_ledger() {
   auto header = message->mutable_header();
   messages::fill_header(header);
 
-  const auto height = last_header.height();
+  const auto id = last_header.id();
+  std::stringstream sstr;
+  sstr << id;
+  LOG_INFO << "Search Block " << sstr.str() << "-" << id;
   auto get_block = message->add_bodies()->mutable_get_block();
-  get_block->set_height(height + 1);
+  get_block->mutable_hash()->CopyFrom(id);
   get_block->set_count(1);
   _networking->send(message, networking::ProtocolType::PROTOBUF2);
 
