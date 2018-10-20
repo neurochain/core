@@ -4,6 +4,7 @@
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 
+#include <chrono>
 #include <cstdlib>
 #include <ctime>
 #include <random>
@@ -13,6 +14,7 @@
 #include "messages/Subscriber.hpp"
 
 namespace neuro {
+using namespace std::chrono_literals;
 
 Bot::Bot(std::istream &bot_stream)
     : _queue(std::make_shared<messages::Queue>()),
@@ -273,7 +275,7 @@ bool Bot::init() {
   _consensus = std::make_shared<consensus::PiiConsensus>(_io_context, _ledger,
                                                          _networking);
   _consensus->add_wallet_keys(_keys);
-  std::thread([this]() { _io_context->run(); }).detach();
+  _io_context_thread = std::thread([this]() { _io_context->run(); });
 
   if (!_config.has_rest()) {
     LOG_INFO << "Missing rest configuration, not loading module";
@@ -687,6 +689,12 @@ void Bot::subscribe(const messages::Type type,
 void Bot::join() { _networking->join(); }
 
 Bot::~Bot() {
+  _io_context->stop();
+
+  while (!_io_context->stopped()) {
+    LOG_INFO << this << " waiting ...";
+    std::this_thread::sleep_for(10ms);
+  }
   _subscriber.unsubscribe();
   LOG_DEBUG << this << " From Bot destructor " << &_subscriber;
 }

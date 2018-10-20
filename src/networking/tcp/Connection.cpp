@@ -44,25 +44,10 @@ void Connection::read_body() {
 
         for (const auto &body : message->bodies()) {
           const auto type = get_type(body);
-          std::cout << this << " TYPE " << type << std::endl;
+          LOG_DEBUG << this << " read_body TYPE " << type;
           if (type == messages::Type::kHello) {
-            std::cout << this << " read hello" << std::endl;
-            // set listening_port of remote peer
-            auto hello = body.hello();
-            if (hello.has_listen_port()) {
-              _listen_port = hello.listen_port();
-            } else {
-              LOG_WARNING << " Hello message does not provide listen_port";
-            }
-
-            if (_remote_peer->has_key_pub()) {
-              // TODO check pub key
-
-              LOG_ERROR << this << " Hello message does not provide pub key"
-                        << *_remote_peer;
-              terminate();
-              return;
-            } else {
+            if (!_remote_peer->has_key_pub()) {
+              LOG_INFO << "Updating peer with hello key pub";
               _remote_peer->mutable_key_pub()->CopyFrom(body.hello().key_pub());
             }
           }
