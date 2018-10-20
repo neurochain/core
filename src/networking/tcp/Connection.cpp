@@ -44,7 +44,7 @@ void Connection::read_body() {
 
         for (const auto &body : message->bodies()) {
           const auto type = get_type(body);
-          LOG_DEBUG << this << " read_body TYPE " << type;
+          std::cout << this << " TYPE " << type << std::endl;
           if (type == messages::Type::kHello) {
             if (!_remote_peer->has_key_pub()) {
               LOG_INFO << "Updating peer with hello key pub";
@@ -121,6 +121,8 @@ const Port Connection::remote_port() const {
   return static_cast<Port>(endpoint.port());
 }
 
+const Port Connection::listen_port() const { return _listen_port; }
+
 std::shared_ptr<messages::Peer> Connection::remote_peer() {
   return _remote_peer;
 }
@@ -132,6 +134,6 @@ Connection::~Connection() {
   }
   LOG_DEBUG << this << " Connection killed";
 }
-}  // namespace tcp
-}  // namespace networking
-}  // namespace neuro
+} // namespace tcp
+} // namespace networking
+} // namespace neuro

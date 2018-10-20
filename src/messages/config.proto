@@ -22,8 +22,8 @@ message Logs {
 
 message Rest {
   required int32 port = 1;
-  optional string static_path = 2;
-  optional uint64 faucet_amount = 3;
+  optional string endpoint = 2 [default = "127.0.0.1"];
+  optional string static_path = 3;
 }
 
 message Database {
@@ -48,6 +48,13 @@ message Networking {
   required Tcp tcp = 2;
 }
 
+message Wallet {
+  required string key_priv_path = 1;
+  required string key_pub_path = 2;
+  optional string name = 3;
+  optional Rest rest = 4;
+}
+
 message Config {
   enum SelectionMethod {
     SIMPLE = 0;
@@ -64,4 +71,5 @@ message Config {
   optional SelectionMethod selection_method = 7 [default = SIMPLE];
   optional Rest rest = 8;
   optional string connection_graph_uri = 9;
+  repeated Wallet wallet = 10;
 }

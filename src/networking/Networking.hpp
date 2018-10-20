@@ -4,6 +4,7 @@
 #include <memory>
 #include <random>
 #include <vector>
+#include <mutex>
 
 #include "common/types.hpp"
 #include "messages.pb.h"
@@ -22,6 +23,7 @@ class Networking {
   std::random_device _rd;
   std::shared_ptr<messages::Queue> _queue;
   std::uniform_int_distribution<int> _dist;
+  mutable std::mutex _send_mutex;
 
  public:
   Networking(std::shared_ptr<messages::Queue> _queue);

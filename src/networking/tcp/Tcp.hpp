@@ -63,6 +63,7 @@ class Tcp : public TransportLayer {
   Port listening_port() const;
   IP local_ip() const;
   void terminated(const Connection::ID id);
+  const tcp::Connection & connection(const Connection::ID id, bool &found) const;
   ~Tcp();
 
   friend class neuro::networking::test::Tcp;

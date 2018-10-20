@@ -54,6 +54,7 @@ message Peer {
   optional Status status = 4;
   optional int32 transport_layer_id = 5;
   optional int32 connection_id = 6;
+  optional int32 last_update_ts = 7;
 }
 
 

@@ -17,13 +17,11 @@ using namespace std::chrono_literals;
 
 Tcp::Tcp(std::shared_ptr<messages::Queue> queue,
          std::shared_ptr<crypto::Ecc> keys)
-    : TransportLayer(queue, keys),
-      _io_service(),
-      _resolver(_io_service),
+    : TransportLayer(queue, keys), _io_service(), _resolver(_io_service),
       _current_connection_id(0) {}
 
 bool Tcp::connect(const bai::tcp::endpoint host, const Port port) {
-  return false;  // TODO
+  return false; // TODO
 }
 
 void Tcp::connect(std::shared_ptr<messages::Peer> peer) {
@@ -117,6 +115,18 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
   }
 }
 
+const tcp::Connection &Tcp::connection(const Connection::ID id, bool &found) const {
+  std::lock_guard<std::mutex> lock_queue(_connection_mutex);
+  auto got = _connections.find(id);
+  if (got == _connections.end()) {
+    LOG_ERROR << this << " Connection not found";
+    found = false;
+    return _connections.end()->second;
+  }
+  found = true;
+  return got->second;
+}
+
 void Tcp::_run() {
   boost::system::error_code ec;
   if (_stopping) {
@@ -134,7 +144,6 @@ void Tcp::_stop() {
   _stopping = true;
   _io_service.stop();
   while (!_io_service.stopped()) {
-    LOG_INFO << this << " waiting ...";
     std::this_thread::sleep_for(10ms);
   }
   LOG_DEBUG << this << " Finished the _stop() in tcp";
@@ -236,5 +245,5 @@ Tcp::~Tcp() {
   LOG_DEBUG << this << " TCP killed";
 }
 
-}  // namespace networking
-}  // namespace neuro
+} // namespace networking
+} // namespace neuro

@@ -19,7 +19,7 @@ LedgerMongodb::LedgerMongodb(const messages::config::Database &db)
   init_block0(db);
 }
 
-mongocxx::options::find LedgerMongodb::remove_OID() {
+mongocxx::options::find LedgerMongodb::remove_OID() const {
   mongocxx::options::find findoption;
   auto projection_transaction =
       bss::document{} << "_id" << 0 << bss::finalize;  ///!< remove _id objectID
@@ -46,6 +46,7 @@ bool LedgerMongodb::get_transactions_from_block(
   return true;
 }
 
+ 
 bool LedgerMongodb::get_transactions_from_block(const messages::BlockID &id,
                                                 messages::Block *block) {
   const auto bson_id = to_bson(id);
@@ -62,8 +63,7 @@ void LedgerMongodb::init_block0(const messages::config::Database &db) {
 
     auto d = bss::document{};
     switch (db.block0_format()) {
-      case messages::config::Database::Block0Format::
-          Database_Block0Format_PROTO:
+      case messages::config::Database::Block0Format::Database_Block0Format_PROTO:
         block0file.ParseFromString(str);
         break;
       case messages::config::Database::Block0Format::Database_Block0Format_BSON:
@@ -256,7 +256,7 @@ int LedgerMongodb::get_transaction_pool(messages::Block &block) {
   return transactions_num;
 }
 
-bool LedgerMongodb::for_each(const Filter &filter, Functor functor) {
+bool LedgerMongodb::for_each(const Filter &filter, Functor functor) const {
   if (!filter.output() && !filter.input_transaction_id()) {
     return false;
   }

@@ -16,6 +16,14 @@ class Hasher : public messages::Hash {
  public:
   Hasher() {}
 
+  Hasher (const std::string &hash_str) {
+    messages::Hasher result;
+    std::stringstream hash_json;
+    // TODO change this, and shoot the guy who did it
+    hash_json << "{\"type\": \"SHA256\", \"data\": \"" << hash_str << "\"}";
+    messages::from_json(hash_json.str(), this);
+  }
+  
   Hasher(const Buffer &data) {
     crypto::hash_sha3_256(data, _data.get());
     this->set_type(Hash::SHA256);

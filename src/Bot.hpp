@@ -5,12 +5,13 @@
 #include "consensus/Consensus.hpp"
 #include "crypto/Ecc.hpp"
 #include "ledger/LedgerMongodb.hpp"
+#include "ledger/Wallet.hpp"
 #include "messages/Message.hpp"
 #include "messages/Queue.hpp"
 #include "messages/Subscriber.hpp"
 #include "networking/Networking.hpp"
 #include "networking/tcp/Tcp.hpp"
-#include "rest/Rest.hpp"
+
 namespace neuro {
 
 class Bot {
@@ -34,7 +35,7 @@ class Bot {
   std::shared_ptr<crypto::Ecc> _keys;
   messages::Subscriber _subscriber;
   std::shared_ptr<ledger::Ledger> _ledger;
-  std::shared_ptr<rest::Rest> _rest;
+  std::vector<std::shared_ptr<ledger::Wallet>> _wallets;
   std::shared_ptr<consensus::Consensus> _consensus;
   std::shared_ptr<boost::asio::io_context> _io_context;
   std::unordered_set<int32_t> _request_ids;
@@ -86,14 +87,18 @@ class Bot {
 
   virtual ~Bot();  // save_config(_config);
 
+  void connect();
   void stop();
   void join();
+  const std::vector<messages::Peer> connected_peers() const;
   Bot::Status status() const;
   void keep_max_connections();
   std::shared_ptr<networking::Networking> networking();
   std::shared_ptr<messages::Queue> queue();
   void subscribe(const messages::Type type,
                  messages::Subscriber::Callback callback);
+  void publish_transaction(messages::Transaction &transaction) const;
+
 };
 
 std::ostream &operator<<(std::ostream &os, const neuro::Bot &b);

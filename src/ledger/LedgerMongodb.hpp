@@ -19,7 +19,7 @@ class LedgerMongodb : public Ledger {
   mutable mongocxx::collection _transactions;
   mutable mongocxx::collection _blocks_forks;
 
-  mongocxx::options::find remove_OID();
+  mongocxx::options::find remove_OID() const;
 
   bool get_block_header(const bsoncxx::document::view &block,
                         messages::BlockHeader *header);
@@ -68,7 +68,7 @@ class LedgerMongodb : public Ledger {
 
   int total_nb_blocks();
 
-  bool for_each(const Filter &filter, Functor functor);
+  bool for_each(const Filter &filter, Functor functor) const;
 
   /**
    * Functions for forks

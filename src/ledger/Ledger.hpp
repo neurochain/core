@@ -4,10 +4,12 @@
 #include <functional>
 #include <optional>
 #include "crypto/Hash.hpp"
+#include "crypto/Sign.hpp"
 #include "ledger/Filter.hpp"
 #include "messages.pb.h"
 #include "messages/Address.hpp"
 #include "rest.pb.h"
+
 
 namespace neuro {
 namespace ledger {
@@ -77,7 +79,7 @@ class Ledger {
 
   virtual bool push_block(const messages::Block &block) = 0;
   virtual bool delete_block(const messages::Hash &id) = 0;
-  virtual bool for_each(const Filter &filter, Functor functor) = 0;
+  virtual bool for_each(const Filter &filter, Functor functor) const = 0;
 
   virtual bool fork_add_block(const messages::Block &b) = 0;
   virtual bool fork_delete_block(const messages::Hash &id) = 0;
@@ -98,6 +100,27 @@ class Ledger {
   virtual int total_nb_blocks() = 0;
 
   // helpers
+
+  messages::UnspentTransactions
+  unspent_transactions(const messages::Address &address) {
+    messages::UnspentTransactions unspent_transactions;
+
+    const auto transactions = list_transactions(address).transactions();
+    for (const auto &transaction : transactions) {
+      for (int i = 0; i < transaction.outputs_size(); i++) {
+	auto output = transaction.outputs(i);
+	if (output.address() == address &&
+	    is_unspent_output(transaction, i)) {
+	  auto unspent_transaction =
+              unspent_transactions.add_unspent_transactions();
+	  unspent_transaction->set_transaction_id(transaction.id().data());
+	  unspent_transaction->set_value(std::to_string(output.value().value()));
+	}
+      }
+    }
+
+    return unspent_transactions;
+  }
 
   messages::Transactions list_transactions(const messages::Address &address) {
     Filter filter;
@@ -121,9 +144,9 @@ class Ledger {
 
     bool match = false;
     for_each(filter, [&](const messages::Transaction) {
-      match = true;
-      return false;
-    });
+        match = true;
+        return false;
+      });
     return !match;
   }
 
@@ -149,9 +172,9 @@ class Ledger {
 
     bool match = false;
     for_each(filter, [&](const messages::Transaction _) {
-      match = true;
-      return false;
-    });
+        match = true;
+        return false;
+      });
     return match;
   }
 
@@ -171,6 +194,65 @@ class Ledger {
     return blocks;
   }
 
+
+  messages::Transaction build_transaction(
+      const messages::TransactionToPublish &transaction_to_publish) {
+    messages::Transaction transaction;
+
+    // Load keys
+    auto buffer = Buffer(transaction_to_publish.key_priv());
+    const auto random_pool = std::make_shared<CryptoPP::AutoSeededRandomPool>();
+    auto key_priv = crypto::EccPriv(random_pool);
+    key_priv.load(buffer);
+    const crypto::EccPub key_pub = key_priv.make_public_key();
+    const auto address = messages::Address(key_pub);
+    const auto ecc = crypto::Ecc(key_priv, key_pub);
+    std::vector<const crypto::Ecc *> keys = {&ecc};
+
+    uint64_t inputs_ncc = 0;
+    uint64_t outputs_ncc = 0;
+    auto outputs_to_publish = transaction_to_publish.outputs();
+    for (auto output : outputs_to_publish) {
+      outputs_ncc += output.value().value();
+    }
+
+    // Process the outputs and lookup their output_id to build the inputs
+    auto transaction_ids = transaction_to_publish.transactions_ids();
+    for (auto transaction_id_str : transaction_ids) {
+      messages::Hasher transaction_id;
+      transaction_id.set_type(messages::Hash_Type_SHA256);
+      transaction_id.set_data(transaction_id_str);
+      auto outputs = get_outputs_for_address(transaction_id, address);
+      for (auto output : outputs) {
+	auto input = transaction.add_inputs();
+	input->mutable_id()->CopyFrom(transaction_id);
+	input->set_output_id(output.output_id());
+	input->set_key_id(0);
+	inputs_ncc += output.value().value();
+      }
+    }
+
+    transaction.mutable_outputs()->CopyFrom(transaction_to_publish.outputs());
+
+    // Add change output
+    if (outputs_ncc < inputs_ncc) {
+      auto change = transaction.add_outputs();
+      change->mutable_value()->set_value(inputs_ncc - outputs_ncc);
+      change->mutable_address()->CopyFrom(address);
+    }
+
+    transaction.mutable_fees()->CopyFrom(transaction_to_publish.fees());
+
+    // Sign the transaction
+    crypto::sign(keys, &transaction);
+
+    // Hash the transaction
+    messages::hash_transaction(&transaction);
+
+    return transaction;
+  }
+
+  
   virtual ~Ledger() {}
 };
 

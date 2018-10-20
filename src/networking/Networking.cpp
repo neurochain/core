@@ -33,6 +33,7 @@ void Networking::remove_connection(const messages::Header &header,
 
 void Networking::send(std::shared_ptr<messages::Message> message,
                       ProtocolType type) {
+  std::lock_guard<std::mutex> m(_send_mutex);
   message->mutable_header()->set_id(_dist(_rd));
   for (auto &transport_layer : _transport_layers) {
     transport_layer->send(message, type);
@@ -41,6 +42,7 @@ void Networking::send(std::shared_ptr<messages::Message> message,
 
 void Networking::send_unicast(std::shared_ptr<messages::Message> message,
                               ProtocolType type) {
+  std::lock_guard<std::mutex> m(_send_mutex);
   assert(message->header().has_peer());
   _transport_layers[message->header().peer().transport_layer_id()]
       ->send_unicast(message, type);

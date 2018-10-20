@@ -33,12 +33,13 @@ bsoncxx::document::value to_bson(const Packet &packet);
 std::ostream &operator<<(std::ostream &os, const Packet &packet);
 
 bool operator==(const Packet &a, const Packet &b);
+bool operator==(const messages::Peer &a, const messages::Peer &b);
 
 void hash_transaction(Transaction *transaction);
 int32_t fill_header(messages::Header *header);
 int32_t fill_header_reply(const messages::Header &header_request,
                           messages::Header *header_reply);
-
+  
 }  // namespace messages
 }  // namespace neuro
 
