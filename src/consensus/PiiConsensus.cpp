@@ -137,7 +137,7 @@ void PiiConsensus::ckeck_run_assembly(int32_t height) {
   }
 }
 
-void PiiConsensus::add_block(const neuro::messages::Block &block) {
+void PiiConsensus::add_block(const neuro::messages::Block &block, bool check_time) {
   neuro::messages::Block last_block, prev_block;
   ///!< fix same id block in the ledger
   if (_valide_block && block_in_ledger(block.header().id())) {
@@ -151,7 +151,7 @@ void PiiConsensus::add_block(const neuro::messages::Block &block) {
   ///!< verif time
 
   ///!< verif block suppose Correct Calcul of PII
-  if (_valide_block &&
+  if (_valide_block && check_time &&
       (!check_owner(block.header()) || height_now != block.header().height())) {
     _ledger->fork_add_block(block);
 

@@ -97,7 +97,7 @@ void Bot::handler_get_block(const messages::Header &header,
   if (get_block.has_hash()) {
     const auto previd = get_block.hash();
     auto block = message->add_bodies()->mutable_block();
-    if (_ledger->get_block_by_previd(previd, block)) {
+    if (!_ledger->get_block_by_previd(previd, block)) {
       std::stringstream sstr;  // TODO operator <<
       sstr << previd;
       LOG_ERROR << this << " get_block by prev id not found " << sstr.str();
@@ -108,7 +108,7 @@ void Bot::handler_get_block(const messages::Header &header,
     const auto height = get_block.height();
     for (auto i = 0u; i < get_block.count(); ++i) {
       auto block = message->add_bodies()->mutable_block();
-      if (_ledger->get_block(height + i, block)) {
+      if (!_ledger->get_block(height + i, block)) {
         LOG_ERROR << this << " get_block by height not found";
         return;
       }
@@ -124,7 +124,13 @@ void Bot::handler_get_block(const messages::Header &header,
 
 void Bot::handler_block(const messages::Header &header,
                         const messages::Body &body) {
-  _consensus->add_block(body.block());
+
+                        std::cout << "trax " << body << std::endl;
+                        std::cout << "trax " << header << std::endl;
+                        std::cout << "trax " << this << std::endl;
+                        std::cout << "trax " << _consensus.get() << std::endl;
+  bool reply_message = header.has_request_id();
+  _consensus->add_block(body.block(), !reply_message );
   update_ledger();
 
   if (header.has_request_id()) {
@@ -162,17 +168,18 @@ bool Bot::update_ledger() {
 
   auto message = std::make_shared<messages::Message>();
   auto header = message->mutable_header();
-  messages::fill_header(header);
+  auto idheader = messages::fill_header(header);
 
   const auto id = last_header.id();
-  std::stringstream sstr;
-  sstr << id;
-  LOG_INFO << "Search Block " << sstr.str() << "-" << id;
+
+  LOG_DEBUG << "Search Block -" << id;
+
   auto get_block = message->add_bodies()->mutable_get_block();
   get_block->mutable_hash()->CopyFrom(id);
   get_block->set_count(1);
   _networking->send(message, networking::ProtocolType::PROTOBUF2);
 
+  _request_ids.insert(idheader);
   return false;
 }
 
@@ -284,7 +291,10 @@ bool Bot::init() {
     _rest = std::make_shared<rest::Rest>(_ledger, _networking, _keys,
                                          _consensus, rest_config);
   }
+
+  this->keep_max_connections();
   update_ledger();
+
 
   return true;
 }

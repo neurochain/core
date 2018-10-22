@@ -40,6 +40,8 @@ void Connection::read_body() {
 
         auto message = std::make_shared<messages::Message>();
         messages::from_buffer(_buffer, message.get());
+
+        std::cout << "\033[1;31mMessage received: " << *message << "\033[0m" << std::endl;
         auto header = message->mutable_header();
 
         for (const auto &body : message->bodies()) {
@@ -55,6 +57,7 @@ void Connection::read_body() {
 
         if (!_remote_peer->has_key_pub()) {
           LOG_ERROR << "Not Key pub set";
+          read_header();
           return;
         }
         crypto::EccPub ecc_pub;

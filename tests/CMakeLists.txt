@@ -40,7 +40,7 @@ target_link_libraries(integration
   )
 add_test(integration integration)
 
-#[[
+
 add_executable(dbreset
     dbreset.cpp
 )
@@ -58,7 +58,7 @@ target_link_libraries(block0
     GTest::main
     core
 )
-
+#[[
 add_executable(blocks19
     blocks19.cpp
 )
@@ -80,7 +80,7 @@ target_link_libraries(piitest
 
 add_test(integration integration)
 #add_test(dbreset  dbreset)
-#add_test(block0	  block0)
+add_test(block0 block0)
 #add_test(blocks19 blocks19)
 #add_test(piitest  piitest)
 

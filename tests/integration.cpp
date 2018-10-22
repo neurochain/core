@@ -109,11 +109,21 @@ class Integration : public ::testing::Test {
 
 TEST(INTEGRATION, simple_interaction) {
   Listener listener;
+  std::vector<std::shared_ptr<Bot>> bots;
   auto bot0 = std::make_shared<Bot>("bot0.json");
   auto bot1 = std::make_shared<Bot>("bot1.json");
 
   messages::Subscriber subscriber0(bot0->queue());
   messages::Subscriber subscriber1(bot1->queue());
+  std::cout << __LINE__ << std::endl;
+
+  int bot_id = 0;
+  std::cout << __LINE__ << std::endl;
+
+  for (const auto &bot : bots) {
+    std::cout << bot_id++ << " bot_id " << bot.get() << std::endl;
+  }
+  std::cout << __LINE__ << std::endl;
 
   subscriber0.subscribe(
       messages::Type::kHello,
@@ -137,54 +147,27 @@ TEST(INTEGRATION, simple_interaction) {
       });
 
   std::this_thread::sleep_for(1s);
+  std::cout << __LINE__ << std::endl;
   bot0->keep_max_connections();
   bot1->keep_max_connections();
+  std::cout << __LINE__ << std::endl;
+  std::this_thread::sleep_for(500ms);
+  std::cout << __LINE__ << std::endl;
+
+  for (const auto &bot : bots) {
+    bot->status();
+  }
+  std::cout << __LINE__ << std::endl;
+
+  std::this_thread::sleep_for(3s);
+  // auto message = std::make_shared<messages::Message>();
+  // message->add_bodies()->mutable_hello();
+  // bot0->networking()->send(message, networking::ProtocolType::PROTOBUF2);
+
   std::this_thread::sleep_for(500ms);
   ASSERT_TRUE(listener.validated());
-}
 
-TEST(INTEGRATION, neighbors_propagation) {
-  auto bot0 = std::make_shared<Bot>("bot0.json");
-  auto bot1 = std::make_shared<Bot>("bot1.json");
-  auto bot2 = std::make_shared<Bot>("bot2.json");
-  std::this_thread::sleep_for(100ms);
-  bot0->keep_max_connections();
-  std::this_thread::sleep_for(500ms);
-  bot1->keep_max_connections();
-  std::this_thread::sleep_for(500ms);
-  bot2->keep_max_connections();
-  std::this_thread::sleep_for(2500ms);
-  auto peers_bot0 = bot0->connected_peers();
-  auto peers_bot1 = bot1->connected_peers();
-  auto peers_bot2 = bot2->connected_peers();
-
-  std::cout << __FILE__ << ":" << __LINE__ << " :: " << peers_bot0.size()
-            << std::endl;
-  std::cout << __FILE__ << ":" << __LINE__ << " :: " << peers_bot1.size()
-            << std::endl;
-  std::cout << __FILE__ << ":" << __LINE__ << " :: " << peers_bot2.size()
-            << std::endl;
-
-  ASSERT_TRUE(peers_bot0.size() == peers_bot1.size() &&
-              peers_bot1.size() == peers_bot2.size() && peers_bot2.size() == 2);
-
-  std::cout << __FILE__ << ":" << __LINE__ << " :: " << peers_bot0[0].port()
-            << std::endl;
-  peers_bot0[0].connection_id();
-  ASSERT_TRUE(peers_bot0[0].endpoint() == "127.0.0.1" &&
-              peers_bot0[0].port() == 1338);
-  ASSERT_TRUE(peers_bot0[1].endpoint() == "127.0.0.1" &&
-              peers_bot0[1].port() == 1339);
-
-  ASSERT_TRUE(peers_bot1[0].endpoint() == "127.0.0.1" &&
-              peers_bot1[0].port() == 1337);
-  ASSERT_TRUE(peers_bot1[1].endpoint() == "127.0.0.1" &&
-              peers_bot1[1].port() == 1339);
-
-  ASSERT_TRUE(peers_bot2[0].endpoint() == "127.0.0.1" &&
-              peers_bot2[0].port() == 1337);
-  ASSERT_TRUE(peers_bot2[1].endpoint() == "127.0.0.1" &&
-              peers_bot2[1].port() == 1338);
+  LOG_DEBUG << " About to go out";
 }
 
 }  // namespace neuro

@@ -63,7 +63,7 @@ class PiiConsensus : public Pii, public Consensus {
   int32_t next_height_by_time() const;
   void build_block();
   void add_transaction(const messages::Transaction &transaction);
-  void add_block(const neuro::messages::Block &block);
+  void add_block(const neuro::messages::Block &block, bool check_time = true);
   void add_blocks(const std::vector<neuro::messages::Block *> &blocks);
   Address get_next_owner() const;
 

@@ -1,6 +1,8 @@
 #ifndef NEURO_SRC_LEDGERMONGODB_HPP
 #define NEURO_SRC_LEDGERMONGODB_HPP
 
+#include <mutex>
+
 #include "config.pb.h"
 #include "ledger/Ledger.hpp"
 #include "ledger/mongo.hpp"
@@ -18,6 +20,8 @@ class LedgerMongodb : public Ledger {
   mutable mongocxx::collection _blocks;
   mutable mongocxx::collection _transactions;
   mutable mongocxx::collection _blocks_forks;
+
+  std::mutex _ledger_mutex;
 
   mongocxx::options::find remove_OID();
 
@@ -40,7 +44,7 @@ class LedgerMongodb : public Ledger {
 
   void remove_all();
 
-  messages::BlockHeight height() const;
+  messages::BlockHeight height();
 
   bool get_block_header(const messages::BlockID &id,
                         messages::BlockHeader *header);

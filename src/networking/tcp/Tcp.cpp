@@ -198,6 +198,7 @@ bool Tcp::send(std::shared_ptr<messages::Message> message,
   Buffer header_tcp(sizeof(networking::tcp::HeaderPattern), 0);
   Buffer body_tcp;
 
+  LOG_DEBUG << "\033[1;34mSending message: >>"<< *message <<"<<\033[0m\n";
   serialize(message, protocol_type, &header_tcp, &body_tcp);
 
   bool res = true;
@@ -205,6 +206,8 @@ bool Tcp::send(std::shared_ptr<messages::Message> message,
     res &= connection.second.send(header_tcp);
     res &= connection.second.send(body_tcp);
   }
+
+
 
   return res;
 }
@@ -221,6 +224,7 @@ bool Tcp::send_unicast(std::shared_ptr<messages::Message> message,
   Buffer header_tcp(sizeof(networking::tcp::HeaderPattern), 0);
   Buffer body_tcp;
 
+  LOG_DEBUG << "\033[1;34mSending unicast : >>"<< *message <<"<<\033[0m";
   serialize(message, protocol_type, &header_tcp, &body_tcp);
 
   got->second.send(header_tcp);

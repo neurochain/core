@@ -66,7 +66,7 @@ class Ledger {
  private:
  public:
   Ledger() {}
-  virtual messages::BlockHeight height() const = 0;
+  virtual messages::BlockHeight height() = 0;
   virtual bool get_block_header(const messages::BlockID &id,
                                 messages::BlockHeader *header) = 0;
   virtual bool get_last_block_header(messages::BlockHeader *block_header) = 0;

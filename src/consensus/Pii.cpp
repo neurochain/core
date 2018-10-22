@@ -38,7 +38,7 @@ void Pii::addBlocks(const std::vector<Transaction>& piitransactions) {
 }
 
 void Pii::calcul() {
-  // LOG_INFO << "Calcul " << std::to_string(_entropies.size());
+   LOG_INFO << "Starting pii computation with " << std::to_string(_entropies.size()) << " addrs";
   int ij = 0;
   for (auto& p : _entropies) {
     double epr1 = 0;
@@ -76,6 +76,8 @@ void Pii::calcul() {
     i++;
     if (i > _assembly_owners) break;
   }
+
+  LOG_INFO << "Ending pii computation";
 }
 
 std::string Pii::operator()(uint32_t index) const {
