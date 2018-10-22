@@ -117,7 +117,8 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
   }
 }
 
-const tcp::Connection &Tcp::connection(const Connection::ID id, bool &found) const {
+const tcp::Connection &Tcp::connection(const Connection::ID id,
+                                       bool &found) const {
   std::lock_guard<std::mutex> lock_queue(_connection_mutex);
   auto got = _connections.find(id);
   if (got == _connections.end()) {
@@ -248,5 +249,5 @@ Tcp::~Tcp() {
   LOG_DEBUG << this << " TCP killed";
 }
 
-} // namespace networking
-} // namespace neuro
+}  // namespace networking
+}  // namespace neuro

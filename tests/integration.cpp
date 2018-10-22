@@ -1,22 +1,22 @@
+#include <gtest/gtest.h>
+#include <chrono>
+#include <sstream>
+#include <thread>
 #include "Bot.hpp"
 #include "common/logger.hpp"
 #include "messages/Subscriber.hpp"
-#include <chrono>
-#include <gtest/gtest.h>
-#include <sstream>
-#include <thread>
 
 namespace neuro {
 using namespace std::chrono_literals;
 
 class Listener {
-private:
+ private:
   bool _received_connection0{false};
   bool _received_connection1{false};
   bool _received_hello{false};
   bool _received_world{false};
 
-public:
+ public:
   Listener() {}
 
   void handler_hello(const messages::Header &header,
@@ -63,7 +63,7 @@ public:
 };
 
 class Integration : public ::testing::Test {
-public:
+ public:
   Integration() {}
 
   // bool test_reachmax() {
@@ -158,22 +158,33 @@ TEST(INTEGRATION, neighbors_propagation) {
   auto peers_bot1 = bot1->connected_peers();
   auto peers_bot2 = bot2->connected_peers();
 
-  std::cout << __FILE__ << ":" << __LINE__ << " :: " << peers_bot0.size() << std::endl;
-  std::cout << __FILE__ << ":" << __LINE__ << " :: " << peers_bot1.size() << std::endl;
-  std::cout << __FILE__ << ":" << __LINE__ << " :: " << peers_bot2.size() << std::endl;
+  std::cout << __FILE__ << ":" << __LINE__ << " :: " << peers_bot0.size()
+            << std::endl;
+  std::cout << __FILE__ << ":" << __LINE__ << " :: " << peers_bot1.size()
+            << std::endl;
+  std::cout << __FILE__ << ":" << __LINE__ << " :: " << peers_bot2.size()
+            << std::endl;
 
-  ASSERT_TRUE(peers_bot0.size() == peers_bot1.size() && peers_bot1.size() == peers_bot2.size() && peers_bot2.size() == 2);
+  ASSERT_TRUE(peers_bot0.size() == peers_bot1.size() &&
+              peers_bot1.size() == peers_bot2.size() && peers_bot2.size() == 2);
 
-  std::cout << __FILE__ << ":" << __LINE__ << " :: " << peers_bot0[0].port() << std::endl;
+  std::cout << __FILE__ << ":" << __LINE__ << " :: " << peers_bot0[0].port()
+            << std::endl;
   peers_bot0[0].connection_id();
-  ASSERT_TRUE(peers_bot0[0].endpoint() == "127.0.0.1" && peers_bot0[0].port() == 1338);
-  ASSERT_TRUE(peers_bot0[1].endpoint() == "127.0.0.1" && peers_bot0[1].port() == 1339);
+  ASSERT_TRUE(peers_bot0[0].endpoint() == "127.0.0.1" &&
+              peers_bot0[0].port() == 1338);
+  ASSERT_TRUE(peers_bot0[1].endpoint() == "127.0.0.1" &&
+              peers_bot0[1].port() == 1339);
 
-  ASSERT_TRUE(peers_bot1[0].endpoint() == "127.0.0.1" && peers_bot1[0].port() == 1337);
-  ASSERT_TRUE(peers_bot1[1].endpoint() == "127.0.0.1" && peers_bot1[1].port() == 1339);
+  ASSERT_TRUE(peers_bot1[0].endpoint() == "127.0.0.1" &&
+              peers_bot1[0].port() == 1337);
+  ASSERT_TRUE(peers_bot1[1].endpoint() == "127.0.0.1" &&
+              peers_bot1[1].port() == 1339);
 
-  ASSERT_TRUE(peers_bot2[0].endpoint() == "127.0.0.1" && peers_bot2[0].port() == 1337);
-  ASSERT_TRUE(peers_bot2[1].endpoint() == "127.0.0.1" && peers_bot2[1].port() == 1338);
+  ASSERT_TRUE(peers_bot2[0].endpoint() == "127.0.0.1" &&
+              peers_bot2[0].port() == 1337);
+  ASSERT_TRUE(peers_bot2[1].endpoint() == "127.0.0.1" &&
+              peers_bot2[1].port() == 1338);
 }
 
-} // namespace neuro
+}  // namespace neuro

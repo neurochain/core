@@ -98,7 +98,7 @@ void Bot::handler_get_block(const messages::Header &header,
     const auto previd = get_block.hash();
     auto block = message->add_bodies()->mutable_block();
     if (_ledger->get_block_by_previd(previd, block)) {
-      std::stringstream sstr; // TODO operator << 
+      std::stringstream sstr;  // TODO operator <<
       sstr << previd;
       LOG_ERROR << this << " get_block by prev id not found " << sstr.str();
       return;
@@ -535,7 +535,8 @@ void Bot::handler_hello(const messages::Header &header,
   // update port by listen_port
   if (remote_peer->has_connection_id()) {
     bool connection_found;
-    const auto &connection = _tcp->connection(remote_peer->connection_id(), connection_found);
+    const auto &connection =
+        _tcp->connection(remote_peer->connection_id(), connection_found);
     if (connection_found) {
       remote_peer->set_port(connection.listen_port());
     }
@@ -599,46 +600,47 @@ bool Bot::next_to_connect(messages::Peer **peer) {
   }
 
   switch (_selection_method) {
-  case messages::config::Config::SIMPLE: {
-    LOG_DEBUG << this << " It entered the simple method for next selection";
-    auto it = std::find_if(peers->begin(), peers->end(), [](const auto &el) {
-      return el.status() == messages::Peer::REACHABLE;
-    });
+    case messages::config::Config::SIMPLE: {
+      LOG_DEBUG << this << " It entered the simple method for next selection";
+      auto it = std::find_if(peers->begin(), peers->end(), [](const auto &el) {
+        return el.status() == messages::Peer::REACHABLE;
+      });
 
-    if (it == peers->end()) {
-      LOG_DEBUG << this << " No reachable peer";
-      return false;
-    } else {
-      *peer = &(*it);
-      return true;
-    }
-    break;
-  }
-  case messages::config::Config::PING: {
-    LOG_WARNING << this
-                << " SelectionMethod::PING is not implemented - Using RANDOM ";
-  } // break; // TODO: After implementing PING, remove the comment from break
-  case messages::config::Config::RANDOM: {
-    // Create a vector with all possible positions shuffled
-    std::vector<std::size_t> pos((std::size_t)peers->size());
-    std::iota(pos.begin(), pos.end(), 0);
-    std::srand(unsigned(std::time(0)));
-    std::random_shuffle(pos.begin(), pos.end());
-
-    // Check every pos until we find one that is good to use
-    for (const auto &idx : pos) {
-      auto tmp_peer = peers->Mutable(idx);
-      // auto &tmp_peer = peers[idx];
-      if (tmp_peer->status() == messages::Peer::REACHABLE) {
-        *peer = tmp_peer;
+      if (it == peers->end()) {
+        LOG_DEBUG << this << " No reachable peer";
+        return false;
+      } else {
+        *peer = &(*it);
         return true;
       }
+      break;
     }
-    break;
-  }
-  default:
-    LOG_ERROR << this
-              << " Uknown method for selecting next peer to connect to ";
+    case messages::config::Config::PING: {
+      LOG_WARNING
+          << this
+          << " SelectionMethod::PING is not implemented - Using RANDOM ";
+    }  // break; // TODO: After implementing PING, remove the comment from break
+    case messages::config::Config::RANDOM: {
+      // Create a vector with all possible positions shuffled
+      std::vector<std::size_t> pos((std::size_t)peers->size());
+      std::iota(pos.begin(), pos.end(), 0);
+      std::srand(unsigned(std::time(0)));
+      std::random_shuffle(pos.begin(), pos.end());
+
+      // Check every pos until we find one that is good to use
+      for (const auto &idx : pos) {
+        auto tmp_peer = peers->Mutable(idx);
+        // auto &tmp_peer = peers[idx];
+        if (tmp_peer->status() == messages::Peer::REACHABLE) {
+          *peer = tmp_peer;
+          return true;
+        }
+      }
+      break;
+    }
+    default:
+      LOG_ERROR << this
+                << " Uknown method for selecting next peer to connect to ";
   }
   return false;
 }
@@ -653,8 +655,7 @@ void Bot::keep_max_connections() {
   }
   LOG_DEBUG << this << " peer count " << peers_size;
 
-  if (_connected_peers == _max_connections)
-    return;
+  if (_connected_peers == _max_connections) return;
 
   if (_connected_peers == peers_size) {
     LOG_WARNING << this << " No available peer to check";
@@ -699,4 +700,4 @@ Bot::~Bot() {
   LOG_DEBUG << this << " From Bot destructor " << &_subscriber;
 }
 
-} // namespace neuro
+}  // namespace neuro

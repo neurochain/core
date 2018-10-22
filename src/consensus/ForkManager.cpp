@@ -95,7 +95,8 @@ bool ForkManager::fork_results() {
     if (_ledger->get_block(i, &block)) {
       if (!forktree.find_add(block, ForkTree::MainBranch, main_score)) {
         throw std::runtime_error(
-            "Not found block in the main ledger");  // TO DO remove throw for best solutions
+            "Not found block in the main ledger");  // TO DO remove throw for
+                                                    // best solutions
       }
     }
   }

@@ -42,6 +42,7 @@ class Consensus {
   virtual bool check_owner(const messages::BlockHeader &block_header) const = 0;
 
   virtual void add_wallet_keys(const std::shared_ptr<crypto::Ecc> wallet) = 0;
+  virtual ~Consensus(){};
 };
 
 }  // namespace consensus
