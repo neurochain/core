@@ -134,6 +134,6 @@ Connection::~Connection() {
   }
   LOG_DEBUG << this << " Connection killed";
 }
-} // namespace tcp
-} // namespace networking
-} // namespace neuro
+}  // namespace tcp
+}  // namespace networking
+}  // namespace neuro

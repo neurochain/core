@@ -2,9 +2,9 @@
 #define NEURO_SRC_NETWORKING_NETWORKING_HPP
 
 #include <memory>
+#include <mutex>
 #include <random>
 #include <vector>
-#include <mutex>
 
 #include "common/types.hpp"
 #include "messages.pb.h"

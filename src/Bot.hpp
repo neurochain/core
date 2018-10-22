@@ -98,7 +98,6 @@ class Bot {
   void subscribe(const messages::Type type,
                  messages::Subscriber::Callback callback);
   void publish_transaction(messages::Transaction &transaction) const;
-
 };
 
 std::ostream &operator<<(std::ostream &os, const neuro::Bot &b);

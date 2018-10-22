@@ -46,7 +46,6 @@ bool LedgerMongodb::get_transactions_from_block(
   return true;
 }
 
- 
 bool LedgerMongodb::get_transactions_from_block(const messages::BlockID &id,
                                                 messages::Block *block) {
   const auto bson_id = to_bson(id);
@@ -63,7 +62,8 @@ void LedgerMongodb::init_block0(const messages::config::Database &db) {
 
     auto d = bss::document{};
     switch (db.block0_format()) {
-      case messages::config::Database::Block0Format::Database_Block0Format_PROTO:
+      case messages::config::Database::Block0Format::
+          Database_Block0Format_PROTO:
         block0file.ParseFromString(str);
         break;
       case messages::config::Database::Block0Format::Database_Block0Format_BSON:

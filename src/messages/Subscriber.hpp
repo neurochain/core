@@ -1,27 +1,27 @@
 #ifndef NEURO_SRC_MESSAGES_SUBSCRIBER_HPP
 #define NEURO_SRC_MESSAGES_SUBSCRIBER_HPP
 
-#include "messages.pb.h"
-#include "messages/Queue.hpp"
+#include <set>
 #include <typeindex>
 #include <typeinfo>
-#include <set>
+#include "messages.pb.h"
+#include "messages/Queue.hpp"
 
 namespace neuro {
 namespace messages {
 
 class Subscriber {
-public:
+ public:
   using Callback = std::function<void(const Header &header, const Body &body)>;
 
-private:
+ private:
   mutable std::mutex _mutex_handler;
   std::shared_ptr<Queue> _queue;
   std::vector<std::vector<Callback>> _callbacks_by_type;
 
-public:
+ public:
   Subscriber(std::shared_ptr<Queue> queue)
-    : _queue(queue), _callbacks_by_type(Body::kBodyCount) {
+      : _queue(queue), _callbacks_by_type(Body::kBodyCount) {
     _queue->subscribe(this);
   }
 
@@ -35,7 +35,7 @@ public:
     std::lock_guard<std::mutex> lock_handler(_mutex_handler);
     for (const auto &body : message->bodies()) {
       const auto type = get_type(body);
-           for (const auto &cb : _callbacks_by_type[type]) {
+      for (const auto &cb : _callbacks_by_type[type]) {
         cb(message->header(), body);
       }
     }
@@ -48,7 +48,7 @@ public:
   }
 };
 
-} // namespace messages
-} // namespace neuro
+}  // namespace messages
+}  // namespace neuro
 
 #endif /* NEURO_SRC_MESSAGES_SUBSCRIBER_HPP */

@@ -10,7 +10,6 @@
 #include "messages/Address.hpp"
 #include "rest.pb.h"
 
-
 namespace neuro {
 namespace ledger {
 
@@ -101,21 +100,21 @@ class Ledger {
 
   // helpers
 
-  messages::UnspentTransactions
-  unspent_transactions(const messages::Address &address) {
+  messages::UnspentTransactions unspent_transactions(
+      const messages::Address &address) {
     messages::UnspentTransactions unspent_transactions;
 
     const auto transactions = list_transactions(address).transactions();
     for (const auto &transaction : transactions) {
       for (int i = 0; i < transaction.outputs_size(); i++) {
-	auto output = transaction.outputs(i);
-	if (output.address() == address &&
-	    is_unspent_output(transaction, i)) {
-	  auto unspent_transaction =
+        auto output = transaction.outputs(i);
+        if (output.address() == address && is_unspent_output(transaction, i)) {
+          auto unspent_transaction =
               unspent_transactions.add_unspent_transactions();
-	  unspent_transaction->set_transaction_id(transaction.id().data());
-	  unspent_transaction->set_value(std::to_string(output.value().value()));
-	}
+          unspent_transaction->set_transaction_id(transaction.id().data());
+          unspent_transaction->set_value(
+              std::to_string(output.value().value()));
+        }
       }
     }
 
@@ -144,9 +143,9 @@ class Ledger {
 
     bool match = false;
     for_each(filter, [&](const messages::Transaction) {
-        match = true;
-        return false;
-      });
+      match = true;
+      return false;
+    });
     return !match;
   }
 
@@ -172,9 +171,9 @@ class Ledger {
 
     bool match = false;
     for_each(filter, [&](const messages::Transaction _) {
-        match = true;
-        return false;
-      });
+      match = true;
+      return false;
+    });
     return match;
   }
 
@@ -193,7 +192,6 @@ class Ledger {
     }
     return blocks;
   }
-
 
   messages::Transaction build_transaction(
       const messages::TransactionToPublish &transaction_to_publish) {
@@ -224,11 +222,11 @@ class Ledger {
       transaction_id.set_data(transaction_id_str);
       auto outputs = get_outputs_for_address(transaction_id, address);
       for (auto output : outputs) {
-	auto input = transaction.add_inputs();
-	input->mutable_id()->CopyFrom(transaction_id);
-	input->set_output_id(output.output_id());
-	input->set_key_id(0);
-	inputs_ncc += output.value().value();
+        auto input = transaction.add_inputs();
+        input->mutable_id()->CopyFrom(transaction_id);
+        input->set_output_id(output.output_id());
+        input->set_key_id(0);
+        inputs_ncc += output.value().value();
       }
     }
 
@@ -252,7 +250,6 @@ class Ledger {
     return transaction;
   }
 
-  
   virtual ~Ledger() {}
 };
 

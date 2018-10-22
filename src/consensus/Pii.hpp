@@ -110,7 +110,7 @@ class Pii {
     messages::to_json(addr, &t);
     return t;
   }
-  virtual ~Pii(){}
+  virtual ~Pii() {}
 };
 
 }  // namespace consensus

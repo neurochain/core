@@ -94,7 +94,7 @@ void Bot::handler_get_block(const messages::Header &header,
   auto id = messages::fill_header_reply(header, header_reply);
 
   if (get_block.has_hash()) {
-    LOG_ERROR << " get_block by hash not implemented"; // TODO
+    LOG_ERROR << " get_block by hash not implemented";  // TODO
   } else if (get_block.has_height()) {
     const auto height = get_block.height();
     for (auto i = 0u; i < get_block.count(); ++i) {
@@ -260,23 +260,18 @@ bool Bot::init() {
                                                          _networking);
 
   for (const auto wallet : _config.wallet()) {
-    if(wallet.has_rest()) {
+    if (wallet.has_rest()) {
       const auto rest_config = wallet.rest();
-      _wallets.push_back(std::make_shared<rest::Wallet>(_ledger, _networking,
-                                                        wallet.key_priv_path(),
-                                                        wallet.key_pub_path(),
-                                                        rest_config.endpoint(),
-                                                        rest_config.port()));
+      _wallets.push_back(std::make_shared<rest::Wallet>(
+          _ledger, _networking, wallet.key_priv_path(), wallet.key_pub_path(),
+          rest_config.endpoint(), rest_config.port()));
     } else {
-      _wallets.push_back(std::make_shared<ledger::Wallet>(_ledger, _networking,
-                                                          wallet.key_priv_path(),
-                                                          wallet.key_pub_path()
-                                                          ));
+      _wallets.push_back(std::make_shared<ledger::Wallet>(
+          _ledger, _networking, wallet.key_priv_path(), wallet.key_pub_path()));
     }
 
-    _consensus->add_wallet_keys
-      (std::make_shared<crypto::Ecc>(wallet.key_priv_path(),
-				     wallet.key_pub_path()));
+    _consensus->add_wallet_keys(std::make_shared<crypto::Ecc>(
+        wallet.key_priv_path(), wallet.key_pub_path()));
   }
 
   _io_context_thread = std::thread([this]() { _io_context->run(); });
@@ -334,7 +329,7 @@ void Bot::handler_connection(const messages::Header &header,
     _tcp_config->add_peers()->CopyFrom(peer);
     return;
   }
-  
+
   auto peers = _tcp_config->mutable_peers();
   auto it = std::find(peers->begin(), peers->end(), peer);
   if (it != peers->end()) {
@@ -530,7 +525,8 @@ void Bot::handler_hello(const messages::Header &header,
   // update port by listen_port
   if (remote_peer->has_connection_id()) {
     bool connection_found;
-    const auto &connection = _tcp->connection(remote_peer->connection_id(), connection_found);
+    const auto &connection =
+        _tcp->connection(remote_peer->connection_id(), connection_found);
     if (connection_found) {
       remote_peer->set_port(connection.listen_port());
     }
@@ -570,42 +566,41 @@ bool Bot::next_to_connect(messages::Peer **peer) {
   auto peers = _tcp_config->mutable_peers();
 
   switch (_selection_method) {
-  case messages::config::Config::SIMPLE: {
-    LOG_DEBUG << this << " Entered simple method for next selection";
-    auto it = std::find_if(peers->begin(), peers->end(), [](const auto &el) {
-      return el.status() == messages::Peer::REACHABLE;
-    });
+    case messages::config::Config::SIMPLE: {
+      LOG_DEBUG << this << " Entered simple method for next selection";
+      auto it = std::find_if(peers->begin(), peers->end(), [](const auto &el) {
+        return el.status() == messages::Peer::REACHABLE;
+      });
 
-    if (it != peers->end()) {
-      *peer = &(*it);
-      return true;
-    }
-    LOG_DEBUG << this << " No reachable peer";
-    break;
-  }
-  case messages::config::Config::RANDOM: {
-    std::vector<std::size_t> pos((std::size_t)peers->size());
-    std::iota(pos.begin(), pos.end(), 0);
-    std::random_shuffle(pos.begin(), pos.end());
-
-    for (const auto &idx : pos) {
-      auto tmp_peer = peers->Mutable(idx);
-      if (tmp_peer->status() == messages::Peer::REACHABLE) {
-        *peer = tmp_peer;
+      if (it != peers->end()) {
+        *peer = &(*it);
         return true;
       }
+      LOG_DEBUG << this << " No reachable peer";
+      break;
     }
-    LOG_DEBUG << this << " No reachable peer";
-    break;
-  }
-  case messages::config::Config::PING: {
-    LOG_WARNING << this
-                << " SelectionMethod::PING is not implemented";
-    break;
-  } // break; // TODO: After implementing PING, remove the comment from break
-  default:
-    LOG_ERROR << this
-              << " Uknown method for selecting next peer to connect to ";
+    case messages::config::Config::RANDOM: {
+      std::vector<std::size_t> pos((std::size_t)peers->size());
+      std::iota(pos.begin(), pos.end(), 0);
+      std::random_shuffle(pos.begin(), pos.end());
+
+      for (const auto &idx : pos) {
+        auto tmp_peer = peers->Mutable(idx);
+        if (tmp_peer->status() == messages::Peer::REACHABLE) {
+          *peer = tmp_peer;
+          return true;
+        }
+      }
+      LOG_DEBUG << this << " No reachable peer";
+      break;
+    }
+    case messages::config::Config::PING: {
+      LOG_WARNING << this << " SelectionMethod::PING is not implemented";
+      break;
+    }  // break; // TODO: After implementing PING, remove the comment from break
+    default:
+      LOG_ERROR << this
+                << " Uknown method for selecting next peer to connect to ";
   }
   return false;
 }
@@ -619,7 +614,7 @@ void Bot::keep_max_connections() {
     return;
   }
   LOG_DEBUG << this << " peer count " << peers_size;
-  
+
   if (_connected_peers == _max_connections) {
     return;
   }
@@ -635,7 +630,7 @@ void Bot::keep_max_connections() {
       LOG_DEBUG << this << " No more REACHABLE peers";
       return;
     }
-    
+
     LOG_DEBUG << this << " Sending connection request to " << *peer;
     peer->set_status(messages::Peer::CONNECTING);
     auto tmp_peer = std::make_shared<messages::Peer>();
@@ -657,9 +652,7 @@ void Bot::subscribe(const messages::Type type,
 
 void Bot::join() { _networking->join(); }
 
-void Bot::connect() {
-  keep_max_connections();
-}
+void Bot::connect() { keep_max_connections(); }
 
 void Bot::stop() {
   _subscriber.unsubscribe();
@@ -691,4 +684,4 @@ Bot::~Bot() {
   LOG_DEBUG << this << " From Bot destructor " << &_subscriber;
 }
 
-} // namespace neuro
+}  // namespace neuro
