@@ -84,7 +84,7 @@ pages:
   dependencies:
     - build_job:ubuntu_18_04
   only:
-    - milestone/0
+    - feature/ledger
   artifacts:
     paths:
       - public
