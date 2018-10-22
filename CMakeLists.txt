@@ -17,7 +17,7 @@ project(core VERSION ${CPACK_PACKAGE_VERSION})
 enable_testing ()
 
 
-set(CMAKE_CXX_FLAGS "-Wall  ${CMAKE_CXX_FLAGS} -std=c++17 -Wignored-qualifiers")
+set(CMAKE_CXX_FLAGS "-Wall  ${CMAKE_CXX_FLAGS} -std=c++17 -Wno-ignored-qualifiers")
 set(CMAKE_CXX_FLAGS_RELEASE " -O3 -Werror")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 --coverage -fsanitize=address ")
 
