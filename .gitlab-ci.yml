@@ -102,6 +102,7 @@ pages:
     sleep 5
     mongo mongodb://localhost:27017/neuro --eval "db.coin.find();"
     python3 ../utils/dockers/times3.py ctest -V || echo ok
+    cd .. && python3 -m gcovr -p -r . --html -o coverage.html
   }
 
 before_script:
