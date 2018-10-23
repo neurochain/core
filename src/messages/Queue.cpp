@@ -26,7 +26,7 @@ bool Queue::is_new_messages(std::shared_ptr<const messages::Message> message) {
     return false;
   }
 
-  Hasher hasher(*message);
+  Hasher hasher(message->bodies());
   auto hash = hasher.raw();
   auto got = _seen_messages_hash.find(hash);
   if (got == _seen_messages_hash.end()) {
