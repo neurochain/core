@@ -20,7 +20,8 @@ class Consensus {
    * \brief Add block for PII calcul
    * \param [in] block block to add
    */
-  virtual void add_block(const messages::Block &block, bool check_time = true) = 0;
+  virtual void add_block(const messages::Block &block,
+                         bool check_time = true) = 0;
 
   /**
    * \brief Add blocks for PII calcul

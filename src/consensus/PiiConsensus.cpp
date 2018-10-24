@@ -35,15 +35,32 @@ void PiiConsensus::init() {
   _valide_block = false;
   _entropies.clear();
   _owner_ordered.clear();
-  const auto height = next_height_by_time();  // _ledger->height();
-  for (int i = 0; i <= height; ++i) {
-    messages::Block block;
-    if (_ledger->get_block(i, &block)) {
+  // int height = next_height_by_time();  // _ledger->height();
+
+  //! OPTI Load with 2000 blocks
+  std::vector<messages::Block> blocks;
+  int start = 0, last_assembly = 0;
+  while (_ledger->get_blocks(start, 2000, blocks)) {
+    for (messages::Block &block : blocks) {
+      int assembly_of_block = block.header().height() / _assembly_blocks;
+      if (assembly_of_block > last_assembly) {
+        ckeck_run_assembly(assembly_of_block * _assembly_blocks);
+        last_assembly = assembly_of_block;
+      }
       add_block(block);
-    } else {
-      ckeck_run_assembly(i);
     }
+    start += 2000;
   }
+  /*
+    for (int i = 0; i <= height; ++i) {
+      messages::Block block;
+      if (_ledger->get_block(i, &block)) {
+        add_block(block);
+      } else {
+        ckeck_run_assembly(i);
+      }
+    }
+  */
   _valide_block = save_valide;
   LOG_INFO << "Pii Consensus ready";
 }
@@ -138,7 +155,8 @@ void PiiConsensus::ckeck_run_assembly(int32_t height) {
   }
 }
 
-void PiiConsensus::add_block(const neuro::messages::Block &block, bool check_time) {
+void PiiConsensus::add_block(const neuro::messages::Block &block,
+                             bool check_time) {
   neuro::messages::Block last_block, prev_block;
   ///!< fix same id block in the ledger
   if (_valide_block && block_in_ledger(block.header().id())) {

@@ -95,6 +95,8 @@ class Ledger {
   virtual bool delete_transaction(const messages::Hash &id) = 0;
   virtual int get_transaction_pool(messages::Block &block) = 0;
 
+  virtual bool get_blocks(int start, int size,
+                          std::vector<messages::Block> &blocks) = 0;
   virtual int total_nb_transactions() = 0;
 
   virtual int total_nb_blocks() = 0;

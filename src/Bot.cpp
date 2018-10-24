@@ -124,13 +124,13 @@ void Bot::handler_get_block(const messages::Header &header,
 
 void Bot::handler_block(const messages::Header &header,
                         const messages::Body &body) {
-
-                        std::cout << "trax " << body << std::endl;
-                        std::cout << "trax " << header << std::endl;
-                        std::cout << "trax " << this << std::endl;
-                        std::cout << "trax " << _consensus.get() << std::endl;
+  std::cout << "trax " << body << std::endl;
+  std::cout << "trax " << header << std::endl;
+  std::cout << "trax " << this << std::endl;
+  std::cout << "trax " << _consensus.get() << std::endl;
   bool reply_message = header.has_request_id();
-  _consensus->add_block(body.block(), !reply_message );
+  _consensus->add_block(body.block(), !reply_message);
+
   update_ledger();
 
   if (header.has_request_id()) {
@@ -142,9 +142,11 @@ void Bot::handler_block(const messages::Header &header,
 
   auto message = std::make_shared<messages::Message>();
   auto header_reply = message->mutable_header();
-  messages::fill_header(header_reply);
+  auto id = messages::fill_header(header_reply);
   message->add_bodies()->mutable_block()->CopyFrom(body.block());
   _networking->send(message, networking::ProtocolType::PROTOBUF2);
+
+  _request_ids.insert(id);
 }
 
 void Bot::handler_transaction(const messages::Header &header,
@@ -294,7 +296,6 @@ bool Bot::init() {
 
   this->keep_max_connections();
   update_ledger();
-
 
   return true;
 }

@@ -41,7 +41,8 @@ void Connection::read_body() {
         auto message = std::make_shared<messages::Message>();
         messages::from_buffer(_buffer, message.get());
 
-        std::cout << "\033[1;31mMessage received: " << *message << "\033[0m" << std::endl;
+        std::cout << "\033[1;31mMessage received: " << *message << "\033[0m"
+                  << std::endl;
         auto header = message->mutable_header();
 
         for (const auto &body : message->bodies()) {
