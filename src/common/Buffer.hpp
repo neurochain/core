@@ -2,9 +2,10 @@
 #define NEURO_SRC_COMMON_BUFFER_HPP
 
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <string>
-
+#include <string_view>
 #include "common/types.hpp"
 
 namespace neuro {
@@ -55,5 +56,19 @@ class Buffer : public std::vector<uint8_t> {
 std::ostream &operator<<(std::ostream &os, const Buffer &buffer);
 
 }  // namespace neuro
+
+namespace std {
+template <>
+struct hash<neuro::Buffer> {
+  typedef neuro::Buffer argument_type;
+  typedef std::size_t result_type;
+  result_type operator()(argument_type const &buffer) const noexcept {
+    const auto string_view = std::string_view{
+        reinterpret_cast<const char *>(buffer.data()), buffer.size()};
+    const auto hash = std::hash<std::string_view>{}(string_view);
+    return hash;
+  }
+};
+}  // namespace std
 
 #endif /* NEURO_SRC_COMMON_BUFFER_HPP */
