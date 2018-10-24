@@ -1,0 +1,30 @@
+{
+    "key_pub_path": "@CMAKE_BINARY_DIR@/key_integration1.pub",
+    "key_priv_path": "@CMAKE_BINARY_DIR@/key_integration1.priv",
+    "logs": {
+        "severity": "debug",
+        "to_stdout": true
+    },
+    "networking": {
+        "max_connections": 3,
+        "tcp": {
+            "port": 1338,
+            "peers": [
+                {
+                    "endpoint": "127.0.0.1",
+                    "port": 1337,
+                    "keyPub": {
+                        "type": "ECP256K1",
+                        "rawData":"MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABE7lNnRXkzIGKEoEDyADOmeTCRXg3HE3HMv2u8r8FBRJh4bFvIyRpmdnuRNpmZjKvQoY7yPLO89+eDLBSn9e0Kk="
+                    }
+                }
+            ]
+        }
+    },
+    "database": {
+        "url": "mongodb://localhost:27017/neuro",
+        "db_name": "neuro1338",
+        "block0_format": "PROTO",
+        "block0_path": "@CMAKE_CURRENT_BINARY_DIR@/data.0.testnet"
+    }
+}

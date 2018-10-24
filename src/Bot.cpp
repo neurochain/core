@@ -242,7 +242,6 @@ bool Bot::load_networking(messages::config::Config *config) {
 
   for (auto &peer : *tcpconfig->mutable_peers()) {
     peer.set_status(messages::Peer::REACHABLE);
-    LOG_DEBUG << this << " Peer: " << peer;
   }
 
   _tcp = std::make_shared<networking::Tcp>(_queue, _keys);
@@ -270,7 +269,6 @@ bool Bot::init() {
     return false;
   }
   subscribe();
-
   const auto db_config = _config.database();
   _ledger = std::make_shared<ledger::LedgerMongodb>(db_config);
 
@@ -287,6 +285,7 @@ bool Bot::init() {
   if (!_config.has_rest()) {
     LOG_INFO << "Missing rest configuration, not loading module";
   } else {
+
     const auto rest_config = _config.rest();
     _rest = std::make_shared<rest::Rest>(_ledger, _networking, _keys,
                                          _consensus, rest_config);
@@ -373,8 +372,6 @@ void Bot::handler_connection(const messages::Header &header,
   key_pub->set_type(messages::KeyType::ECP256K1);
   const auto tmp = _keys->public_key().save();
   key_pub->set_raw_data(tmp.data(), tmp.size());
-
-  std::cout << this << " setting pub key in hello " << tmp << std::endl;
 
   _networking->send_unicast(message, networking::ProtocolType::PROTOBUF2);
 
@@ -518,8 +515,6 @@ void Bot::handler_hello(const messages::Header &header,
         return false;
       });
   bool found = peer_it != peers->end();
-  LOG_DEBUG << this << " in handler_hello found: " << found;
-
   for (const auto &peer_conn : *peers) {
     if (peer_conn.status() == messages::Peer::CONNECTED ||
         peer_conn.status() == messages::Peer::REACHABLE) {
@@ -566,11 +561,10 @@ void Bot::handler_hello(const messages::Header &header,
   messages::fill_header_reply(header, header_reply);
   world->set_accepted(accepted);
 
-  Buffer key_pub_buffer;
-  _keys->public_key().save(&key_pub_buffer);
   auto key_pub = world->mutable_key_pub();
   key_pub->set_type(messages::KeyType::ECP256K1);
-  key_pub->set_hex_data(key_pub_buffer.str());
+  const auto tmp = _keys->public_key().save();
+  key_pub->set_raw_data(tmp.data(), tmp.size());
 
   _networking->send_unicast(message, networking::ProtocolType::PROTOBUF2);
 }
@@ -611,7 +605,6 @@ bool Bot::next_to_connect(messages::Peer **peer) {
 
   switch (_selection_method) {
     case messages::config::Config::SIMPLE: {
-      LOG_DEBUG << this << " It entered the simple method for next selection";
       auto it = std::find_if(peers->begin(), peers->end(), [](const auto &el) {
         return el.status() == messages::Peer::REACHABLE;
       });
@@ -663,7 +656,6 @@ void Bot::keep_max_connections() {
     LOG_INFO << this << " No peers";
     return;
   }
-  LOG_DEBUG << this << " peer count " << peers_size;
 
   if (_connected_peers == _max_connections) return;
 
@@ -675,7 +667,6 @@ void Bot::keep_max_connections() {
   if (_connected_peers < _max_connections) {
     messages::Peer *peer;
     if (this->next_to_connect(&peer)) {
-      LOG_DEBUG << this << " Asking to connect to " << *peer;
       peer->set_status(messages::Peer::CONNECTING);
       auto tmp_peer = std::make_shared<messages::Peer>();
       tmp_peer->CopyFrom(*peer);
