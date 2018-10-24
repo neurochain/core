@@ -45,6 +45,8 @@ bool EccPriv::save(messages::KeyPriv *key_priv) const {
 }
 
 bool EccPriv::load(const std::string &filepath) {
+  _params = CryptoPP::DL_GroupParameters_EC<CryptoPP::ECP>(CryptoPP::ASN1::secp256k1());
+  _key.Initialize(*_prng, _params);
   CryptoPP::FileSource fs(filepath.c_str(), true);
   _key.Load(fs);
   return (_key.Validate(*_prng, 3));
