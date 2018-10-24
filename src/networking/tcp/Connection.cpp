@@ -45,14 +45,27 @@ void Connection::read_body() {
                   << std::endl;
         auto header = message->mutable_header();
 
+        header->mutable_peer()->CopyFrom(*_remote_peer);
+        auto signature = header->mutable_signature();
+        signature->set_type(messages::Hash::SHA256);
+        signature->set_data(header_pattern->signature,
+                            sizeof(header_pattern->signature));
+
         for (const auto &body : message->bodies()) {
           const auto type = get_type(body);
           LOG_DEBUG << this << " read_body TYPE " << type;
           if (type == messages::Type::kHello) {
+            auto hello = body.hello();
+
+            if (hello.has_listen_port()) {
+              _listen_port = hello.listen_port();
+            }
+
             if (!_remote_peer->has_key_pub()) {
               LOG_INFO << "Updating peer with hello key pub";
-              _remote_peer->mutable_key_pub()->CopyFrom(body.hello().key_pub());
+              _remote_peer->mutable_key_pub()->CopyFrom(hello.key_pub());
             }
+
           }
         }
 
@@ -77,13 +90,7 @@ void Connection::read_body() {
           return;
         }
 
-        header->mutable_peer()->CopyFrom(*_remote_peer);
-        auto signature = header->mutable_signature();
-        signature->set_type(messages::Hash::SHA256);
-        signature->set_data(header_pattern->signature,
-                            sizeof(header_pattern->signature));
         this->_queue->publish(message);
-
         read_header();
       });
 }

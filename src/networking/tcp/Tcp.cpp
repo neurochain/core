@@ -69,7 +69,6 @@ void Tcp::accept(std::shared_ptr<bai::tcp::acceptor> acceptor,
   });
   while (!acceptor->is_open()) {
     std::this_thread::yield();
-    LOG_DEBUG << "Waiting for acceptor to be open";
   }
 }
 
@@ -80,9 +79,7 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
                          const boost::system::error_code &error,
                          std::shared_ptr<messages::Peer> peer,
                          const bool from_remote) {
-  LOG_DEBUG << this << " It entered new_connection on TCP";
   std::lock_guard<std::mutex> lock_queue(_connection_mutex);
-  LOG_DEBUG << this << " It passed the lock on new_connection TCP";
 
   auto message = std::make_shared<messages::Message>();
   auto header = message->mutable_header();
@@ -102,9 +99,7 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
 
     connection_ready->set_from_remote(from_remote);
 
-    LOG_DEBUG << this << " Before copyfrom on new_connection TCP";
     peer_tmp->CopyFrom(*peer);
-    LOG_DEBUG << this << " Before publishing on new_connection TCP";
     _queue->publish(message);
     r.first->second.read();
   } else {
@@ -150,7 +145,6 @@ void Tcp::_stop() {
     LOG_INFO << this << " waiting ...";
     std::this_thread::sleep_for(10ms);
   }
-  LOG_DEBUG << this << " Finished the _stop() in tcp";
 }
 
 void Tcp::terminated(const Connection::ID id) {
@@ -166,7 +160,6 @@ void Tcp::terminated(const Connection::ID id) {
 bool Tcp::serialize(std::shared_ptr<messages::Message> message,
                     const ProtocolType protocol_type, Buffer *header_tcp,
                     Buffer *body_tcp) {
-  LOG_DEBUG << this << " Before reinterpret and signing";
   auto header_pattern =
       reinterpret_cast<tcp::HeaderPattern *>(header_tcp->data());
   message->mutable_header()->mutable_ts()->set_data(time(NULL));
@@ -248,7 +241,6 @@ bool Tcp::disconnected(const Connection::ID id, std::shared_ptr<Peer> peer) {
 Tcp::~Tcp() {
   std::lock_guard<std::mutex> lock_queue(_connection_mutex);
   _stop();
-  LOG_DEBUG << this << " TCP killed";
 }
 
 }  // namespace networking

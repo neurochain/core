@@ -16,6 +16,22 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../data.0.testnet
 configure_file("configs/bot0.json.in" "${CMAKE_CURRENT_BINARY_DIR}/bot0.json" @ONLY)
 configure_file("configs/bot1.json.in" "${CMAKE_CURRENT_BINARY_DIR}/bot1.json" @ONLY)
 configure_file("configs/bot2.json.in" "${CMAKE_CURRENT_BINARY_DIR}/bot2.json" @ONLY)
+configure_file("configs/integration_propagation0.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_propagation0.json" @ONLY)
+configure_file("configs/integration_propagation1.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_propagation1.json" @ONLY)
+configure_file("configs/integration_propagation2.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_propagation2.json" @ONLY)
+
+file(COPY configs/key_integration0.priv
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/key_integration0.priv)
+file(COPY configs/key_integration1.priv
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/key_integration1.priv)
+file(COPY configs/key_integration2.priv
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/key_integration2.priv)
+file(COPY configs/key_integration0.pub
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/key_integration0.pub)
+file(COPY configs/key_integration1.pub
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/key_integration1.pub)
+file(COPY configs/key_integration2.pub
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/key_integration2.pub)
 
 set(ProtoFiles "networking/proto/Messages.proto")
 PROTOBUF_GENERATE_CPP(ProtoSources ProtoHeaders ${ProtoFiles})

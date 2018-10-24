@@ -39,7 +39,6 @@ void Queue::subscribe(Subscriber *subscriber) {
 
 void Queue::unsubscribe(Subscriber *subscriber) {
   std::lock_guard<std::mutex> lock_callbacks(_callbacks_mutex);
-  LOG_DEBUG << "Queue unsub " << subscriber;
   _subscribers.erase(subscriber);
 }
 
@@ -71,7 +70,6 @@ void Queue::quit() {
 
 void Queue::do_work() {
   do {
-    LOG_DEBUG << this << " After do in queue";
     while (!_quitting && this->is_empty()) {  // avoid spurious wakeups
       std::unique_lock<std::mutex> lock_queue(_queue_mutex);
       _condition.wait(lock_queue);
