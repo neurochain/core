@@ -74,11 +74,7 @@ class Queue {
   std::thread _main_thread;
   std::condition_variable _condition;
 
-  std::unordered_set<std::shared_ptr<Buffer>> _seen_messages_hash;
-  std::map<std::time_t, std::shared_ptr<Buffer>> _message_hash_by_ts;
-
-  // bool clear_history();
-  bool is_new_messages(std::shared_ptr<const messages::Message> message);
+  bool expired(std::shared_ptr<const messages::Message> message);
 
  public:
   Queue();
