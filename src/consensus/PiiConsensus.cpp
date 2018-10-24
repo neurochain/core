@@ -30,12 +30,12 @@ PiiConsensus::PiiConsensus(std::shared_ptr<boost::asio::io_context> io,
 }
 
 void PiiConsensus::init() {
+  LOG_INFO << "Pii Consensus init";
   bool save_valide = _valide_block;
   _valide_block = false;
   _entropies.clear();
   _owner_ordered.clear();
-  int height = next_height_by_time();  // _ledger->height();
-
+  const auto height = next_height_by_time();  // _ledger->height();
   for (int i = 0; i <= height; ++i) {
     messages::Block block;
     if (_ledger->get_block(i, &block)) {
@@ -45,6 +45,7 @@ void PiiConsensus::init() {
     }
   }
   _valide_block = save_valide;
+  LOG_INFO << "Pii Consensus ready";
 }
 
 int32_t PiiConsensus::next_height_by_time() const {
