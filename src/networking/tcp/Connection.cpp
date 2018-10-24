@@ -65,7 +65,6 @@ void Connection::read_body() {
               LOG_INFO << "Updating peer with hello key pub";
               _remote_peer->mutable_key_pub()->CopyFrom(hello.key_pub());
             }
-
           }
         }
 

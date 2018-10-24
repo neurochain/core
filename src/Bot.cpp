@@ -287,7 +287,6 @@ bool Bot::init() {
   if (!_config.has_rest()) {
     LOG_INFO << "Missing rest configuration, not loading module";
   } else {
-
     const auto rest_config = _config.rest();
     _rest = std::make_shared<rest::Rest>(_ledger, _networking, _keys,
                                          _consensus, rest_config);

@@ -35,8 +35,6 @@ void PiiConsensus::init() {
   _valide_block = false;
   _entropies.clear();
   _owner_ordered.clear();
-  // int height = next_height_by_time();  // _ledger->height();
-
   //! OPTI Load with 2000 blocks
   std::vector<messages::Block> blocks;
   int start = 0, last_assembly = 0;
@@ -51,16 +49,10 @@ void PiiConsensus::init() {
     }
     start += 2000;
   }
-  /*
-    for (int i = 0; i <= height; ++i) {
-      messages::Block block;
-      if (_ledger->get_block(i, &block)) {
-        add_block(block);
-      } else {
-        ckeck_run_assembly(i);
-      }
-    }
-  */
+  int assembly_of_block = next_height_by_time() / _assembly_blocks;
+  if (assembly_of_block > last_assembly) {
+    ckeck_run_assembly(assembly_of_block * _assembly_blocks);
+  }
   _valide_block = save_valide;
   LOG_INFO << "Pii Consensus ready";
 }
@@ -85,7 +77,7 @@ void PiiConsensus::timer_func() {
   int32_t next_time =
       BLOCK_PERIODE -
       time_now % BLOCK_PERIODE;  // time_now - time_now % BLOCK_PERIODE +
-                                 // BLOCK_PERIODE;
+  // BLOCK_PERIODE;
   _timer_of_block_time.expires_at(_timer_of_block_time.expiry() +
                                   boost::asio::chrono::seconds(next_time));
   _timer_of_block_time.async_wait(boost::bind(&PiiConsensus::timer_func, this));

@@ -75,6 +75,22 @@ void LedgerMongodb::init_block0(const messages::config::Database &db) {
         break;
     }
     push_block(block0file);
+
+    //! add index to mongo collection
+    _blocks.create_index(bss::document{} << "id" << 1 << bss::finalize);
+    _blocks.create_index(bss::document{} << "height" << 1 << bss::finalize);
+    _blocks.create_index(bss::document{} << "previousBlockHash" << 1
+                                         << bss::finalize);
+    _transactions.create_index(bss::document{} << "id" << 1 << bss::finalize);
+    _transactions.create_index(bss::document{} << "blockId" << 1
+                                               << bss::finalize);
+    _transactions.create_index(bss::document{} << "outputs.address.data" << 1
+                                               << bss::finalize);
+
+    _blocks_forks.create_index(bss::document{} << "header.id" << 1
+                                               << bss::finalize);
+    _blocks_forks.create_index(bss::document{} << "header.height" << 1
+                                               << bss::finalize);
   }
 }
 
