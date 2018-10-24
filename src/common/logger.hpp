@@ -70,7 +70,9 @@ void from_config(const messages::config::Logs &logs_config);
 }  // namespace log
 }  // namespace neuro
 
-#define LOG_TRACE BOOST_LOG_SEV(logger::get(), boost::log::trivial::trace)
+#define LOG_TRACE                                          \
+  BOOST_LOG_SEV(logger::get(), boost::log::trivial::trace) \
+      << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "> "
 #define LOG_DEBUG BOOST_LOG_SEV(logger::get(), boost::log::trivial::debug)
 #define LOG_INFO BOOST_LOG_SEV(logger::get(), boost::log::trivial::info)
 #define LOG_WARNING BOOST_LOG_SEV(logger::get(), boost::log::trivial::warning)
