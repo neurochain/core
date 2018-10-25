@@ -285,8 +285,8 @@ bool Bot::init() {
     LOG_INFO << "Missing rest configuration, not loading module";
   } else {
     const auto rest_config = _config.rest();
-    _rest = std::make_shared<rest::Rest>(_ledger, _networking, _keys,
-                                         _consensus, rest_config);
+    _rest = std::make_shared<rest::Rest>(this, _ledger, _keys, _consensus,
+                                         rest_config);
   }
 
   this->keep_max_connections();
@@ -691,6 +691,18 @@ std::shared_ptr<messages::Queue> Bot::queue() { return _queue; }
 void Bot::subscribe(const messages::Type type,
                     messages::Subscriber::Callback callback) {
   _subscriber.subscribe(type, callback);
+}
+
+void Bot::publish_transaction(const messages::Transaction &transaction) const {
+  // Add the transaction to the transaction pool
+  _consensus->add_transaction(transaction);
+
+  // Send the transaction on the network
+  auto message = std::make_shared<messages::Message>();
+  messages::fill_header(message->mutable_header());
+  auto body = message->add_bodies();
+  body->mutable_transaction()->CopyFrom(transaction);
+  _networking->send(message, networking::ProtocolType::PROTOBUF2);
 }
 
 void Bot::join() { _networking->join(); }

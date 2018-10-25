@@ -3,6 +3,7 @@
 #include <onion/request.hpp>
 #include <onion/response.hpp>
 
+#include "Bot.hpp"
 #include "common/logger.hpp"
 #include "ledger/Ledger.hpp"
 #include "rest/Rest.hpp"
@@ -10,13 +11,12 @@
 namespace neuro {
 namespace rest {
 
-Rest::Rest(std::shared_ptr<ledger::Ledger> ledger,
-           std::shared_ptr<networking::Networking> networking,
+Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
            std::shared_ptr<crypto::Ecc> keys,
            std::shared_ptr<consensus::Consensus> consensus,
            const messages::config::Rest &config)
-    : _ledger(ledger),
-      _networking(networking),
+    : _bot(bot),
+      _ledger(ledger),
       _keys(keys),
       _consensus(consensus),
       _config(config),
@@ -43,7 +43,7 @@ Rest::Rest(std::shared_ptr<ledger::Ledger> ledger,
     messages::TransactionToPublish transaction_to_publish;
     messages::from_json(post_data, &transaction_to_publish);
     auto transaction = build_transaction(transaction_to_publish);
-    publish_transaction(transaction);
+    _bot->publish_transaction(transaction);
     res << transaction;
     return OCS_PROCESSED;
   };
@@ -71,7 +71,7 @@ Rest::Rest(std::shared_ptr<ledger::Ledger> ledger,
       amount.set_value(faucet_amount);
       messages::Transaction transaction =
           _ledger->build_transaction(address, amount, _keys->private_key());
-      publish_transaction(transaction);
+      _bot->publish_transaction(transaction);
       res << transaction;
       return OCS_PROCESSED;
     }
@@ -228,18 +228,6 @@ messages::Transaction Rest::build_transaction(
 
   return _ledger->build_transaction(transaction_ids, outputs, key_priv,
                                     transaction_to_publish.fees());
-}
-
-void Rest::publish_transaction(messages::Transaction &transaction) const {
-  // Add the transaction to the transaction pool
-  _consensus->add_transaction(transaction);
-
-  // Send the transaction on the network
-  auto message = std::make_shared<messages::Message>();
-  messages::fill_header(message->mutable_header());
-  auto body = message->add_bodies();
-  body->mutable_transaction()->CopyFrom(transaction);
-  _networking->send(message, networking::ProtocolType::PROTOBUF2);
 }
 
 messages::GeneratedKeys Rest::generate_keys() const {
