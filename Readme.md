@@ -57,11 +57,11 @@ It makes it easier to cover different platform by having the same version of the
 
 ### Ubuntu/Debian 
 
-
-
 ```bash
+
 sudo apt install -y git cmake build-essential libssl-dev mongodb-server
 
+git clone --branch feature/ledger https://gitlab.com/neurochaintech/core.git
 cd build
 cmake ..
 cmake --build .
@@ -70,5 +70,6 @@ cmake --build .
 ## Run 
 
 ```bash
-./build/src/bot --listen 1337 
+cd build/src
+./main -c bot.json
 ```

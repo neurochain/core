@@ -1,0 +1,24 @@
+{
+    "key_pub_path": "@CMAKE_BINARY_DIR@/key0.pub",
+    "key_priv_path": "@CMAKE_BINARY_DIR@/key0.priv",
+    "logs": {
+	"severity": "info",
+	"to_stdout": true
+    },
+    "networking": {
+	"max_connections": 3,
+	"tcp": {
+	    "port": 1337,
+	    "peers": []
+	}
+    },
+    "database": {
+	"url": "mongodb://localhost:27017",
+	"db_name": "neuro",
+	"block0_format": "PROTO",
+	"block0_path": "@CMAKE_BINARY_DIR@/data.0.testnet"
+    },
+    "rest": {
+	"port": 8080
+    }
+}
