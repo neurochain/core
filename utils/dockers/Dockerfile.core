@@ -4,5 +4,6 @@ MAINTAINER trax Omar Givernaud
 LABEL Description "Bot docker image"
 
 USER neuro
-RUN find . -name main ; pwd
+RUN pwd ; ls -lahrt 
+RUN find . 
 COPY build/src/main main
