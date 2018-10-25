@@ -58,6 +58,27 @@ target_link_libraries(integration
   )
 add_test(integration integration)
 
+add_executable(ut
+  ut.cpp
+  )
+
+target_link_libraries(ut
+  GTest::main
+  core
+  protos
+  Boost::program_options
+  Boost::system
+  Boost::filesystem
+  Boost::thread
+  Boost::log
+  libonion::onion
+  cpr::cpr
+  libonion::onioncpp
+  ${LIBMONGOCXX_STATIC_LIBRARIES}
+  )
+
+add_test(ut ut)
+
 
 add_executable(dbreset
     dbreset.cpp
