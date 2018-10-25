@@ -1,6 +1,6 @@
 {
-    "key_pub_path": "@CMAKE_BINARY_DIR@/key_integration0.pub",
-    "key_priv_path": "@CMAKE_BINARY_DIR@/key_integration0.priv",
+    "key_pub_path": "@CMAKE_CURRENT_BINARY_DIR@/key_integration0.pub",
+    "key_priv_path": "@CMAKE_CURRENT_BINARY_DIR@/key_integration0.priv",
     "logs": {
         "severity": "debug",
         "to_stdout": true

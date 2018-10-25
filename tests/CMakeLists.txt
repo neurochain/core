@@ -20,18 +20,12 @@ configure_file("configs/integration_propagation0.json.in" "${CMAKE_CURRENT_BINAR
 configure_file("configs/integration_propagation1.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_propagation1.json" @ONLY)
 configure_file("configs/integration_propagation2.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_propagation2.json" @ONLY)
 
-file(COPY configs/key_integration0.priv
-  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/key_integration0.priv)
-file(COPY configs/key_integration1.priv
-  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/key_integration1.priv)
-file(COPY configs/key_integration2.priv
-  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/key_integration2.priv)
-file(COPY configs/key_integration0.pub
-  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/key_integration0.pub)
-file(COPY configs/key_integration1.pub
-  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/key_integration1.pub)
-file(COPY configs/key_integration2.pub
-  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/key_integration2.pub)
+configure_file("configs/key_integration0.priv" "${CMAKE_CURRENT_BINARY_DIR}/key_integration0.priv" COPYONLY)
+configure_file("configs/key_integration1.priv" "${CMAKE_CURRENT_BINARY_DIR}/key_integration1.priv" COPYONLY)
+configure_file("configs/key_integration2.priv" "${CMAKE_CURRENT_BINARY_DIR}/key_integration2.priv" COPYONLY)
+configure_file("configs/key_integration0.pub" "${CMAKE_CURRENT_BINARY_DIR}/key_integration0.pub" COPYONLY)
+configure_file("configs/key_integration1.pub" "${CMAKE_CURRENT_BINARY_DIR}/key_integration1.pub" COPYONLY)
+configure_file("configs/key_integration2.pub" "${CMAKE_CURRENT_BINARY_DIR}/key_integration2.pub" COPYONLY)
 
 set(ProtoFiles "networking/proto/Messages.proto")
 PROTOBUF_GENERATE_CPP(ProtoSources ProtoHeaders ${ProtoFiles})

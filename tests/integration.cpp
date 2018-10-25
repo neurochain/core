@@ -206,9 +206,9 @@ TEST(INTEGRATION, neighbors_propagation) {
 
 TEST(INTEGRATION, block_exchange) {
   ASSERT_TRUE(true);
-  // iniciar el bot
-  auto bot0 = std::make_shared<Bot>("bot0.json");
-  // dump el mensaje del block0 para validar
+  // init the bot
+  auto bot0 = std::make_shared<Bot>("integration_propagation0.json");
+  // dump msg of block0 to validate
 }
 
 } // namespace neuro
