@@ -60,6 +60,7 @@ add_test(integration integration)
 
 add_executable(ut
   ./common/Buffer.cpp
+  ./crypto/Hash.cpp
   )
 
 target_link_libraries(ut
