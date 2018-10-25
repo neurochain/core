@@ -292,7 +292,6 @@ bool Bot::init() {
   this->keep_max_connections();
   update_ledger();
 
-
   return true;
 }
 

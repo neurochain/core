@@ -1,22 +1,22 @@
+#include <gtest/gtest.h>
+#include <chrono>
+#include <sstream>
+#include <thread>
 #include "Bot.hpp"
 #include "common/logger.hpp"
 #include "messages/Subscriber.hpp"
-#include <chrono>
-#include <gtest/gtest.h>
-#include <sstream>
-#include <thread>
 
 namespace neuro {
 using namespace std::chrono_literals;
 
 class Listener {
-private:
+ private:
   bool _received_connection0{false};
   bool _received_connection1{false};
   bool _received_hello{false};
   bool _received_world{false};
 
-public:
+ public:
   Listener() {}
 
   void handler_hello(const messages::Header &header,
@@ -55,7 +55,7 @@ public:
 };
 
 class Integration : public ::testing::Test {
-public:
+ public:
   Integration() {}
 
   // bool test_reachmax() {
@@ -211,4 +211,4 @@ TEST(INTEGRATION, block_exchange) {
   // dump el mensaje del block0 para validar
 }
 
-} // namespace neuro
+}  // namespace neuro

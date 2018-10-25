@@ -54,44 +54,44 @@ bool LedgerMongodb::get_transactions_from_block(const messages::BlockID &id,
 
 void LedgerMongodb::init_block0(const messages::config::Database &db) {
   messages::Block block0;
-  if (!get_block(0, &block0)) {
-    messages::Block block0file;
-    std::ifstream t(db.block0_path());
-    std::string str((std::istreambuf_iterator<char>(t)),
-                    std::istreambuf_iterator<char>());
-
-    auto d = bss::document{};
-    switch (db.block0_format()) {
-      case messages::config::Database::Block0Format::
-          Database_Block0Format_PROTO:
-        block0file.ParseFromString(str);
-        break;
-      case messages::config::Database::Block0Format::Database_Block0Format_BSON:
-        d << str;
-        messages::from_bson(d.view(), &block0file);
-        break;
-      case messages::config::Database::Block0Format::Database_Block0Format_JSON:
-        messages::from_json(str, &block0file);
-        break;
-    }
-    push_block(block0file);
-
-    //! add index to mongo collection
-    _blocks.create_index(bss::document{} << "id" << 1 << bss::finalize);
-    _blocks.create_index(bss::document{} << "height" << 1 << bss::finalize);
-    _blocks.create_index(bss::document{} << "previousBlockHash" << 1
-                                         << bss::finalize);
-    _transactions.create_index(bss::document{} << "id" << 1 << bss::finalize);
-    _transactions.create_index(bss::document{} << "blockId" << 1
-                                               << bss::finalize);
-    _transactions.create_index(bss::document{} << "outputs.address.data" << 1
-                                               << bss::finalize);
-
-    _blocks_forks.create_index(bss::document{} << "header.id" << 1
-                                               << bss::finalize);
-    _blocks_forks.create_index(bss::document{} << "header.height" << 1
-                                               << bss::finalize);
+  if (get_block(0, &block0)) {
+    return;
   }
+  messages::Block block0file;
+  std::ifstream t(db.block0_path());
+  std::string str((std::istreambuf_iterator<char>(t)),
+                  std::istreambuf_iterator<char>());
+
+  auto d = bss::document{};
+  switch (db.block0_format()) {
+    case messages::config::Database::Block0Format::Database_Block0Format_PROTO:
+      block0file.ParseFromString(str);
+      break;
+    case messages::config::Database::Block0Format::Database_Block0Format_BSON:
+      d << str;
+      messages::from_bson(d.view(), &block0file);
+      break;
+    case messages::config::Database::Block0Format::Database_Block0Format_JSON:
+      messages::from_json(str, &block0file);
+      break;
+  }
+  push_block(block0file);
+
+  //! add index to mongo collection
+  _blocks.create_index(bss::document{} << "id" << 1 << bss::finalize);
+  _blocks.create_index(bss::document{} << "height" << 1 << bss::finalize);
+  _blocks.create_index(bss::document{} << "previousBlockHash" << 1
+                                       << bss::finalize);
+  _transactions.create_index(bss::document{} << "id" << 1 << bss::finalize);
+  _transactions.create_index(bss::document{} << "blockId" << 1
+                                             << bss::finalize);
+  _transactions.create_index(bss::document{} << "outputs.address.data" << 1
+                                             << bss::finalize);
+
+  _blocks_forks.create_index(bss::document{} << "header.id" << 1
+                                             << bss::finalize);
+  _blocks_forks.create_index(bss::document{} << "header.height" << 1
+                                             << bss::finalize);
 }
 
 void LedgerMongodb::remove_all() {
