@@ -4,6 +4,7 @@
 #include <functional>
 #include <optional>
 #include "crypto/Hash.hpp"
+#include "crypto/Sign.hpp"
 #include "ledger/Filter.hpp"
 #include "messages.pb.h"
 #include "messages/Address.hpp"
@@ -95,6 +96,8 @@ class Ledger {
   virtual bool delete_transaction(const messages::Hash &id) = 0;
   virtual int get_transaction_pool(messages::Block &block) = 0;
 
+  virtual bool get_blocks(int start, int size,
+                          std::vector<messages::Block> &blocks) = 0;
   virtual int total_nb_transactions() = 0;
 
   virtual int total_nb_blocks() = 0;
@@ -171,6 +174,141 @@ class Ledger {
       blocks.push_back(block);
     }
     return blocks;
+  }
+
+  std::vector<messages::UnspentTransaction> list_unspent_transactions(
+      const messages::Address &address) {
+    std::vector<messages::UnspentTransaction> unspent_transactions;
+
+    auto transactions = list_transactions(address).transactions();
+    for (auto transaction : transactions) {
+      for (int i = 0; i < transaction.outputs_size(); i++) {
+        auto output = transaction.outputs(i);
+        if (output.address() == address && is_unspent_output(transaction, i)) {
+          auto &unspent_transaction = unspent_transactions.emplace_back();
+          unspent_transaction.mutable_transaction_id()->CopyFrom(
+              transaction.id());
+          unspent_transaction.mutable_value()->CopyFrom(output.value());
+        }
+      }
+    }
+    return unspent_transactions;
+  }
+
+  void add_change(messages::Transaction *transaction,
+                  const messages::Address &change_address) {
+    uint64_t inputs_ncc = 0;
+    uint64_t outputs_ncc = 0;
+    for (auto output : transaction->outputs()) {
+      outputs_ncc += output.value().value();
+    }
+    if (transaction->has_fees()) {
+      outputs_ncc += transaction->fees().value();
+    }
+
+    for (auto input : transaction->inputs()) {
+      messages::Transaction transaction;
+      get_transaction(input.id(), &transaction);
+      auto output = transaction.outputs(input.output_id());
+      inputs_ncc += output.value().value();
+    }
+
+    if (outputs_ncc < inputs_ncc) {
+      auto change = transaction->add_outputs();
+      change->mutable_value()->set_value(inputs_ncc - outputs_ncc);
+      change->mutable_address()->CopyFrom(change_address);
+    }
+  }
+
+  std::vector<messages::Input> build_inputs(
+      const std::vector<messages::Address> &unspent_transactions_ids,
+      const messages::Address &address) {
+    std::vector<messages::Input> inputs;
+
+    // Process the outputs and lookup their output_id to build the inputs
+    for (auto transaction_id : unspent_transactions_ids) {
+      auto transaction_outputs =
+          get_outputs_for_address(transaction_id, address);
+
+      for (auto output : transaction_outputs) {
+        auto &input = inputs.emplace_back();
+        input.mutable_id()->CopyFrom(transaction_id);
+        input.set_output_id(output.output_id());
+        input.set_key_id(0);
+      }
+    }
+    return inputs;
+  }
+
+  messages::Transaction build_transaction(
+      const std::vector<messages::Address> &unspent_transactions_ids,
+      const std::vector<messages::Output> &outputs,
+      const crypto::EccPriv &key_priv,
+      const std::optional<const messages::NCCSDF> &fees = {}) {
+    const crypto::EccPub key_pub = key_priv.make_public_key();
+    const auto address = messages::Address(key_pub);
+
+    auto inputs = build_inputs(unspent_transactions_ids, address);
+
+    return build_transaction(inputs, outputs, key_priv, fees);
+  }
+
+  messages::Transaction build_transaction(
+      const std::vector<messages::Input> &inputs,
+      const std::vector<messages::Output> &outputs,
+      const crypto::EccPriv &key_priv,
+      const std::optional<messages::NCCSDF> &fees = {}) {
+    messages::Transaction transaction;
+
+    // Build keys
+    const crypto::EccPub key_pub = key_priv.make_public_key();
+    const auto address = messages::Address(key_pub);
+    const auto ecc = crypto::Ecc(key_priv, key_pub);
+    std::vector<const crypto::Ecc *> keys = {&ecc};
+
+    for (auto input : inputs) {
+      transaction.add_inputs()->CopyFrom(input);
+    }
+
+    for (auto output : outputs) {
+      transaction.add_outputs()->CopyFrom(output);
+    }
+
+    if (fees) {
+      transaction.mutable_fees()->CopyFrom(fees.value());
+    }
+
+    add_change(&transaction, address);
+
+    // Sign the transaction
+    crypto::sign(keys, &transaction);
+
+    // Hash the transaction
+    messages::hash_transaction(&transaction);
+
+    return transaction;
+  }
+
+  messages::Transaction build_transaction(
+      const messages::Address &address, const messages::NCCSDF &amount,
+      const crypto::EccPriv &key_priv,
+      const std::optional<messages::NCCSDF> &fees = {}) {
+    auto bot_address = messages::Address(key_priv.make_public_key());
+    std::vector<messages::UnspentTransaction> unspent_transactions =
+        list_unspent_transactions(bot_address);
+
+    std::vector<messages::Address> unspent_transactions_ids;
+    for (auto unspent_transaction : unspent_transactions) {
+      auto &unspent_transaction_id = unspent_transactions_ids.emplace_back();
+      unspent_transaction_id.CopyFrom(unspent_transaction.transaction_id());
+    }
+
+    // Set outputs
+    std::vector<messages::Output> outputs;
+    auto &output = outputs.emplace_back();
+    output.mutable_address()->CopyFrom(address);
+    output.mutable_value()->CopyFrom(amount);
+    return build_transaction(unspent_transactions_ids, outputs, key_priv, fees);
   }
 
   virtual ~Ledger() {}

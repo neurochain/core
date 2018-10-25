@@ -41,7 +41,8 @@ void Connection::read_body() {
         auto message = std::make_shared<messages::Message>();
         messages::from_buffer(_buffer, message.get());
 
-        std::cout << "\033[1;31mMessage received: " << *message << "\033[0m" << std::endl;
+        std::cout << "\033[1;31mMessage received: " << *message << "\033[0m"
+                  << std::endl;
         auto header = message->mutable_header();
 
         header->mutable_peer()->CopyFrom(*_remote_peer);
@@ -64,7 +65,6 @@ void Connection::read_body() {
               LOG_INFO << "Updating peer with hello key pub";
               _remote_peer->mutable_key_pub()->CopyFrom(hello.key_pub());
             }
-
           }
         }
 

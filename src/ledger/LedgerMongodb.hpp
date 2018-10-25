@@ -75,6 +75,8 @@ class LedgerMongodb : public Ledger {
 
   int total_nb_blocks();
 
+  bool get_blocks(int start, int size, std::vector<messages::Block> &blocks);
+
   bool for_each(const Filter &filter, Functor functor);
 
   /**

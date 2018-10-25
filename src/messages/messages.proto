@@ -121,3 +121,8 @@ message Message {
   optional Header header = 1;
   repeated Body bodies = 20;
 }
+
+message UnspentTransaction {
+  required Hash transaction_id = 1;
+  required NCCSDF value = 2;
+}

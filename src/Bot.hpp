@@ -2,6 +2,7 @@
 #define NEURO_SRC_BOT_HPP
 
 #include <memory>
+#include "Bot.hpp"
 #include "consensus/Consensus.hpp"
 #include "crypto/Ecc.hpp"
 #include "ledger/LedgerMongodb.hpp"
@@ -95,6 +96,8 @@ class Bot {
   std::shared_ptr<messages::Queue> queue();
   void subscribe(const messages::Type type,
                  messages::Subscriber::Callback callback);
+
+  void publish_transaction(const messages::Transaction &transaction) const;
 };
 
 std::ostream &operator<<(std::ostream &os, const neuro::Bot &b);

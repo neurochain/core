@@ -18,13 +18,14 @@ PiiConsensus::PiiConsensus(std::shared_ptr<boost::asio::io_context> io,
       _timer_of_block_time(*io) {
   // load all block from
 
-  int32_t time_now = std::time(nullptr);
-  int32_t next_time =
-      BLOCK_PERIODE -
-      time_now % BLOCK_PERIODE;  // time_now - time_now % BLOCK_PERIODE +
-  // BLOCK_PERIODE;
-  _timer_of_block_time.expires_after(boost::asio::chrono::seconds(next_time));
-  _timer_of_block_time.async_wait(boost::bind(&PiiConsensus::timer_func, this));
+    int32_t time_now = std::time(nullptr);
+    int32_t next_time =
+        BLOCK_PERIODE -
+        time_now % BLOCK_PERIODE;  // time_now - time_now % BLOCK_PERIODE +
+    // BLOCK_PERIODE;
+    _timer_of_block_time.expires_after(boost::asio::chrono::seconds(next_time));
+    _timer_of_block_time.async_wait(boost::bind(&PiiConsensus::timer_func,
+    this));
   _assembly_blocks = block_assembly;
   init();
 }
@@ -35,15 +36,29 @@ void PiiConsensus::init() {
   _valide_block = false;
   _entropies.clear();
   _owner_ordered.clear();
-  const auto height = next_height_by_time();  // _ledger->height();
-  for (int i = 0; i <= height; ++i) {
-    messages::Block block;
-    if (_ledger->get_block(i, &block)) {
+
+  //! OPTI Load with 2000 blocks
+  std::vector<messages::Block> blocks;
+  int start = 0, last_assembly = 0;
+  while (_ledger->get_blocks(start, _assembly_blocks, blocks)) {
+    for (messages::Block &block : blocks) {
+      int assembly_of_block = block.header().height() / _assembly_blocks;
+      if (assembly_of_block > last_assembly) {
+        ckeck_run_assembly(assembly_of_block * _assembly_blocks);
+        last_assembly = assembly_of_block;
+      }
+
       add_block(block);
-    } else {
-      ckeck_run_assembly(i);
     }
+    start += _assembly_blocks;
   }
+  blocks.clear();
+
+  int assembly_of_block = next_height_by_time() / _assembly_blocks;
+  if (assembly_of_block > last_assembly) {
+    ckeck_run_assembly(assembly_of_block * _assembly_blocks);
+  }
+
   _valide_block = save_valide;
   LOG_INFO << "Pii Consensus ready";
 }
@@ -68,7 +83,7 @@ void PiiConsensus::timer_func() {
   int32_t next_time =
       BLOCK_PERIODE -
       time_now % BLOCK_PERIODE;  // time_now - time_now % BLOCK_PERIODE +
-                                 // BLOCK_PERIODE;
+  // BLOCK_PERIODE;
   _timer_of_block_time.expires_at(_timer_of_block_time.expiry() +
                                   boost::asio::chrono::seconds(next_time));
   _timer_of_block_time.async_wait(boost::bind(&PiiConsensus::timer_func, this));
@@ -104,7 +119,6 @@ void PiiConsensus::build_block() {
     int h = _transaction_pool.build_block(blocks, next_height, it->second.get(),
                                           858993459200lu);
     _transaction_pool.delete_transactions(blocks.transactions());
-
     LOG_INFO << "Build Block " << std::to_string(next_height)
              << " with : " << std::to_string(h) << " transactions";
     add_block(blocks);
@@ -138,7 +152,8 @@ void PiiConsensus::ckeck_run_assembly(int32_t height) {
   }
 }
 
-void PiiConsensus::add_block(const neuro::messages::Block &block, bool check_time) {
+void PiiConsensus::add_block(const neuro::messages::Block &block,
+                             bool check_time) {
   neuro::messages::Block last_block, prev_block;
   ///!< fix same id block in the ledger
   if (_valide_block && block_in_ledger(block.header().id())) {
@@ -236,7 +251,6 @@ void PiiConsensus::add_block(const neuro::messages::Block &block, bool check_tim
       }
     }
   }
-
   addBlocks(_piithx);
 
   _last_heigth_block = block.header().height();
@@ -250,18 +264,18 @@ void PiiConsensus::add_blocks(
 
 void PiiConsensus::random_from_hashs() {
   // Get all hash from 2000 block
-  std::vector<std::string> _hash;
+  _nonce_assembly = 0;
+  int height = (next_height_by_time() / _assembly_blocks) * _assembly_blocks;
   for (int32_t i = 0; i < _assembly_blocks; i++) {
     neuro::messages::Block b;
     ///!< assembly_blocks/2 is juste pour test
-    if (_ledger->get_block(_last_heigth_block - i - _assembly_blocks / 2, &b)) {
-      _hash.push_back(b.header().id().data());
+    if (_ledger->get_block(height - i, &b)) {
+      std::string h = b.header().id().data().substr(0, 4);
+      _nonce_assembly += *reinterpret_cast<uint32_t *>(&h[0]);
     }
   }
 
-  _nonce_assembly = 0;
-  for (const std::string &h : _hash)
-    _nonce_assembly += std::atoi(h.substr(0, 4).c_str());  ///!< just for fun oh
+  LOG_INFO << "New Nonce " << _nonce_assembly;
 }
 
 uint32_t PiiConsensus::ramdon_at(int index, uint64_t nonce) const {

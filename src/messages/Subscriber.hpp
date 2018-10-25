@@ -19,8 +19,8 @@ class Subscriber {
   mutable std::mutex _mutex_handler;
   std::shared_ptr<Queue> _queue;
   std::vector<std::vector<Callback>> _callbacks_by_type;
-  std::unordered_set<std::shared_ptr<Buffer>> _seen_messages_hash;
-  std::map<std::time_t, std::shared_ptr<Buffer>> _message_hash_by_ts;
+  std::unordered_set<Buffer> _seen_messages_hash;
+  std::map<std::time_t, Buffer> _message_hash_by_ts;
 
  public:
   Subscriber(std::shared_ptr<Queue> queue)
@@ -39,21 +39,22 @@ class Subscriber {
     Buffer serialized_body;
     to_buffer(body, &serialized_body);
 
-    const auto hash =
-        std::make_shared<Buffer>(crypto::hash_sha3_256(serialized_body));
-    const auto &[it, is_emplaced] = _seen_messages_hash.emplace(hash);
+    const auto hash = crypto::hash_sha3_256(serialized_body);
+    const auto [it, is_emplaced] = _seen_messages_hash.emplace(hash);
     if (!is_emplaced) {
-      LOG_TRACE << "message already seened " << body;
       return false;
     }
 
     _message_hash_by_ts.emplace(std::piecewise_construct,
                                 std::forward_as_tuple(current_time),
                                 std::forward_as_tuple(hash));
-    LOG_TRACE << "new message " << body;
-    _message_hash_by_ts.erase(
-        _message_hash_by_ts.begin(),
-        _message_hash_by_ts.lower_bound(current_time - MESSAGE_TTL));
+
+    for (auto it = _message_hash_by_ts.begin(),
+              end = _message_hash_by_ts.lower_bound(current_time - MESSAGE_TTL);
+         it != end; ++it) {
+      _seen_messages_hash.erase(it->second);
+      _message_hash_by_ts.erase(it);
+    }
 
     return true;
   }

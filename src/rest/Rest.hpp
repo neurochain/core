@@ -5,7 +5,6 @@
 #include "consensus/Consensus.hpp"
 #include "crypto/Sign.hpp"
 #include "ledger/Ledger.hpp"
-#include "networking/Networking.hpp"
 
 #include <memory>
 #include <thread>
@@ -14,12 +13,13 @@
 #include <onion/url.hpp>
 
 namespace neuro {
+class Bot;
 namespace rest {
 
 class Rest {
  private:
+  Bot *_bot;
   std::shared_ptr<ledger::Ledger> _ledger;
-  std::shared_ptr<networking::Networking> _networking;
   std::shared_ptr<crypto::Ecc> _keys;
   std::shared_ptr<consensus::Consensus> _consensus;
   messages::config::Rest _config;
@@ -31,11 +31,8 @@ class Rest {
 
   std::thread _thread;
   std::string list_transactions(const std::string &address) const;
-  messages::UnspentTransactions list_unspent_transactions(
-      const messages::Address &address) const;
   messages::Transaction build_transaction(
       const messages::TransactionToPublish &transaction_to_publish) const;
-  void publish_transaction(messages::Transaction &transaction) const;
   messages::Hasher load_hash(const std::string &hash_str) const;
   messages::GeneratedKeys generate_keys() const;
   messages::Transaction build_faucet_transaction(
@@ -45,8 +42,7 @@ class Rest {
   void serve_folder(const std::string route, const std::string foldername);
 
  public:
-  Rest(std::shared_ptr<ledger::Ledger> ledger,
-       std::shared_ptr<networking::Networking> networking,
+  Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
        std::shared_ptr<crypto::Ecc> keys,
        std::shared_ptr<consensus::Consensus> consensus,
        const messages::config::Rest &config);

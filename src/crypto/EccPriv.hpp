@@ -31,7 +31,7 @@ class EccPriv {
   Buffer sign(const uint8_t *data, const std::size_t size) const;
   Buffer sign(const Buffer &input) const;
 
-  EccPub make_public_key();
+  EccPub make_public_key() const;
   bool operator==(const EccPriv &key) const;
   friend std::ostream &operator<<(std::ostream &os, const EccPriv &priv);
 };

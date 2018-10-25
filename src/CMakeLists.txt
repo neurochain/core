@@ -7,6 +7,8 @@ set(ProtoFiles
 
 PROTOBUF_GENERATE_CPP(ProtoSources ProtoHeaders ${ProtoFiles})
 
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/configs/bot.json.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/bot.json" @ONLY)
 
 add_library(protos
   ${ProtoSources}
