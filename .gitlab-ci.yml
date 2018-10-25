@@ -1,7 +1,7 @@
 stages:
   - build
-  - doxygen
   - prod_image
+  - doxygen
 
 variables:
   DOCKER_PROD_IMAGE: $CI_REGISTRY_IMAGE:latest
