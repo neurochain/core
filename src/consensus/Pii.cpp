@@ -9,11 +9,9 @@ void Pii::addBlock(const Transaction& piitransaction) {
   auto& tij1 = pfrom.entropie_Tij[piitransaction.to];
   auto& tij2 = pto.entropie_Tij[piitransaction.from];
   tij1.nbinput++;
-  tij1.mtin +=
-      piitransaction.ncc * piitransaction.timencc * pto.entropie;
+  tij1.mtin += piitransaction.ncc * piitransaction.timencc * pto.entropie;
   tij2.nboutput++;
-  tij2.mtout +=
-      piitransaction.ncc * piitransaction.timencc * pfrom.entropie;
+  tij2.mtout += piitransaction.ncc * piitransaction.timencc * pfrom.entropie;
   pfrom.sum_outputs++;
   pto.sum_inputs++;
 }
