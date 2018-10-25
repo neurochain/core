@@ -40,6 +40,7 @@ void Pii::addBlocks(const std::vector<Transaction>& piitransactions) {
 void Pii::calcul() {
   LOG_INFO << "Starting pii computation with "
            << std::to_string(_entropies.size()) << " addrs";
+
   int ij = 0;
   for (auto& p : _entropies) {
     double epr1 = 0;
@@ -61,7 +62,6 @@ void Pii::calcul() {
     p.second.update(std::max(1.0, -0.5 * (epr1 + epr2)));
     // p.second.update(-0.5 * (epr1 + epr2));
   }
-
   // Order it
   std::vector<std::pair<std::string, Calculus> > sorted_pii(_entropies.begin(),
                                                             _entropies.end());
@@ -77,7 +77,6 @@ void Pii::calcul() {
     i++;
     if (i > _assembly_owners) break;
   }
-
   LOG_INFO << "Ending pii computation";
 }
 

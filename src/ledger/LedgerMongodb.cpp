@@ -357,11 +357,11 @@ bool LedgerMongodb::for_each(const Filter &filter, Functor functor) {
   }
 
   // auto cursor_block = _blocks.find(query_block.view());
-
+  auto query_final = query_transaction << bss::finalize;
   auto cursor_transaction =
-      _transactions.find(std::move(query_transaction.view()), remove_OID());
+      _transactions.find(std::move(query_final), remove_OID());
 
-  for (auto &bson_transaction : cursor_transaction) {
+  for (auto &&bson_transaction : cursor_transaction) {
     messages::Transaction transaction;
     messages::from_bson(bson_transaction, &transaction);
     functor(transaction);
@@ -379,19 +379,20 @@ bool LedgerMongodb::get_blocks(int start, int size,
   filter.sort(bss::document{} << "height" << 1 << bss::finalize);
   filter.skip(start).limit(size);
 
-  bool res = false;
   auto cursor_transaction = _blocks.find(std::move(query_block), filter);
 
-  std::cout << "Get Blocks " << std::to_string(start) << std::endl;
-  for (auto &bsonheader : cursor_transaction) {
-    res = true;
+  if (cursor_transaction.begin() == cursor_transaction.end()) {
+    return false;
+  }
+
+  for (auto &&bsonheader : cursor_transaction) {
     messages::Block block;
     messages::from_bson(bsonheader, block.mutable_header());
     get_transactions_from_block(block.header().id(), &block);
     blocks.push_back(block);
   }
 
-  return res;
+  return true;
 }
 
 bool LedgerMongodb::fork_add_block(const messages::Block &block) {
