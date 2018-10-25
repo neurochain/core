@@ -20,6 +20,9 @@ configure_file("configs/integration_propagation0.json.in" "${CMAKE_CURRENT_BINAR
 configure_file("configs/integration_propagation1.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_propagation1.json" @ONLY)
 configure_file("configs/integration_propagation2.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_propagation2.json" @ONLY)
 
+configure_file("configs/test_sign.priv" "${CMAKE_CURRENT_BINARY_DIR}/test_sign.priv" COPYONLY)
+configure_file("configs/test_sign.pub" "${CMAKE_CURRENT_BINARY_DIR}/test_sign.pub" COPYONLY)
+
 file(COPY configs/key_integration0.priv
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/key_integration0.priv)
 file(COPY configs/key_integration1.priv
@@ -59,17 +62,18 @@ add_test(integration integration)
 add_executable(ut
   ./common/Buffer.cpp
   ./crypto/Hash.cpp
+  ./crypto/Ecc.cpp
   )
 
 target_link_libraries(ut
   GTest::main
   core
   protos
+  Boost::log
   Boost::program_options
   Boost::system
   Boost::filesystem
   Boost::thread
-  Boost::log
   libonion::onion
   cpr::cpr
   libonion::onioncpp
