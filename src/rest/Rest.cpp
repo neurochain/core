@@ -44,18 +44,14 @@ Rest::Rest(std::shared_ptr<ledger::Ledger> ledger,
     messages::from_json(post_data, &transaction_to_publish);
     auto transaction = build_transaction(transaction_to_publish);
     publish_transaction(transaction);
-    std::string json;
-    messages::to_json(transaction, &json);
-    res << json;
+    res << transaction;
     return OCS_PROCESSED;
   };
 
   const auto generate_keys_route = [this](Onion::Request &req,
                                           Onion::Response &res) {
     messages::GeneratedKeys generated_keys = generate_keys();
-    std::string json;
-    messages::to_json(generated_keys, &json);
-    res << json;
+    res << generated_keys;
     return OCS_PROCESSED;
   };
 
@@ -70,12 +66,13 @@ Rest::Rest(std::shared_ptr<ledger::Ledger> ledger,
              "coins.\"";
       return OCS_PROCESSED;
     } else {
+      const auto address = messages::Hasher(_keys->public_key());
+      messages::NCCSDF amount;
+      amount.set_value(faucet_amount);
       messages::Transaction transaction =
-          build_faucet_transaction(address, faucet_amount);
+          _ledger->build_transaction(address, amount, _keys->private_key());
       publish_transaction(transaction);
-      std::string json;
-      messages::to_json(transaction, &json);
-      res << json;
+      res << transaction;
       return OCS_PROCESSED;
     }
   };
@@ -86,9 +83,7 @@ Rest::Rest(std::shared_ptr<ledger::Ledger> ledger,
     const messages::Hasher transaction_id = load_hash(transaction_id_str);
     messages::Transaction transaction;
     _ledger->get_transaction(transaction_id, &transaction);
-    std::string json;
-    messages::to_json(transaction, &json);
-    res << json;
+    res << transaction;
     return OCS_PROCESSED;
   };
 
@@ -106,9 +101,7 @@ Rest::Rest(std::shared_ptr<ledger::Ledger> ledger,
         _ledger->get_block(block_height, &block);
       }
     }
-    std::string json;
-    messages::to_json(block, &json);
-    res << json;
+    res << block;
     return OCS_PROCESSED;
   };
 
@@ -122,9 +115,7 @@ Rest::Rest(std::shared_ptr<ledger::Ledger> ledger,
     for (auto block : blocks_vector) {
       blocks.add_blocks()->CopyFrom(block);
     }
-    std::string json;
-    messages::to_json(blocks, &json);
-    res << json;
+    res << blocks;
     return OCS_PROCESSED;
   };
 
@@ -186,32 +177,21 @@ messages::Hasher Rest::load_hash(const std::string &hash_str) const {
   return result;
 }
 
-messages::UnspentTransactions Rest::list_unspent_transactions(
-    const messages::Address &address) const {
-  messages::UnspentTransactions unspent_transactions;
-
-  auto transactions = _ledger->list_transactions(address).transactions();
-  for (auto transaction : transactions) {
-    for (int i = 0; i < transaction.outputs_size(); i++) {
-      auto output = transaction.outputs(i);
-      if (output.address() == address &&
-          _ledger->is_unspent_output(transaction, i)) {
-        auto unspent_transaction =
-            unspent_transactions.add_unspent_transactions();
-        unspent_transaction->set_transaction_id(transaction.id().data());
-        unspent_transaction->set_value(std::to_string(output.value().value()));
-      }
-    }
-  }
-  return unspent_transactions;
-}
-
 std::string Rest::list_transactions(const std::string &address_str) const {
   const messages::Hasher address = load_hash(address_str);
-  messages::UnspentTransactions unspent_transactions =
-      list_unspent_transactions(address);
+  std::vector<messages::UnspentTransaction> unspent_transactions =
+      _ledger->list_unspent_transactions(address);
+  messages::RestUnspentTransactions rest_unspent_transactions;
+  for (auto unspent_transaction : unspent_transactions) {
+    auto rest_unspent_transaction =
+        rest_unspent_transactions.add_unspent_transactions();
+    rest_unspent_transaction->set_transaction_id(
+        unspent_transaction.transaction_id().data());
+    rest_unspent_transaction->set_value(
+        std::to_string(unspent_transaction.value().value()));
+  }
   std::string result;
-  messages::to_json(unspent_transactions, &result);
+  messages::to_json(rest_unspent_transactions, &result);
   return result;
 }
 
@@ -224,52 +204,30 @@ messages::Transaction Rest::build_transaction(
   const auto random_pool = std::make_shared<CryptoPP::AutoSeededRandomPool>();
   auto key_priv = crypto::EccPriv(random_pool);
   key_priv.load(buffer);
+
+  std::vector<messages::Output> outputs;
+  auto outputs_to_publish = transaction_to_publish.outputs();
+  for (auto output : outputs_to_publish) {
+    outputs.push_back(output);
+  }
+
   const crypto::EccPub key_pub = key_priv.make_public_key();
   const auto address = messages::Address(key_pub);
   const auto ecc = crypto::Ecc(key_priv, key_pub);
   std::vector<const crypto::Ecc *> keys = {&ecc};
 
-  uint64_t inputs_ncc = 0;
-  uint64_t outputs_ncc = 0;
-  auto outputs_to_publish = transaction_to_publish.outputs();
-  for (auto output : outputs_to_publish) {
-    outputs_ncc += output.value().value();
-  }
-
   // Process the outputs and lookup their output_id to build the inputs
-  auto transaction_ids = transaction_to_publish.transactions_ids();
-  for (auto transaction_id_str : transaction_ids) {
-    messages::Hasher transaction_id;
+  std::vector<messages::Address> transaction_ids;
+  auto transaction_ids_str = transaction_to_publish.transactions_ids();
+  for (auto transaction_id_str : transaction_ids_str) {
+    messages::Address transaction_id;
     transaction_id.set_type(messages::Hash_Type_SHA256);
     transaction_id.set_data(transaction_id_str);
-    auto outputs = _ledger->get_outputs_for_address(transaction_id, address);
-    for (auto output : outputs) {
-      auto input = transaction.add_inputs();
-      input->mutable_id()->CopyFrom(transaction_id);
-      input->set_output_id(output.output_id());
-      input->set_key_id(0);
-      inputs_ncc += output.value().value();
-    }
+    transaction_ids.push_back(transaction_id);
   }
 
-  transaction.mutable_outputs()->CopyFrom(transaction_to_publish.outputs());
-
-  // Add change output
-  if (outputs_ncc < inputs_ncc) {
-    auto change = transaction.add_outputs();
-    change->mutable_value()->set_value(inputs_ncc - outputs_ncc);
-    change->mutable_address()->CopyFrom(address);
-  }
-
-  transaction.mutable_fees()->CopyFrom(transaction_to_publish.fees());
-
-  // Sign the transaction
-  crypto::sign(keys, &transaction);
-
-  // Hash the transaction
-  messages::hash_transaction(&transaction);
-
-  return transaction;
+  return _ledger->build_transaction(transaction_ids, outputs, key_priv,
+                                    transaction_to_publish.fees());
 }
 
 void Rest::publish_transaction(messages::Transaction &transaction) const {
@@ -296,35 +254,6 @@ messages::GeneratedKeys Rest::generate_keys() const {
   generated_keys.mutable_address()->CopyFrom(
       messages::Hasher(ecc.public_key()));
   return generated_keys;
-}
-
-messages::Transaction Rest::build_faucet_transaction(
-    const messages::Address &address, const uint64_t amount) {
-  // Set transactions_ids
-  auto bot_address = messages::Hasher(_keys->public_key());
-  messages::UnspentTransactions unspent_transactions =
-      list_unspent_transactions(bot_address);
-  messages::TransactionToPublish transaction_to_publish;
-  for (auto unspent_transaction : unspent_transactions.unspent_transactions()) {
-    auto transaction_id = transaction_to_publish.add_transactions_ids();
-    *transaction_id = unspent_transaction.transaction_id();
-  }
-
-  // Set outputs
-  auto output = transaction_to_publish.add_outputs();
-  output->mutable_address()->CopyFrom(address);
-  output->mutable_value()->set_value(amount);
-
-  // Set key_priv
-  messages::KeyPriv key_priv;
-  _keys->private_key().save(&key_priv);
-  transaction_to_publish.set_key_priv(key_priv.data());
-
-  // Set fees
-  transaction_to_publish.mutable_fees()->set_value(0);
-
-  messages::Transaction transaction = build_transaction(transaction_to_publish);
-  return transaction;
 }
 
 void Rest::join() { _thread.join(); }

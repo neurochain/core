@@ -9,13 +9,13 @@ message Transactions {
   repeated Transaction transactions = 1;
 }
 
-message UnspentTransaction {
+message RestUnspentTransaction {
   required bytes transaction_id = 1;
   required string value = 2;
 }
 
-message UnspentTransactions {
-  repeated UnspentTransaction unspent_transactions = 1;
+message RestUnspentTransactions {
+  repeated RestUnspentTransaction unspent_transactions = 1;
 }
 
 message TransactionToPublish {

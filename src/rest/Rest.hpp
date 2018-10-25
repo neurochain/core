@@ -31,8 +31,6 @@ class Rest {
 
   std::thread _thread;
   std::string list_transactions(const std::string &address) const;
-  messages::UnspentTransactions list_unspent_transactions(
-      const messages::Address &address) const;
   messages::Transaction build_transaction(
       const messages::TransactionToPublish &transaction_to_publish) const;
   void publish_transaction(messages::Transaction &transaction) const;
