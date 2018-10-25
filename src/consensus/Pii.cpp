@@ -10,10 +10,10 @@ void Pii::addBlock(const Transaction& piitransaction) {
   auto& tij2 = pto.entropie_Tij[piitransaction.from];
   tij1.nbinput++;
   tij1.mtin +=
-      piitransaction.ncc * piitransaction.timencc * std::sqrt(pto.entropie);
+      piitransaction.ncc * piitransaction.timencc * pto.entropie;
   tij2.nboutput++;
   tij2.mtout +=
-      piitransaction.ncc * piitransaction.timencc * std::sqrt(pfrom.entropie);
+      piitransaction.ncc * piitransaction.timencc * pfrom.entropie;
   pfrom.sum_outputs++;
   pto.sum_inputs++;
 }
