@@ -68,8 +68,8 @@ add_library(core
   ./ledger/LedgerMongodb.cpp
   ./ledger/Transaction.hpp
   ./Bot.hpp
-  rest/Rest.cpp
-  rest/Rest.hpp
+  ./rest/Rest.cpp
+  ./rest/Rest.hpp
   ./consensus/Consensus.hpp
   ./consensus/ForkTree.hpp
   ./consensus/ForkTree.cpp

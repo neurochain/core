@@ -1,0 +1,7 @@
+FROM registry.gitlab.com/neurochaintech/core/ubuntu:18.04
+
+MAINTAINER trax Omar Givernaud
+LABEL Description "Bot docker image"
+
+USER neuro
+COPY build/src/main core

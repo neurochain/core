@@ -1,6 +1,6 @@
 {
-    "key_pub_path": "@CMAKE_BINARY_DIR@/key_integration2.pub",
-    "key_priv_path": "@CMAKE_BINARY_DIR@/key_integration2.priv",
+    "key_pub_path": "@CMAKE_CURRENT_BINARY_DIR@/key_integration2.pub",
+    "key_priv_path": "@CMAKE_CURRENT_BINARY_DIR@/key_integration2.priv",
     "logs": {
         "severity": "debug",
         "to_stdout": true
@@ -16,14 +16,6 @@
                     "keyPub": {
                         "type": "ECP256K1",
                         "rawData":"MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABE7lNnRXkzIGKEoEDyADOmeTCRXg3HE3HMv2u8r8FBRJh4bFvIyRpmdnuRNpmZjKvQoY7yPLO89+eDLBSn9e0Kk="
-                    }
-                },
-                {
-                    "endpoint": "127.0.0.1",
-                    "port": 1338,
-                    "keyPub": {
-                        "type": "ECP256K1",
-                        "rawData":"MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABCCB796sRtelDJQxGScuX0Ka4QgoUIjeOOjA77idA7zexfdZuJzvjELtnnj5d86gVMfW1zABLEoT0ChoX76D6h4=",
                     }
                 }
             ]

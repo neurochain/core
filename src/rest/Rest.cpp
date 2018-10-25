@@ -66,7 +66,6 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
              "coins.\"";
       return OCS_PROCESSED;
     } else {
-      const auto address = messages::Hasher(_keys->public_key());
       messages::NCCSDF amount;
       amount.set_value(faucet_amount);
       messages::Transaction transaction =
