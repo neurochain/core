@@ -10,6 +10,7 @@
 #include "config.pb.h"
 #include "messages/Message.hpp"
 #include "mongo/mongo.hpp"
+#include "version.h"
 
 namespace neuro {
 
@@ -18,7 +19,8 @@ using namespace std::chrono_literals;
 
 int main(int argc, char *argv[]) {
   po::options_description desc("Allowed options");
-  desc.add_options()("help,h", "Produce help message.")(
+  desc.add_options()("help,h", "Produce help message.")("version,v",
+                                                        "Print version.")(
       "configuration,c", po::value<std::string>()->default_value("bot.json"),
       "Configuration path.");
 
@@ -32,6 +34,11 @@ int main(int argc, char *argv[]) {
 
   if (vm.count("help")) {
     std::cout << desc << "\n";
+    return 1;
+  }
+
+  if (vm.count("version")) {
+    std::cout << GIT_COMMIT_HASH << "\n";
     return 1;
   }
 

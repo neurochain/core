@@ -1,0 +1,7 @@
+#ifndef NEURO_SRC_VERSION_H
+#define NEURO_SRC_VERSION_H
+
+#define GIT_BRANCH "@GIT_BRANCH@"
+#define GIT_COMMIT_HASH "@GIT_COMMIT_HASH@"
+
+#endif /* NEURO_SRC_VERSION_H */
