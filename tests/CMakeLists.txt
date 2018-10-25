@@ -57,7 +57,7 @@ target_link_libraries(integration
 add_test(integration integration)
 
 add_executable(ut
-  ut.cpp
+  ./common/Buffer.cpp
   )
 
 target_link_libraries(ut
