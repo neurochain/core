@@ -20,6 +20,7 @@ configure_file("configs/bot2.json.in" "${CMAKE_CURRENT_BINARY_DIR}/bot2.json" @O
 configure_file("configs/integration_propagation0.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_propagation0.json" @ONLY)
 configure_file("configs/integration_propagation1.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_propagation1.json" @ONLY)
 configure_file("configs/integration_propagation2.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_propagation2.json" @ONLY)
+<<<<<<< HEAD
 configure_file("configs/integration_update0.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_update0.json" @ONLY)
 configure_file("configs/integration_update1.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_update1.json" @ONLY)
 configure_file("configs/integration_update2.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_update2.json" @ONLY)
@@ -34,6 +35,24 @@ configure_file("configs/key_integration2.priv" "${CMAKE_CURRENT_BINARY_DIR}/key_
 configure_file("configs/key_integration0.pub" "${CMAKE_CURRENT_BINARY_DIR}/key_integration0.pub" COPYONLY)
 configure_file("configs/key_integration1.pub" "${CMAKE_CURRENT_BINARY_DIR}/key_integration1.pub" COPYONLY)
 configure_file("configs/key_integration2.pub" "${CMAKE_CURRENT_BINARY_DIR}/key_integration2.pub" COPYONLY)
+=======
+
+configure_file("configs/test_sign.priv" "${CMAKE_CURRENT_BINARY_DIR}/test_sign.priv" COPYONLY)
+configure_file("configs/test_sign.pub" "${CMAKE_CURRENT_BINARY_DIR}/test_sign.pub" COPYONLY)
+
+file(COPY configs/key_integration0.priv
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/key_integration0.priv)
+file(COPY configs/key_integration1.priv
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/key_integration1.priv)
+file(COPY configs/key_integration2.priv
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/key_integration2.priv)
+file(COPY configs/key_integration0.pub
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/key_integration0.pub)
+file(COPY configs/key_integration1.pub
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/key_integration1.pub)
+file(COPY configs/key_integration2.pub
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/key_integration2.pub)
+>>>>>>> Backport Ecc test Ref #15
 
 set(ProtoFiles "networking/proto/Messages.proto")
 PROTOBUF_GENERATE_CPP(ProtoSources ProtoHeaders ${ProtoFiles})
@@ -61,17 +80,18 @@ add_test(integration integration)
 add_executable(ut
   ./common/Buffer.cpp
   ./crypto/Hash.cpp
+  ./crypto/Ecc.cpp
   )
 
 target_link_libraries(ut
   GTest::main
   core
   protos
+  Boost::log
   Boost::program_options
   Boost::system
   Boost::filesystem
   Boost::thread
-  Boost::log
   libonion::onion
   cpr::cpr
   libonion::onioncpp
