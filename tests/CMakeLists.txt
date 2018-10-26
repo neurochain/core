@@ -81,7 +81,7 @@ add_executable(ut
   ./common/Buffer.cpp
   ./crypto/Hash.cpp
   ./crypto/Ecc.cpp
-  ./Conf.cpp
+  ./messages/Config.cpp
   )
 
 target_link_libraries(ut
