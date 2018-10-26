@@ -20,5 +20,6 @@
     },
     "rest": {
 	"port": 8080
-    }
+    },
+    "connection_graph_uri": "http://dashboard.test.neurochaintech.io"
 }
