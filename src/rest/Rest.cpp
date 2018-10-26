@@ -63,7 +63,7 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
     const messages::Address address = load_hash(address_str);
     if (_ledger->has_received_transaction(address)) {
       res << "{\"error\": \"The given address has already received some "
-             "coins.\"";
+             "coins.\"}";
       return OCS_PROCESSED;
     } else {
       messages::NCCSDF amount;
