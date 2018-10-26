@@ -81,6 +81,7 @@ add_executable(ut
   ./common/Buffer.cpp
   ./crypto/Hash.cpp
   ./crypto/Ecc.cpp
+  ./Bot.cpp
   )
 
 target_link_libraries(ut
