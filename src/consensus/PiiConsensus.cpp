@@ -18,14 +18,13 @@ PiiConsensus::PiiConsensus(std::shared_ptr<boost::asio::io_context> io,
       _timer_of_block_time(*io) {
   // load all block from
 
-    int32_t time_now = std::time(nullptr);
-    int32_t next_time =
-        BLOCK_PERIODE -
-        time_now % BLOCK_PERIODE;  // time_now - time_now % BLOCK_PERIODE +
-    // BLOCK_PERIODE;
-    _timer_of_block_time.expires_after(boost::asio::chrono::seconds(next_time));
-    _timer_of_block_time.async_wait(boost::bind(&PiiConsensus::timer_func,
-    this));
+  int32_t time_now = std::time(nullptr);
+  int32_t next_time =
+      BLOCK_PERIODE -
+      time_now % BLOCK_PERIODE;  // time_now - time_now % BLOCK_PERIODE +
+  // BLOCK_PERIODE;
+  _timer_of_block_time.expires_after(boost::asio::chrono::seconds(next_time));
+  _timer_of_block_time.async_wait(boost::bind(&PiiConsensus::timer_func, this));
   _assembly_blocks = block_assembly;
   init();
 }
@@ -217,7 +216,7 @@ void PiiConsensus::add_block(const neuro::messages::Block &block,
     }
     /* inputs */
     double somme_Inputs = 0;
-
+    std::unordered_map<std::string, int32_t> time_inputs;
     for (int ji = 0; ji < transaction.inputs_size(); ji++) {
       const neuro::messages::Input &input = transaction.inputs(ji);
       // Get out ref and block header for time
@@ -227,18 +226,21 @@ void PiiConsensus::add_block(const neuro::messages::Block &block,
       // #error  TO DO get transaction
       uint64_t add = 0;
       auto inputid = input.id();
-
-      if (_ledger->get_transaction(inputid, &thinput)) {
+      int32_t height_time = 0;
+      if (_ledger->get_transaction(inputid, &thinput, &height_time)) {
         const neuro::messages::Output &thxouput =
             thinput.outputs(input.output_id());
         add = thxouput.value()
                   .value();  // std::atol(thxouput.value().value().c_str());
 
         _input.push_back({thxouput.address().SerializeAsString(), add});
+        time_inputs[thxouput.address().SerializeAsString()] =
+            block.header().height() - height_time;
       } else {
         _input.push_back({transaction.outputs(0).address().SerializeAsString(),
                           transaction.outputs(0).value().value()});
         add = transaction.outputs(0).value().value();
+        time_inputs[transaction.outputs(0).address().SerializeAsString()] = 1;
       }
       somme_Inputs += add;
     }
@@ -247,7 +249,8 @@ void PiiConsensus::add_block(const neuro::messages::Block &block,
       for (const auto &output : _output) {
         _piithx.push_back(
             Transaction{input.first, output.first,
-                        (input.second / somme_Inputs) * output.second, 1});
+                        (input.second / somme_Inputs) * output.second,
+                        (uint64_t)time_inputs[input.first]});
       }
     }
   }

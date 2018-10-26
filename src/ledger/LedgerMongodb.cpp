@@ -254,6 +254,29 @@ bool LedgerMongodb::get_transaction(const messages::Hash &id,
   return false;
 }
 
+bool LedgerMongodb::get_transaction(const messages::Hash &id,
+                                    messages::Transaction *transaction,
+                                    messages::BlockHeight *blockheight) {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  auto query_transaction = bss::document{} << "id" << messages::to_bson(id)
+                                           << bss::finalize;
+
+  auto res = _transactions.find_one(std::move(query_transaction), remove_OID());
+  if (res) {
+    messages::from_bson(res->view(), transaction);
+    messages::BlockHeader header;
+    const auto bson_id = to_bson(transaction->block_id());
+    auto query = bss::document{} << "id" << bson_id << bss::finalize;
+    if (!_blocks.find_one(std::move(query), remove_OID())) {
+      return false;
+    }
+    get_block_header(res->view(), &header);
+    *blockheight = header.height();
+    return true;
+  }
+  return false;
+}
+
 bool LedgerMongodb::add_transaction(const messages::Transaction &transaction) {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto bson_transaction = messages::to_bson(transaction);

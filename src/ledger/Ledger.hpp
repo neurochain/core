@@ -92,6 +92,9 @@ class Ledger {
   virtual void fork_test() = 0;
   virtual bool get_transaction(const messages::Hash &id,
                                messages::Transaction *transaction) = 0;
+  virtual bool get_transaction(const messages::Hash &id,
+                               messages::Transaction *transaction,
+                               messages::BlockHeight *blockheight) = 0;
   virtual bool add_transaction(const messages::Transaction &transaction) = 0;
   virtual bool delete_transaction(const messages::Hash &id) = 0;
   virtual int get_transaction_pool(messages::Block &block) = 0;

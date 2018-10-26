@@ -65,6 +65,9 @@ class LedgerMongodb : public Ledger {
   bool get_transaction(const messages::Hash &id,
                        messages::Transaction *transaction);
 
+  bool get_transaction(const messages::Hash &id,
+                       messages::Transaction *transaction,
+                       messages::BlockHeight *blockheight);
   bool add_transaction(const messages::Transaction &transaction);
 
   bool delete_transaction(const messages::Hash &id);
