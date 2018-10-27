@@ -75,10 +75,12 @@ void Pii::calcul() {
     i++;
     if (i > _assembly_owners) break;
   }
-  LOG_INFO << "Ending pii computation";
+  LOG_INFO << "Ending pii computation with "
+           << std::to_string(_entropies.size()) << " addrs";
 }
 
 std::string Pii::operator()(uint32_t index) const {
+  LOG_INFO << "operator () " << _owner_ordered.size();
   if (_owner_ordered.size() > index)
     return _owner_ordered[index];
   else

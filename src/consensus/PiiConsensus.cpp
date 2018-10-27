@@ -77,6 +77,7 @@ int32_t PiiConsensus::next_height_by_time() const {
 }
 
 void PiiConsensus::timer_func() {
+  LOG_INFO << "timer_func";
   build_block();
   int32_t time_now = std::time(nullptr);
   int32_t next_time =
@@ -89,7 +90,9 @@ void PiiConsensus::timer_func() {
 }
 // TO DO Test
 void PiiConsensus::build_block() {
+  LOG_INFO << "build_block";
   int32_t next_height = next_height_by_time();
+  LOG_INFO << "build_block " << next_height;
   if (next_height < 1) {
     return;
   }
@@ -132,6 +135,8 @@ void PiiConsensus::build_block() {
     message->add_bodies()->mutable_block()->CopyFrom(blocks);
     _network->send(message, networking::ProtocolType::PROTOBUF2);
   }
+
+  LOG_INFO << "build_block end";
 }
 
 void PiiConsensus::add_transaction(const messages::Transaction &transaction) {
@@ -212,7 +217,9 @@ void PiiConsensus::add_block(const neuro::messages::Block &block,
       somme_Inputs += add;
     }
 
-    if (somme_Inputs == somme_outputs + transaction.fees().value()) {
+    LOG_INFO << "Inputs " << somme_Inputs << " Outputs " << somme_outputs << " Fees " << transaction.fees().value();
+
+    if (somme_Inputs != (somme_outputs + transaction.fees().value()) )  {
       return;
     }
 
