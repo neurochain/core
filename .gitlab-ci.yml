@@ -4,7 +4,7 @@ stages:
   - doxygen
 
 variables:
-  DOCKER_PROD_IMAGE: $CI_REGISTRY_IMAGE:latest
+  DOCKER_PROD_IMAGE: $CI_REGISTRY_IMAGE
 
 services:
   - docker:dind
