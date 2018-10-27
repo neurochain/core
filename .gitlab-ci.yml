@@ -5,6 +5,7 @@ stages:
 
 variables:
   DOCKER_PROD_IMAGE: $CI_REGISTRY_IMAGE
+  DOCKER_WALLET_IMAGE: $CI_REGISTRY_IMAGE/wallet
 
 services:
   - docker:dind
@@ -71,6 +72,9 @@ prod_image_build:ubuntu_18_04:
     - docker build -f utils/dockers/Dockerfile.core -t $DOCKER_PROD_IMAGE:latest -t $DOCKER_PROD_IMAGE:$CI_COMMIT_SHA  .
     - docker push $DOCKER_PROD_IMAGE:$CI_COMMIT_SHA
     - docker push $DOCKER_PROD_IMAGE:latest
+    - docker build -f utils/dockers/Dockerfile.wallet -t $DOCKER_WALLET_IMAGE:latest -t $DOCKER_WALLET_IMAGE:$CI_COMMIT_SHA  .
+    - docker push $DOCKER_WALLET_IMAGE:$CI_COMMIT_SHA
+    - docker push $DOCKER_WALLET_IMAGE:latest
 
 pages:
   image: alpine

@@ -1,0 +1,16 @@
+FROM registry.gitlab.com/neurochaintech/core:latest
+
+MAINTAINER trax Omar Givernaud
+LABEL Description "Bot docker image with js wallet"
+
+USER neuro
+
+# Wallet
+RUN wget https://gitlab.com/neurochaintech/neurochain-wallet/-/jobs/artifacts/v0.1/download?job=build -O build.zip && \
+unzip build.zip && \
+rm build.zip && \
+mv build wallet
+
+# Setting configuration inside docker image for a simpler deployment
+RUN mkdir conf || echo ok
+COPY testnet/bot_wallet.json conf/bot.json
