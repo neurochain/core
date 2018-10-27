@@ -6,7 +6,7 @@ LABEL Description "Bot docker image with js wallet"
 
 USER root
 RUN apt update && apt install -y unzip mongodb-server
-RUN mkdir -p /data/db || echo ok
+RUN mkdir -p /home/neuro/db || echo ok
 
 USER neuro
 
@@ -20,4 +20,4 @@ mv build wallet
 RUN mkdir conf || echo ok
 COPY testnet/bot_wallet.json conf/bot.json
 
-CMD nohup mongod & sleep 5 && /home/neuro/main -c /home/neuro/conf/bot.json
+CMD nohup mongod --dbpath /home/neuro/db & sleep 5 && /home/neuro/main -c /home/neuro/conf/bot.json
