@@ -1,9 +1,12 @@
 FROM registry.gitlab.com/neurochaintech/core/ubuntu:18.04
 
 MAINTAINER trax Omar Givernaud
-LABEL Description "Bot docker image"
+LABEL Description "Just the bot: no configuraiton"
 
-USER root
-RUN pwd ; ls -lahrt 
-RUN find . 
+USER NEURO
 COPY build/src/main main
+RUN rm -r build
+COPY testnet/data.0.testnet /home/neuro/data.0.testnet
+
+
+
