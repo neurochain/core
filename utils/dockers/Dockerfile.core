@@ -5,7 +5,6 @@ LABEL Description "Just the bot: no configuraiton"
 
 USER neuro
 COPY build/src/main main
-RUN rm -r build
 COPY testnet/data.0.testnet /home/neuro/data.0.testnet
 
 
