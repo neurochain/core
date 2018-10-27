@@ -19,7 +19,8 @@
 	"block0_path": "/home/neuro/conf/data.0.testnet"
     },
     "rest": {
-	"port": 8080
+	"port": 8080,
+	"static_path": "/home/neuro/conf/wallet/"
     },
     "connection_graph_uri": "http://dashboard.test.neurochaintech.io"
 }
