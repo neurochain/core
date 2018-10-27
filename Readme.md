@@ -62,6 +62,7 @@ It makes it easier to cover different platform by having the same version of the
 sudo apt install -y git cmake build-essential libssl-dev mongodb-server
 
 git clone --branch feature/ledger https://gitlab.com/neurochaintech/core.git
+cd core
 mkdir build
 cd build
 cmake ..

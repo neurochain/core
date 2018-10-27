@@ -131,6 +131,15 @@ target_link_libraries(keygen
   Boost::program_options
   )
 
+add_executable(confgen
+  tooling/confgen.cpp
+  )
+
+target_link_libraries(confgen
+  core
+  Boost::program_options
+  )
+
 add_executable(showkey
   tooling/Showkey.cpp
   )

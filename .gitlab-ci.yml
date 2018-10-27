@@ -68,7 +68,8 @@ prod_image_build:ubuntu_18_04:
   script:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
     - docker build -f utils/dockers/Dockerfile.core -t $DOCKER_PROD_IMAGE .
-    - docker push $DOCKER_PROD_IMAGE
+    - docker push $DOCKER_PROD_IMAGE:$CI_COMMIT_SHA
+    - docker push $DOCKER_PROD_IMAGE:latest
 
 pages:
   image: alpine
