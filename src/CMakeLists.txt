@@ -7,8 +7,10 @@ set(ProtoFiles
 
 PROTOBUF_GENERATE_CPP(ProtoSources ProtoHeaders ${ProtoFiles})
 
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/configs/bot.json.in"
-  "${CMAKE_CURRENT_BINARY_DIR}/bot.json" @ONLY)
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../testnet/data.0.testnet
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+configure_file("../testnet/bot_local.json.in" "${CMAKE_CURRENT_BINARY_DIR}/bot.json" @ONLY)
 
 add_library(protos
   ${ProtoSources}
