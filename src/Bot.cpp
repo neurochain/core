@@ -152,16 +152,19 @@ void Bot::handler_transaction(const messages::Header &header,
 }
 
 bool Bot::update_ledger() {
+  std::cout << "trax> " << __FUNCTION__ << ":" << __LINE__ << std::endl;
   messages::BlockHeader last_header;
   if (!_ledger->get_last_block_header(&last_header)) {
     LOG_ERROR << "Ledger should have at least block0";
     return false;
   }
+  std::cout << "trax> " << __FUNCTION__ << ":" << __LINE__ << std::endl;
 
   // TODO #consensus change by height by time function
   if ((std::time(nullptr) - last_header.timestamp().data()) < BLOCK_PERIODE) {
     return true;
   }
+  std::cout << "trax> " << __FUNCTION__ << ":" << __LINE__ << std::endl;
 
   auto message = std::make_shared<messages::Message>();
   auto header = message->mutable_header();

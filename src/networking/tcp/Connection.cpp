@@ -41,8 +41,6 @@ void Connection::read_body() {
         auto message = std::make_shared<messages::Message>();
         messages::from_buffer(_buffer, message.get());
 
-        std::cout << "\033[1;31mMessage received: " << *message << "\033[0m"
-                  << std::endl;
         auto header = message->mutable_header();
 
         header->mutable_peer()->CopyFrom(*_remote_peer);
@@ -67,6 +65,8 @@ void Connection::read_body() {
             }
           }
         }
+        std::cout << "\033[1;31mMessage received: " << *message << "\033[0m"
+                  << std::endl;
 
         if (!_remote_peer->has_key_pub()) {
           LOG_ERROR << "Not Key pub set";
