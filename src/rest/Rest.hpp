@@ -37,9 +37,9 @@ class Rest {
   messages::GeneratedKeys generate_keys() const;
   messages::Transaction build_faucet_transaction(
       const messages::Address &address, const uint64_t amount);
-  void serve_file(const std::string filename);
-  void serve_file(const std::string route, const std::string filename);
-  void serve_folder(const std::string route, const std::string foldername);
+  void serve_file(const std::string &filename);
+  void serve_file(const std::string &route, const std::string &filename);
+  void serve_folder(const std::string &route, const std::string &foldername);
 
  public:
   Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,

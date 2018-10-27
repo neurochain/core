@@ -153,17 +153,18 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
   _thread = std::thread([this]() { _server.listen(); });
 }
 
-void Rest::serve_file(const std::string filename) {
+void Rest::serve_file(const std::string &filename) {
   _root->add(filename,
              Onion::Shortcuts::static_file((_static_path + filename).c_str()));
 }
 
-void Rest::serve_file(const std::string route, const std::string filename) {
+void Rest::serve_file(const std::string &route, const std::string &filename) {
   _root->add(route,
              Onion::Shortcuts::static_file((_static_path + filename).c_str()));
 }
 
-void Rest::serve_folder(const std::string route, const std::string foldername) {
+void Rest::serve_folder(const std::string &route,
+                        const std::string &foldername) {
   _root->add(route, onion_handler_export_local_new(
                         (_static_path + foldername).c_str()));
 }
