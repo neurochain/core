@@ -80,11 +80,15 @@ void Pii::calcul() {
 }
 
 std::string Pii::operator()(uint32_t index) const {
-  LOG_INFO << "operator () " << _owner_ordered.size();
-  if (_owner_ordered.size() > index)
+  if (_owner_ordered.size() == 0) {
+    return std::string("");
+  }
+
+  if (_owner_ordered.size() > index) {
     return _owner_ordered[index];
-  else
+  } else {
     return _owner_ordered[index % _owner_ordered.size()];
+  }
 
   return std::string("");
 }
