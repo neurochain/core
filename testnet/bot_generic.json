@@ -1,6 +1,6 @@
 {
-    "key_pub_path": "/tmp/key.pub",
-    "key_priv_path": "/tmp/key.priv",
+    "key_pub_path": "/home/neuro/conf/key.pub",
+    "key_priv_path": "/home/neuro/conf/key.priv",
     "logs": {
 	"severity": "debug",
 	"to_stdout": true
