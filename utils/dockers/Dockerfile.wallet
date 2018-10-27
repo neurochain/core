@@ -3,6 +3,11 @@ FROM registry.gitlab.com/neurochaintech/core:latest
 MAINTAINER trax Omar Givernaud
 LABEL Description "Bot docker image with js wallet"
 
+
+USER root
+RUN apt update && apt install -y unzip mongodb-server
+RUN mkdir -p /data/db || echo ok
+
 USER neuro
 
 # Wallet
@@ -14,3 +19,5 @@ mv build wallet
 # Setting configuration inside docker image for a simpler deployment
 RUN mkdir conf || echo ok
 COPY testnet/bot_wallet.json conf/bot.json
+
+CMD nohup mongod & sleep 5 && /home/neuro/main -c /home/neuro/conf/bot.json
