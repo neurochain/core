@@ -6,9 +6,10 @@ LABEL Description "Bot docker image with js wallet"
 
 USER root
 RUN apt update && apt install -y unzip mongodb-server
-RUN mkdir -p /home/neuro/db || echo ok
 
 USER neuro
+
+RUN mkdir -p /home/neuro/db || echo ok
 
 # Wallet
 RUN wget https://gitlab.com/neurochaintech/neurochain-wallet/-/jobs/artifacts/v0.1/download?job=build -O build.zip && \

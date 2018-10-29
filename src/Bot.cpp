@@ -347,7 +347,11 @@ void Bot::update_connection_graph() {
   messages::Address own_address = messages::Hasher(_keys->public_key());
   graph.mutable_own_address()->CopyFrom(own_address);
   messages::Peers peers;
-  for (auto peer : _tcp_config->peers()) {
+  for (const auto &peer : _tcp_config->peers()) {
+    if (!peer.has_key_pub()) {
+      LOG_ERROR << "Missing key on peer " << peer;
+      continue;
+    }
     crypto::EccPub ecc_pub;
     ecc_pub.load(peer.key_pub());
     graph.add_peers_addresses()->CopyFrom(messages::Hasher(ecc_pub));

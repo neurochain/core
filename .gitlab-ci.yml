@@ -67,6 +67,8 @@ prod_image_build:ubuntu_18_04:
     - docker:stable-dind
   dependencies:
     - build_job:ubuntu_18_04
+  only:
+    - feature/ledger
   script:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
     - docker build -f utils/dockers/Dockerfile.core -t $DOCKER_PROD_IMAGE:latest -t $DOCKER_PROD_IMAGE:$CI_COMMIT_SHA  .
