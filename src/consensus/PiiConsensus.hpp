@@ -11,6 +11,7 @@
 #include "TransactionPool.hpp"
 #include "common/types.hpp"
 #include "crypto/Ecc.hpp"
+#include "crypto/Sign.hpp"
 #include "networking/Networking.hpp"
 
 namespace neuro {

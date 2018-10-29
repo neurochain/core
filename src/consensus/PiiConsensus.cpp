@@ -159,6 +159,73 @@ void PiiConsensus::add_block(const neuro::messages::Block &block,
     return;
   }
 
+  ///!< build Transaction for intermider calcule
+  std::vector<Transaction> _piithx;
+  std::vector<std::pair<std::string, uint64_t> > _output, _input;
+
+  ///!< From https://developers.google.com/protocol-buffers/docs/cpptutorial
+  for (int j = 0; j < block.transactions_size(); j++) {
+    const neuro::messages::Transaction &transaction = block.transactions(j);
+    if (block.header().height() > 0 && j > 0 && !crypto::verify(transaction)) {
+      return;
+    }
+    _output.clear();
+    _input.clear();
+    /* output first */
+    double outputs_somme = 0;
+    for (int jo = 0; jo < transaction.outputs_size(); jo++) {
+      const neuro::messages::Output &output = transaction.outputs(jo);
+      _output.push_back({
+          output.address().SerializeAsString(),
+          output.value().value()  // std::atol(output.value().value().c_str())
+      }                           ///!< ProtoBuf to JSON String for uint64_t fix
+      );
+      outputs_somme += output.value().value();
+    }
+    /* inputs */
+    double somme_Inputs = 0;
+    std::unordered_map<std::string, int32_t> time_inputs;
+    for (int ji = 0; ji < transaction.inputs_size(); ji++) {
+      const neuro::messages::Input &input = transaction.inputs(ji);
+      // Get out ref and block header for time
+      // std::unique_ptr<neuro::messages::Transaction> thinput =
+      // std::make_unique<neuro::messages::Transaction>();
+      messages::Transaction thinput;
+      // #error  TO DO get transaction
+      uint64_t add = 0;
+      auto inputid = input.id();
+      int32_t height_time = 0;
+      if (_ledger->get_transaction(inputid, &thinput, &height_time)) {
+        const neuro::messages::Output &thxouput =
+            thinput.outputs(input.output_id());
+        add = thxouput.value()
+                  .value();  // std::atol(thxouput.value().value().c_str());
+
+        _input.push_back({thxouput.address().SerializeAsString(), add});
+        time_inputs[thxouput.address().SerializeAsString()] =
+            block.header().height() - height_time;
+      } else {
+        _input.push_back({transaction.outputs(0).address().SerializeAsString(),
+                          transaction.outputs(0).value().value()});
+        add = transaction.outputs(0).value().value();
+        time_inputs[transaction.outputs(0).address().SerializeAsString()] = 1;
+      }
+      somme_Inputs += add;
+    }
+
+    if (somme_Inputs != outputs_somme + transaction.fees().value()) {
+      return;
+    }
+    for (const auto &input : _input) {
+      for (const auto &output : _output) {
+        _piithx.push_back(
+            Transaction{input.first, output.first,
+                        (input.second / somme_Inputs) * output.second,
+                        (uint64_t)time_inputs[input.first]});
+      }
+    }
+  }
+
   int32_t height_now = next_height_by_time();
 
   ///!< compare heigth with ledger
@@ -196,64 +263,6 @@ void PiiConsensus::add_block(const neuro::messages::Block &block,
     }
   }
 
-  ///!< build Transaction for intermider calcule
-  std::vector<Transaction> _piithx;
-  std::vector<std::pair<std::string, uint64_t> > _output, _input;
-
-  ///!< From https://developers.google.com/protocol-buffers/docs/cpptutorial
-  for (int j = 0; j < block.transactions_size(); j++) {
-    const neuro::messages::Transaction &transaction = block.transactions(j);
-    _output.clear();
-    _input.clear();
-    /* output first */
-    for (int jo = 0; jo < transaction.outputs_size(); jo++) {
-      const neuro::messages::Output &output = transaction.outputs(jo);
-      _output.push_back({
-          output.address().SerializeAsString(),
-          output.value().value()  // std::atol(output.value().value().c_str())
-      }                           ///!< ProtoBuf to JSON String for uint64_t fix
-      );
-    }
-    /* inputs */
-    double somme_Inputs = 0;
-    std::unordered_map<std::string, int32_t> time_inputs;
-    for (int ji = 0; ji < transaction.inputs_size(); ji++) {
-      const neuro::messages::Input &input = transaction.inputs(ji);
-      // Get out ref and block header for time
-      // std::unique_ptr<neuro::messages::Transaction> thinput =
-      // std::make_unique<neuro::messages::Transaction>();
-      messages::Transaction thinput;
-      // #error  TO DO get transaction
-      uint64_t add = 0;
-      auto inputid = input.id();
-      int32_t height_time = 0;
-      if (_ledger->get_transaction(inputid, &thinput, &height_time)) {
-        const neuro::messages::Output &thxouput =
-            thinput.outputs(input.output_id());
-        add = thxouput.value()
-                  .value();  // std::atol(thxouput.value().value().c_str());
-
-        _input.push_back({thxouput.address().SerializeAsString(), add});
-        time_inputs[thxouput.address().SerializeAsString()] =
-            block.header().height() - height_time;
-      } else {
-        _input.push_back({transaction.outputs(0).address().SerializeAsString(),
-                          transaction.outputs(0).value().value()});
-        add = transaction.outputs(0).value().value();
-        time_inputs[transaction.outputs(0).address().SerializeAsString()] = 1;
-      }
-      somme_Inputs += add;
-    }
-
-    for (const auto &input : _input) {
-      for (const auto &output : _output) {
-        _piithx.push_back(
-            Transaction{input.first, output.first,
-                        (input.second / somme_Inputs) * output.second,
-                        (uint64_t)time_inputs[input.first]});
-      }
-    }
-  }
   addBlocks(_piithx);
 
   _last_heigth_block = block.header().height();

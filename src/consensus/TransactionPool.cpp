@@ -1,5 +1,6 @@
 #include "TransactionPool.hpp"
 #include "common/logger.hpp"
+#include "crypto/Sign.hpp"
 #include "ledger/Ledger.hpp"
 
 namespace neuro {
@@ -12,6 +13,10 @@ TransactionPool::TransactionPool(std::shared_ptr<ledger::Ledger> ledger)
 
 bool TransactionPool::add_transactions(
     const messages::Transaction &transaction) {
+  if (!crypto::verify(transaction)) {
+    return false;
+  }
+
   if (transaction.has_id()) {
     messages::Transaction oldtrans;
     auto id_transaction = transaction.id();
