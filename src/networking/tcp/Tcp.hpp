@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include "common/types.hpp"
+#include "networking/tcp/Connection.hpp"
 #include "networking/Connection.hpp"
 #include "networking/TransportLayer.hpp"
 
@@ -14,11 +15,11 @@ namespace messages {
 class Queue;
 }  // namespace messages
 
-namespace networking {
-
 namespace test {
 class Tcp;
 }  // namespace test
+
+namespace networking {
 
 class Tcp : public TransportLayer {
  private:
@@ -66,7 +67,7 @@ class Tcp : public TransportLayer {
   const tcp::Connection &connection(const Connection::ID id, bool &found) const;
   ~Tcp();
 
-  friend class neuro::networking::test::Tcp;
+  friend class neuro::test::Tcp;
 };
 
 }  // namespace networking

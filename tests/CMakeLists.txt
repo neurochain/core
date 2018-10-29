@@ -66,6 +66,8 @@ add_executable(ut
   ./messages/Config.cpp
   ./messages/Messages.cpp
   ./messages/Queue.cpp
+  ./networking/TransportLayer.cpp
+  ./networking/tcp/Tcp.cpp
   )
 
 target_link_libraries(ut
