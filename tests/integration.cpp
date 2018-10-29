@@ -1,11 +1,11 @@
+#include <gtest/gtest.h>
+#include <chrono>
+#include <sstream>
+#include <thread>
 #include "Bot.hpp"
 #include "common/logger.hpp"
 #include "ledger/LedgerMongodb.hpp"
 #include "messages/Subscriber.hpp"
-#include <chrono>
-#include <gtest/gtest.h>
-#include <sstream>
-#include <thread>
 
 namespace neuro {
 
@@ -14,13 +14,13 @@ namespace tests {
 using namespace std::chrono_literals;
 
 class Listener {
-private:
+ private:
   bool _received_connection0{false};
   bool _received_connection1{false};
   bool _received_hello{false};
   bool _received_world{false};
 
-public:
+ public:
   Listener() {}
 
   void handler_hello(const messages::Header &header,
@@ -51,15 +51,16 @@ public:
 };
 
 class BotTest {
-private:
+ private:
   neuro::Bot _bot;
 
-public:
+ public:
   BotTest(const std::string &configpath) : _bot(configpath) {}
 
   int nb_blocks() { return _bot._ledger->total_nb_blocks(); }
 
-  void create_transaction(messages::Transaction &transaction, const std::string &datavalue) {
+  void create_transaction(messages::Transaction &transaction,
+                          const std::string &datavalue) {
     Buffer key_pub_raw;
     _bot._keys->public_key().save(&key_pub_raw);
     messages::Hasher address(key_pub_raw);
@@ -78,9 +79,8 @@ public:
     transaction.mutable_fees()->set_value(0);
   }
 
-
   void add_transactions() {
-    for(int i=0; i<5; i++) {
+    for (int i = 0; i < 5; i++) {
       neuro::messages::Transaction t;
       this->create_transaction(t, std::to_string(i));
       _bot._consensus->add_transaction(t);
@@ -187,7 +187,6 @@ TEST(INTEGRATION, neighbors_propagation) {
               peers_bot2[1].port() == 1338);
 }
 
-
 TEST(INTEGRATION, neighbors_update) {
   auto bot0 = std::make_shared<Bot>("integration_update0.json");
   std::this_thread::sleep_for(1s);
@@ -196,14 +195,15 @@ TEST(INTEGRATION, neighbors_update) {
   auto bot2 = std::make_shared<Bot>("integration_update2.json");
   std::this_thread::sleep_for(1s);
 
-  //std::this_thread::sleep_for(15s);
+  // std::this_thread::sleep_for(15s);
 
   // auto peers_bot0 = bot0->connected_peers();
   // auto peers_bot1 = bot1->connected_peers();
   // auto peers_bot2 = bot2->connected_peers();
 
   // ASSERT_TRUE(peers_bot0.size() == peers_bot1.size() &&
-  //             peers_bot1.size() == peers_bot2.size() && peers_bot2.size() == 2);
+  //             peers_bot1.size() == peers_bot2.size() && peers_bot2.size() ==
+  //             2);
 
   // ASSERT_TRUE(peers_bot0[0].endpoint() == "127.0.0.1" &&
   //             peers_bot0[0].port() == 1338);
@@ -221,9 +221,6 @@ TEST(INTEGRATION, neighbors_update) {
   //             peers_bot2[1].port() == 1338);
 }
 
-
-
-
 TEST(INTEGRATION, block_exchange) {
   ASSERT_TRUE(true);
   // init the bot
@@ -231,7 +228,7 @@ TEST(INTEGRATION, block_exchange) {
   //                          "neuro_tests_exchange");
 
   BotTest bot("integration_propagation0.json");
-    //auto bot0 = std::make_shared<Bot>("integration_propagation0.json");
+  // auto bot0 = std::make_shared<Bot>("integration_propagation0.json");
   std::cout << __FILE__ << ":" << __LINE__
             << " Nb of blocks: " << bot.nb_blocks() << std::endl;
   bot.add_transactions();
@@ -242,6 +239,6 @@ TEST(INTEGRATION, block_exchange) {
             << " Nb of blocks: " << bot.nb_blocks() << std::endl;
 }
 
-} // namespace tests
+}  // namespace tests
 
-} // namespace neuro
+}  // namespace neuro

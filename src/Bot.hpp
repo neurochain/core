@@ -15,7 +15,7 @@
 namespace neuro {
 
 namespace tests {
-  class BotTest;
+class BotTest;
 }
 
 class Bot {

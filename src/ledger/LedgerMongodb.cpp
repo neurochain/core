@@ -1,6 +1,6 @@
 #include "ledger/LedgerMongodb.hpp"
-#include "messages.pb.h"
 #include "common/logger.hpp"
+#include "messages.pb.h"
 
 namespace neuro {
 namespace ledger {
@@ -249,6 +249,7 @@ bool LedgerMongodb::get_transaction(const messages::Hash &id,
 
   auto res = _transactions.find_one(std::move(query_transaction), remove_OID());
   if (res) {
+    LOG_DEBUG << "got transaction " << bsoncxx::to_json(res->view());
     messages::from_bson(res->view(), transaction);
     return true;
   }
