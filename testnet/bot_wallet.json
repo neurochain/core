@@ -44,6 +44,7 @@
     "block0Path": "/home/neuro/data.0.testnet"
   },
   "rest": {
-    "port": 8080
+    "port": 8080,
+    "static_path": "wallet/"
   }
 }
