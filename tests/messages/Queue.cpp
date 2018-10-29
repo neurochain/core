@@ -97,16 +97,30 @@ public:
     tested_queue->subscribe(&sub_hello);
     tested_queue->subscribe(&sub_world);
     auto message_hello = std::make_shared<messages::Message>();
-    const messages::Hello* hello = message_hello->add_bodies()->mutable_hello();
+    messages::Hello* hello = message_hello->add_bodies()->mutable_hello();
     if (hello == nullptr) {
       return false;
     }
+    auto hello_kpub = hello->mutable_key_pub();
+    if (hello_kpub == nullptr) {
+      return false;
+    }
+    hello_kpub->set_type(messages::ECP256K1);
+    hello_kpub->set_raw_data("MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABOBPdJmNMRu7dZ0O4+b/jG5CyuLeI870VKYu0DrtJ8I8VW3wt5NcbqfqIk7OI0+9cE7+xCPtKwF1vAHi730nMJ0=");
     auto message_world = std::make_shared<messages::Message>();
-    const messages::World* world = message_world->add_bodies()->mutable_world();
+    messages::World* world = message_world->add_bodies()->mutable_world();
     if (world == nullptr) {
       return false;
     }
-    if (!tested_queue->publish(std::move(message_hello))) {
+    auto world_kpub = world->mutable_key_pub();
+    if (world_kpub == nullptr) {
+      return false;
+    }
+    world_kpub->set_type(messages::ECP256K1);
+    world_kpub->set_raw_data("MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABOBPdJmNMRu7dZ0O4+b/jG5CyuLeI870VKYu0DrtJ8I8VW3wt5NcbqfqIk7OI0+9cE7+xCPtKwF1vAHi730nMJ0=");
+    world->set_accepted(true);
+    if (!tested_queue->publish(std::move(message_hello)))
+    {
       return false;
     }
     if (!tested_queue->publish(std::move(message_world))) {
