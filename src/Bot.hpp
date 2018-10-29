@@ -14,6 +14,10 @@
 #include "rest/Rest.hpp"
 namespace neuro {
 
+namespace tests {
+  class BotTest;
+}
+
 class Bot {
  public:
   struct Status {
@@ -98,6 +102,8 @@ class Bot {
                  messages::Subscriber::Callback callback);
 
   void publish_transaction(const messages::Transaction &transaction) const;
+
+  friend class neuro::tests::BotTest;
 };
 
 std::ostream &operator<<(std::ostream &os, const neuro::Bot &b);

@@ -1,5 +1,6 @@
 #include "ledger/LedgerMongodb.hpp"
 #include "messages.pb.h"
+#include "common/logger.hpp"
 
 namespace neuro {
 namespace ledger {
