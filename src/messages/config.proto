@@ -46,6 +46,7 @@ message Tcp {
 message Networking {
   optional int32 max_connections = 1;
   required Tcp tcp = 2;
+  optional int32 peers_update_time = 3;
 }
 
 message Config {

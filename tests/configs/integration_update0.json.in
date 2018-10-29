@@ -7,6 +7,7 @@
     },
     "networking": {
         "max_connections": 3,
+        "peers_update_time": 15,
         "tcp": {
             "port": 1337,
             "peers": [ ]

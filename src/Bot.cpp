@@ -247,6 +247,10 @@ bool Bot::load_networking(messages::config::Config *config) {
   _keep_status = config->keep_status();
   _max_connections = networking_conf->max_connections();
 
+  if (networking_conf->has_peers_update_time()) {
+    _update_time = networking_conf->peers_update_time();
+  }
+
   if (!networking_conf->has_tcp()) {
     LOG_ERROR << "Missing tcp configuration";
     return false;
@@ -309,8 +313,10 @@ bool Bot::init() {
   this->keep_max_connections();
   update_ledger();
 
-  _update_timer.expires_after(boost::asio::chrono::seconds(_UPDATE_TIME));
+  _update_timer.expires_after(boost::asio::chrono::seconds(_update_time));
   _update_timer.async_wait(boost::bind(&Bot::update_peerlist, this));
+
+  LOG_DEBUG << this << " USING UPDATE TIME: " << _update_time;
 
   return true;
 }
@@ -324,7 +330,7 @@ void Bot::update_peerlist() {
   _networking->send(msg, networking::ProtocolType::PROTOBUF2);
 
   _update_timer.expires_at(_update_timer.expiry() +
-                           boost::asio::chrono::seconds(_UPDATE_TIME));
+                           boost::asio::chrono::seconds(_update_time));
   _update_timer.async_wait(boost::bind(&Bot::update_peerlist, this));
 }
 
