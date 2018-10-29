@@ -323,7 +323,8 @@ void Bot::update_peerlist() {
 
   _networking->send(msg, networking::ProtocolType::PROTOBUF2);
 
-  _update_timer.expires_at(_update_timer.expiry() + boost::asio::chrono::seconds(_UPDATE_TIME));
+  _update_timer.expires_at(_update_timer.expiry() +
+                           boost::asio::chrono::seconds(_UPDATE_TIME));
   _update_timer.async_wait(boost::bind(&Bot::update_peerlist, this));
 }
 
@@ -762,7 +763,7 @@ void Bot::keep_max_connections() {
       _tcp->connect(tmp_peer);
     } else {
       LOG_DEBUG << this << " No more REACHABLE peers - asking for peers";
-     // this->update_peerlist();
+      // this->update_peerlist();
     }
   }
 }
