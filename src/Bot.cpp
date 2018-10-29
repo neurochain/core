@@ -323,7 +323,7 @@ void Bot::update_peerlist() {
 
   _networking->send(msg, networking::ProtocolType::PROTOBUF2);
 
-  _update_timer.expires_after(boost::asio::chrono::seconds(_UPDATE_TIME));
+  _update_timer.expires_at(_update_timer.expiry() + boost::asio::chrono::seconds(_UPDATE_TIME));
   _update_timer.async_wait(boost::bind(&Bot::update_peerlist, this));
 }
 
@@ -430,6 +430,7 @@ void Bot::handler_connection(const messages::Header &header,
     // Nothing else to do; just wait for the hello message from remote peer
     return;
   }
+
   auto peers = _tcp_config->mutable_peers();
   auto it = std::find(peers->begin(), peers->end(), peer);
   if (it != peers->end()) {
@@ -761,7 +762,7 @@ void Bot::keep_max_connections() {
       _tcp->connect(tmp_peer);
     } else {
       LOG_DEBUG << this << " No more REACHABLE peers - asking for peers";
-      this->update_peerlist();
+     // this->update_peerlist();
     }
   }
 }
