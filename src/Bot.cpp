@@ -380,14 +380,11 @@ void Bot::handler_get_peers(const messages::Header &header,
 
   auto peers = _tcp_config->mutable_peers();
   for (const auto &peer_conn : *peers) {
-    if (peer_conn.status() == messages::Peer::CONNECTED ||
-        peer_conn.status() == messages::Peer::REACHABLE) {
-      auto tmp_peer = peers_body->add_peers();
-      tmp_peer->mutable_key_pub()->CopyFrom(peer_conn.key_pub());
-      tmp_peer->set_endpoint(peer_conn.endpoint());
-      tmp_peer->set_port(peer_conn.port());
-      tmp_peer->set_status(messages::Peer::REACHABLE);
-    }
+    auto tmp_peer = peers_body->add_peers();
+    tmp_peer->mutable_key_pub()->CopyFrom(peer_conn.key_pub());
+    tmp_peer->set_endpoint(peer_conn.endpoint());
+    tmp_peer->set_port(peer_conn.port());
+    tmp_peer->set_status(messages::Peer::REACHABLE);
   }
 
   _networking->send_unicast(msg, networking::ProtocolType::PROTOBUF2);
