@@ -19,6 +19,10 @@ configure_file("configs/bot2.json.in" "${CMAKE_CURRENT_BINARY_DIR}/bot2.json" @O
 configure_file("configs/integration_propagation0.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_propagation0.json" @ONLY)
 configure_file("configs/integration_propagation1.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_propagation1.json" @ONLY)
 configure_file("configs/integration_propagation2.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_propagation2.json" @ONLY)
+configure_file("configs/integration_update0.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_update0.json" @ONLY)
+configure_file("configs/integration_update1.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_update1.json" @ONLY)
+configure_file("configs/integration_update2.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_update2.json" @ONLY)
+
 
 configure_file("configs/key_integration0.priv" "${CMAKE_CURRENT_BINARY_DIR}/key_integration0.priv" COPYONLY)
 configure_file("configs/key_integration1.priv" "${CMAKE_CURRENT_BINARY_DIR}/key_integration1.priv" COPYONLY)
