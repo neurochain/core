@@ -17,6 +17,7 @@ using BlockHeight = decltype(((BlockHeader *)nullptr)->height());
 using BlockID = decltype(((BlockHeader *)nullptr)->id());
 using TransactionID = decltype(((Transaction *)nullptr)->id());
 using Packet = google::protobuf::Message;
+
 using Type = Body::BodyCase;
 
 Type get_type(const Body &body);
@@ -31,6 +32,15 @@ std::size_t to_buffer(const Packet &packet, Buffer *buffer);
 void to_json(const Packet &packet, std::string *output);
 bsoncxx::document::value to_bson(const Packet &packet);
 std::ostream &operator<<(std::ostream &os, const Packet &packet);
+
+template <typename T>
+std::ostream &operator<<(
+    std::ostream &os, const ::google::protobuf::RepeatedPtrField<T> &packets) {
+  for (const auto &packet : packets) {
+    os << packet << std::endl;
+  }
+  return os;
+}
 
 bool operator==(const Packet &a, const Packet &b);
 bool operator==(const messages::Peer &a, const messages::Peer &b);
