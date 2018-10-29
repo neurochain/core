@@ -65,6 +65,7 @@ add_executable(ut
   ./crypto/Ecc.cpp
   ./messages/Config.cpp
   ./messages/Messages.cpp
+  ./messages/Queue.cpp
   )
 
 target_link_libraries(ut

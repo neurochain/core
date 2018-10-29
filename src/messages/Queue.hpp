@@ -17,13 +17,14 @@
 #include "messages/Message.hpp"
 
 namespace neuro {
-namespace messages {
-
-class Subscriber;
 
 namespace test {
 class QueueTest;
 }
+
+namespace messages {
+
+class Subscriber;
 
 /*!
    \Class Queue
@@ -100,7 +101,7 @@ class Queue {
   */
   void quit();
 
-  friend class neuro::messages::test::QueueTest;
+  friend class neuro::test::QueueTest;
 };
 
 }  // namespace messages
