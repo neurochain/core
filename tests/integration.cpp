@@ -187,6 +187,43 @@ TEST(INTEGRATION, neighbors_propagation) {
               peers_bot2[1].port() == 1338);
 }
 
+
+TEST(INTEGRATION, neighbors_update) {
+  auto bot0 = std::make_shared<Bot>("integration_update0.json");
+  std::this_thread::sleep_for(1s);
+  auto bot1 = std::make_shared<Bot>("integration_update1.json");
+  std::this_thread::sleep_for(1s);
+  auto bot2 = std::make_shared<Bot>("integration_update2.json");
+  std::this_thread::sleep_for(1s);
+
+  //std::this_thread::sleep_for(15s);
+
+  // auto peers_bot0 = bot0->connected_peers();
+  // auto peers_bot1 = bot1->connected_peers();
+  // auto peers_bot2 = bot2->connected_peers();
+
+  // ASSERT_TRUE(peers_bot0.size() == peers_bot1.size() &&
+  //             peers_bot1.size() == peers_bot2.size() && peers_bot2.size() == 2);
+
+  // ASSERT_TRUE(peers_bot0[0].endpoint() == "127.0.0.1" &&
+  //             peers_bot0[0].port() == 1338);
+  // ASSERT_TRUE(peers_bot0[1].endpoint() == "127.0.0.1" &&
+  //             peers_bot0[1].port() == 1339);
+
+  // ASSERT_TRUE(peers_bot1[0].endpoint() == "127.0.0.1" &&
+  //             peers_bot1[0].port() == 1337);
+  // ASSERT_TRUE(peers_bot1[1].endpoint() == "127.0.0.1" &&
+  //             peers_bot1[1].port() == 1339);
+
+  // ASSERT_TRUE(peers_bot2[0].endpoint() == "127.0.0.1" &&
+  //             peers_bot2[0].port() == 1337);
+  // ASSERT_TRUE(peers_bot2[1].endpoint() == "127.0.0.1" &&
+  //             peers_bot2[1].port() == 1338);
+}
+
+
+
+
 TEST(INTEGRATION, block_exchange) {
   ASSERT_TRUE(true);
   // init the bot

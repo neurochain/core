@@ -1,17 +1,17 @@
 #include "Bot.hpp"
-#include <cpr/cpr.h>
 #include <algorithm>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
+#include <cpr/cpr.h>
 
-#include <chrono>
-#include <cstdlib>
-#include <ctime>
-#include <random>
 #include "common/logger.hpp"
 #include "common/types.hpp"
 #include "consensus/PiiConsensus.hpp"
 #include "messages/Subscriber.hpp"
+#include <chrono>
+#include <cstdlib>
+#include <ctime>
+#include <random>
 
 namespace neuro {
 using namespace std::chrono_literals;
@@ -20,7 +20,8 @@ Bot::Bot(std::istream &bot_stream)
     : _queue(std::make_shared<messages::Queue>()),
       _networking(std::make_shared<networking::Networking>(_queue)),
       _subscriber(_queue),
-      _io_context(std::make_shared<boost::asio::io_context>()) {
+      _io_context(std::make_shared<boost::asio::io_context>()),
+      _update_timer(*_io_context) {
   std::string tmp;
   std::stringstream ss;
   while (!bot_stream.eof()) {
@@ -38,7 +39,8 @@ Bot::Bot(const std::string &configuration_path)
     : _queue(std::make_shared<messages::Queue>()),
       _networking(std::make_shared<networking::Networking>(_queue)),
       _subscriber(_queue),
-      _io_context(std::make_shared<boost::asio::io_context>()) {
+      _io_context(std::make_shared<boost::asio::io_context>()),
+      _update_timer(*_io_context) {
   if (!messages::from_json_file(configuration_path, &_config)) {
     std::string s = "Coult not parse configuration file " + configuration_path +
                     " from " + boost::filesystem::current_path().native();
@@ -98,7 +100,7 @@ void Bot::handler_get_block(const messages::Header &header,
     const auto previd = get_block.hash();
     auto block = message->add_bodies()->mutable_block();
     if (!_ledger->get_block_by_previd(previd, block)) {
-      std::stringstream sstr;  // TODO operator <<
+      std::stringstream sstr; // TODO operator <<
       sstr << previd;
       LOG_ERROR << this << " get_block by prev id not found " << sstr.str();
       return;
@@ -225,6 +227,18 @@ void Bot::subscribe() {
       [this](const messages::Header &header, const messages::Body &body) {
         this->handler_get_block(header, body);
       });
+
+  _subscriber.subscribe(
+      messages::Type::kGetPeers,
+      [this](const messages::Header &header, const messages::Body &body) {
+        this->handler_get_peers(header, body);
+      });
+
+  _subscriber.subscribe(
+      messages::Type::kPeers,
+      [this](const messages::Header &header, const messages::Body &body) {
+        this->handler_peers(header, body);
+      });
 }
 
 bool Bot::load_networking(messages::config::Config *config) {
@@ -295,7 +309,22 @@ bool Bot::init() {
   this->keep_max_connections();
   update_ledger();
 
+  _update_timer.expires_after(boost::asio::chrono::seconds(_UPDATE_TIME));
+  _update_timer.async_wait(boost::bind(&Bot::update_peerlist, this));
+
   return true;
+}
+
+void Bot::update_peerlist() {
+  LOG_DEBUG << this << " FROM UPDATE PEERLIST";
+  auto msg = std::make_shared<messages::Message>();
+  messages::fill_header(msg->mutable_header());
+  msg->add_bodies()->mutable_get_peers();
+
+  _networking->send(msg, networking::ProtocolType::PROTOBUF2);
+
+  _update_timer.expires_after(boost::asio::chrono::seconds(_UPDATE_TIME));
+  _update_timer.async_wait(boost::bind(&Bot::update_peerlist, this));
 }
 
 const std::vector<messages::Peer> Bot::connected_peers() const {
@@ -327,6 +356,57 @@ void Bot::update_connection_graph() {
   messages::to_json(graph, &json);
   cpr::Post(cpr::Url{uri}, cpr::Body{json},
             cpr::Header{{"Content-Type", "text/plain"}});
+}
+
+void Bot::handler_get_peers(const messages::Header &header,
+                            const messages::Body &body) {
+  LOG_DEBUG << this << " Got a Get_Peers message";
+  // build list of peers reachabe && connected to send
+  auto msg = std::make_shared<messages::Message>();
+  auto header_reply = msg->mutable_header();
+  messages::fill_header_reply(header, header_reply);
+  auto peers_body = msg->add_bodies()->mutable_peers();
+
+  auto peers = _tcp_config->mutable_peers();
+  for (const auto &peer_conn : *peers) {
+    if (peer_conn.status() == messages::Peer::CONNECTED ||
+        peer_conn.status() == messages::Peer::REACHABLE) {
+      auto tmp_peer = peers_body->add_peers();
+      tmp_peer->mutable_key_pub()->CopyFrom(peer_conn.key_pub());
+      tmp_peer->set_endpoint(peer_conn.endpoint());
+      tmp_peer->set_port(peer_conn.port());
+      tmp_peer->set_status(messages::Peer::REACHABLE);
+    }
+  }
+
+  _networking->send_unicast(msg, networking::ProtocolType::PROTOBUF2);
+}
+
+void Bot::handler_peers(const messages::Header &header,
+                        const messages::Body &body) {
+  LOG_DEBUG << this << " Got a Peers message";
+  auto peers_body = body.peers();
+  auto peers = _tcp_config->mutable_peers();
+  for (const auto &peer : peers_body.peers()) {
+    auto predicate = [peer, this](const auto &it) {
+      if (it.endpoint() == this->_tcp->local_ip().to_string()) {
+        if (it.has_port()) {
+          return it.port() == this->_tcp->listening_port();
+        }
+      }
+      return false;
+    };
+
+    if (std::find_if(peers->begin(), peers->end(), predicate) != peers->end()) {
+      continue;
+    }
+
+    if (std::find(peers->begin(), peers->end(), peer) != peers->end()) {
+      continue;
+    }
+
+    _tcp_config->add_peers()->CopyFrom(peer);
+  }
 }
 
 void Bot::handler_connection(const messages::Header &header,
@@ -609,47 +689,46 @@ bool Bot::next_to_connect(messages::Peer **peer) {
   }
 
   switch (_selection_method) {
-    case messages::config::Config::SIMPLE: {
-      LOG_DEBUG << this << " It entered the simple method for next selection";
-      auto it = std::find_if(peers->begin(), peers->end(), [](const auto &el) {
-        return el.status() == messages::Peer::REACHABLE;
-      });
+  case messages::config::Config::SIMPLE: {
+    LOG_DEBUG << this << " It entered the simple method for next selection";
+    auto it = std::find_if(peers->begin(), peers->end(), [](const auto &el) {
+      return el.status() == messages::Peer::REACHABLE;
+    });
 
-      if (it == peers->end()) {
-        LOG_DEBUG << this << " No reachable peer";
-        return false;
-      } else {
-        *peer = &(*it);
+    if (it == peers->end()) {
+      LOG_DEBUG << this << " No reachable peer";
+      return false;
+    } else {
+      *peer = &(*it);
+      return true;
+    }
+    break;
+  }
+  case messages::config::Config::PING: {
+    LOG_WARNING << this
+                << " SelectionMethod::PING is not implemented - Using RANDOM ";
+  } // break; // TODO: After implementing PING, remove the comment from break
+  case messages::config::Config::RANDOM: {
+    // Create a vector with all possible positions shuffled
+    std::vector<std::size_t> pos((std::size_t)peers->size());
+    std::iota(pos.begin(), pos.end(), 0);
+    std::srand(unsigned(std::time(0)));
+    std::random_shuffle(pos.begin(), pos.end());
+
+    // Check every pos until we find one that is good to use
+    for (const auto &idx : pos) {
+      auto tmp_peer = peers->Mutable(idx);
+      // auto &tmp_peer = peers[idx];
+      if (tmp_peer->status() == messages::Peer::REACHABLE) {
+        *peer = tmp_peer;
         return true;
       }
-      break;
     }
-    case messages::config::Config::PING: {
-      LOG_WARNING
-          << this
-          << " SelectionMethod::PING is not implemented - Using RANDOM ";
-    }  // break; // TODO: After implementing PING, remove the comment from break
-    case messages::config::Config::RANDOM: {
-      // Create a vector with all possible positions shuffled
-      std::vector<std::size_t> pos((std::size_t)peers->size());
-      std::iota(pos.begin(), pos.end(), 0);
-      std::srand(unsigned(std::time(0)));
-      std::random_shuffle(pos.begin(), pos.end());
-
-      // Check every pos until we find one that is good to use
-      for (const auto &idx : pos) {
-        auto tmp_peer = peers->Mutable(idx);
-        // auto &tmp_peer = peers[idx];
-        if (tmp_peer->status() == messages::Peer::REACHABLE) {
-          *peer = tmp_peer;
-          return true;
-        }
-      }
-      break;
-    }
-    default:
-      LOG_ERROR << this
-                << " Uknown method for selecting next peer to connect to ";
+    break;
+  }
+  default:
+    LOG_ERROR << this
+              << " Uknown method for selecting next peer to connect to ";
   }
   return false;
 }
@@ -664,7 +743,8 @@ void Bot::keep_max_connections() {
   }
   LOG_DEBUG << this << " peer count " << peers_size;
 
-  if (_connected_peers == _max_connections) return;
+  if (_connected_peers == _max_connections)
+    return;
 
   if (_connected_peers == peers_size) {
     LOG_WARNING << this << " No available peer to check";
@@ -680,7 +760,8 @@ void Bot::keep_max_connections() {
       tmp_peer->CopyFrom(*peer);
       _tcp->connect(tmp_peer);
     } else {
-      LOG_DEBUG << this << " No more REACHABLE peers";
+      LOG_DEBUG << this << " No more REACHABLE peers - asking for peers";
+      this->update_peerlist();
     }
   }
 }
@@ -711,6 +792,7 @@ void Bot::publish_transaction(const messages::Transaction &transaction) const {
 void Bot::join() { _networking->join(); }
 
 Bot::~Bot() {
+  _update_timer.cancel();
   _io_context->stop();
 
   while (!_io_context->stopped()) {
@@ -721,4 +803,4 @@ Bot::~Bot() {
   LOG_DEBUG << this << " From Bot destructor " << &_subscriber;
 }
 
-}  // namespace neuro
+} // namespace neuro

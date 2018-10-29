@@ -42,6 +42,7 @@ class Bot {
   std::shared_ptr<rest::Rest> _rest;
   std::shared_ptr<consensus::Consensus> _consensus;
   std::shared_ptr<boost::asio::io_context> _io_context;
+  boost::asio::steady_timer _update_timer;
   std::unordered_set<int32_t> _request_ids;
   std::thread _io_context_thread;
 
@@ -57,6 +58,8 @@ class Bot {
   mutable std::mutex _mutex_connections;
   mutable std::mutex _mutex_quitting;
   bool _quitting{false};
+
+  const unsigned int _UPDATE_TIME{20};
 
  private:
   bool init();
@@ -76,12 +79,16 @@ class Bot {
                      const messages::Body &body);
   void handler_get_block(const messages::Header &header,
                          const messages::Body &body);
-
+  void handler_get_peers(const messages::Header &header,
+                         const messages::Body &body);
+  void handler_peers(const messages::Header &header,
+                     const messages::Body &body);
   bool next_to_connect(messages::Peer **out_peer);
   bool load_keys(const messages::config::Config &config);
   bool load_networking(messages::config::Config *config);
   void subscribe();
   bool update_ledger();
+  void update_peerlist();
 
  public:
   Bot(const std::string &configuration_path);
