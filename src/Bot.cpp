@@ -393,28 +393,7 @@ void Bot::handler_get_peers(const messages::Header &header,
 void Bot::handler_peers(const messages::Header &header,
                         const messages::Body &body) {
   LOG_DEBUG << this << " Got a Peers message";
-  auto peers_body = body.peers();
-  auto peers = _tcp_config->mutable_peers();
-  for (const auto &peer : peers_body.peers()) {
-    auto predicate = [peer, this](const auto &it) {
-      if (it.endpoint() == this->_tcp->local_ip().to_string()) {
-        if (it.has_port()) {
-          return it.port() == this->_tcp->listening_port();
-        }
-      }
-      return false;
-    };
-
-    if (std::find_if(peers->begin(), peers->end(), predicate) != peers->end()) {
-      continue;
-    }
-
-    if (std::find(peers->begin(), peers->end(), peer) != peers->end()) {
-      continue;
-    }
-
-    _tcp_config->add_peers()->CopyFrom(peer);
-  }
+  add_peers(body.peers().peers());
 }
 
 void Bot::handler_connection(const messages::Header &header,
@@ -502,28 +481,12 @@ void Bot::handler_world(const messages::Header &header,
                         const messages::Body &body) {
   auto world = body.world();
   LOG_DEBUG << this << " Got a WORLD message";
-
-  // std::lock_guard<std::mutex> lock_connections(_mutex_connections);
-  // Check that I am not in the received list
-  messages::KeyPub my_key_pub;
-  _keys->public_key().save(&my_key_pub);
-  auto peers = _tcp_config->mutable_peers();
-  for (const auto &peer : world.peers()) {
-    if (peer.key_pub() == my_key_pub) {
-      continue;
-    }
-
-    if (std::find(peers->begin(), peers->end(), peer) != peers->end()) {
-      continue;
-    }
-
-    _tcp_config->add_peers()->CopyFrom(peer);
-  }
-
   if (!header.has_peer()) {
     LOG_ERROR << this << " Got an empty peer. Going out of the world handler";
     return;
   }
+  auto peers = _tcp_config->mutable_peers();
+  add_peers(world.peers());
 
   auto peer_header = header.peer();
 
@@ -534,6 +497,7 @@ void Bot::handler_world(const messages::Header &header,
   if (peer_it == peers->end()) {
     remote_peer = _tcp_config->add_peers();
     remote_peer->CopyFrom(peer_header);
+    LOG_ERROR << "We should already have the peer if you receive a message from him";
   } else {
     remote_peer = &(*peer_it);
   }
