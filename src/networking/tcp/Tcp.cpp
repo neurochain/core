@@ -167,8 +167,6 @@ bool Tcp::serialize(std::shared_ptr<messages::Message> message,
   LOG_DEBUG << this << " Before reinterpret and signing";
   auto header_pattern =
       reinterpret_cast<tcp::HeaderPattern *>(header_tcp->data());
-  message->mutable_header()->mutable_ts()->set_data(time(NULL));
-  message->mutable_header()->set_version(neuro::MessageVersion);
   messages::to_buffer(*message, body_tcp);
 
   if (body_tcp->size() > (1 << (8 * sizeof(tcp::HeaderPattern::size)))) {

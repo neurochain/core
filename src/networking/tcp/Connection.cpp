@@ -1,5 +1,6 @@
 #include "networking/tcp/Connection.hpp"
 #include "common/logger.hpp"
+#include "common/types.hpp"
 #include "messages/Queue.hpp"
 #include "networking/tcp/Tcp.hpp"
 
@@ -48,6 +49,15 @@ void Connection::read_body() {
         signature->set_type(messages::Hash::SHA256);
         signature->set_data(header_pattern->signature,
                             sizeof(header_pattern->signature));
+
+        // validate the MessageVersion from the header
+        if (header->version() != neuro::MessageVersion) {
+          LOG_ERROR << " MessageVersion not corresponding: "
+                    << neuro::MessageVersion << " (mine) vs "
+                    << header->version() << " )";
+          this->terminate();
+          return;
+        }
 
         for (const auto &body : message->bodies()) {
           const auto type = get_type(body);
@@ -148,6 +158,6 @@ Connection::~Connection() {
   }
   LOG_DEBUG << this << " Connection killed";
 }
-}  // namespace tcp
-}  // namespace networking
-}  // namespace neuro
+} // namespace tcp
+} // namespace networking
+} // namespace neuro
