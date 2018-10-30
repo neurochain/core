@@ -41,7 +41,7 @@
     "url": "mongodb://localhost:27017/neuro",
     "dbName": "neuro",
     "block0Format": "PROTO",
-    "block0Path": "/home/neuro/conf/data.0.testnet"
+    "block0Path": "/home/neuro/data.0.testnet"
   },
   "rest": {
     "port": 8080,
