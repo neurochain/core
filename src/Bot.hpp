@@ -91,17 +91,17 @@ class Bot {
   void update_peerlist();
 
   template <typename T>
-  void add_peers(const T&remote_peers) {
+  void add_peers(const T &remote_peers) {
     messages::KeyPub my_key_pub;
     _keys->public_key().save(&my_key_pub);
     const auto peers = _tcp_config->peers();
     for (const auto &peer : remote_peers) {
       if (peer.key_pub() == my_key_pub) {
-	continue;
+        continue;
       }
 
       if (std::find(peers.begin(), peers.end(), peer) != peers.end()) {
-	continue;
+        continue;
       }
 
       _tcp_config->add_peers()->CopyFrom(peer);

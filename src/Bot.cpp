@@ -497,7 +497,8 @@ void Bot::handler_world(const messages::Header &header,
   if (peer_it == peers->end()) {
     remote_peer = _tcp_config->add_peers();
     remote_peer->CopyFrom(peer_header);
-    LOG_ERROR << "We should already have the peer if you receive a message from him";
+    LOG_ERROR
+        << "We should already have the peer if you receive a message from him";
   } else {
     remote_peer = &(*peer_it);
   }
