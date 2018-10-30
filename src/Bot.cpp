@@ -505,18 +505,11 @@ void Bot::handler_world(const messages::Header &header,
 
   // std::lock_guard<std::mutex> lock_connections(_mutex_connections);
   // Check that I am not in the received list
+  messages::KeyPub my_key_pub;
+  _keys->public_key().save(&my_key_pub);
   auto peers = _tcp_config->mutable_peers();
   for (const auto &peer : world.peers()) {
-    auto predicate = [peer, this](const auto &it) {
-      if (it.endpoint() == this->_tcp->local_ip().to_string()) {
-        if (it.has_port()) {
-          return it.port() == this->_tcp->listening_port();
-        }
-      }
-      return false;
-    };
-
-    if (std::find_if(peers->begin(), peers->end(), predicate) != peers->end()) {
+    if (peer.key_pub() == my_key_pub) {
       continue;
     }
 
