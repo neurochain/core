@@ -120,7 +120,7 @@ const tcp::Connection &Tcp::connection(const Connection::ID id,
   std::lock_guard<std::mutex> lock_queue(_connection_mutex);
   auto got = _connections.find(id);
   if (got == _connections.end()) {
-    LOG_ERROR << this << " Connection not found";
+    LOG_ERROR << this << " " << __LINE__ << " Connection not found";
     found = false;
     return _connections.end()->second;
   }
@@ -155,7 +155,7 @@ void Tcp::terminated(const Connection::ID id) {
   std::lock_guard<std::mutex> lock_queue(_connection_mutex);
   auto got = _connections.find(id);
   if (got == _connections.end()) {
-    LOG_ERROR << this << " Connection not found";
+    LOG_ERROR << this << " " << __LINE__ << " Connection not found " << id;
     return;
   }
   _connections.erase(got);
@@ -234,7 +234,7 @@ bool Tcp::disconnected(const Connection::ID id, std::shared_ptr<Peer> peer) {
     std::lock_guard<std::mutex> lock_queue(_connection_mutex);
     auto got = _connections.find(id);
     if (got == _connections.end()) {
-      LOG_ERROR << "Connection not found";
+      LOG_WARNING << __LINE__ << " Connection not found";
       return false;
     }
     _connections.erase(got);
