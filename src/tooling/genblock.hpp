@@ -1,3 +1,6 @@
+#ifndef NEURO_SRC_TOOLING_GENBLOCK_HPP
+#define NEURO_SRC_TOOLING_GENBLOCK_HPP
+
 #include <boost/program_options.hpp>
 #include "common/logger.hpp"
 #include "common/types.hpp"
@@ -170,3 +173,5 @@ bool genblock_from_last_db_block(
 }  // namespace genblock
 }  // namespace tooling
 }  // namespace neuro
+
+#endif
