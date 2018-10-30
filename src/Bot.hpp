@@ -15,7 +15,7 @@
 namespace neuro {
 
 namespace tests {
-  class BotTest;
+class BotTest;
 }
 
 class Bot {
@@ -59,7 +59,7 @@ class Bot {
   mutable std::mutex _mutex_quitting;
   bool _quitting{false};
 
-  uint32_t _update_time{20}; // In seconds
+  uint32_t _update_time{20};  // In seconds
 
  private:
   bool init();

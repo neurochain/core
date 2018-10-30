@@ -1,12 +1,12 @@
+#include <gtest/gtest.h>
+#include <chrono>
+#include <sstream>
+#include <thread>
 #include "Bot.hpp"
 #include "common/logger.hpp"
 #include "common/types.hpp"
 #include "ledger/LedgerMongodb.hpp"
 #include "messages/Subscriber.hpp"
-#include <chrono>
-#include <gtest/gtest.h>
-#include <sstream>
-#include <thread>
 
 namespace neuro {
 
@@ -15,14 +15,14 @@ namespace tests {
 using namespace std::chrono_literals;
 
 class Listener {
-private:
+ private:
   bool _received_connection0{false};
   bool _received_connection1{false};
   bool _received_hello{false};
   bool _received_world{false};
   bool _received_deconnection{false};
 
-public:
+ public:
   Listener() {}
 
   void handler_hello(const messages::Header &header,
@@ -60,10 +60,10 @@ public:
 };
 
 class BotTest {
-private:
+ private:
   neuro::Bot _bot;
 
-public:
+ public:
   BotTest(const std::string &configpath) : _bot(configpath) {}
 
   int nb_blocks() { return _bot._ledger->total_nb_blocks(); }
@@ -280,6 +280,6 @@ TEST(INTEGRATION, block_exchange) {
             << " Nb of blocks: " << bot.nb_blocks() << std::endl;
 }
 
-} // namespace tests
+}  // namespace tests
 
-} // namespace neuro
+}  // namespace neuro
