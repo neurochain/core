@@ -589,7 +589,7 @@ void Bot::handler_hello(const messages::Header &header,
   // == Create world message for replying ==
   auto message = std::make_shared<messages::Message>();
   auto world = message->add_bodies()->mutable_world();
-  bool accepted = _connected_peers < _max_connections;
+  bool accepted = _connected_peers < (2 * _max_connections);
   if (accepted) {
     _connected_peers += 1;
   }
@@ -744,6 +744,7 @@ bool Bot::next_to_connect(messages::Peer **peer) {
 }
 
 void Bot::keep_max_connections() {
+  LOG_TRACE;
   std::size_t peers_size = 0;
   peers_size = _tcp_config->peers().size();
 
