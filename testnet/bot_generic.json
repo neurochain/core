@@ -1,1 +1,47 @@
-{"keyPubPath":"/home/neuro/conf/key.pub","keyPrivPath":"/home/neuro/conf/key.priv","logs":{"severity":"debug","toStdout":true},"networking":{"maxConnections":3,"tcp":{"port":1337,"peers":[{"endpoint":"boot0.test.neurochaintech.io","port":1337,"keyPub":{"type":"ECP256K1","rawData":"MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABDHZCj/1/FtdVMuNsAEHmbnMDNkbMpSKlKr/qYzPapNIQeRhHUt7SCapJ3zeP+b38IG9IM6CulGtu1bh+2hOdHQ="}},{"endpoint":"boot1.test.neurochaintech.io","port":1337,"keyPub":{"type":"ECP256K1","rawData":"MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABH+9o8kFJa0XqT7xINwYibKUpwso9AaNOhNBUEXgAwHW/hzCPXc2xwHBaW9NhfsAlK+pBEWYl34zJvRYiR3Dh5U="}},{"endpoint":"boot2.test.neurochaintech.io","port":1337,"keyPub":{"type":"ECP256K1","rawData":"MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABMn2gZ5Tmo1RE/0iFamTpG+QS9ecy2pRCzUpqZhdpSaVy/8vf4FxbvPr5WVoWtK+DMAjJjglX7+JH4QOB1kJjWc="}}]}},"database":{"url":"mongodb://mongo:27017/neuro","dbName":"neuro","block0Format":"PROTO","block0Path":"/home/neuro/conf/data.0.testnet"},"connectionGraphUri":"http://dashboard.test.neurochaintech.io"}
+{
+  "keyPubPath": "/home/neuro/conf/key.pub",
+  "keyPrivPath": "/home/neuro/conf/key.priv",
+  "logs": {
+    "severity": "debug",
+    "toStdout": true
+  },
+  "networking": {
+    "maxConnections": 3,
+    "tcp": {
+      "port": 1337,
+      "peers": [
+        {
+          "endpoint": "boot0.test.neurochaintech.io",
+          "port": 1337,
+          "keyPub": {
+            "type": "ECP256K1",
+            "rawData": "MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABDHZCj/1/FtdVMuNsAEHmbnMDNkbMpSKlKr/qYzPapNIQeRhHUt7SCapJ3zeP+b38IG9IM6CulGtu1bh+2hOdHQ="
+          }
+        },
+        {
+          "endpoint": "boot1.test.neurochaintech.io",
+          "port": 1337,
+          "keyPub": {
+            "type": "ECP256K1",
+            "rawData": "MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABH+9o8kFJa0XqT7xINwYibKUpwso9AaNOhNBUEXgAwHW/hzCPXc2xwHBaW9NhfsAlK+pBEWYl34zJvRYiR3Dh5U="
+          }
+        },
+        {
+          "endpoint": "boot2.test.neurochaintech.io",
+          "port": 1337,
+          "keyPub": {
+            "type": "ECP256K1",
+            "rawData": "MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABMn2gZ5Tmo1RE/0iFamTpG+QS9ecy2pRCzUpqZhdpSaVy/8vf4FxbvPr5WVoWtK+DMAjJjglX7+JH4QOB1kJjWc="
+          }
+        }
+      ]
+    }
+  },
+  "database": {
+    "url": "mongodb://mongo:27017/neuro",
+    "dbName": "neuro",
+    "block0Format": "PROTO",
+    "block0Path": "/home/neuro/conf/data.0.testnet"
+  },
+  "connectionGraphUri": "http://dashboard.test.neurochaintech.io"
+}
