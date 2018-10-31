@@ -417,7 +417,8 @@ void Bot::handler_connection(const messages::Header &header,
     // Nothing to do; just wait for the hello message from remote peer
     LOG_DEBUG << this << " Got a connection from " << peer;
     // add the peer from the header to my list of peers
-    _tcp_config->add_peers()->CopyFrom(peer);
+    //_tcp_config->add_peers()->CopyFrom(peer);
+    add_peer(peer);
     // Nothing else to do; just wait for the hello message from remote peer
     return;
   }
@@ -499,8 +500,14 @@ void Bot::handler_world(const messages::Header &header,
 
   messages::Peer *remote_peer;
   if (peer_it == peers->end()) {
-    remote_peer = _tcp_config->add_peers();
-    remote_peer->CopyFrom(peer_header);
+    auto remote_peer_opt = add_peer(peer_header);
+    if (remote_peer_opt) {
+      remote_peer = *remote_peer_opt;
+    } else {
+      LOG_ERROR << this << " Received a message from ourself ";
+    }
+    // remote_peer = _tcp_config->add_peers();
+    // remote_peer->CopyFrom(peer_header);
     LOG_ERROR
         << "We should already have the peer if you receive a message from him";
   } else {
@@ -563,7 +570,7 @@ void Bot::handler_hello(const messages::Header &header,
   messages::Peer *remote_peer = nullptr;
 
   for (const auto &peer_conn : *peers) {
-    if(!peer_conn.has_key_pub()) {
+    if (!peer_conn.has_key_pub()) {
       continue;
     }
     auto tmp_peer = world->add_peers();
