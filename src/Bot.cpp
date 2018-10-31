@@ -415,7 +415,7 @@ void Bot::handler_connection(const messages::Header &header,
     LOG_DEBUG << this << " Got a connection from " << peer;
     // add the peer from the header to my list of peers
     //_tcp_config->add_peers()->CopyFrom(peer);
-    add_peer(peer);
+    // add_peer(peer);
     // Nothing else to do; just wait for the hello message from remote peer
     return;
   }
