@@ -563,6 +563,9 @@ void Bot::handler_hello(const messages::Header &header,
   messages::Peer *remote_peer = nullptr;
 
   for (const auto &peer_conn : *peers) {
+    if(!peer_conn.has_key_pub()) {
+      continue;
+    }
     auto tmp_peer = world->add_peers();
     tmp_peer->mutable_key_pub()->CopyFrom(peer_conn.key_pub());
     tmp_peer->set_endpoint(peer_conn.endpoint());
