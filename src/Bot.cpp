@@ -445,7 +445,7 @@ void Bot::handler_connection(const messages::Header &header,
   std::cout << this << " setting pub key in hello " << tmp << std::endl;
 
   _networking->send_unicast(message, networking::ProtocolType::PROTOBUF2);
-  _connected_peers++;
+  _connected_peers = _networking->peer_count();
   LOG_DEBUG << this << " updating _connected_peers to ++ " << _connected_peers;
 
   update_connection_graph();
@@ -469,7 +469,7 @@ void Bot::handler_deconnection(const messages::Header &header,
     return;
   }
 
-  _connected_peers--;
+  _connected_peers = _networking->peer_count();
   LOG_DEBUG << this << " updating _connected_peers to -- " << _connected_peers;
   it->set_status(messages::Peer::REACHABLE);
 
@@ -560,20 +560,17 @@ void Bot::handler_hello(const messages::Header &header,
   messages::Peer *remote_peer = nullptr;
 
   for (const auto &peer_conn : *peers) {
-    if (peer_conn.status() == messages::Peer::CONNECTED ||
-        peer_conn.status() == messages::Peer::REACHABLE) {
-      auto tmp_peer = world->add_peers();
-      tmp_peer->mutable_key_pub()->CopyFrom(peer_conn.key_pub());
-      tmp_peer->set_endpoint(peer_conn.endpoint());
-      tmp_peer->set_port(peer_conn.port());
-      tmp_peer->set_status(messages::Peer::REACHABLE);
-    }
+    auto tmp_peer = world->add_peers();
+    tmp_peer->mutable_key_pub()->CopyFrom(peer_conn.key_pub());
+    tmp_peer->set_endpoint(peer_conn.endpoint());
+    tmp_peer->set_port(peer_conn.port());
+    tmp_peer->set_status(messages::Peer::REACHABLE);
   }
 
   if (!found) {
     LOG_WARNING << this << " Peer was not created in handler_connection";
     auto remote_peer_opt = add_peer(peer_header);
-    if(!remote_peer_opt) {
+    if (!remote_peer_opt) {
       LOG_ERROR << this << " Received a message from ourself ";
     } else {
       remote_peer = *remote_peer_opt;

@@ -70,6 +70,7 @@ bool operator==(const Packet &a, const Packet &b) {
 }
 
 bool operator==(const messages::Peer &a, const messages::Peer &b) {
+  LOG_TRACE << a.endpoint() << " " << b.endpoint();
   return a.endpoint() == b.endpoint() && a.port() == b.port();
 }
 
