@@ -464,7 +464,6 @@ void Bot::handler_deconnection(const messages::Header &header,
   auto peers = _tcp_config->mutable_peers();
   auto it = std::find(peers->begin(), peers->end(), remote_peer);
   _tcp->terminated(remote_peer.connection_id());
-  auto old_status = remote_peer.status();
 
   if (it == peers->end()) {
     LOG_WARNING << "Unknown peer disconnected";
@@ -561,6 +560,7 @@ void Bot::handler_hello(const messages::Header &header,
       });
   bool found = peer_it != peers->end();
   LOG_DEBUG << this << " in handler_hello found: " << found;
+  messages::Peer *remote_peer = nullptr;
 
   for (const auto &peer_conn : *peers) {
     if (peer_conn.status() == messages::Peer::CONNECTED ||
@@ -573,10 +573,14 @@ void Bot::handler_hello(const messages::Header &header,
     }
   }
 
-  messages::Peer *remote_peer;
   if (!found) {
     LOG_WARNING << this << " Peer was not created in handler_connection";
-    add_peers(peer_header);
+    auto remote_peer_opt = add_peer(peer_header);
+    if(!remote_peer_opt) {
+      LOG_ERROR << this << " Received a message from ourself ";
+    } else {
+      remote_peer = *remote_peer_opt;
+    }
   } else {
     remote_peer = &(*peer_it);
   }
