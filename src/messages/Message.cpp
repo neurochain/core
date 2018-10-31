@@ -67,7 +67,7 @@ bool operator==(const Packet &a, const Packet &b) {
   to_json(a, &json_a);
   to_json(b, &json_b);
   bool res = json_a == json_b;
-  
+
   return res;
 }
 
