@@ -40,6 +40,8 @@ class TransportLayer {
                     ProtocolType type) = 0;
   virtual bool send_unicast(const std::shared_ptr<messages::Message> message,
                             ProtocolType type) = 0;
+  virtual std::size_t peer_count() const = 0;
+
   ID id() const;
   void id(const ID id);
   void run();

@@ -32,7 +32,7 @@ class Networking {
   void send_unicast(std::shared_ptr<messages::Message> message,
                     ProtocolType type);
   messages::Peers connected_peers() const;
-
+  std::size_t peer_count() const;
   void remove_connection(const messages::Header &header,
                          const messages::Body &body);
 

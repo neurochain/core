@@ -89,22 +89,33 @@ class Bot {
   void subscribe();
   bool update_ledger();
   void update_peerlist();
+  
+  std::optional<messages::Peer*> add_peer(const messages::Peer &peer) {
+    std::optional<messages::Peer*> res;
+    messages::KeyPub my_key_pub;
+    auto peers = _tcp_config->mutable_peers();
+    _keys->public_key().save(&my_key_pub);
+
+    if (peer.key_pub() == my_key_pub) {
+      return res;
+    }
+
+    auto got = std::find(peers->begin(), peers->end(), peer);
+    if (got != peers->end()) {
+      res = &(*got);
+      return res;
+    }
+
+    res = _tcp_config->add_peers();
+    (*res)->CopyFrom(peer);
+
+    return res;
+  }
 
   template <typename T>
   void add_peers(const T &remote_peers) {
-    messages::KeyPub my_key_pub;
-    _keys->public_key().save(&my_key_pub);
-    const auto peers = _tcp_config->peers();
     for (const auto &peer : remote_peers) {
-      if (peer.key_pub() == my_key_pub) {
-        continue;
-      }
-
-      if (std::find(peers.begin(), peers.end(), peer) != peers.end()) {
-        continue;
-      }
-
-      _tcp_config->add_peers()->CopyFrom(peer);
+      add_peer(peer);
     }
   }
 
