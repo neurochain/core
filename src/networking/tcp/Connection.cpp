@@ -16,6 +16,8 @@ void Connection::read_header() {
       *_socket, boost::asio::buffer(_header.data(), _header.size()),
       [this](const boost::system::error_code &error, std::size_t bytes_read) {
         if (error) {
+          LOG_ERROR << this << " " << __LINE__ << " Killing connection "
+                    << error;
           this->terminate();
           return;
         }
@@ -31,6 +33,8 @@ void Connection::read_body() {
       *_socket, boost::asio::buffer(_buffer.data(), _buffer.size()),
       [this](const boost::system::error_code &error, std::size_t bytes_read) {
         if (error) {
+          LOG_ERROR << this << " " << __LINE__ << " Killing connection "
+                    << error;
           this->terminate();
           return;
         }
@@ -101,6 +105,8 @@ bool Connection::send(const Buffer &message) {
                                   std::size_t bytes_transferred) {
                              if (error) {
                                LOG_ERROR << "Could not send message";
+                               LOG_ERROR << this << " " << __LINE__
+                                         << " Killing connection " << error;
                                this->terminate();
                                return false;
                              }
@@ -141,7 +147,7 @@ std::shared_ptr<messages::Peer> Connection::remote_peer() {
   return _remote_peer;
 }
 Connection::~Connection() {
-  terminate();
+  _socket->close();
 
   while (!_is_dead) {
     std::this_thread::yield();
