@@ -563,20 +563,17 @@ void Bot::handler_hello(const messages::Header &header,
   messages::Peer *remote_peer = nullptr;
 
   for (const auto &peer_conn : *peers) {
-    if (peer_conn.status() == messages::Peer::CONNECTED ||
-        peer_conn.status() == messages::Peer::REACHABLE) {
-      auto tmp_peer = world->add_peers();
-      tmp_peer->mutable_key_pub()->CopyFrom(peer_conn.key_pub());
-      tmp_peer->set_endpoint(peer_conn.endpoint());
-      tmp_peer->set_port(peer_conn.port());
-      tmp_peer->set_status(messages::Peer::REACHABLE);
-    }
+    auto tmp_peer = world->add_peers();
+    tmp_peer->mutable_key_pub()->CopyFrom(peer_conn.key_pub());
+    tmp_peer->set_endpoint(peer_conn.endpoint());
+    tmp_peer->set_port(peer_conn.port());
+    tmp_peer->set_status(messages::Peer::REACHABLE);
   }
 
   if (!found) {
     LOG_WARNING << this << " Peer was not created in handler_connection";
     auto remote_peer_opt = add_peer(peer_header);
-    if(!remote_peer_opt) {
+    if (!remote_peer_opt) {
       LOG_ERROR << this << " Received a message from ourself ";
     } else {
       remote_peer = *remote_peer_opt;
