@@ -448,7 +448,7 @@ void Bot::handler_connection(const messages::Header &header,
   std::cout << this << " setting pub key in hello " << tmp << std::endl;
 
   _networking->send_unicast(message, networking::ProtocolType::PROTOBUF2);
-  _connected_peers++;
+  _connected_peers = _networking->peer_count();
   LOG_DEBUG << this << " updating _connected_peers to ++ " << _connected_peers;
 
   update_connection_graph();
@@ -472,7 +472,7 @@ void Bot::handler_deconnection(const messages::Header &header,
     return;
   }
 
-  _connected_peers--;
+  _connected_peers = _networking->peer_count();
   LOG_DEBUG << this << " updating _connected_peers to -- " << _connected_peers;
   it->set_status(messages::Peer::REACHABLE);
 

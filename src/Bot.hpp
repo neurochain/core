@@ -100,13 +100,13 @@ class Bot {
       return res;
     }
 
-    //auto got = std::find(peers->begin(), peers->end(), peer);
-    for(auto &p : *peers) {
-      if(p.key_pub() == peer.key_pub()) {
-	res = &p;
-	return res;
+    // auto got = std::find(peers->begin(), peers->end(), peer);
+    for (auto &p : *peers) {
+      if (p.key_pub() == peer.key_pub()) {
+        res = &p;
+        return res;
       }
-    } 
+    }
 
     // if (got != peers->end()) {
     //   res = &(*got);
