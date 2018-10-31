@@ -3,17 +3,16 @@
 #include "messages.pb.h"
 #include "messages/Hasher.hpp"
 
-namespace po = boost::program_options;
-
 namespace neuro {
+namespace po = boost::program_options;
 
 int main(int argc, char *argv[]) {
   po::options_description desc("Allowed options");
   desc.add_options()("help,h", "Produce help message.")(
       "private,k", po::value<std::string>()->default_value("key.priv"),
-      "File path for private keys (appending .priv)")(
+      "File path for private keys")(
       "public,p", po::value<std::string>()->default_value("key.priv"),
-      "File path for private keys (appending .pub)");
+      "File path for private keys");
 
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);

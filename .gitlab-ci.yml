@@ -105,7 +105,7 @@ pages:
     mkdir build || echo k
     cd build
     cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/root -DCMAKE_BUILD_TYPE=$1 ..
-    cmake --build .
+    make -j5
     mkdir /tmp/db && nohup mongod --dbpath /tmp/db & 
     sleep 5
     python3 ../utils/dockers/times3.py ctest -V || echo ok

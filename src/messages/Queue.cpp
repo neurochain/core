@@ -15,6 +15,7 @@ bool Queue::expired(std::shared_ptr<const messages::Message> message) {
 
 bool Queue::publish(std::shared_ptr<const messages::Message> message) {
   if (_quitting) {
+    LOG_DEBUG << "Skip message because quitting";
     return false;
   }
 

@@ -66,10 +66,13 @@ bool operator==(const Packet &a, const Packet &b) {
   std::string json_a, json_b;
   to_json(a, &json_a);
   to_json(b, &json_b);
-  return json_a == json_b;
+  bool res = json_a == json_b;
+
+  return res;
 }
 
 bool operator==(const messages::Peer &a, const messages::Peer &b) {
+  LOG_TRACE << a.endpoint() << " " << b.endpoint();
   return a.endpoint() == b.endpoint() && a.port() == b.port();
 }
 
