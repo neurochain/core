@@ -14,9 +14,3 @@ RUN wget https://gitlab.com/neurochaintech/neurochain-faucet/-/jobs/artifacts/v1
 unzip build.zip && \
 rm build.zip && \
 mv build faucet
-
-# Setting configuration inside docker image for a simpler deployment
-RUN mkdir conf || echo ok
-COPY testnet/bot_faucet.json conf/bot.json
-
-CMD /home/neuro/main -c /home/neuro/conf/bot.json
