@@ -73,7 +73,9 @@ class Subscriber {
 
         if (process) {
           cb(message->header(), body);
-        }
+        } else {
+	  LOG_TRACE << "Droppping message " << *message;
+	}
       }
     }
   }
