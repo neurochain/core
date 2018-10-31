@@ -173,12 +173,11 @@ class Ledger {
       if (previous_hash.data().size() == 0) {
         break;
       }
-      if ( get_block(previous_hash, &block)) {
+      if (get_block(previous_hash, &block)) {
         blocks.push_back(block);
-      }else{
+      } else {
         return blocks;
       }
-
     }
     return blocks;
   }

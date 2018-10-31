@@ -69,7 +69,7 @@ void Connection::read_body() {
             }
           }
         }
-        std::cout << "\033[1;31mMessage received: " << *message << "\033[0m"
+        std::cout << "\033[1;32mMessage received: " << *message << "\033[0m"
                   << std::endl;
 
         if (!_remote_peer->has_key_pub()) {
