@@ -23,6 +23,7 @@ Tcp::Tcp(std::shared_ptr<messages::Queue> queue,
       _current_connection_id(0) {}
 
 bool Tcp::connect(const bai::tcp::endpoint host, const Port port) {
+  throw std::runtime_error("connect host:port not implemented");
   return false;  // TODO
 }
 
@@ -227,6 +228,11 @@ bool Tcp::send_unicast(std::shared_ptr<messages::Message> message,
   got->second.send(body_tcp);
 
   return true;
+}
+
+std::size_t Tcp::peer_count() const {
+  std::lock_guard<std::mutex> lock_queue(_connection_mutex);
+  return _connections.size();
 }
 
 bool Tcp::disconnected(const Connection::ID id, std::shared_ptr<Peer> peer) {

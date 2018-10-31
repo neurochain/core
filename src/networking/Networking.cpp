@@ -62,9 +62,18 @@ void Networking::stop() {
 }
 
 void Networking::join() {
-  for (const auto transport_layer : _transport_layers) {
+  for (const auto &transport_layer : _transport_layers) {
     transport_layer->join();
   }
+}
+
+std::size_t Networking::peer_count() const {
+  std::size_t r = 0;
+  for (const auto &transport_layer : _transport_layers) {
+    r += transport_layer->peer_count();
+  }
+
+  return r;
 }
 
 Networking::~Networking() {
