@@ -399,7 +399,7 @@ void Bot::handler_peers(const messages::Header &header,
 
 void Bot::handler_connection(const messages::Header &header,
                              const messages::Body &body) {
-  LOG_DEBUG << this << " It entered in handler_connection in bot ";
+  LOG_DEBUG << this << " It entered in handler_connection in bot " << body;
   if (!header.has_peer()) {
     // TODO: ask to close the connection
     LOG_ERROR << this
