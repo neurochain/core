@@ -4,6 +4,7 @@ MAINTAINER trax Omar Givernaud
 LABEL Description "Bot docker image with js faucet"
 
 USER root
+RUN apt update && apt install -y unzip
 
 USER neuro
 
