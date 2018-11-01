@@ -12,7 +12,7 @@ USER neuro
 RUN mkdir -p /home/neuro/db || echo ok
 
 # Wallet
-RUN wget https://gitlab.com/neurochaintech/neurochain-wallet/-/jobs/artifacts/v1.5.13/download?job=build -O build.zip && \
+RUN wget https://gitlab.com/neurochaintech/neurochain-wallet/-/jobs/artifacts/v1.5.14/download?job=build -O build.zip && \
 unzip build.zip && \
 rm build.zip && \
 mv build wallet
