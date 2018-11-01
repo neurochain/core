@@ -120,7 +120,6 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
 
   const auto total_nb_transactions_route = [this](Onion::Request &req,
                                                   Onion::Response &res) {
-    res << _ledger->total_nb_transactions() << "\n";
     res << "{\"totalNbTransactions\":" << _ledger->total_nb_transactions()
         << "}\n";
     return OCS_PROCESSED;
