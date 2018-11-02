@@ -6,9 +6,9 @@
 #include <unordered_map>
 
 #include "common/types.hpp"
-#include "networking/tcp/Connection.hpp"
 #include "networking/Connection.hpp"
 #include "networking/TransportLayer.hpp"
+#include "networking/tcp/Connection.hpp"
 
 namespace neuro {
 namespace messages {

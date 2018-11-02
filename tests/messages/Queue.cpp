@@ -10,8 +10,7 @@ namespace neuro {
 namespace test {
 
 template <typename T, typename... U>
-size_t function_address(std::function<T(U...)> f)
-{
+size_t function_address(std::function<T(U...)> f) {
   typedef T(fnType)(U...);
   fnType **fn_ptr = f.template target<fnType *>();
   return (size_t)*fn_ptr;
@@ -27,7 +26,7 @@ void callback_world1(const messages::Header &header,
                      const messages::Body &body) {}
 
 class QueueTest {
-public:
+ public:
   bool test_empty() {
     auto tested_queue = std::make_shared<messages::Queue>();
     if (!tested_queue->_queue.empty()) {
@@ -38,7 +37,8 @@ public:
 
   bool test_subscribe() {
     auto tested_queue = std::make_shared<messages::Queue>();
-    messages::Subscriber sub_0(tested_queue), sub_1(tested_queue), sub_2(tested_queue);
+    messages::Subscriber sub_0(tested_queue), sub_1(tested_queue),
+        sub_2(tested_queue);
     sub_0.subscribe(messages::Type::kHello, callback_hello1);
     sub_1.subscribe(messages::Type::kHello, callback_hello2);
     sub_2.subscribe(messages::Type::kWorld, callback_world1);
@@ -81,11 +81,17 @@ public:
     auto tested_queue = std::make_shared<messages::Queue>();
     tested_queue->run();
     messages::Subscriber sub_hello(tested_queue);
-    sub_hello.subscribe(messages::Type::kHello,
-                        [&count_hello](const messages::Header &, const messages::Body &) { ++count_hello; });
+    sub_hello.subscribe(
+        messages::Type::kHello,
+        [&count_hello](const messages::Header &, const messages::Body &) {
+          ++count_hello;
+        });
     messages::Subscriber sub_world(tested_queue);
-    sub_world.subscribe(messages::Type::kWorld,
-                        [&count_world](const messages::Header &, const messages::Body &) { ++count_world; });
+    sub_world.subscribe(
+        messages::Type::kWorld,
+        [&count_world](const messages::Header &, const messages::Body &) {
+          ++count_world;
+        });
     tested_queue->subscribe(&sub_hello);
     tested_queue->subscribe(&sub_world);
     auto message_hello = std::make_shared<messages::Message>();
@@ -98,7 +104,14 @@ public:
       return false;
     }
     hello_kpub->set_type(messages::ECP256K1);
-    hello_kpub->set_raw_data("MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABOBPdJmNMRu7dZ0O4+b/jG5CyuLeI870VKYu0DrtJ8I8VW3wt5NcbqfqIk7OI0+9cE7+xCPtKwF1vAHi730nMJ0=");
+    hello_kpub->set_raw_data(
+        "MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA//////////////////////"
+        "///////////////v///"
+        "C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAA"
+        "AAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/"
+        "NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP/////"
+        "///////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABOBPdJmNMRu7dZ0O4+b/"
+        "jG5CyuLeI870VKYu0DrtJ8I8VW3wt5NcbqfqIk7OI0+9cE7+xCPtKwF1vAHi730nMJ0=");
     auto message_world = std::make_shared<messages::Message>();
     messages::World *world = message_world->add_bodies()->mutable_world();
     if (world == nullptr) {
@@ -109,7 +122,14 @@ public:
       return false;
     }
     world_kpub->set_type(messages::ECP256K1);
-    world_kpub->set_raw_data("MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABOBPdJmNMRu7dZ0O4+b/jG5CyuLeI870VKYu0DrtJ8I8VW3wt5NcbqfqIk7OI0+9cE7+xCPtKwF1vAHi730nMJ0=");
+    world_kpub->set_raw_data(
+        "MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA//////////////////////"
+        "///////////////v///"
+        "C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAA"
+        "AAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/"
+        "NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP/////"
+        "///////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABOBPdJmNMRu7dZ0O4+b/"
+        "jG5CyuLeI870VKYu0DrtJ8I8VW3wt5NcbqfqIk7OI0+9cE7+xCPtKwF1vAHi730nMJ0=");
     world->set_accepted(true);
     if (!tested_queue->publish(std::move(message_hello))) {
       return false;
@@ -142,5 +162,5 @@ TEST(Queue, message_broadcasting) {
   ASSERT_TRUE(mqt.test_message_broadcasting());
 }
 
-} // namespace test
-} // namespace neuro
+}  // namespace test
+}  // namespace neuro

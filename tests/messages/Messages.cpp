@@ -18,7 +18,7 @@ TEST(Message, Hello) {
   const messages::Hello* hello = message.add_bodies()->mutable_hello();
   ASSERT_NE(hello, nullptr);
   ASSERT_EQ(message.bodies_size(), 1);
-  for (const auto& body: message.bodies()) {
+  for (const auto& body : message.bodies()) {
     ASSERT_EQ(messages::get_type(body), messages::Type::kHello);
     ASSERT_FALSE(hello->has_key_pub());
     ASSERT_FALSE(hello->has_listen_port());
@@ -31,7 +31,7 @@ TEST(Message, World) {
   const messages::World* world = message.add_bodies()->mutable_world();
   ASSERT_NE(world, nullptr);
   ASSERT_EQ(message.bodies_size(), 1);
-  for (const auto& body: message.bodies()) {
+  for (const auto& body : message.bodies()) {
     ASSERT_EQ(messages::get_type(body), messages::Type::kWorld);
     ASSERT_FALSE(world->has_key_pub());
     ASSERT_FALSE(world->has_accepted());
@@ -40,5 +40,5 @@ TEST(Message, World) {
   }
 }
 
-} // namespace test
-} // namespace neuro
+}  // namespace test
+}  // namespace neuro
