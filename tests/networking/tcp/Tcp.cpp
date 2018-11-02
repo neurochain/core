@@ -6,7 +6,7 @@
 #include "networking/TransportLayer.hpp"
 
 namespace neuro {
-
+namespace networking {
 namespace test {
 
 class Tcp {
@@ -33,9 +33,10 @@ class Tcp {
 };
 
 TEST(Tcp, ConnectionTest) {
-  Tcp tcp_test;
+  networking::test::Tcp tcp_test;
   tcp_test.test_connection();
 }
 
 }  // namespace test
+}  // namespace networking
 }  // namespace neuro
