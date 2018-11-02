@@ -592,7 +592,7 @@ void Bot::handler_hello(const messages::Header &header,
     const auto &connection =
         _tcp->connection(remote_peer->connection_id(), connection_found);
     if (connection_found) {
-      remote_peer->set_port(connection.listen_port());
+      remote_peer->set_port(connection->listen_port());
     }
   } else {
     // TODO check this;

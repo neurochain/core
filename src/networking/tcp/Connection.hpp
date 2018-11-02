@@ -20,6 +20,9 @@ namespace tcp {
 using boost::asio::ip::tcp;
 
 class Connection : public networking::Connection {
+ public:
+  using Ptr = std::shared_ptr<Connection>;
+
  private:
   Buffer _header;
   Buffer _buffer;
@@ -29,7 +32,7 @@ class Connection : public networking::Connection {
   std::atomic<bool> _is_dead{false};
   std::mutex _connection_mutex;
 
- public:
+ private:
   Connection(const ID id, networking::TransportLayer::ID transport_layer_id,
              std::shared_ptr<messages::Queue> queue,
              std::shared_ptr<tcp::socket> socket,
@@ -43,13 +46,26 @@ class Connection : public networking::Connection {
         _remote_peer(remote_peer),
         _listen_port(_remote_peer->port()) {}
 
+ public:
+  static Ptr create(const ID id,
+                    networking::TransportLayer::ID transport_layer_id,
+                    std::shared_ptr<messages::Queue> queue,
+                    std::shared_ptr<tcp::socket> socket,
+                    std::shared_ptr<messages::Peer> remote_peer,
+                    const bool from_remote);
+
+ public:
   std::shared_ptr<tcp::socket> socket();
 
   void read();
   void read_header();
   void read_body();
+  Buffer& header();
+  Buffer& buffer();
+  std::shared_ptr<messages::Peer> remote_peer() const;
+  void set_listen_port(::google::protobuf::int32 port);
 
-  bool send(const Buffer &message);
+  bool send(const Buffer& message);
   const std::shared_ptr<messages::Peer> peer() const;
   const IP remote_ip() const;
   const Port remote_port() const;
