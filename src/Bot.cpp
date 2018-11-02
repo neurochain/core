@@ -443,13 +443,9 @@ void Bot::handler_connection(const messages::Header &header,
   const auto tmp = _keys->public_key().save();
   key_pub->set_raw_data(tmp.data(), tmp.size());
 
-  std::cout << this << " setting pub key in hello " << tmp << std::endl;
-
   _networking->send_unicast(message, networking::ProtocolType::PROTOBUF2);
   _connected_peers = _networking->peer_count();
   LOG_DEBUG << this << " updating _connected_peers to ++ " << _connected_peers;
-
-  update_connection_graph();
 }
 
 void Bot::handler_deconnection(const messages::Header &header,
@@ -476,7 +472,6 @@ void Bot::handler_deconnection(const messages::Header &header,
 
   this->keep_max_connections();
 
-  update_connection_graph();
 }
 
 void Bot::handler_world(const messages::Header &header,
