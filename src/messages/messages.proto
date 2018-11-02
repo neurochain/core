@@ -117,7 +117,7 @@ message Header {
   optional Peer peer = 13;
 }
 
-message Message {
+message _Message {
   optional Header header = 1;
   repeated Body bodies = 20;
 }

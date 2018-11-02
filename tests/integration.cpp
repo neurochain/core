@@ -5,15 +5,11 @@
 #include "Bot.hpp"
 #include "common/logger.hpp"
 #include "common/types.hpp"
+#include "consensus/PiiConsensus.hpp"
+#include "crypto/Sign.hpp"
 #include "ledger/LedgerMongodb.hpp"
 #include "messages/Subscriber.hpp"
-#include "consensus/PiiConsensus.hpp"
 #include "tooling/genblock.hpp"
-#include "crypto/Sign.hpp"
-#include <chrono>
-#include <gtest/gtest.h>
-#include <sstream>
-#include <thread>
 
 namespace neuro {
 
@@ -77,7 +73,8 @@ class BotTest {
 
   void add_block() {
     messages::Block new_block;
-    neuro::tooling::genblock::genblock_from_last_db_block(new_block, _bot._ledger, 1, 0);
+    neuro::tooling::genblock::genblock_from_last_db_block(new_block,
+                                                          _bot._ledger, 1, 0);
     _bot._ledger->push_block(new_block);
   }
 };
@@ -195,8 +192,7 @@ TEST(INTEGRATION, neighbors_update) {
   auto peers_bot2 = bot2->connected_peers();
 
   ASSERT_TRUE(peers_bot0.size() == peers_bot1.size() &&
-              peers_bot1.size() == peers_bot2.size() && peers_bot2.size() ==
-              2);
+              peers_bot1.size() == peers_bot2.size() && peers_bot2.size() == 2);
 
   ASSERT_TRUE(peers_bot0[0].endpoint() == "127.0.0.1" &&
               peers_bot0[0].port() == 1338);
@@ -246,7 +242,6 @@ TEST(INTEGRATION, terminate_on_bad_version) {
   ASSERT_TRUE(listener.got_deconnection());
 }
 
-
 TEST(INTEGRATION, keep_max_connections) {
   auto bot0 = std::make_shared<neuro::Bot>("integration_keepmax0.json");
   std::this_thread::sleep_for(750ms);
@@ -273,7 +268,6 @@ TEST(INTEGRATION, keep_max_connections) {
               peers_bot2[0].port() == 1338);
 }
 
-
 TEST(INTEGRATION, block_exchange) {
   ASSERT_TRUE(true);
 
@@ -281,7 +275,7 @@ TEST(INTEGRATION, block_exchange) {
   bot0.add_block();
   BotTest bot1("integration_propagation1.json");
 
-  //std::this_thread::sleep_for(35s);
+  // std::this_thread::sleep_for(35s);
 
   std::cout << __FILE__ << ":" << __LINE__
             << " Nb of blocks: " << bot0.nb_blocks() << std::endl;
