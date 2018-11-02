@@ -13,7 +13,7 @@ class Tcp {
  public:
   Tcp() = default;
 
-  bool test_connection() {
+  void test_connection() {
     auto queue = std::make_shared<messages::Queue>();
     auto keys1 = std::make_shared<crypto::Ecc>(),
          keys2 = std::make_shared<crypto::Ecc>();
@@ -27,7 +27,8 @@ class Tcp {
     tcp2.connect(peer);
     tcp1._io_service.run_one();
     tcp2._io_service.run_one();
-    return tcp1._connections.size() == 1 && tcp2._connections.size() == 1;
+    ASSERT_EQ(tcp1._connections.size(), 1);
+    ASSERT_EQ(tcp2._connections.size(), 1);
   }
 };
 
