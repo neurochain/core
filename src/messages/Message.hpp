@@ -50,6 +50,12 @@ int32_t fill_header(messages::Header *header);
 int32_t fill_header_reply(const messages::Header &header_request,
                           messages::Header *header_reply);
 
+class Message : public _Message {
+ public:
+  Message() { fill_header(mutable_header()); }
+  virtual ~Message() {}
+};
+
 }  // namespace messages
 }  // namespace neuro
 

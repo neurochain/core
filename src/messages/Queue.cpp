@@ -73,16 +73,19 @@ void Queue::do_work() {
   do {
     while (!_quitting && this->is_empty()) {  // avoid spurious wakeups
       std::unique_lock<std::mutex> lock_queue(_queue_mutex);
+      LOG_TRACE << "waiting";
       _condition.wait(lock_queue);
     }
     // we validate again that the woke up call was not because it is quitting
     if (_quitting) {
       break;
     }
+    LOG_TRACE << "getting next message";
     auto message = this->next_message();
     // for every body in the message we get the type
     {
       std::lock_guard<std::mutex> lock_callbacks(_callbacks_mutex);
+      LOG_TRACE << "sending to subscribers";
       for (auto &subscriber : _subscribers) {
         subscriber->handler(message);
       }
