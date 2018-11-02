@@ -7,11 +7,6 @@ namespace neuro {
 namespace crypto {
 namespace test {
 
-class Ecc : public ::testing::Test {
- public:
-  Ecc();
-};
-
 TEST(Ecc, save_load_file) {
   crypto::Ecc keys0;
   keys0.save("test_keys.priv", "test_keys.pub");
