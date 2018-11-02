@@ -409,6 +409,7 @@ void Bot::handler_connection(const messages::Header &header,
 
   auto peer = header.peer();
   auto connection_ready = body.connection_ready();
+  _connected_peers = _networking->peer_count();
 
   if (connection_ready.from_remote()) {
     // Nothing to do; just wait for the hello message from remote peer
@@ -444,7 +445,6 @@ void Bot::handler_connection(const messages::Header &header,
   key_pub->set_raw_data(tmp.data(), tmp.size());
 
   _networking->send_unicast(message, networking::ProtocolType::PROTOBUF2);
-  _connected_peers = _networking->peer_count();
   LOG_DEBUG << this << " updating _connected_peers to ++ " << _connected_peers;
 }
 
@@ -471,7 +471,6 @@ void Bot::handler_deconnection(const messages::Header &header,
   it->set_status(messages::Peer::REACHABLE);
 
   this->keep_max_connections();
-
 }
 
 void Bot::handler_world(const messages::Header &header,
@@ -702,6 +701,15 @@ bool Bot::next_to_connect(messages::Peer **peer) {
 
 void Bot::keep_max_connections() {
   LOG_TRACE;
+  LOG_INFO << "Entered keep_max_connections";
+  auto peers = connected_peers();
+  for (const auto &peer : peers) {
+    LOG_INFO << "Connected peer " << peer;
+  }
+  LOG_INFO << "Number of peers with status connected: " << peers.size()
+           << std::endl
+           << *this;
+
   std::size_t peers_size = 0;
   peers_size = _tcp_config->peers().size();
 
