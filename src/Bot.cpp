@@ -496,6 +496,7 @@ void Bot::handler_world(const messages::Header &header,
       remote_peer = *remote_peer_opt;
     } else {
       LOG_ERROR << this << " Received a message from ourself ";
+      return;
     }
     // remote_peer = _tcp_config->add_peers();
     // remote_peer->CopyFrom(peer_header);

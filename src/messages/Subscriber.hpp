@@ -40,8 +40,8 @@ class Subscriber {
     to_buffer(body, &serialized_body);
 
     const auto hash = crypto::hash_sha3_256(serialized_body);
-    const auto [it, is_emplaced] = _seen_messages_hash.emplace(hash);
-    if (!is_emplaced) {
+    const auto pair = _seen_messages_hash.emplace(hash);
+    if (!pair.second) {
       return false;
     }
 
