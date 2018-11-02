@@ -1,7 +1,7 @@
 FROM registry.gitlab.com/neurochaintech/core:latest
 
 MAINTAINER trax Omar Givernaud
-LABEL Description "Bot docker image with js faucet"
+LABEL Description "Bot docker image with js block explorer"
 
 USER root
 RUN apt update && apt install -y unzip
@@ -9,7 +9,7 @@ RUN apt update && apt install -y unzip
 USER neuro
 
 # Faucet
-RUN wget https://gitlab.com/neurochaintech/neurochain-wallet/-/jobs/artifacts/v1.6.3/download?job=build-faucet -O build.zip && \
+RUN wget https://gitlab.com/neurochaintech/neurochain-wallet/-/jobs/artifacts/v1.6.3/download?job=build-block -O build.zip && \
 unzip build.zip && \
 rm build.zip && \
 mv build faucet
