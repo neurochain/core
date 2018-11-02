@@ -12,4 +12,4 @@ USER neuro
 RUN wget https://gitlab.com/neurochaintech/neurochain-wallet/-/jobs/artifacts/v1.6.3/download?job=build-block -O build.zip && \
 unzip build.zip && \
 rm build.zip && \
-mv build faucet
+mv build-block block
