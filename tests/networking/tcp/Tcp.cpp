@@ -34,7 +34,7 @@ class Tcp {
 
 TEST(Tcp, ConnectionTest) {
   Tcp tcp_test;
-  ASSERT_TRUE(tcp_test.test_connection());
+  tcp_test.test_connection();
 }
 
 }  // namespace test
