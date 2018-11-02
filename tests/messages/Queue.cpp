@@ -7,6 +7,7 @@
 #include "src/messages/Subscriber.hpp"
 
 namespace neuro {
+namespace messages {
 namespace test {
 
 template <typename T, typename... U>
@@ -143,4 +144,5 @@ TEST(Queue, message_broadcasting) {
 }
 
 }  // namespace test
+}  // namespace messages
 }  // namespace neuro
