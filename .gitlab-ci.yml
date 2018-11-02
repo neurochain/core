@@ -7,6 +7,7 @@ variables:
   DOCKER_PROD_IMAGE: $CI_REGISTRY_IMAGE
   DOCKER_WALLET_IMAGE: $CI_REGISTRY_IMAGE/wallet
   DOCKER_FAUCET_IMAGE: $CI_REGISTRY_IMAGE/faucet
+  DOCKER_BLOCK_EXPLORER_IMAGE: $CI_REGISTRY_IMAGE/block_explorer
 
 services:
   - docker:dind
@@ -81,6 +82,11 @@ prod_image_build:ubuntu_18_04:
     - docker build -f utils/dockers/Dockerfile.faucet -t $DOCKER_FAUCET_IMAGE:latest -t $DOCKER_FAUCET_IMAGE:$CI_COMMIT_SHA  .
     - docker push $DOCKER_FAUCET_IMAGE:$CI_COMMIT_SHA
     - docker push $DOCKER_FAUCET_IMAGE:latest
+    - docker build -f utils/dockers/Dockerfile.block -t $DOCKER_BLOCK_EXPLORER_IMAGE:latest -t $DOCKER_BLOCK_EXPLORER_IMAGE:$CI_COMMIT_SHA  .
+    - docker push $DOCKER_BLOCK_EXPLORER_IMAGE:$CI_COMMIT_SHA
+    - docker push $DOCKER_BLOCK_EXPLORER_IMAGE:latest
+
+
 
 pages:
   image: alpine
