@@ -29,7 +29,7 @@ TEST(Conf, load) {
   ASSERT_EQ(tcp.peers_size(), 2);
   std::string endpoint("127.0.0.1");
 
-  for (const auto& peer: tcp.peers()) {
+  for (const auto& peer : tcp.peers()) {
     ASSERT_TRUE(peer.has_endpoint());
     ASSERT_EQ(peer.endpoint(), endpoint);
     ASSERT_TRUE(peer.has_port());

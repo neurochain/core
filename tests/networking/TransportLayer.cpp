@@ -7,5 +7,5 @@ TEST(TransportLayer, ID_Uniqueness) {
   // todo
 }
 
-} // namespace test
-} // namespace neuro
+}  // namespace test
+}  // namespace neuro

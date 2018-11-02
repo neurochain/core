@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "src/crypto/Hash.hpp"
 #include "common/logger.hpp"
+#include "src/crypto/Hash.hpp"
 
 namespace neuro {
 namespace crypto {
