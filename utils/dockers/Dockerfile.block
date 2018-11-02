@@ -9,7 +9,7 @@ RUN apt update && apt install -y unzip
 USER neuro
 
 # Faucet
-RUN wget https://gitlab.com/neurochaintech/neurochain-wallet/-/jobs/artifacts/v1.6.5/download?job=build-block -O build.zip && \
+RUN wget https://gitlab.com/neurochaintech/neurochain-wallet/-/jobs/artifacts/v1.6.6/download?job=build-block -O build.zip && \
 unzip build.zip && \
 rm build.zip && \
 mv build-block block
