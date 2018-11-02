@@ -15,11 +15,11 @@ namespace messages {
 class Queue;
 }  // namespace messages
 
+namespace networking {
+
 namespace test {
 class Tcp;
 }  // namespace test
-
-namespace networking {
 
 class Tcp : public TransportLayer {
  private:
@@ -70,7 +70,7 @@ class Tcp : public TransportLayer {
                                               bool &found) const;
   ~Tcp();
 
-  friend class neuro::test::Tcp;
+  friend class neuro::networking::test::Tcp;
 };
 
 }  // namespace networking
