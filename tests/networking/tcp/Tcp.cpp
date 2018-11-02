@@ -27,6 +27,7 @@ class Tcp {
     tcp2.connect(peer);
     tcp1._io_service.run_one();
     tcp2._io_service.run_one();
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
     ASSERT_EQ(tcp1._connections.size(), 1);
     ASSERT_EQ(tcp2._connections.size(), 1);
   }
