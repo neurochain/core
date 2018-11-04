@@ -286,11 +286,11 @@ class Ledger {
 
     add_change(&transaction, address);
 
-    // Hash the transaction
-    messages::hash_transaction(&transaction);
-
     // Sign the transaction
     crypto::sign(keys, &transaction);
+
+    // Hash the transaction
+    messages::hash_transaction(&transaction);
 
     return transaction;
   }
