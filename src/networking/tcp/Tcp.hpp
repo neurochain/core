@@ -26,7 +26,7 @@ class Tcp : public TransportLayer {
   boost::asio::io_service _io_service;
   bai::tcp::resolver _resolver;
   Connection::ID _current_connection_id;
-  std::unordered_map<Connection::ID, tcp::Connection> _connections;
+  std::unordered_map<Connection::ID, std::shared_ptr<tcp::Connection>> _connections;
   mutable std::mutex _connection_mutex;
   std::atomic<bool> _stopping{false};
   Port _listening_port{0};
@@ -64,7 +64,7 @@ class Tcp : public TransportLayer {
   IP local_ip() const;
   void terminated(const Connection::ID id);
   std::size_t peer_count() const;
-  const tcp::Connection &connection(const Connection::ID id, bool &found) const;
+  std::shared_ptr<tcp::Connection> connection(const Connection::ID id, bool &found) const;
   ~Tcp();
 
   friend class neuro::networking::test::Tcp;

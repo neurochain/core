@@ -15,40 +15,41 @@ void Connection::read() { read_header(); }
 void Connection::read_header() {
   boost::asio::async_read(
       *_socket, boost::asio::buffer(_header.data(), _header.size()),
-      [this](const boost::system::error_code &error, std::size_t bytes_read) {
+      [_this=ptr()](const boost::system::error_code &error, std::size_t bytes_read) {
         if (error) {
-          LOG_ERROR << this << " " << __LINE__ << " Killing connection "
+          LOG_ERROR << _this << " " << __LINE__ << " Killing connection "
                     << error;
-          this->terminate();
+          _this->terminate();
           return;
         }
 
-        auto header_pattern = reinterpret_cast<HeaderPattern *>(_header.data());
-        _buffer.resize(header_pattern->size);
-        read_body();
+        auto header_pattern =
+	  reinterpret_cast<HeaderPattern *>(_this->_header.data());
+        _this->_buffer.resize(header_pattern->size);
+        _this->read_body();
       });
 }
 
 void Connection::read_body() {
   boost::asio::async_read(
       *_socket, boost::asio::buffer(_buffer.data(), _buffer.size()),
-      [this](const boost::system::error_code &error, std::size_t bytes_read) {
+      [_this=ptr()](const boost::system::error_code &error, std::size_t bytes_read) {
         if (error) {
-          LOG_ERROR << this << " " << __LINE__ << " Killing connection "
+          LOG_ERROR << _this << " " << __LINE__ << " Killing connection "
                     << error;
-          this->terminate();
+          _this->terminate();
           return;
         }
 
         const auto header_pattern =
-            reinterpret_cast<HeaderPattern *>(_header.data());
+            reinterpret_cast<HeaderPattern *>(_this->_header.data());
 
         auto message = std::make_shared<messages::Message>();
-        messages::from_buffer(_buffer, message.get());
+        messages::from_buffer(_this->_buffer, message.get());
 
         auto header = message->mutable_header();
 
-        header->mutable_peer()->CopyFrom(*_remote_peer);
+        header->mutable_peer()->CopyFrom(*_this->_remote_peer);
         auto signature = header->mutable_signature();
         signature->set_type(messages::Hash::SHA256);
         signature->set_data(header_pattern->signature,
@@ -59,65 +60,65 @@ void Connection::read_body() {
           LOG_ERROR << " MessageVersion not corresponding: "
                     << neuro::MessageVersion << " (mine) vs "
                     << header->version() << " )";
-          this->terminate();
+          _this->terminate();
           return;
         }
 
         for (const auto &body : message->bodies()) {
           const auto type = get_type(body);
-          LOG_DEBUG << this << " read_body TYPE " << type;
+          LOG_DEBUG << _this << " read_body TYPE " << type;
           if (type == messages::Type::kHello) {
             auto hello = body.hello();
 
             if (hello.has_listen_port()) {
-              _listen_port = hello.listen_port();
+              _this->_listen_port = hello.listen_port();
             }
 
-            if (!_remote_peer->has_key_pub()) {
+            if (!_this->_remote_peer->has_key_pub()) {
               LOG_INFO << "Updating peer with hello key pub";
-              _remote_peer->mutable_key_pub()->CopyFrom(hello.key_pub());
+              _this->_remote_peer->mutable_key_pub()->CopyFrom(hello.key_pub());
             }
           }
         }
         std::cout << "\033[1;32mMessage received: " << *message << "\033[0m"
                   << std::endl;
 
-        if (!_remote_peer->has_key_pub()) {
+        if (!_this->_remote_peer->has_key_pub()) {
           LOG_ERROR << "Not Key pub set";
-          read_header();
+          _this->read_header();
           return;
         }
         crypto::EccPub ecc_pub;
-        const auto key_pub = _remote_peer->key_pub();
+        const auto key_pub = _this->_remote_peer->key_pub();
 
         ecc_pub.load(
             reinterpret_cast<const uint8_t *>(key_pub.raw_data().data()),
             key_pub.raw_data().size());
 
-        const auto check = ecc_pub.verify(_buffer, header_pattern->signature,
+        const auto check = ecc_pub.verify(_this->_buffer, header_pattern->signature,
                                           sizeof(header_pattern->signature));
 
         if (!check) {
           LOG_ERROR << "Bad signature, dropping message";
-          read_header();
+          _this->read_header();
           return;
         }
 
-        this->_queue->publish(message);
-        read_header();
+        _this->_queue->publish(message);
+        _this->read_header();
       });
 }
 
 bool Connection::send(const Buffer &message) {
   boost::asio::async_write(*_socket,
                            boost::asio::buffer(message.data(), message.size()),
-                           [this](const boost::system::error_code &error,
+                           [_this=ptr()](const boost::system::error_code &error,
                                   std::size_t bytes_transferred) {
                              if (error) {
                                LOG_ERROR << "Could not send message";
-                               LOG_ERROR << this << " " << __LINE__
+                               LOG_ERROR << _this << " " << __LINE__
                                          << " Killing connection " << error;
-                               this->terminate();
+                               _this->terminate();
                                return false;
                              }
                              return true;
