@@ -44,9 +44,7 @@ class Connection : public networking::Connection,
         _remote_peer(remote_peer),
         _listen_port(_remote_peer->port()) {}
 
-  std::shared_ptr<Connection> ptr() {
-    return shared_from_this();
-  }
+  std::shared_ptr<Connection> ptr() { return shared_from_this(); }
 
   std::shared_ptr<tcp::socket> socket();
 

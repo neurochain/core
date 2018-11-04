@@ -318,6 +318,8 @@ bool Bot::init() {
   return true;
 }
 
+
+  
 void Bot::update_peerlist() {
   LOG_DEBUG << this << " FROM UPDATE PEERLIST";
   for (auto &peer : *_tcp_config->mutable_peers()) {
