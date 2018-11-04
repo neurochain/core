@@ -94,15 +94,9 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
     _current_connection_id++;
     peer->set_connection_id(_current_connection_id);
 
-    auto connection =
-      std::make_shared<tcp::Connection>(_current_connection_id,
-                                        this->id(),
-                                        _queue,
-                                        socket,
-                                        peer,
-                                        from_remote);
-    auto r = _connections.insert({_current_connection_id,
-          connection});
+    auto connection = std::make_shared<tcp::Connection>(
+        _current_connection_id, this->id(), _queue, socket, peer, from_remote);
+    auto inserted = _connections.insert({_current_connection_id, connection});
 
     auto connection_ready = body->mutable_connection_ready();
 
@@ -110,7 +104,7 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
 
     peer_tmp->CopyFrom(*peer);
     _queue->publish(message);
-    r.first->second->read();
+    inserted.first->second->read();
   } else {
     LOG_WARNING << "Could not create new connection to " << *peer << " due to "
                 << error.message();

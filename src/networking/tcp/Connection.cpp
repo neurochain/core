@@ -15,7 +15,8 @@ void Connection::read() { read_header(); }
 void Connection::read_header() {
   boost::asio::async_read(
       *_socket, boost::asio::buffer(_header.data(), _header.size()),
-      [_this=ptr()](const boost::system::error_code &error, std::size_t bytes_read) {
+      [_this = ptr()](const boost::system::error_code &error,
+                      std::size_t bytes_read) {
         if (error) {
           LOG_ERROR << _this << " " << __LINE__ << " Killing connection "
                     << error;
@@ -24,7 +25,7 @@ void Connection::read_header() {
         }
 
         auto header_pattern =
-	  reinterpret_cast<HeaderPattern *>(_this->_header.data());
+            reinterpret_cast<HeaderPattern *>(_this->_header.data());
         _this->_buffer.resize(header_pattern->size);
         _this->read_body();
       });
@@ -33,7 +34,8 @@ void Connection::read_header() {
 void Connection::read_body() {
   boost::asio::async_read(
       *_socket, boost::asio::buffer(_buffer.data(), _buffer.size()),
-      [_this=ptr()](const boost::system::error_code &error, std::size_t bytes_read) {
+      [_this = ptr()](const boost::system::error_code &error,
+                      std::size_t bytes_read) {
         if (error) {
           LOG_ERROR << _this << " " << __LINE__ << " Killing connection "
                     << error;
@@ -95,8 +97,9 @@ void Connection::read_body() {
             reinterpret_cast<const uint8_t *>(key_pub.raw_data().data()),
             key_pub.raw_data().size());
 
-        const auto check = ecc_pub.verify(_this->_buffer, header_pattern->signature,
-                                          sizeof(header_pattern->signature));
+        const auto check =
+            ecc_pub.verify(_this->_buffer, header_pattern->signature,
+                           sizeof(header_pattern->signature));
 
         if (!check) {
           LOG_ERROR << "Bad signature, dropping message";
@@ -110,19 +113,19 @@ void Connection::read_body() {
 }
 
 bool Connection::send(const Buffer &message) {
-  boost::asio::async_write(*_socket,
-                           boost::asio::buffer(message.data(), message.size()),
-                           [_this=ptr()](const boost::system::error_code &error,
-                                  std::size_t bytes_transferred) {
-                             if (error) {
-                               LOG_ERROR << "Could not send message";
-                               LOG_ERROR << _this << " " << __LINE__
-                                         << " Killing connection " << error;
-                               _this->terminate();
-                               return false;
-                             }
-                             return true;
-                           });
+  boost::asio::async_write(
+      *_socket, boost::asio::buffer(message.data(), message.size()),
+      [_this = ptr()](const boost::system::error_code &error,
+                      std::size_t bytes_transferred) {
+        if (error) {
+          LOG_ERROR << "Could not send message";
+          LOG_ERROR << _this << " " << __LINE__ << " Killing connection "
+                    << error;
+          _this->terminate();
+          return false;
+        }
+        return true;
+      });
   return true;
 }
 
