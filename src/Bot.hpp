@@ -87,6 +87,7 @@ class Bot {
   bool load_keys(const messages::config::Config &config);
   bool load_networking(messages::config::Config *config);
   void subscribe();
+  void regular_update();
   bool update_ledger();
   void update_peerlist();
 

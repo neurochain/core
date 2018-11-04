@@ -311,11 +311,20 @@ bool Bot::init() {
   update_ledger();
 
   _update_timer.expires_after(boost::asio::chrono::seconds(_update_time));
-  _update_timer.async_wait(boost::bind(&Bot::update_peerlist, this));
+  _update_timer.async_wait(boost::bind(&Bot::regular_update, this));
 
   LOG_DEBUG << this << " USING UPDATE TIME: " << _update_time;
 
   return true;
+}
+
+void Bot::regular_update() {
+  update_peerlist();
+  keep_max_connections();
+  update_ledger();
+  _update_timer.expires_at(_update_timer.expiry() +
+                           boost::asio::chrono::seconds(_update_time));
+  _update_timer.async_wait(boost::bind(&Bot::regular_update, this));
 }
 
 void Bot::update_peerlist() {
@@ -328,11 +337,6 @@ void Bot::update_peerlist() {
   msg->add_bodies()->mutable_get_peers();
 
   _networking->send(msg, networking::ProtocolType::PROTOBUF2);
-
-  _update_timer.expires_at(_update_timer.expiry() +
-                           boost::asio::chrono::seconds(_update_time));
-  _update_timer.async_wait(boost::bind(&Bot::update_peerlist, this));
-  this->keep_max_connections();
 }
 
 const std::vector<messages::Peer> Bot::connected_peers() const {
