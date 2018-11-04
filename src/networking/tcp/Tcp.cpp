@@ -94,10 +94,15 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
     _current_connection_id++;
     peer->set_connection_id(_current_connection_id);
 
-    auto r = _connections.emplace(
-        std::piecewise_construct, std::forward_as_tuple(_current_connection_id),
-        std::forward_as_tuple(_current_connection_id, this->id(), _queue,
-                              socket, peer, from_remote));
+    auto connection =
+      std::make_shared<tcp::Connection>(_current_connection_id,
+                                        this->id(),
+                                        _queue,
+                                        socket,
+                                        peer,
+                                        from_remote);
+    auto r = _connections.insert({_current_connection_id,
+          connection});
 
     auto connection_ready = body->mutable_connection_ready();
 
@@ -105,7 +110,7 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
 
     peer_tmp->CopyFrom(*peer);
     _queue->publish(message);
-    r.first->second.read();
+    r.first->second->read();
   } else {
     LOG_WARNING << "Could not create new connection to " << *peer << " due to "
                 << error.message();
@@ -116,8 +121,8 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
   }
 }
 
-const tcp::Connection &Tcp::connection(const Connection::ID id,
-                                       bool &found) const {
+std::shared_ptr<tcp::Connection> Tcp::connection(const Connection::ID id,
+                                                 bool &found) const {
   std::lock_guard<std::mutex> lock_queue(_connection_mutex);
   auto got = _connections.find(id);
   if (got == _connections.end()) {
@@ -200,8 +205,8 @@ bool Tcp::send(std::shared_ptr<messages::Message> message,
 
   bool res = true;
   for (auto &connection : _connections) {
-    res &= connection.second.send(header_tcp);
-    res &= connection.second.send(body_tcp);
+    res &= connection.second->send(header_tcp);
+    res &= connection.second->send(body_tcp);
   }
 
   return res;
@@ -222,8 +227,8 @@ bool Tcp::send_unicast(std::shared_ptr<messages::Message> message,
   LOG_DEBUG << "\033[1;34mSending unicast : >>" << *message << "<<\033[0m";
   serialize(message, protocol_type, &header_tcp, &body_tcp);
 
-  got->second.send(header_tcp);
-  got->second.send(body_tcp);
+  got->second->send(header_tcp);
+  got->second->send(body_tcp);
 
   return true;
 }
