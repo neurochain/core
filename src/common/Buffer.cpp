@@ -1,3 +1,5 @@
+#include  <iomanip>
+
 #include "common/Buffer.hpp"
 #include <iostream>
 #include <iterator>
@@ -64,7 +66,7 @@ std::string Buffer::str() const {
 
 std::ostream &operator<<(std::ostream &os, const Buffer &buffer) {
   std::ios_base::fmtflags f(os.flags());
-  os << std::hex;
+  os << std::setfill('0') << std::setw(2) << std::hex;
   std::copy(buffer.cbegin(), buffer.cend(), std::ostream_iterator<int>(os, ""));
   os.flags(f);
 
