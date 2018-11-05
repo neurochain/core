@@ -83,6 +83,7 @@ add_executable(ut
   ./crypto/Ecc.cpp
   ./messages/Config.cpp
   ./messages/Queue.cpp
+  ./messages/Subscriber.cpp
   ./networking/TransportLayer.cpp
   ./networking/tcp/Tcp.cpp
   )
