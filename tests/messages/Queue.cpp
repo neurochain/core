@@ -31,6 +31,7 @@ class QueueTest {
   void test_empty() {
     auto tested_queue = std::make_shared<messages::Queue>();
     ASSERT_TRUE(tested_queue->_queue.empty());
+    ASSERT_TRUE(tested_queue->is_empty());
   }
 
   void test_subscribe() {
@@ -120,6 +121,60 @@ class QueueTest {
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     ASSERT_EQ(count_hello, 1);
     ASSERT_EQ(count_world, 1);
+  }
+
+  void test_unsubscribe() {
+    std::size_t count_hello(0);
+    std::size_t count_world(0);
+    auto tested_queue = std::make_shared<messages::Queue>();
+    tested_queue->run();
+    messages::Subscriber sub_hello(tested_queue);
+    sub_hello.subscribe(
+        messages::Type::kHello,
+        [&count_hello](const messages::Header &, const messages::Body &) {
+          ++count_hello;
+        });
+    messages::Subscriber sub_world(tested_queue);
+    sub_world.subscribe(
+        messages::Type::kWorld,
+        [&count_world](const messages::Header &, const messages::Body &) {
+          ++count_world;
+        });
+    auto message_hello = std::make_shared<messages::Message>();
+    messages::Hello *hello = message_hello->add_bodies()->mutable_hello();
+    ASSERT_NE(hello, nullptr);
+    auto hello_kpub = hello->mutable_key_pub();
+    ASSERT_NE(hello_kpub, nullptr);
+    hello_kpub->set_type(messages::ECP256K1);
+    hello_kpub->set_raw_data(
+        "MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA//////////////////////"
+        "///////////////v///"
+        "C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAA"
+        "AAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/"
+        "NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP/////"
+        "///////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABOBPdJmNMRu7dZ0O4+b/"
+        "jG5CyuLeI870VKYu0DrtJ8I8VW3wt5NcbqfqIk7OI0+9cE7+xCPtKwF1vAHi730nMJ0=");
+    auto message_world = std::make_shared<messages::Message>();
+    messages::World *world = message_world->add_bodies()->mutable_world();
+    ASSERT_NE(world, nullptr);
+    auto world_kpub = world->mutable_key_pub();
+    ASSERT_NE(world_kpub, nullptr);
+    world_kpub->set_type(messages::ECP256K1);
+    world_kpub->set_raw_data(
+        "MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA//////////////////////"
+        "///////////////v///"
+        "C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAA"
+        "AAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/"
+        "NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP/////"
+        "///////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABOBPdJmNMRu7dZ0O4+b/"
+        "jG5CyuLeI870VKYu0DrtJ8I8VW3wt5NcbqfqIk7OI0+9cE7+xCPtKwF1vAHi730nMJ0=");
+    world->set_accepted(true);
+    ASSERT_TRUE(tested_queue->publish(std::move(message_hello)));
+    ASSERT_TRUE(tested_queue->publish(std::move(message_world)));
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    ASSERT_EQ(count_hello, 1);
+    tested_queue->unsubscribe(&sub_world);
+    ASSERT_EQ(count_world, 0);
   }
 };
 
