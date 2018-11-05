@@ -19,7 +19,8 @@ namespace networking {
 namespace tcp {
 using boost::asio::ip::tcp;
 
-class Connection : public networking::Connection {
+class Connection : public networking::Connection,
+                   public std::enable_shared_from_this<Connection> {
  private:
   Buffer _header;
   Buffer _buffer;
@@ -42,6 +43,8 @@ class Connection : public networking::Connection {
         _socket(socket),
         _remote_peer(remote_peer),
         _listen_port(_remote_peer->port()) {}
+
+  std::shared_ptr<Connection> ptr() { return shared_from_this(); }
 
   std::shared_ptr<tcp::socket> socket();
 
