@@ -21,12 +21,12 @@ void Connection::read_header() {
         }
 
         auto header_pattern = reinterpret_cast<HeaderPattern *>(_header.data());
-        _buffer.resize(header_pattern->size);
-        read_body();
+        read_body(header_pattern->size);
       });
 }
 
-void Connection::read_body() {
+  void Connection::read_body(const std::size_t size) {
+  _buffer.resize(size);
   boost::asio::async_read(
       *_socket, boost::asio::buffer(_buffer.data(), _buffer.size()),
       [this](const boost::system::error_code &error, std::size_t bytes_read) {

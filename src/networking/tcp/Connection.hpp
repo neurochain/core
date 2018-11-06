@@ -47,7 +47,7 @@ class Connection : public networking::Connection {
 
   void read();
   void read_header();
-  void read_body();
+  void read_body(const std::size_t size);
 
   bool send(const Buffer &message);
   const std::shared_ptr<messages::Peer> peer() const;
