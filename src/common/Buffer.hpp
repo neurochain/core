@@ -44,7 +44,7 @@ class Buffer : public std::vector<uint8_t> {
   Buffer(const std::initializer_list<uint8_t> init) : vector<uint8_t>(init) {}
 
   Buffer(const std::string &string, const InputType input_type);
-  void save(const std::string &filepath);
+  bool save(const std::string &filepath);
   void copy(const uint8_t *data, const std::size_t size);
   void copy(const std::string &string);
   void copy(const Buffer &buffer);
