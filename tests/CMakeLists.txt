@@ -40,6 +40,9 @@ configure_file("configs/key_integration2.pub" "${CMAKE_CURRENT_BINARY_DIR}/key_i
 configure_file("configs/test_sign.priv" "${CMAKE_CURRENT_BINARY_DIR}/test_sign.priv" COPYONLY)
 configure_file("configs/test_sign.pub" "${CMAKE_CURRENT_BINARY_DIR}/test_sign.pub" COPYONLY)
 
+configure_file("configs/test_sign.priv" "${CMAKE_CURRENT_BINARY_DIR}/test_sign.priv" COPYONLY)
+configure_file("configs/test_sign.pub" "${CMAKE_CURRENT_BINARY_DIR}/test_sign.pub" COPYONLY)
+
 file(COPY configs/key_integration0.priv
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/key_integration0.priv)
 file(COPY configs/key_integration1.priv
