@@ -24,9 +24,13 @@ Buffer::Buffer(const std::string &string, const InputType input_type) {
   }
 }
 
-void Buffer::save(const std::string &filepath) {
+bool Buffer::save(const std::string &filepath) {
   std::ofstream of(filepath, std::ios::binary);
+  if (!of.is_open()) {
+    return false;
+  }
   of.write(reinterpret_cast<const char *>(data()), size());
+  return true;
 }
 
 void Buffer::copy(const uint8_t *data, const std::size_t size) {
