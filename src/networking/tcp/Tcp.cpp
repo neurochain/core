@@ -86,9 +86,9 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
   LOG_DEBUG << this << " It passed the lock on new_connection TCP";
 
   auto message = std::make_shared<messages::Message>();
-  auto header = message->mutable_header();
-  auto peer_tmp = header->mutable_peer();
-  auto body = message->add_bodies();
+  auto msg_header = message->mutable_header();
+  auto msg_peer = msg_header->mutable_peer();
+  auto msg_body = message->add_bodies();
 
   if (!error) {
     _current_connection_id++;
@@ -98,19 +98,19 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
         _current_connection_id, this->id(), _queue, socket, peer, from_remote);
     auto inserted = _connections.insert({_current_connection_id, connection});
 
-    auto connection_ready = body->mutable_connection_ready();
+    auto connection_ready = msg_body->mutable_connection_ready();
 
     connection_ready->set_from_remote(from_remote);
 
-    peer_tmp->CopyFrom(*peer);
+    msg_peer->CopyFrom(*peer);
     _queue->publish(message);
     inserted.first->second->read();
   } else {
     LOG_WARNING << "Could not create new connection to " << *peer << " due to "
                 << error.message();
 
-    body->mutable_connection_closed();
-    peer_tmp->CopyFrom(*peer);
+    msg_body->mutable_connection_closed();
+    msg_peer->CopyFrom(*peer);
     _queue->publish(message);
   }
 }
