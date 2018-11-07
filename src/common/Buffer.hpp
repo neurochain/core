@@ -12,7 +12,7 @@ namespace neuro {
 
 class Buffer : public std::vector<uint8_t> {
  public:
-  enum class InputType { HEX };
+  enum class InputType { RAW, HEX };
 
  private:
   inline uint8_t char2uint(const char c) {
@@ -29,6 +29,8 @@ class Buffer : public std::vector<uint8_t> {
     throw std::runtime_error("Bad input");
   }
 
+  bool read_hex(const std::string &str);
+
  public:
   Buffer() = default;
   Buffer(const Buffer &) = default;
@@ -38,12 +40,10 @@ class Buffer : public std::vector<uint8_t> {
   Buffer(const char *data, const std::size_t size) {
     copy(reinterpret_cast<const uint8_t *>(data), size);
   }
-  Buffer(const std::string &string)
-      : std::vector<uint8_t>(string.cbegin(), string.cend()) {}
-
   Buffer(const std::initializer_list<uint8_t> init) : vector<uint8_t>(init) {}
 
-  Buffer(const std::string &string, const InputType input_type);
+  Buffer(const std::string &string,
+         const InputType input_type = InputType::RAW);
   void save(const std::string &filepath);
   void copy(const uint8_t *data, const std::size_t size);
   void copy(const std::string &string);
