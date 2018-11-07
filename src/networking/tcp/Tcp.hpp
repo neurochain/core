@@ -150,7 +150,7 @@ class Tcp : public TransportLayer {
             ProtocolType protocol_type);
   bool send_unicast(std::shared_ptr<messages::Message> message,
                     ProtocolType protocol_type);
-  bool disconnected(const Connection::ID id, std::shared_ptr<Peer> remote_peer);
+  bool disconnect(const Connection::ID id);
   Port listening_port() const;
   IP local_ip() const;
   void terminate(const Connection::ID id);

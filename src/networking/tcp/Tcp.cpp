@@ -191,7 +191,7 @@ std::size_t Tcp::peer_count() const {
   return _connection_pool.size();
 }
 
-bool Tcp::disconnected(const Connection::ID id, std::shared_ptr<Peer> peer) {
+bool Tcp::disconnect(const Connection::ID id) {
   return _connection_pool.disconnect(id);
 }
 
