@@ -36,6 +36,14 @@ class LedgerMongodb : public Ledger {
 
   void init_block0(const messages::config::Database &db);
 
+  bool get_block_unsafe(const messages::BlockID &id, messages::Block *block);
+
+  bool get_block_unsafe(const messages::BlockHeight height,
+                        messages::Block *block);
+
+  bool get_block_header_unsafe(const messages::BlockID &id,
+                               messages::BlockHeader *header);
+
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);
   LedgerMongodb(const messages::config::Database &db);
@@ -52,7 +60,7 @@ class LedgerMongodb : public Ledger {
   bool get_last_block_header(messages::BlockHeader *block_header);
 
   bool get_block(const messages::BlockID &id, messages::Block *block);
-  ;
+
   bool get_block_by_previd(const messages::BlockID &previd,
                            messages::Block *block);
 
