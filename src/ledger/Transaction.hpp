@@ -4,14 +4,9 @@
 #include "messages.pb.h"
 
 namespace neuro {
-<<<<<<< Updated upstream
-namespace ledger {}  // namespace ledger
-}  // namespace neuro
-=======
 namespace ledger {
 namespace Transaction {}  // namespace Transaction
 }  // namespace ledger
-}  // neuro
->>>>>>> Stashed changes
+}  // namespace neuro
 
 #endif /* NEURO_SRC_LEDGER_TRANSACTION_HPP */
