@@ -459,7 +459,7 @@ void Bot::handler_deconnection(const messages::Header &header,
   // std::lock_guard<std::mutex> lock_connections(_mutex_connections);
   auto peers = _tcp_config->mutable_peers();
   auto it = std::find(peers->begin(), peers->end(), remote_peer);
-  _tcp->terminated(remote_peer.connection_id());
+  _tcp->terminate(remote_peer.connection_id());
 
   if (it == peers->end()) {
     LOG_WARNING << "Unknown peer disconnected";
@@ -514,7 +514,7 @@ void Bot::handler_world(const messages::Header &header,
     LOG_DEBUG << this << " Not accepted, disconnecting ...";
     remote_peer->set_status(messages::Peer::FULL);
     // Should I call terminate from the connection
-    _tcp->terminated(remote_peer->connection_id());
+    _tcp->terminate(remote_peer->connection_id());
   } else {
     bool accepted = (_connected_peers < _max_connections);
 
@@ -522,7 +522,7 @@ void Bot::handler_world(const messages::Header &header,
       LOG_DEBUG << this
                 << " Closing a connection because remote is already full";
       remote_peer->set_status(messages::Peer::REACHABLE);
-      _tcp->terminated(remote_peer->connection_id());
+      _tcp->terminate(remote_peer->connection_id());
     } else {
       remote_peer->set_status(messages::Peer::CONNECTED);
     }

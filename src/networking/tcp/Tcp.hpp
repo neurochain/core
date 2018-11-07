@@ -153,7 +153,7 @@ class Tcp : public TransportLayer {
   bool disconnected(const Connection::ID id, std::shared_ptr<Peer> remote_peer);
   Port listening_port() const;
   IP local_ip() const;
-  void terminated(const Connection::ID id);
+  void terminate(const Connection::ID id);
   std::size_t peer_count() const;
   std::shared_ptr<tcp::Connection> connection(const Connection::ID id) const;
   ~Tcp();

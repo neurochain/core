@@ -135,7 +135,7 @@ void Tcp::_stop() {
   LOG_DEBUG << this << " Finished the _stop() in tcp";
 }
 
-void Tcp::terminated(const Connection::ID id) {
+void Tcp::terminate(const Connection::ID id) {
   _connection_pool.erase(id);
 }
 
