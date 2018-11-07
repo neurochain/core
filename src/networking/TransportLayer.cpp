@@ -5,12 +5,11 @@
 namespace neuro {
 namespace networking {
 
-TransportLayer::TransportLayer(std::shared_ptr<messages::Queue> queue,
+TransportLayer::TransportLayer(ID id,std::shared_ptr<messages::Queue> queue,
                                std::shared_ptr<crypto::Ecc> keys)
-    : _queue(queue), _keys(keys), _id(-1) {}
+    : _queue(queue), _keys(keys), _id(id) {}
 
 TransportLayer::ID TransportLayer::id() const { return _id; }
-void TransportLayer::id(const TransportLayer::ID id) { _id = id; }
 
 void TransportLayer::run() {
   _thread = std::thread([this]() { this->_run(); });

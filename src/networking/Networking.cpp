@@ -46,13 +46,16 @@ void Networking::send_unicast(std::shared_ptr<messages::Message> message,
       ->send_unicast(message, type);
 }
 
-TransportLayer::ID Networking::push(
-    std::shared_ptr<TransportLayer> transport_layer) {
-  _transport_layers.push_back(transport_layer);
-  transport_layer->run();
+std::pair<std::shared_ptr<Tcp>, TransportLayer::ID> Networking::create_tcp(
+    std::shared_ptr<messages::Queue> queue, std::shared_ptr<crypto::Ecc> keys,
+    ::google::protobuf::int32 port) {
   const auto id = _transport_layers.size() - 1;
-  transport_layer->id(id);
-  return id;
+  auto tcp = std::make_shared<Tcp>(id, _queue, keys);
+  tcp->accept(port);
+  LOG_INFO << this << " Accepting connections on port " << port;
+  _transport_layers.push_back(tcp);
+  tcp->run();
+  return std::make_pair(tcp, id);
 }
 
 void Networking::stop() {

@@ -15,12 +15,12 @@ namespace neuro {
 namespace networking {
 using namespace std::chrono_literals;
 
-Tcp::Tcp(std::shared_ptr<messages::Queue> queue,
+Tcp::Tcp(ID id, std::shared_ptr<messages::Queue> queue,
          std::shared_ptr<crypto::Ecc> keys)
-    : TransportLayer(queue, keys),
+    : TransportLayer(id, queue, keys),
       _io_service(),
       _resolver(_io_service),
-      _current_connection_id(0) {}
+      _connection_pool(id) {}
 
 bool Tcp::connect(const bai::tcp::endpoint host, const Port port) {
   throw std::runtime_error("connect host:port not implemented");
@@ -81,22 +81,15 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
                          const boost::system::error_code &error,
                          std::shared_ptr<messages::Peer> peer,
                          const bool from_remote) {
-  LOG_DEBUG << this << " It entered new_connection on TCP";
-  std::lock_guard<std::mutex> lock_queue(_connection_mutex);
-  LOG_DEBUG << this << " It passed the lock on new_connection TCP";
-
   auto message = std::make_shared<messages::Message>();
   auto msg_header = message->mutable_header();
   auto msg_peer = msg_header->mutable_peer();
   auto msg_body = message->add_bodies();
 
   if (!error) {
-    _current_connection_id++;
-    peer->set_connection_id(_current_connection_id);
-
-    auto connection = std::make_shared<tcp::Connection>(
-        _current_connection_id, this->id(), _queue, socket, peer, from_remote);
-    auto inserted = _connections.insert({_current_connection_id, connection});
+    auto conn_insertion = _connection_pool.insert(_queue, socket, peer, from_remote);
+    auto &connection_ptr = conn_insertion.first->second;
+    peer->set_connection_id(connection_ptr->id());
 
     auto connection_ready = msg_body->mutable_connection_ready();
 
@@ -104,7 +97,7 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
 
     msg_peer->CopyFrom(*peer);
     _queue->publish(message);
-    inserted.first->second->read();
+    connection_ptr->read();
   } else {
     LOG_WARNING << "Could not create new connection to " << *peer << " due to "
                 << error.message();
@@ -115,17 +108,8 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
   }
 }
 
-std::shared_ptr<tcp::Connection> Tcp::connection(const Connection::ID id,
-                                                 bool &found) const {
-  std::lock_guard<std::mutex> lock_queue(_connection_mutex);
-  auto got = _connections.find(id);
-  if (got == _connections.end()) {
-    LOG_ERROR << this << " " << __LINE__ << " Connection not found";
-    found = false;
-    return _connections.end()->second;
-  }
-  found = true;
-  return got->second;
+std::shared_ptr<tcp::Connection> Tcp::connection(const Connection::ID id) const {
+  return _connection_pool.find(id);
 }
 
 void Tcp::_run() {
@@ -152,13 +136,7 @@ void Tcp::_stop() {
 }
 
 void Tcp::terminated(const Connection::ID id) {
-  std::lock_guard<std::mutex> lock_queue(_connection_mutex);
-  auto got = _connections.find(id);
-  if (got == _connections.end()) {
-    LOG_ERROR << this << " " << __LINE__ << " Connection not found " << id;
-    return;
-  }
-  _connections.erase(got);
+  _connection_pool.erase(id);
 }
 
 bool Tcp::serialize(std::shared_ptr<messages::Message> message,
@@ -184,9 +162,7 @@ bool Tcp::serialize(std::shared_ptr<messages::Message> message,
 
 bool Tcp::send(std::shared_ptr<messages::Message> message,
                ProtocolType protocol_type) {
-  std::lock_guard<std::mutex> lock_queue(_connection_mutex);
-
-  if (_connections.size() == 0) {
+  if (_connection_pool.size() == 0) {
     LOG_ERROR << "Could not send message because there is no connection";
     return false;
   }
@@ -197,57 +173,29 @@ bool Tcp::send(std::shared_ptr<messages::Message> message,
   std::cout << "\033[1;34mSending message: >>" << *message << "<<\033[0m\n";
   serialize(message, protocol_type, &header_tcp, &body_tcp);
 
-  bool res = true;
-  for (auto &connection : _connections) {
-    res &= connection.second->send(header_tcp);
-    res &= connection.second->send(body_tcp);
-  }
-
-  return res;
+  return _connection_pool.send(header_tcp, body_tcp);
 }
 
 bool Tcp::send_unicast(std::shared_ptr<messages::Message> message,
                        ProtocolType protocol_type) {
-  std::lock_guard<std::mutex> lock_queue(_connection_mutex);
   assert(message->header().has_peer());
-  auto got = _connections.find(message->header().peer().connection_id());
-  if (got == _connections.end()) {
-    return false;
-  }
-
   Buffer header_tcp(sizeof(networking::tcp::HeaderPattern), 0);
   Buffer body_tcp;
-
   LOG_DEBUG << "\033[1;34mSending unicast : >>" << *message << "<<\033[0m";
   serialize(message, protocol_type, &header_tcp, &body_tcp);
-
-  got->second->send(header_tcp);
-  got->second->send(body_tcp);
-
-  return true;
+  return _connection_pool.send_unicast(message->header().peer().connection_id(),
+                                   header_tcp, body_tcp);
 }
 
 std::size_t Tcp::peer_count() const {
-  std::lock_guard<std::mutex> lock_queue(_connection_mutex);
-  return _connections.size();
+  return _connection_pool.size();
 }
 
 bool Tcp::disconnected(const Connection::ID id, std::shared_ptr<Peer> peer) {
-  {
-    std::lock_guard<std::mutex> lock_queue(_connection_mutex);
-    auto got = _connections.find(id);
-    if (got == _connections.end()) {
-      LOG_WARNING << __LINE__ << " Connection not found";
-      return false;
-    }
-    _connections.erase(got);
-  }
-
-  return true;
+  return _connection_pool.disconnect(id);
 }
 
 Tcp::~Tcp() {
-  std::lock_guard<std::mutex> lock_queue(_connection_mutex);
   _stop();
   LOG_DEBUG << this << " TCP killed";
 }

@@ -260,11 +260,9 @@ bool Bot::load_networking(messages::config::Config *config) {
     LOG_DEBUG << this << " Peer: " << peer;
   }
 
-  _tcp = std::make_shared<networking::Tcp>(_queue, _keys);
   auto port = tcpconfig->port();
-  _tcp->accept(port);
-  LOG_INFO << this << " Accepting connections on port " << port;
-  _networking->push(_tcp);
+  auto tcp_creation = _networking->create_tcp(_queue, _keys, port);
+  _tcp = tcp_creation.first;
   if (tcpconfig->peers().empty()) {
     LOG_WARNING << this << " There is no information about peers";
   }
@@ -593,10 +591,9 @@ void Bot::handler_hello(const messages::Header &header,
 
   // update port by listen_port
   if (remote_peer->has_connection_id()) {
-    bool connection_found;
-    const auto &connection =
-        _tcp->connection(remote_peer->connection_id(), connection_found);
-    if (connection_found) {
+    const auto connection =
+        _tcp->connection(remote_peer->connection_id());
+    if (connection != nullptr) {
       remote_peer->set_port(connection->listen_port());
     }
   } else {
