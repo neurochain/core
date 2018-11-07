@@ -12,7 +12,7 @@ namespace neuro {
 
 class Buffer : public std::vector<uint8_t> {
  public:
-  enum class InputType { RAW, HEX };
+  enum class InputType { RAW, HEX/*, B64*/ };
 
  private:
   inline uint8_t char2uint(const char c) {
@@ -30,6 +30,7 @@ class Buffer : public std::vector<uint8_t> {
   }
 
   bool read_hex(const std::string &str);
+  // bool read_b64(const std::string &str);
 
  public:
   Buffer() = default;
