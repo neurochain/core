@@ -194,7 +194,6 @@ bool LedgerMongodb::get_block_by_previd(const messages::BlockID &previd,
 
 bool LedgerMongodb::get_block_unsafe(const messages::BlockHeight height,
                                      messages::Block *block) {
-  std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto query = bss::document{} << "height" << height << bss::finalize;
   const auto res = _blocks.find_one(std::move(query), remove_OID());
   if (!res) {
