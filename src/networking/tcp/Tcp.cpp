@@ -15,6 +15,84 @@ namespace neuro {
 namespace networking {
 using namespace std::chrono_literals;
 
+Tcp::ConnectionPool::ConnectionPool(Tcp::ID parent_id)
+    : _current_id(0), _parent_id(parent_id) {}
+
+std::pair<Tcp::ConnectionPool::iterator, bool> Tcp::ConnectionPool::insert(
+    std::shared_ptr<messages::Queue> queue,
+    std::shared_ptr<boost::asio::ip::tcp::socket> socket,
+    std::shared_ptr<messages::Peer> remote_peer, const bool from_remote) {
+  std::lock_guard<std::mutex> lock_queue(_connections_mutex);
+
+  auto connection = std::make_shared<tcp::Connection>(
+      _current_id, _parent_id, queue, socket, remote_peer, from_remote);
+  return _connections.insert(std::make_pair(_current_id++, connection));
+}
+
+std::shared_ptr<tcp::Connection> Tcp::ConnectionPool::find(
+    const Connection::ID id) const {
+  std::shared_ptr<tcp::Connection> ans;
+  std::lock_guard<std::mutex> lock_queue(_connections_mutex);
+  auto got = _connections.find(id);
+  if (got != _connections.end()) {
+    ans = got->second;
+  } else {
+    LOG_ERROR << this << " " << __LINE__ << " Connection not found";
+  }
+  return ans;
+}
+
+bool Tcp::ConnectionPool::erase(ID id) {
+  std::lock_guard<std::mutex> lock_queue(_connections_mutex);
+  auto got = _connections.find(id);
+  if (got == _connections.end()) {
+    LOG_ERROR << this << " " << __LINE__ << " Connection not found " << id;
+    return false;
+  }
+  _connections.erase(got);
+  return true;
+}
+
+std::size_t Tcp::ConnectionPool::size() const {
+  std::lock_guard<std::mutex> lock_queue(_connections_mutex);
+  return _connections.size();
+}
+
+bool Tcp::ConnectionPool::send(const Buffer &header_tcp,
+                               const Buffer &body_tcp) {
+  std::lock_guard<std::mutex> lock_queue(_connections_mutex);
+  bool res = true;
+  for (auto &it : _connections) {
+    auto &connection = it.second;
+    res &= connection->send(header_tcp);
+    res &= connection->send(body_tcp);
+  }
+  return res;
+}
+
+bool Tcp::ConnectionPool::send_unicast(ID id, const Buffer &header_tcp,
+                                       const Buffer &body_tcp) {
+  std::lock_guard<std::mutex> lock_queue(_connections_mutex);
+  auto got = _connections.find(id);
+  if (got == _connections.end()) {
+    return false;
+  }
+  got->second->send(header_tcp);
+  got->second->send(body_tcp);
+  return true;
+}
+
+bool Tcp::ConnectionPool::disconnect(ID id) {
+  std::lock_guard<std::mutex> lock_queue(_connections_mutex);
+  auto got = _connections.find(id);
+  if (got == _connections.end()) {
+    LOG_WARNING << __LINE__ << " Connection not found";
+    return false;
+  }
+  _connections.erase(got);
+  return true;
+}
+
 Tcp::Tcp(ID id, std::shared_ptr<messages::Queue> queue,
          std::shared_ptr<crypto::Ecc> keys)
     : TransportLayer(id, queue, keys),
@@ -87,7 +165,8 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
   auto msg_body = message->add_bodies();
 
   if (!error) {
-    auto conn_insertion = _connection_pool.insert(_queue, socket, peer, from_remote);
+    auto conn_insertion =
+        _connection_pool.insert(_queue, socket, peer, from_remote);
     auto &connection_ptr = conn_insertion.first->second;
     peer->set_connection_id(connection_ptr->id());
 
@@ -108,7 +187,8 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
   }
 }
 
-std::shared_ptr<tcp::Connection> Tcp::connection(const Connection::ID id) const {
+std::shared_ptr<tcp::Connection> Tcp::connection(
+    const Connection::ID id) const {
   return _connection_pool.find(id);
 }
 
@@ -135,9 +215,7 @@ void Tcp::_stop() {
   LOG_DEBUG << this << " Finished the _stop() in tcp";
 }
 
-void Tcp::terminate(const Connection::ID id) {
-  _connection_pool.erase(id);
-}
+void Tcp::terminate(const Connection::ID id) { _connection_pool.erase(id); }
 
 bool Tcp::serialize(std::shared_ptr<messages::Message> message,
                     const ProtocolType protocol_type, Buffer *header_tcp,
@@ -184,12 +262,10 @@ bool Tcp::send_unicast(std::shared_ptr<messages::Message> message,
   LOG_DEBUG << "\033[1;34mSending unicast : >>" << *message << "<<\033[0m";
   serialize(message, protocol_type, &header_tcp, &body_tcp);
   return _connection_pool.send_unicast(message->header().peer().connection_id(),
-                                   header_tcp, body_tcp);
+                                       header_tcp, body_tcp);
 }
 
-std::size_t Tcp::peer_count() const {
-  return _connection_pool.size();
-}
+std::size_t Tcp::peer_count() const { return _connection_pool.size(); }
 
 bool Tcp::disconnect(const Connection::ID id) {
   return _connection_pool.disconnect(id);

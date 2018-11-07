@@ -40,79 +40,18 @@ class Tcp : public TransportLayer {
     mutable std::mutex _connections_mutex;
 
    public:
-    ConnectionPool(Tcp::ID parent_id) : _current_id(0), _parent_id(parent_id) {}
+    ConnectionPool(Tcp::ID parent_id);
 
     std::pair<iterator, bool> insert(
         std::shared_ptr<messages::Queue> queue,
         std::shared_ptr<boost::asio::ip::tcp::socket> socket,
-        std::shared_ptr<messages::Peer> remote_peer, const bool from_remote) {
-      std::lock_guard<std::mutex> lock_queue(_connections_mutex);
-
-      auto connection = std::make_shared<tcp::Connection>(
-          _current_id, _parent_id, queue, socket, remote_peer, from_remote);
-      return _connections.insert(std::make_pair(_current_id++, connection));
-    }
-
-    std::shared_ptr<tcp::Connection> find(const Connection::ID id) const {
-      std::shared_ptr<tcp::Connection> ans;
-      std::lock_guard<std::mutex> lock_queue(_connections_mutex);
-      auto got = _connections.find(id);
-      if (got != _connections.end()) {
-        ans = got->second;
-      } else {
-        LOG_ERROR << this << " " << __LINE__ << " Connection not found";
-      }
-      return ans;
-    }
-
-    bool erase(ID id) {
-      std::lock_guard<std::mutex> lock_queue(_connections_mutex);
-      auto got = _connections.find(id);
-      if (got == _connections.end()) {
-        LOG_ERROR << this << " " << __LINE__ << " Connection not found " << id;
-        return false;
-      }
-      _connections.erase(got);
-      return true;
-    }
-
-    std::size_t size() const {
-      std::lock_guard<std::mutex> lock_queue(_connections_mutex);
-      return _connections.size();
-    }
-
-    bool send(const Buffer &header_tcp, const Buffer &body_tcp) {
-      std::lock_guard<std::mutex> lock_queue(_connections_mutex);
-      bool res = true;
-      for (auto &it : _connections) {
-        auto &connection = it.second;
-        res &= connection->send(header_tcp);
-        res &= connection->send(body_tcp);
-      }
-      return res;
-    }
-
-    bool send_unicast(ID id, const Buffer &header_tcp, const Buffer &body_tcp) {
-      std::lock_guard<std::mutex> lock_queue(_connections_mutex);
-      auto got = _connections.find(id);
-      if (got == _connections.end()) {
-        return false;
-      }
-      got->second->send(header_tcp);
-      got->second->send(body_tcp);
-      return true;
-    }
-
-    bool disconnect(ID id) {
-      std::lock_guard<std::mutex> lock_queue(_connections_mutex);
-      auto got = _connections.find(id);
-      if (got == _connections.end()) {
-        LOG_WARNING << __LINE__ << " Connection not found";
-        return false;
-      }
-      _connections.erase(got);
-      return true;
-    }
+        std::shared_ptr<messages::Peer> remote_peer, const bool from_remote);
+    std::shared_ptr<tcp::Connection> find(const Connection::ID id) const;
+    bool erase(ID id);
+    std::size_t size() const;
+    bool send(const Buffer &header_tcp, const Buffer &body_tcp);
+    bool send_unicast(ID id, const Buffer &header_tcp, const Buffer &body_tcp);
+    bool disconnect(ID id);
   };
 
   bool _started{false};
