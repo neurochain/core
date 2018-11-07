@@ -7,12 +7,11 @@
 namespace neuro {
 
 Buffer::Buffer(const std::string &string, const InputType input_type) {
-  if ((string.size() % 2) == 1) {
-    throw std::runtime_error("Bad input size");
-  }
-
   switch (input_type) {
     case InputType::HEX: {
+      if ((string.size() % 2) == 1) {
+        throw std::runtime_error("Bad input size");
+      }
       auto it = string.begin(), end = string.end();
       while (it < end) {
         push_back((char2uint(*it) << 4) + char2uint(*(it + 1)));
