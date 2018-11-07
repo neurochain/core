@@ -27,8 +27,10 @@ class Connection : public networking::Connection,
   std::shared_ptr<tcp::socket> _socket;
   std::shared_ptr<messages::Peer> _remote_peer;
   Port _listen_port;
-  std::atomic<bool> _is_dead{false};
-  std::mutex _connection_mutex;
+
+  void terminate();
+  void read_header();
+  void read_body(std::size_t body_size);
 
  public:
   Connection(const ID id, networking::TransportLayer::ID transport_layer_id,
@@ -49,8 +51,6 @@ class Connection : public networking::Connection,
   std::shared_ptr<tcp::socket> socket();
 
   void read();
-  void read_header();
-  void read_body();
 
   bool send(const Buffer &message);
   const std::shared_ptr<messages::Peer> peer() const;
@@ -58,7 +58,7 @@ class Connection : public networking::Connection,
   const Port remote_port() const;
   const Port listen_port() const;
   std::shared_ptr<messages::Peer> remote_peer();
-  void terminate();
+  void close();
   ~Connection();
 };
 }  // namespace tcp

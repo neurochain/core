@@ -29,13 +29,13 @@ std::pair<Tcp::ConnectionPool::iterator, bool> Tcp::ConnectionPool::insert(
   return _connections.insert(std::make_pair(_current_id++, connection));
 }
 
-std::shared_ptr<tcp::Connection> Tcp::ConnectionPool::find(
+std::optional<Port> Tcp::ConnectionPool::connection_port(
     const Connection::ID id) const {
-  std::shared_ptr<tcp::Connection> ans;
+  std::optional<Port> ans;
   std::lock_guard<std::mutex> lock_queue(_connections_mutex);
   auto got = _connections.find(id);
   if (got != _connections.end()) {
-    ans = got->second;
+    ans = got->second->listen_port();
   } else {
     LOG_ERROR << this << " " << __LINE__ << " Connection not found";
   }
@@ -187,9 +187,8 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
   }
 }
 
-std::shared_ptr<tcp::Connection> Tcp::connection(
-    const Connection::ID id) const {
-  return _connection_pool.find(id);
+std::optional<Port> Tcp::connection_port(const Connection::ID id) const {
+  return _connection_pool.connection_port(id);
 }
 
 void Tcp::_run() {

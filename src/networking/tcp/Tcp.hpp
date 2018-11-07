@@ -46,7 +46,7 @@ class Tcp : public TransportLayer {
         std::shared_ptr<messages::Queue> queue,
         std::shared_ptr<boost::asio::ip::tcp::socket> socket,
         std::shared_ptr<messages::Peer> remote_peer, const bool from_remote);
-    std::shared_ptr<tcp::Connection> find(const Connection::ID id) const;
+    std::optional<Port> connection_port(const Connection::ID id) const;
     bool erase(ID id);
     std::size_t size() const;
     bool send(const Buffer &header_tcp, const Buffer &body_tcp);
@@ -94,7 +94,7 @@ class Tcp : public TransportLayer {
   IP local_ip() const;
   void terminate(const Connection::ID id);
   std::size_t peer_count() const;
-  std::shared_ptr<tcp::Connection> connection(const Connection::ID id) const;
+  std::optional<Port> connection_port(const Connection::ID id) const;
   ~Tcp();
 
   friend class neuro::networking::test::Tcp;
