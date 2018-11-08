@@ -24,14 +24,13 @@ void Connection::read_header() {
           return;
         }
 
-        auto header_pattern =
-            reinterpret_cast<HeaderPattern *>(_this->_header.data());
-        _this->_buffer.resize(header_pattern->size);
-        _this->read_body();
+        auto header_pattern = reinterpret_cast<HeaderPattern *>(_header.data());
+        _this->read_body(header_pattern->size);
       });
 }
 
-void Connection::read_body() {
+  void Connection::read_body(const std::size_t size) {
+  _buffer.resize(size);
   boost::asio::async_read(
       *_socket, boost::asio::buffer(_buffer.data(), _buffer.size()),
       [_this = ptr()](const boost::system::error_code &error,
