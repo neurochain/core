@@ -41,9 +41,6 @@ class QueueTest {
     sub_0.subscribe(messages::Type::kHello, callback_hello1);
     sub_1.subscribe(messages::Type::kHello, callback_hello2);
     sub_2.subscribe(messages::Type::kWorld, callback_world1);
-    tested_queue->subscribe(&sub_0);
-    tested_queue->subscribe(&sub_1);
-    tested_queue->subscribe(&sub_2);
     ASSERT_EQ(tested_queue->_subscribers.size(), 3);
     std::size_t count_sub_0(0), count_sub_1(0), count_sub_2(0);
     for (const auto &sub : tested_queue->_subscribers) {
