@@ -66,10 +66,10 @@ std::string Buffer::str() const {
 
 std::ostream &operator<<(std::ostream &os, const Buffer &buffer) {
   std::ios_base::fmtflags f(os.flags());
-  os << std::setfill('0') << std::setw(2) << std::hex;
-  std::copy(buffer.cbegin(), buffer.cend(), std::ostream_iterator<int>(os, ""));
+  for (auto& x: buffer) {
+    os << std::setfill('0') << std::setw(2) << std::hex << (unsigned int)x;
+  }
   os.flags(f);
-
   return os;
 }
 

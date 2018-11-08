@@ -48,7 +48,7 @@ TEST(Buffer, Ctors) {
     Buffer tested_buffer(raw_data, 6);
     std::stringstream output;
     output << tested_buffer;
-    std::string expected_str("12354dff");
+    std::string expected_str("010203054dff");
     ASSERT_EQ(output.str(), expected_str);
     ++step;
   } catch (...) {
@@ -70,7 +70,7 @@ TEST(Buffer, Ctors) {
     Buffer tested_buffer(initial_str, Buffer::InputType::HEX);
     std::stringstream output;
     output << tested_buffer;
-    std::string expected_str("12357ff");
+    std::string expected_str("0102030507ff");
     ASSERT_EQ(output.str(), expected_str);
     ++step;
   } catch (...) {
@@ -80,7 +80,7 @@ TEST(Buffer, Ctors) {
     Buffer tested_buffer({1, 2, 3, 5, 77, 255});
     std::stringstream output;
     output << tested_buffer;
-    std::string expected_str("12354dff");
+    std::string expected_str("010203054dff");
     ASSERT_EQ(output.str(), expected_str);
     ++step;
   } catch (...) {
@@ -109,7 +109,7 @@ TEST(Buffer, save) {
 TEST(Buffer, str) {
   // todo: check what is expected
   Buffer tested_buffer({1, 2, 3, 5, 77, 255});
-  std::string expected_str("12354dff");
+  std::string expected_str("010203054dff");
   tested_buffer.str();
   // ASSERT_EQ(expected_str, tested_buffer.str());
 }
