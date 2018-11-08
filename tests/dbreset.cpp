@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "config.pb.h"
+#include "messages/config/Config.hpp"
 #include "src/ledger/LedgerMongodb.hpp"
 #include "src/messages/Message.hpp"
 

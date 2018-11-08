@@ -7,6 +7,7 @@
 #include "messages.pb.h"
 #include "messages/Hasher.hpp"
 #include "messages/Message.hpp"
+#include "messages/config/Config.hpp"
 #include "tooling/genblock.hpp"
 
 #include <sys/stat.h>

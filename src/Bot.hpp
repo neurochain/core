@@ -9,6 +9,7 @@
 #include "messages/Message.hpp"
 #include "messages/Queue.hpp"
 #include "messages/Subscriber.hpp"
+#include "messages/config/Config.hpp"
 #include "networking/Networking.hpp"
 #include "networking/tcp/Tcp.hpp"
 #include "rest/Rest.hpp"
@@ -128,8 +129,8 @@ class Bot {
   }
 
  public:
-  Bot(const std::string &configuration_path);
-  Bot(std::istream &bot_stream);
+  Bot(const messages::config::Config &config);
+  Bot(const std::string &config_path);
   Bot(const Bot &) = delete;
   Bot(Bot &&) = delete;
 
