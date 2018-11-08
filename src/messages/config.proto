@@ -49,7 +49,7 @@ message Networking {
   optional int32 peers_update_time = 3;
 }
 
-message Config {
+message _Config {
   enum SelectionMethod {
     SIMPLE = 0;
     PING = 1;

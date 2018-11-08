@@ -1,8 +1,8 @@
-#include  <iomanip>
+#include <iomanip>
 
-#include "common/Buffer.hpp"
 #include <iostream>
 #include <iterator>
+#include "common/Buffer.hpp"
 
 namespace neuro {
 
