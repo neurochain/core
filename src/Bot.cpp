@@ -635,7 +635,8 @@ bool Bot::next_to_connect(messages::Peer **peer) {
   auto peers = _tcp_config->mutable_peers();
 
   for (auto &peer : *_tcp_config->mutable_peers()) {
-    std::cout << this << " PEER STATUS " << peer << std::endl;
+    LOG_TRACE << this << " PEER STATUS " << peer.endpoint() << ":"
+              << peer.port() << peer.Status_Name(peer.status()) << std::endl;
   }
 
   switch (_selection_method) {
