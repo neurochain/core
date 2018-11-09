@@ -31,6 +31,7 @@ class Connection : public networking::Connection,
   void terminate();
   void read_header();
   void read_body(std::size_t body_size);
+  std::shared_ptr<Connection> ptr() { return shared_from_this(); }
 
  public:
   Connection(const ID id, networking::TransportLayer::ID transport_layer_id,
@@ -46,16 +47,9 @@ class Connection : public networking::Connection,
         _remote_peer(remote_peer),
         _listen_port(_remote_peer->port()) {}
 
-  std::shared_ptr<Connection> ptr() { return shared_from_this(); }
-
   std::shared_ptr<tcp::socket> socket();
 
   void read();
-<<<<<<< HEAD
-  void read_header();
-  void read_body(const std::size_t size);
-=======
->>>>>>> fix/48/blocking-tcp-connection-dtor
 
   bool send(const Buffer &message);
   const std::shared_ptr<messages::Peer> peer() const;

@@ -25,22 +25,11 @@ void Connection::read_header() {
               reinterpret_cast<HeaderPattern *>(_this->_header.data());
           _this->read_body(header_pattern->size);
         }
-<<<<<<< HEAD
-
-        auto header_pattern = reinterpret_cast<HeaderPattern *>(_this->_header.data());
-        _this->read_body(header_pattern->size);
-      });
-}
-
-  void Connection::read_body(const std::size_t size) {
-  _buffer.resize(size);
-=======
       });
 }
 
 void Connection::read_body(std::size_t body_size) {
   _buffer.resize(body_size);
->>>>>>> fix/48/blocking-tcp-connection-dtor
   boost::asio::async_read(
       *_socket, boost::asio::buffer(_buffer.data(), _buffer.size()),
       [_this = ptr()](const boost::system::error_code &error,
