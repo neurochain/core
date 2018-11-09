@@ -6,7 +6,6 @@
 #include <unordered_map>
 
 #include "common/types.hpp"
-#include "networking/Connection.hpp"
 #include "networking/TransportLayer.hpp"
 #include "networking/tcp/Connection.hpp"
 
@@ -23,17 +22,46 @@ class Tcp;
 
 class Tcp : public TransportLayer {
  private:
+  class ConnectionPool {
+   public:
+    using ID = Connection::ID;
+
+   private:
+    using ConnPtr = std::shared_ptr<tcp::Connection>;
+    using Map = std::unordered_map<ID, ConnPtr>;
+
+   public:
+    using iterator = Map::iterator;
+
+   private:
+    ID _current_id;
+    Tcp::ID _parent_id;
+    Map _connections;
+    mutable std::mutex _connections_mutex;
+
+   public:
+    ConnectionPool(Tcp::ID parent_id);
+
+    std::pair<iterator, bool> insert(
+        std::shared_ptr<messages::Queue> queue,
+        std::shared_ptr<boost::asio::ip::tcp::socket> socket,
+        std::shared_ptr<messages::Peer> remote_peer, const bool from_remote);
+    std::optional<Port> connection_port(const Connection::ID id) const;
+    bool erase(ID id);
+    std::size_t size() const;
+    bool send(const Buffer &header_tcp, const Buffer &body_tcp);
+    bool send_unicast(ID id, const Buffer &header_tcp, const Buffer &body_tcp);
+    bool disconnect(ID id);
+  };
+
   bool _started{false};
   boost::asio::io_service _io_service;
   bai::tcp::resolver _resolver;
-  Connection::ID _current_connection_id;
-  std::unordered_map<Connection::ID, std::shared_ptr<tcp::Connection>>
-      _connections;
-  mutable std::mutex _connection_mutex;
   std::atomic<bool> _stopping{false};
   Port _listening_port{0};
   IP _local_ip{};
   mutable std::mutex _stopping_mutex;
+  ConnectionPool _connection_pool;
 
   void _run();
   void _stop();
@@ -51,7 +79,7 @@ class Tcp : public TransportLayer {
   Tcp(Tcp &&) = delete;
   Tcp(const Tcp &) = delete;
 
-  Tcp(std::shared_ptr<messages::Queue> queue,
+  Tcp(ID id, std::shared_ptr<messages::Queue> queue,
       std::shared_ptr<crypto::Ecc> keys);
   void accept(const Port port);
   void connect(const std::string &host, const std::string &service);
@@ -61,13 +89,12 @@ class Tcp : public TransportLayer {
             ProtocolType protocol_type);
   bool send_unicast(std::shared_ptr<messages::Message> message,
                     ProtocolType protocol_type);
-  bool disconnected(const Connection::ID id, std::shared_ptr<Peer> remote_peer);
+  bool disconnect(const Connection::ID id);
   Port listening_port() const;
   IP local_ip() const;
-  void terminated(const Connection::ID id);
+  void terminate(const Connection::ID id);
   std::size_t peer_count() const;
-  std::shared_ptr<tcp::Connection> connection(const Connection::ID id,
-                                              bool &found) const;
+  std::optional<Port> connection_port(const Connection::ID id) const;
   ~Tcp();
 
   friend class neuro::networking::test::Tcp;

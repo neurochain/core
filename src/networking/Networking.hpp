@@ -9,7 +9,7 @@
 #include "messages.pb.h"
 #include "messages/Queue.hpp"
 #include "messages/Subscriber.hpp"
-#include "networking/TransportLayer.hpp"
+#include "networking/tcp/Tcp.hpp"
 #include "networking/tcp/Connection.hpp"
 
 namespace neuro {
@@ -27,7 +27,10 @@ class Networking {
   Networking(std::shared_ptr<messages::Queue> _queue);
   ~Networking();
 
-  TransportLayer::ID push(std::shared_ptr<TransportLayer> transport_layer);
+  std::pair<std::shared_ptr<Tcp>, TransportLayer::ID> create_tcp(
+      std::shared_ptr<messages::Queue> queue,
+      std::shared_ptr<crypto::Ecc> keys,
+      ::google::protobuf::int32 port);
   void send(std::shared_ptr<messages::Message> message, ProtocolType type);
   void send_unicast(std::shared_ptr<messages::Message> message,
                     ProtocolType type);

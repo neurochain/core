@@ -96,6 +96,7 @@ void LedgerMongodb::init_block0(const messages::config::Database &db) {
 }
 
 void LedgerMongodb::remove_all() {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
   _blocks.delete_many(bss::document{} << bss::finalize);
   _blocks_forks.delete_many(bss::document{}.view());
   _transactions.delete_many(bss::document{}.view());
@@ -119,9 +120,8 @@ messages::BlockHeight LedgerMongodb::height() {
   return res->view()["height"].get_int32().value;
 }
 
-bool LedgerMongodb::get_block_header(const messages::BlockID &id,
-                                     messages::BlockHeader *header) {
-  std::lock_guard<std::mutex> lock(_ledger_mutex);
+bool LedgerMongodb::get_block_header_unsafe(const messages::BlockID &id,
+                                            messages::BlockHeader *header) {
   const auto bson_id = to_bson(id);
   auto query = bss::document{} << "id" << bson_id << bss::finalize;
   auto res = _blocks.find_one(std::move(query), remove_OID());
@@ -131,13 +131,22 @@ bool LedgerMongodb::get_block_header(const messages::BlockID &id,
   return get_block_header(res->view(), header);
 }
 
+bool LedgerMongodb::get_block_header(const messages::BlockID &id,
+                                     messages::BlockHeader *header) {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  return get_block_header_unsafe(id, header);
+}
+
 bool LedgerMongodb::get_last_block_header(messages::BlockHeader *block_header) {
+  LOG_TRACE;
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto query = bss::document{} << bss::finalize;
   auto options = remove_OID();
   options.sort(bss::document{} << "height" << -1 << bss::finalize);
 
+  LOG_TRACE;
   const auto res = _blocks.find_one(std::move(query), options);
+  LOG_TRACE;
   if (!res) {
     return false;
   }
@@ -146,15 +155,20 @@ bool LedgerMongodb::get_last_block_header(messages::BlockHeader *block_header) {
   return true;
 }
 
-bool LedgerMongodb::get_block(const messages::BlockID &id,
-                              messages::Block *block) {
-  // std::lock_guard<std::mutex> lock(_ledger_mutex);
+bool LedgerMongodb::get_block_unsafe(const messages::BlockID &id,
+                                     messages::Block *block) {
   auto header = block->mutable_header();
-  auto res_state = get_block_header(id, header);
+  auto res_state = get_block_header_unsafe(id, header);
 
   res_state &= get_transactions_from_block(id, block);
 
   return res_state;
+}
+
+bool LedgerMongodb::get_block(const messages::BlockID &id,
+                              messages::Block *block) {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  return get_block_unsafe(id, block);
 }
 
 bool LedgerMongodb::get_block_by_previd(const messages::BlockID &previd,
@@ -178,9 +192,8 @@ bool LedgerMongodb::get_block_by_previd(const messages::BlockID &previd,
   return true;
 }
 
-bool LedgerMongodb::get_block(const messages::BlockHeight height,
-                              messages::Block *block) {
-  std::lock_guard<std::mutex> lock(_ledger_mutex);
+bool LedgerMongodb::get_block_unsafe(const messages::BlockHeight height,
+                                     messages::Block *block) {
   auto query = bss::document{} << "height" << height << bss::finalize;
   const auto res = _blocks.find_one(std::move(query), remove_OID());
   if (!res) {
@@ -193,6 +206,12 @@ bool LedgerMongodb::get_block(const messages::BlockHeight height,
   get_transactions_from_block(res->view()["id"].get_document(), block);
 
   return true;
+}
+
+bool LedgerMongodb::get_block(const messages::BlockHeight height,
+                              messages::Block *block) {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  return get_block_unsafe(height, block);
 }
 
 bool LedgerMongodb::push_block(const messages::Block &block) {

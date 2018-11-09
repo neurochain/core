@@ -20,9 +20,12 @@ void Connection::read_header() {
         if (error) {
           LOG_ERROR << _this << " " << __LINE__ << " Killing connection "
                     << error;
-          _this->terminate();
-          return;
+        } else {
+          auto header_pattern =
+              reinterpret_cast<HeaderPattern *>(_this->_header.data());
+          _this->read_body(header_pattern->size);
         }
+<<<<<<< HEAD
 
         auto header_pattern = reinterpret_cast<HeaderPattern *>(_this->_header.data());
         _this->read_body(header_pattern->size);
@@ -31,6 +34,13 @@ void Connection::read_header() {
 
   void Connection::read_body(const std::size_t size) {
   _buffer.resize(size);
+=======
+      });
+}
+
+void Connection::read_body(std::size_t body_size) {
+  _buffer.resize(body_size);
+>>>>>>> fix/48/blocking-tcp-connection-dtor
   boost::asio::async_read(
       *_socket, boost::asio::buffer(_buffer.data(), _buffer.size()),
       [_this = ptr()](const boost::system::error_code &error,
@@ -38,76 +48,71 @@ void Connection::read_header() {
         if (error) {
           LOG_ERROR << _this << " " << __LINE__ << " Killing connection "
                     << error;
-          _this->terminate();
-          return;
-        }
+        } else {
+          const auto header_pattern =
+              reinterpret_cast<HeaderPattern *>(_this->_header.data());
 
-        const auto header_pattern =
-            reinterpret_cast<HeaderPattern *>(_this->_header.data());
+          auto message = std::make_shared<messages::Message>();
+          messages::from_buffer(_this->_buffer, message.get());
 
-        auto message = std::make_shared<messages::Message>();
-        messages::from_buffer(_this->_buffer, message.get());
+          auto header = message->mutable_header();
 
-        auto header = message->mutable_header();
+          header->mutable_peer()->CopyFrom(*_this->_remote_peer);
+          auto signature = header->mutable_signature();
+          signature->set_type(messages::Hash::SHA256);
+          signature->set_data(header_pattern->signature,
+                              sizeof(header_pattern->signature));
 
-        header->mutable_peer()->CopyFrom(*_this->_remote_peer);
-        auto signature = header->mutable_signature();
-        signature->set_type(messages::Hash::SHA256);
-        signature->set_data(header_pattern->signature,
-                            sizeof(header_pattern->signature));
+          // validate the MessageVersion from the header
+          if (header->version() != neuro::MessageVersion) {
+            LOG_ERROR << " MessageVersion not corresponding: "
+                      << neuro::MessageVersion << " (mine) vs "
+                      << header->version() << " )";
+          } else {
+            for (const auto &body : message->bodies()) {
+              const auto type = get_type(body);
+              LOG_DEBUG << _this << " read_body TYPE " << type;
+              if (type == messages::Type::kHello) {
+                auto hello = body.hello();
 
-        // validate the MessageVersion from the header
-        if (header->version() != neuro::MessageVersion) {
-          LOG_ERROR << " MessageVersion not corresponding: "
-                    << neuro::MessageVersion << " (mine) vs "
-                    << header->version() << " )";
-          _this->terminate();
-          return;
-        }
+                if (hello.has_listen_port()) {
+                  _this->_listen_port = hello.listen_port();
+                }
 
-        for (const auto &body : message->bodies()) {
-          const auto type = get_type(body);
-          LOG_DEBUG << _this << " read_body TYPE " << type;
-          if (type == messages::Type::kHello) {
-            auto hello = body.hello();
-
-            if (hello.has_listen_port()) {
-              _this->_listen_port = hello.listen_port();
+                if (!_this->_remote_peer->has_key_pub()) {
+                  LOG_INFO << "Updating peer with hello key pub";
+                  _this->_remote_peer->mutable_key_pub()->CopyFrom(
+                      hello.key_pub());
+                }
+              }
             }
+            std::cout << "\033[1;32mMessage received: " << *message << "\033[0m"
+                      << std::endl;
 
             if (!_this->_remote_peer->has_key_pub()) {
-              LOG_INFO << "Updating peer with hello key pub";
-              _this->_remote_peer->mutable_key_pub()->CopyFrom(hello.key_pub());
+              LOG_ERROR << "Not Key pub set";
+              _this->read_header();
+              return;
             }
+            crypto::EccPub ecc_pub;
+            const auto key_pub = _this->_remote_peer->key_pub();
+
+            ecc_pub.load(
+                reinterpret_cast<const uint8_t *>(key_pub.raw_data().data()),
+                key_pub.raw_data().size());
+
+            const auto check =
+                ecc_pub.verify(_this->_buffer, header_pattern->signature,
+                               sizeof(header_pattern->signature));
+
+            if (!check) {
+              LOG_ERROR << "Bad signature, dropping message";
+            } else {
+              _this->_queue->publish(message);
+            }
+            _this->read_header();
           }
         }
-        std::cout << "\033[1;32mMessage received: " << *message << "\033[0m"
-                  << std::endl;
-
-        if (!_this->_remote_peer->has_key_pub()) {
-          LOG_ERROR << "Not Key pub set";
-          _this->read_header();
-          return;
-        }
-        crypto::EccPub ecc_pub;
-        const auto key_pub = _this->_remote_peer->key_pub();
-
-        ecc_pub.load(
-            reinterpret_cast<const uint8_t *>(key_pub.raw_data().data()),
-            key_pub.raw_data().size());
-
-        const auto check =
-            ecc_pub.verify(_this->_buffer, header_pattern->signature,
-                           sizeof(header_pattern->signature));
-
-        if (!check) {
-          LOG_ERROR << "Bad signature, dropping message";
-          _this->read_header();
-          return;
-        }
-
-        _this->_queue->publish(message);
-        _this->read_header();
       });
 }
 
@@ -120,7 +125,7 @@ bool Connection::send(const Buffer &message) {
           LOG_ERROR << "Could not send message";
           LOG_ERROR << _this << " " << __LINE__ << " Killing connection "
                     << error;
-          _this->terminate();
+          _this->close();
           return false;
         }
         return true;
@@ -128,12 +133,10 @@ bool Connection::send(const Buffer &message) {
   return true;
 }
 
+void Connection::close() { _socket->close(); }
+
 void Connection::terminate() {
-  std::lock_guard<std::mutex> m(_connection_mutex);
-  if (_is_dead) {
-    return;
-  }
-  _socket->close();
+  close();
   auto message = std::make_shared<messages::Message>();
   auto header = message->mutable_header();
   auto peer = header->mutable_peer();
@@ -141,7 +144,6 @@ void Connection::terminate() {
   auto body = message->add_bodies();
   body->mutable_connection_closed();
   _queue->publish(message);
-  _is_dead = true;
 }
 
 const IP Connection::remote_ip() const {
@@ -160,11 +162,7 @@ std::shared_ptr<messages::Peer> Connection::remote_peer() {
   return _remote_peer;
 }
 Connection::~Connection() {
-  _socket->close();
-
-  while (!_is_dead) {
-    std::this_thread::yield();
-  }
+  terminate();
   LOG_DEBUG << this << " Connection killed";
 }
 }  // namespace tcp

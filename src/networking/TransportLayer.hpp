@@ -33,7 +33,7 @@ class TransportLayer {
   virtual void _stop() = 0;
 
  public:
-  TransportLayer(std::shared_ptr<messages::Queue> queue,
+  TransportLayer(ID id, std::shared_ptr<messages::Queue> queue,
                  std::shared_ptr<crypto::Ecc> keys);
 
   virtual bool send(const std::shared_ptr<messages::Message> message,
@@ -43,7 +43,6 @@ class TransportLayer {
   virtual std::size_t peer_count() const = 0;
 
   ID id() const;
-  void id(const ID id);
   void run();
   void stop();
   void join();

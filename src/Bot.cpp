@@ -260,11 +260,9 @@ bool Bot::load_networking(messages::config::Config *config) {
     LOG_DEBUG << this << " Peer: " << peer;
   }
 
-  _tcp = std::make_shared<networking::Tcp>(_queue, _keys);
   auto port = tcpconfig->port();
-  _tcp->accept(port);
-  LOG_INFO << this << " Accepting connections on port " << port;
-  _networking->push(_tcp);
+  auto tcp_creation = _networking->create_tcp(_queue, _keys, port);
+  _tcp = tcp_creation.first;
   if (tcpconfig->peers().empty()) {
     LOG_WARNING << this << " There is no information about peers";
   }
@@ -461,7 +459,7 @@ void Bot::handler_deconnection(const messages::Header &header,
   // std::lock_guard<std::mutex> lock_connections(_mutex_connections);
   auto peers = _tcp_config->mutable_peers();
   auto it = std::find(peers->begin(), peers->end(), remote_peer);
-  _tcp->terminated(remote_peer.connection_id());
+  _tcp->terminate(remote_peer.connection_id());
 
   if (it == peers->end()) {
     LOG_WARNING << "Unknown peer disconnected";
@@ -516,7 +514,7 @@ void Bot::handler_world(const messages::Header &header,
     LOG_DEBUG << this << " Not accepted, disconnecting ...";
     remote_peer->set_status(messages::Peer::FULL);
     // Should I call terminate from the connection
-    _tcp->terminated(remote_peer->connection_id());
+    _tcp->terminate(remote_peer->connection_id());
   } else {
     bool accepted = (_connected_peers < _max_connections);
 
@@ -524,7 +522,7 @@ void Bot::handler_world(const messages::Header &header,
       LOG_DEBUG << this
                 << " Closing a connection because remote is already full";
       remote_peer->set_status(messages::Peer::REACHABLE);
-      _tcp->terminated(remote_peer->connection_id());
+      _tcp->terminate(remote_peer->connection_id());
     } else {
       remote_peer->set_status(messages::Peer::CONNECTED);
     }
@@ -593,11 +591,10 @@ void Bot::handler_hello(const messages::Header &header,
 
   // update port by listen_port
   if (remote_peer->has_connection_id()) {
-    bool connection_found;
-    const auto &connection =
-        _tcp->connection(remote_peer->connection_id(), connection_found);
-    if (connection_found) {
-      remote_peer->set_port(connection->listen_port());
+    auto port =
+        _tcp->connection_port(remote_peer->connection_id());
+    if (!!port) {
+      remote_peer->set_port(*port);
     }
   } else {
     // TODO check this;
