@@ -21,11 +21,11 @@ Tcp::ConnectionPool::ConnectionPool(Tcp::ID parent_id)
 std::pair<Tcp::ConnectionPool::iterator, bool> Tcp::ConnectionPool::insert(
     std::shared_ptr<messages::Queue> queue,
     std::shared_ptr<boost::asio::ip::tcp::socket> socket,
-    std::shared_ptr<messages::Peer> remote_peer, const bool from_remote) {
+    std::shared_ptr<messages::Peer> remote_peer) {
   std::lock_guard<std::mutex> lock_queue(_connections_mutex);
 
   auto connection = std::make_shared<tcp::Connection>(
-      _current_id, _parent_id, queue, socket, remote_peer, from_remote);
+      _current_id, _parent_id, queue, socket, remote_peer);
   return _connections.insert(std::make_pair(_current_id++, connection));
 }
 
@@ -166,7 +166,7 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
 
   if (!error) {
     auto conn_insertion =
-        _connection_pool.insert(_queue, socket, peer, from_remote);
+        _connection_pool.insert(_queue, socket, peer);
     auto &connection_ptr = conn_insertion.first->second;
     peer->set_connection_id(connection_ptr->id());
 

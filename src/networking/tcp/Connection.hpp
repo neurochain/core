@@ -37,8 +37,7 @@ class Connection : public networking::Connection,
   Connection(const ID id, networking::TransportLayer::ID transport_layer_id,
              std::shared_ptr<messages::Queue> queue,
              std::shared_ptr<tcp::socket> socket,
-             std::shared_ptr<messages::Peer> remote_peer,
-             const bool from_remote)
+             std::shared_ptr<messages::Peer> remote_peer)
       : ::neuro::networking::Connection::Connection(id, transport_layer_id,
                                                     queue),
         _header(sizeof(HeaderPattern), 0),

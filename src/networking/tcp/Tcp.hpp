@@ -45,7 +45,7 @@ class Tcp : public TransportLayer {
     std::pair<iterator, bool> insert(
         std::shared_ptr<messages::Queue> queue,
         std::shared_ptr<boost::asio::ip::tcp::socket> socket,
-        std::shared_ptr<messages::Peer> remote_peer, const bool from_remote);
+        std::shared_ptr<messages::Peer> remote_peer);
     std::optional<Port> connection_port(const Connection::ID id) const;
     bool erase(ID id);
     std::size_t size() const;
