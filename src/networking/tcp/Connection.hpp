@@ -47,16 +47,15 @@ class Connection : public networking::Connection,
         _remote_peer(remote_peer),
         _listen_port(_remote_peer->port()) {}
 
-  std::shared_ptr<tcp::socket> socket();
+  std::shared_ptr<const tcp::socket> socket() const;
 
   void read();
 
   bool send(const Buffer &message);
-  const std::shared_ptr<messages::Peer> peer() const;
+  std::shared_ptr<const messages::Peer> remote_peer() const;
   const IP remote_ip() const;
   const Port remote_port() const;
   const Port listen_port() const;
-  std::shared_ptr<messages::Peer> remote_peer();
   void close();
   ~Connection();
 };

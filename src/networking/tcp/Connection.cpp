@@ -8,7 +8,7 @@ namespace neuro {
 namespace networking {
 namespace tcp {
 
-std::shared_ptr<tcp::socket> Connection::socket() { return _socket; }
+std::shared_ptr<const tcp::socket> Connection::socket() const { return _socket; }
 
 void Connection::read() { read_header(); }
 
@@ -147,7 +147,7 @@ const Port Connection::remote_port() const {
 
 const Port Connection::listen_port() const { return _listen_port; }
 
-std::shared_ptr<messages::Peer> Connection::remote_peer() {
+std::shared_ptr<const messages::Peer> Connection::remote_peer() const {
   return _remote_peer;
 }
 Connection::~Connection() {
