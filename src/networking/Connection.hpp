@@ -18,9 +18,7 @@ class Connection {
 
  public:
   Connection(const ID id, TransportLayer::ID transport_layer_id,
-             std::shared_ptr<messages::Queue> queue)
-      : _id(id), _transport_layer_id(transport_layer_id), _queue(queue) {}
-
+             std::shared_ptr<messages::Queue> queue);
   ID id() const;
   TransportLayer::ID transport_layer_id() const;
 };

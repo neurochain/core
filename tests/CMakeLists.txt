@@ -70,6 +70,7 @@ add_executable(ut
   ./messages/Subscriber.cpp
   ./networking/TransportLayer.cpp
   ./networking/tcp/Tcp.cpp
+  ./networking/tcp/Connection.cpp
   )
 
 target_link_libraries(ut
