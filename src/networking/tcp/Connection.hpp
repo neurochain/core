@@ -27,7 +27,6 @@ class Connection : public networking::Connection,
   std::shared_ptr<tcp::socket> _socket;
   std::shared_ptr<messages::Peer> _remote_peer;
   Port _listen_port;
-  std::atomic<bool> _is_dead{false};
   std::mutex _connection_mutex;
 
  public:

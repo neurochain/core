@@ -20,18 +20,16 @@ void Connection::read_header() {
         if (error) {
           LOG_ERROR << _this << " " << __LINE__ << " Killing connection "
                     << error;
-          _this->terminate();
           return;
         }
 
-        auto header_pattern =
-            reinterpret_cast<HeaderPattern *>(_this->_header.data());
-        _this->_buffer.resize(header_pattern->size);
-        _this->read_body();
+        auto header_pattern = reinterpret_cast<HeaderPattern *>(_this->_header.data());
+        _this->read_body(header_pattern->size);
       });
 }
 
-void Connection::read_body() {
+void Connection::read_body(const std::size_t size) {
+  _buffer.resize(size);
   boost::asio::async_read(
       *_socket, boost::asio::buffer(_buffer.data(), _buffer.size()),
       [_this = ptr()](const boost::system::error_code &error,
@@ -39,7 +37,6 @@ void Connection::read_body() {
         if (error) {
           LOG_ERROR << _this << " " << __LINE__ << " Killing connection "
                     << error;
-          _this->terminate();
           return;
         }
 
@@ -62,7 +59,6 @@ void Connection::read_body() {
           LOG_ERROR << " MessageVersion not corresponding: "
                     << neuro::MessageVersion << " (mine) vs "
                     << header->version() << " )";
-          _this->terminate();
           return;
         }
 
@@ -121,28 +117,11 @@ bool Connection::send(const Buffer &message) {
           LOG_ERROR << "Could not send message";
           LOG_ERROR << _this << " " << __LINE__ << " Killing connection "
                     << error;
-          _this->terminate();
           return false;
         }
         return true;
       });
   return true;
-}
-
-void Connection::terminate() {
-  std::lock_guard<std::mutex> m(_connection_mutex);
-  if (_is_dead) {
-    return;
-  }
-  _socket->close();
-  auto message = std::make_shared<messages::Message>();
-  auto header = message->mutable_header();
-  auto peer = header->mutable_peer();
-  peer->CopyFrom(*_remote_peer);
-  auto body = message->add_bodies();
-  body->mutable_connection_closed();
-  _queue->publish(message);
-  _is_dead = true;
 }
 
 const IP Connection::remote_ip() const {
@@ -161,12 +140,21 @@ std::shared_ptr<messages::Peer> Connection::remote_peer() {
   return _remote_peer;
 }
 Connection::~Connection() {
-  _socket->close();
-
-  while (!_is_dead) {
-    std::this_thread::yield();
+  boost::system::error_code ec;
+  
+  _socket->close(ec);
+  if (ec) {
+    LOG_ERROR << ec.message();
   }
-  LOG_DEBUG << this << " Connection killed";
+
+  _socket->close();
+  auto message = std::make_shared<messages::Message>();
+  auto header = message->mutable_header();
+  auto peer = header->mutable_peer();
+  peer->CopyFrom(*_remote_peer);
+  auto body = message->add_bodies();
+  body->mutable_connection_closed();
+  _queue->publish(message);
 }
 }  // namespace tcp
 }  // namespace networking
