@@ -309,7 +309,8 @@ void Bot::regular_update() {
 void Bot::update_peerlist() {
   LOG_DEBUG << this << " FROM UPDATE PEERLIST";
   for (auto &peer : *_tcp_config->mutable_peers()) {
-    std::cout << this << " PEER STATUS " << peer << std::endl;
+    LOG_TRACE << this << " PEER STATUS " << peer.endpoint() << ":"
+              << peer.port() << peer.Status_Name(peer.status()) << std::endl;
   }
   auto msg = std::make_shared<messages::Message>();
   messages::fill_header(msg->mutable_header());
