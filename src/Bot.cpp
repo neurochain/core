@@ -784,6 +784,7 @@ Bot::~Bot() {
     std::this_thread::sleep_for(10ms);
   }
   _subscriber.unsubscribe();
+  _consensus.reset();
   if (_io_context_thread.joinable()) {
     _io_context_thread.join();
   }
