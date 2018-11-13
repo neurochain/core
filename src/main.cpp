@@ -44,7 +44,6 @@ int main(int argc, char *argv[]) {
 
   const auto configuration_filepath = vm["configuration"].as<std::string>();
   Bot bot(configuration_filepath);
-  bot.join();
   return 0;
 }
 }  // namespace neuro

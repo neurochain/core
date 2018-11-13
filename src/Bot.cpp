@@ -773,8 +773,6 @@ void Bot::publish_transaction(const messages::Transaction &transaction) const {
   _networking->send(message, networking::ProtocolType::PROTOBUF2);
 }
 
-void Bot::join() { _networking->join(); }
-
 Bot::~Bot() {
   _update_timer.cancel();
   _io_context->stop();

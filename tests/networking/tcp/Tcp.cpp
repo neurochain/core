@@ -15,19 +15,17 @@ class Tcp {
 
   void test_connection() {
     auto queue = std::make_shared<messages::Queue>();
+    ASSERT_NE(queue, nullptr);
     auto keys1 = std::make_shared<crypto::Ecc>(),
          keys2 = std::make_shared<crypto::Ecc>();
-    networking::Tcp tcp1(0, queue, keys1);
-    networking::Tcp tcp2(1, queue, keys2);
     Port port{31212};  // Maybe change this to the port to be used by the bot
-    tcp1.accept(port);
+    networking::Tcp tcp1(port, 1, queue, keys1);
+    networking::Tcp tcp2(port + 1, 2, queue, keys2);
     auto peer = std::make_shared<messages::Peer>();
     peer->set_endpoint("127.0.0.1");
     peer->set_port(port);
     tcp2.connect(peer);
-    tcp1._io_service.run_one();
-    tcp2._io_service.run_one();
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     ASSERT_EQ(tcp1._connection_pool.size(), 1);
     ASSERT_EQ(tcp2._connection_pool.size(), 1);
   }

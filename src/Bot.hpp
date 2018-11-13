@@ -135,8 +135,6 @@ class Bot {
 
   virtual ~Bot();  // save_config(_config);
 
-  void stop();
-  void join();
   const std::vector<messages::Peer> connected_peers() const;
   Bot::Status status() const;
   void keep_max_connections();

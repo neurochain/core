@@ -50,24 +50,10 @@ std::pair<std::shared_ptr<Tcp>, TransportLayer::ID> Networking::create_tcp(
     std::shared_ptr<messages::Queue> queue, std::shared_ptr<crypto::Ecc> keys,
     ::google::protobuf::int32 port) {
   const auto id = _transport_layers.size() - 1;
-  auto tcp = std::make_shared<Tcp>(id, _queue, keys);
-  tcp->accept(port);
+  auto tcp = std::make_shared<Tcp>(port, id, _queue, keys);
   LOG_INFO << this << " Accepting connections on port " << port;
   _transport_layers.push_back(tcp);
-  tcp->run();
   return std::make_pair(tcp, id);
-}
-
-void Networking::stop() {
-  for (const auto transport_layer : _transport_layers) {
-    transport_layer->stop();
-  }
-}
-
-void Networking::join() {
-  for (const auto &transport_layer : _transport_layers) {
-    transport_layer->join();
-  }
 }
 
 std::size_t Networking::peer_count() const {
@@ -79,13 +65,7 @@ std::size_t Networking::peer_count() const {
   return r;
 }
 
-Networking::~Networking() {
-  LOG_DEBUG << this << " Networking killing";
-  stop();
-  LOG_DEBUG << this << " Networking killing2";
-  _queue->quit();
-  LOG_DEBUG << this << " Networking killed";
-}
+Networking::~Networking() { LOG_DEBUG << this << " Networking killed"; }
 
 }  // namespace networking
 }  // namespace neuro

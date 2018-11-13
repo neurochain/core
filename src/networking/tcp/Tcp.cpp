@@ -15,8 +15,10 @@ namespace neuro {
 namespace networking {
 using namespace std::chrono_literals;
 
-Tcp::ConnectionPool::ConnectionPool(Tcp::ID parent_id)
-    : _current_id(0), _parent_id(parent_id) {}
+Tcp::ConnectionPool::ConnectionPool(
+    Tcp::ID parent_id,
+    const std::shared_ptr<boost::asio::io_service> &io_context)
+    : _current_id(0), _parent_id(parent_id), _io_context(io_context) {}
 
 std::pair<Tcp::ConnectionPool::iterator, bool> Tcp::ConnectionPool::insert(
     std::shared_ptr<messages::Queue> queue,
@@ -25,7 +27,7 @@ std::pair<Tcp::ConnectionPool::iterator, bool> Tcp::ConnectionPool::insert(
   std::lock_guard<std::mutex> lock_queue(_connections_mutex);
 
   auto connection = std::make_shared<tcp::Connection>(
-      _current_id, _parent_id, queue, socket, remote_peer);
+      _current_id, _parent_id, _io_context, queue, socket, remote_peer);
   return _connections.insert(std::make_pair(_current_id++, connection));
 }
 
@@ -93,12 +95,62 @@ bool Tcp::ConnectionPool::disconnect(ID id) {
   return true;
 }
 
-Tcp::Tcp(ID id, std::shared_ptr<messages::Queue> queue,
+void Tcp::ConnectionPool::disconnect_all() {
+  std::lock_guard<std::mutex> lock_queue(_connections_mutex);
+  for (auto &it : _connections) {
+    it.second->close();
+  }
+  _connections.clear();
+}
+
+void Tcp::start_accept() {
+  if (!_stopping) {
+    _new_socket = std::make_shared<bai::tcp::socket>(*_io_service_ptr);
+    _acceptor->async_accept(
+        *_new_socket.get(),
+        boost::bind(&Tcp::accept, this, boost::asio::placeholders::error));
+  }
+}
+
+void Tcp::accept(const boost::system::error_code &error) {
+  if (!error) {
+    const auto remote_endpoint =
+        _new_socket->remote_endpoint().address().to_string();
+
+    auto peer = std::make_shared<messages::Peer>();
+    peer->set_endpoint(remote_endpoint);
+    peer->set_port(_new_socket->remote_endpoint().port());
+    peer->set_status(messages::Peer::CONNECTING);
+    peer->set_transport_layer_id(_id);
+
+    this->new_connection(_new_socket, error, peer, true);
+  } else {
+    LOG_WARNING << "Rejected connection.";
+  }
+  _new_socket.reset();
+  start_accept();
+}  // namespace networking
+
+Tcp::Tcp(const Port port, ID id, std::shared_ptr<messages::Queue> queue,
          std::shared_ptr<crypto::Ecc> keys)
     : TransportLayer(id, queue, keys),
-      _io_service(),
-      _resolver(_io_service),
-      _connection_pool(id) {}
+      _io_service_ptr(std::make_shared<boost::asio::io_service>()),
+      _dummy_work(
+          std::make_shared<boost::asio::io_service::work>(*_io_service_ptr)),
+      _resolver(*_io_service_ptr),
+      _listening_port(port),
+      _acceptor(std::make_shared<bai::tcp::acceptor>(
+          *_io_service_ptr.get(),
+          bai::tcp::endpoint(bai::tcp::v4(), _listening_port))),
+      _connection_pool(id, _io_service_ptr),
+      _stopping(false) {
+  while (!_acceptor->is_open()) {
+    std::this_thread::yield();
+    LOG_DEBUG << "Waiting for acceptor to be open";
+  }
+  start_accept();
+  _io_context_thread = std::thread([this]() { this->_io_service_ptr->run(); });
+}
 
 bool Tcp::connect(const bai::tcp::endpoint host, const Port port) {
   throw std::runtime_error("connect host:port not implemented");
@@ -106,12 +158,12 @@ bool Tcp::connect(const bai::tcp::endpoint host, const Port port) {
 }
 
 void Tcp::connect(std::shared_ptr<messages::Peer> peer) {
-  bai::tcp::resolver resolver(_io_service);
+  bai::tcp::resolver resolver(*_io_service_ptr);
   bai::tcp::resolver::query query(peer->endpoint(),
                                   std::to_string(peer->port()));
   bai::tcp::resolver::iterator endpoint_iterator = resolver.resolve(query);
 
-  auto socket = std::make_shared<bai::tcp::socket>(_io_service);
+  auto socket = std::make_shared<bai::tcp::socket>(*_io_service_ptr);
   auto handler = [this, socket, peer](boost::system::error_code error,
                                       bai::tcp::resolver::iterator iterator) {
     this->new_connection(socket, error, peer, false);
@@ -120,37 +172,6 @@ void Tcp::connect(std::shared_ptr<messages::Peer> peer) {
 }
 
 void Tcp::connect(const std::string &host, const std::string &service) {}
-
-void Tcp::accept(const Port port) {
-  auto acceptor = std::make_shared<bai::tcp::acceptor>(
-      _io_service, bai::tcp::endpoint(bai::tcp::v4(), port));
-  accept(acceptor, port);
-}
-
-void Tcp::accept(std::shared_ptr<bai::tcp::acceptor> acceptor,
-                 const Port port) {
-  _listening_port = port;
-
-  auto socket = std::make_shared<bai::tcp::socket>(acceptor->get_io_service());
-  acceptor->async_accept(*socket, [this, acceptor, socket, port](
-                                      const boost::system::error_code &error) {
-    const auto remote_endpoint =
-        socket->remote_endpoint().address().to_string();
-
-    auto peer = std::make_shared<messages::Peer>();
-    peer->set_endpoint(remote_endpoint);
-    peer->set_port(socket->remote_endpoint().port());
-    peer->set_status(messages::Peer::CONNECTING);
-    peer->set_transport_layer_id(_id);
-
-    this->new_connection(socket, error, peer, true);
-    this->accept(acceptor, port);
-  });
-  while (!acceptor->is_open()) {
-    std::this_thread::yield();
-    LOG_DEBUG << "Waiting for acceptor to be open";
-  }
-}
 
 Port Tcp::listening_port() const { return _listening_port; }
 IP Tcp::local_ip() const { return _local_ip; }
@@ -165,8 +186,7 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
   auto msg_body = message->add_bodies();
 
   if (!error) {
-    auto conn_insertion =
-        _connection_pool.insert(_queue, socket, peer);
+    auto conn_insertion = _connection_pool.insert(_queue, socket, peer);
     auto &connection_ptr = conn_insertion.first->second;
     peer->set_connection_id(connection_ptr->id());
 
@@ -189,29 +209,6 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
 
 std::optional<Port> Tcp::connection_port(const Connection::ID id) const {
   return _connection_pool.connection_port(id);
-}
-
-void Tcp::_run() {
-  boost::system::error_code ec;
-  if (_stopping) {
-    return;
-  }
-  LOG_INFO << this << " Starting io_service";
-  _io_service.run(ec);
-  if (ec) {
-    LOG_ERROR << "service run failed (" << ec.message() << ")";
-  }
-}
-
-void Tcp::_stop() {
-  std::lock_guard<std::mutex> lock_queue(_stopping_mutex);
-  _stopping = true;
-  _io_service.stop();
-  while (!_io_service.stopped()) {
-    LOG_INFO << this << " waiting ...";
-    std::this_thread::sleep_for(10ms);
-  }
-  LOG_DEBUG << this << " Finished the _stop() in tcp";
 }
 
 void Tcp::terminate(const Connection::ID id) { _connection_pool.erase(id); }
@@ -271,7 +268,15 @@ bool Tcp::disconnect(const Connection::ID id) {
 }
 
 Tcp::~Tcp() {
-  _stop();
+  _stopping = true;
+  _acceptor->close();
+  _acceptor.reset();
+  _connection_pool.disconnect_all();
+  _dummy_work.reset();
+  _io_service_ptr->stop();
+  if (_io_context_thread.joinable()) {
+    _io_context_thread.join();
+  }
   LOG_DEBUG << this << " TCP killed";
 }
 

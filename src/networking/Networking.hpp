@@ -9,8 +9,8 @@
 #include "messages.pb.h"
 #include "messages/Queue.hpp"
 #include "messages/Subscriber.hpp"
-#include "networking/tcp/Tcp.hpp"
 #include "networking/tcp/Connection.hpp"
+#include "networking/tcp/Tcp.hpp"
 
 namespace neuro {
 namespace networking {
@@ -28,8 +28,7 @@ class Networking {
   ~Networking();
 
   std::pair<std::shared_ptr<Tcp>, TransportLayer::ID> create_tcp(
-      std::shared_ptr<messages::Queue> queue,
-      std::shared_ptr<crypto::Ecc> keys,
+      std::shared_ptr<messages::Queue> queue, std::shared_ptr<crypto::Ecc> keys,
       ::google::protobuf::int32 port);
   void send(std::shared_ptr<messages::Message> message, ProtocolType type);
   void send_unicast(std::shared_ptr<messages::Message> message,
@@ -38,9 +37,6 @@ class Networking {
   std::size_t peer_count() const;
   void remove_connection(const messages::Header &header,
                          const messages::Body &body);
-
-  void stop();
-  void join();
 };
 
 }  // namespace networking

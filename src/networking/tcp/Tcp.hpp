@@ -36,11 +36,13 @@ class Tcp : public TransportLayer {
    private:
     ID _current_id;
     Tcp::ID _parent_id;
+    std::shared_ptr<boost::asio::io_service> _io_context;
     Map _connections;
     mutable std::mutex _connections_mutex;
 
    public:
-    ConnectionPool(Tcp::ID parent_id);
+    ConnectionPool(Tcp::ID parent_id,
+                   const std::shared_ptr<boost::asio::io_service> &io_context);
 
     std::pair<iterator, bool> insert(
         std::shared_ptr<messages::Queue> queue,
@@ -52,36 +54,38 @@ class Tcp : public TransportLayer {
     bool send(const Buffer &header_tcp, const Buffer &body_tcp);
     bool send_unicast(ID id, const Buffer &header_tcp, const Buffer &body_tcp);
     bool disconnect(ID id);
+    void disconnect_all();
   };
 
-  bool _started{false};
-  boost::asio::io_service _io_service;
+  std::shared_ptr<boost::asio::io_service> _io_service_ptr;
+  std::shared_ptr<boost::asio::io_service::work> _dummy_work;
   bai::tcp::resolver _resolver;
-  std::atomic<bool> _stopping{false};
-  Port _listening_port{0};
+  Port _listening_port;
+  std::shared_ptr<bai::tcp::acceptor> _acceptor;
   IP _local_ip{};
-  mutable std::mutex _stopping_mutex;
   ConnectionPool _connection_pool;
+  std::shared_ptr<bai::tcp::socket> _new_socket;
+  std::thread _io_context_thread;
+  std::atomic<bool> _stopping;
 
-  void _run();
-  void _stop();
   void new_connection(std::shared_ptr<bai::tcp::socket> socket,
                       const boost::system::error_code &error,
                       std::shared_ptr<messages::Peer> peer,
                       const bool from_remote);
-  void accept(std::shared_ptr<bai::tcp::acceptor> acceptor, const Port port);
 
   bool serialize(std::shared_ptr<messages::Message> message,
                  const ProtocolType protocol_type, Buffer *header_tcp,
                  Buffer *body_tcp);
 
+  void start_accept();
+  void accept(const boost::system::error_code &error);
+
  public:
   Tcp(Tcp &&) = delete;
   Tcp(const Tcp &) = delete;
 
-  Tcp(ID id, std::shared_ptr<messages::Queue> queue,
+  Tcp(const Port port, ID id, std::shared_ptr<messages::Queue> queue,
       std::shared_ptr<crypto::Ecc> keys);
-  void accept(const Port port);
   void connect(const std::string &host, const std::string &service);
   void connect(std::shared_ptr<messages::Peer> peer);
   bool connect(const bai::tcp::endpoint host, const Port port);
