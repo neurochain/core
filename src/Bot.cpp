@@ -784,6 +784,9 @@ Bot::~Bot() {
     std::this_thread::sleep_for(10ms);
   }
   _subscriber.unsubscribe();
+  if (_io_context_thread.joinable()) {
+    _io_context_thread.join();
+  }
   LOG_DEBUG << this << " From Bot destructor " << &_subscriber;
 }
 
