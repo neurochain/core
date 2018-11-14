@@ -106,7 +106,7 @@ void Tcp::ConnectionPool::disconnect_all() {
 void Tcp::start_accept() {
   if (!_stopping) {
     _new_socket = std::make_shared<bai::tcp::socket>(*_io_service_ptr);
-    _acceptor->async_accept(
+    _acceptor.async_accept(
         *_new_socket.get(),
         boost::bind(&Tcp::accept, this, boost::asio::placeholders::error));
   }
@@ -137,12 +137,11 @@ Tcp::Tcp(const Port port, ID id, std::shared_ptr<messages::Queue> queue,
       _io_service_ptr(std::make_shared<boost::asio::io_service>()),
       _resolver(*_io_service_ptr),
       _listening_port(port),
-      _acceptor(std::make_shared<bai::tcp::acceptor>(
-          *_io_service_ptr.get(),
-          bai::tcp::endpoint(bai::tcp::v4(), _listening_port))),
+      _acceptor(*_io_service_ptr.get(),
+                bai::tcp::endpoint(bai::tcp::v4(), _listening_port)),
       _connection_pool(id, _io_service_ptr),
       _stopping(false) {
-  while (!_acceptor->is_open()) {
+  while (!_acceptor.is_open()) {
     std::this_thread::yield();
     LOG_DEBUG << "Waiting for acceptor to be open";
   }
@@ -267,8 +266,7 @@ bool Tcp::disconnect(const Connection::ID id) {
 
 Tcp::~Tcp() {
   _stopping = true;
-  _acceptor->close();
-  _acceptor.reset();
+  _io_service_ptr->post([this]() { _acceptor.close(); });
   _connection_pool.disconnect_all();
   _io_service_ptr->stop();
   if (_io_context_thread.joinable()) {
