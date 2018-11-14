@@ -84,9 +84,7 @@ class Tcp : public TransportLayer {
 
   Tcp(const Port port, ID id, std::shared_ptr<messages::Queue> queue,
       std::shared_ptr<crypto::Ecc> keys);
-  void connect(const std::string &host, const std::string &service);
   void connect(std::shared_ptr<messages::Peer> peer);
-  bool connect(const bai::tcp::endpoint host, const Port port);
   bool send(std::shared_ptr<messages::Message> message,
             ProtocolType protocol_type);
   bool send_unicast(std::shared_ptr<messages::Message> message,

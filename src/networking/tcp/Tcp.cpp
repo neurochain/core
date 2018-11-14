@@ -139,11 +139,6 @@ Tcp::Tcp(const Port port, ID id, std::shared_ptr<messages::Queue> queue,
   _io_context_thread = std::thread([this]() { this->_io_service_ptr->run(); });
 }
 
-bool Tcp::connect(const bai::tcp::endpoint host, const Port port) {
-  throw std::runtime_error("connect host:port not implemented");
-  return false;  // TODO
-}
-
 void Tcp::connect(std::shared_ptr<messages::Peer> peer) {
   bai::tcp::resolver resolver(*_io_service_ptr);
   bai::tcp::resolver::query query(peer->endpoint(),
@@ -157,8 +152,6 @@ void Tcp::connect(std::shared_ptr<messages::Peer> peer) {
   };
   boost::asio::async_connect(*socket, endpoint_iterator, handler);
 }
-
-void Tcp::connect(const std::string &host, const std::string &service) {}
 
 Port Tcp::listening_port() const { return _listening_port; }
 IP Tcp::local_ip() const { return _local_ip; }
