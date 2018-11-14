@@ -44,17 +44,6 @@ std::optional<Port> Tcp::ConnectionPool::connection_port(
   return ans;
 }
 
-bool Tcp::ConnectionPool::erase(ID id) {
-  std::lock_guard<std::mutex> lock_queue(_connections_mutex);
-  auto got = _connections.find(id);
-  if (got == _connections.end()) {
-    LOG_ERROR << this << " " << __LINE__ << " Connection not found " << id;
-    return false;
-  }
-  _connections.erase(got);
-  return true;
-}
-
 std::size_t Tcp::ConnectionPool::size() const {
   std::lock_guard<std::mutex> lock_queue(_connections_mutex);
   return _connections.size();
@@ -208,7 +197,7 @@ std::optional<Port> Tcp::connection_port(const Connection::ID id) const {
   return _connection_pool.connection_port(id);
 }
 
-void Tcp::terminate(const Connection::ID id) { _connection_pool.erase(id); }
+void Tcp::terminate(const Connection::ID id) { _connection_pool.disconnect(id); }
 
 bool Tcp::serialize(std::shared_ptr<messages::Message> message,
                     const ProtocolType protocol_type, Buffer *header_tcp,

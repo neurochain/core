@@ -49,7 +49,6 @@ class Tcp : public TransportLayer {
         std::shared_ptr<boost::asio::ip::tcp::socket> socket,
         std::shared_ptr<messages::Peer> remote_peer);
     std::optional<Port> connection_port(const Connection::ID id) const;
-    bool erase(ID id);
     std::size_t size() const;
     bool send(const Buffer &header_tcp, const Buffer &body_tcp);
     bool send_unicast(ID id, const Buffer &header_tcp, const Buffer &body_tcp);
