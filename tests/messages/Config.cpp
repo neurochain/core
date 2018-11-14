@@ -4,13 +4,20 @@
 #include "config.pb.h"
 #include "messages.pb.h"
 #include "messages/Message.hpp"
+#include "messages/config/Config.hpp"
 
 namespace neuro {
 namespace test {
 
 TEST(Conf, load) {
-  messages::config::Config conf;
-  ASSERT_TRUE(messages::from_json_file("./bot2.json", &conf));
+  bool did_throw(false);
+  try {
+    auto configuration = messages::config::Config{"./bot2.json"};
+  }
+  catch(...) { did_throw = true; }
+  ASSERT_NE(did_throw, true);
+
+  auto conf = messages::config::Config{"./bot2.json"};
 
   boost::filesystem::path pub_path(conf.key_pub_path());
   boost::filesystem::path priv_path(conf.key_priv_path());
