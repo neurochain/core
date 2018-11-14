@@ -58,7 +58,6 @@ class Tcp : public TransportLayer {
   };
 
   std::shared_ptr<boost::asio::io_service> _io_service_ptr;
-  std::shared_ptr<boost::asio::io_service::work> _dummy_work;
   bai::tcp::resolver _resolver;
   Port _listening_port;
   std::shared_ptr<bai::tcp::acceptor> _acceptor;

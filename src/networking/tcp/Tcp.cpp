@@ -135,8 +135,6 @@ Tcp::Tcp(const Port port, ID id, std::shared_ptr<messages::Queue> queue,
          std::shared_ptr<crypto::Ecc> keys)
     : TransportLayer(id, queue, keys),
       _io_service_ptr(std::make_shared<boost::asio::io_service>()),
-      _dummy_work(
-          std::make_shared<boost::asio::io_service::work>(*_io_service_ptr)),
       _resolver(*_io_service_ptr),
       _listening_port(port),
       _acceptor(std::make_shared<bai::tcp::acceptor>(
@@ -272,7 +270,6 @@ Tcp::~Tcp() {
   _acceptor->close();
   _acceptor.reset();
   _connection_pool.disconnect_all();
-  _dummy_work.reset();
   _io_service_ptr->stop();
   if (_io_context_thread.joinable()) {
     _io_context_thread.join();
