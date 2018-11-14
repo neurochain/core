@@ -9,6 +9,7 @@
 #include "messages/Message.hpp"
 #include "messages/Queue.hpp"
 #include "messages/Subscriber.hpp"
+#include "messages/config/Config.hpp"
 #include "networking/Networking.hpp"
 #include "networking/tcp/Tcp.hpp"
 #include "rest/Rest.hpp"
@@ -35,14 +36,14 @@ class Bot {
  private:
   std::shared_ptr<messages::Queue> _queue;
   std::shared_ptr<networking::Networking> _networking;
-  messages::config::Config _config;
-  std::shared_ptr<crypto::Ecc> _keys;
   messages::Subscriber _subscriber;
+  std::shared_ptr<boost::asio::io_context> _io_context;
+  messages::config::Config _config;
+  boost::asio::steady_timer _update_timer;
+  std::shared_ptr<crypto::Ecc> _keys;
   std::shared_ptr<ledger::Ledger> _ledger;
   std::shared_ptr<rest::Rest> _rest;
   std::shared_ptr<consensus::Consensus> _consensus;
-  std::shared_ptr<boost::asio::io_context> _io_context;
-  boost::asio::steady_timer _update_timer;
   std::unordered_set<int32_t> _request_ids;
   std::thread _io_context_thread;
 
@@ -128,8 +129,8 @@ class Bot {
   }
 
  public:
-  Bot(const std::string &configuration_path);
-  Bot(std::istream &bot_stream);
+  Bot(const messages::config::Config &config);
+  Bot(const std::string &config_path);
   Bot(const Bot &) = delete;
   Bot(Bot &&) = delete;
 
