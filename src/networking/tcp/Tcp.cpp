@@ -80,6 +80,7 @@ bool Tcp::ConnectionPool::disconnect(ID id) {
     LOG_WARNING << __LINE__ << " Connection not found";
     return false;
   }
+  got->second->close();
   _connections.erase(got);
   return true;
 }
