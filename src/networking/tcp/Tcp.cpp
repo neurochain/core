@@ -268,7 +268,6 @@ Tcp::~Tcp() {
   _stopping = true;
   _io_service_ptr->post([this]() { _acceptor.close(); });
   _connection_pool.disconnect_all();
-  _io_service_ptr->stop();
   if (_io_context_thread.joinable()) {
     _io_context_thread.join();
   }
