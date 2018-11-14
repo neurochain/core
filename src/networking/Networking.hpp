@@ -37,6 +37,7 @@ class Networking {
   std::size_t peer_count() const;
   void remove_connection(const messages::Header &header,
                          const messages::Body &body);
+  void join();
 };
 
 }  // namespace networking

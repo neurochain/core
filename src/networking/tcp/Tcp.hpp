@@ -43,7 +43,7 @@ class Tcp : public TransportLayer {
    public:
     ConnectionPool(Tcp::ID parent_id,
                    const std::shared_ptr<boost::asio::io_service> &io_context);
-
+    ~ConnectionPool();
     std::pair<iterator, bool> insert(
         std::shared_ptr<messages::Queue> queue,
         std::shared_ptr<boost::asio::ip::tcp::socket> socket,
@@ -64,7 +64,7 @@ class Tcp : public TransportLayer {
   ConnectionPool _connection_pool;
   std::shared_ptr<bai::tcp::socket> _new_socket;
   std::thread _io_context_thread;
-  std::atomic<bool> _stopping;
+  std::atomic<bool> _stopped;
 
   void new_connection(std::shared_ptr<bai::tcp::socket> socket,
                       const boost::system::error_code &error,
@@ -95,6 +95,8 @@ class Tcp : public TransportLayer {
   void terminate(const Connection::ID id);
   std::size_t peer_count() const;
   std::optional<Port> connection_port(const Connection::ID id) const;
+  void stop();
+  void join();
   ~Tcp();
 
   friend class neuro::networking::test::Tcp;

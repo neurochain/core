@@ -134,6 +134,8 @@ class Bot {
   Bot(const Bot &) = delete;
   Bot(Bot &&) = delete;
 
+  void join();
+
   virtual ~Bot();  // save_config(_config);
 
   const std::vector<messages::Peer> connected_peers() const;

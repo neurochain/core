@@ -65,6 +65,12 @@ std::size_t Networking::peer_count() const {
   return r;
 }
 
+void Networking::join() {
+  for (const auto layer : _transport_layers) {
+    layer->join();
+  }
+}
+
 Networking::~Networking() { LOG_DEBUG << this << " Networking killed"; }
 
 }  // namespace networking

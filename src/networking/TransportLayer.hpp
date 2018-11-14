@@ -39,6 +39,7 @@ class TransportLayer {
 
   ID id() const;
   virtual ~TransportLayer(){};
+  virtual void join() = 0;
 };
 
 }  // namespace networking

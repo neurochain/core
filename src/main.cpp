@@ -52,6 +52,7 @@ int main(int argc, char *argv[]) {
     configuration.mutable_networking()->mutable_tcp()->set_port(port);
   }
   Bot bot(configuration);
+  bot.join();
   return 0;
 }
 }  // namespace neuro

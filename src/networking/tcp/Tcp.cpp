@@ -93,8 +93,10 @@ void Tcp::ConnectionPool::disconnect_all() {
   _connections.clear();
 }
 
+Tcp::ConnectionPool::~ConnectionPool() { disconnect_all(); }
+
 void Tcp::start_accept() {
-  if (!_stopping) {
+  if (!_stopped) {
     _new_socket = std::make_shared<bai::tcp::socket>(*_io_service_ptr);
     _acceptor.async_accept(
         *_new_socket.get(),
@@ -130,7 +132,7 @@ Tcp::Tcp(const Port port, ID id, std::shared_ptr<messages::Queue> queue,
       _acceptor(*_io_service_ptr.get(),
                 bai::tcp::endpoint(bai::tcp::v4(), _listening_port)),
       _connection_pool(id, _io_service_ptr),
-      _stopping(false) {
+      _stopped(false) {
   while (!_acceptor.is_open()) {
     std::this_thread::yield();
     LOG_DEBUG << "Waiting for acceptor to be open";
@@ -247,13 +249,25 @@ bool Tcp::disconnect(const Connection::ID id) {
   return _connection_pool.disconnect(id);
 }
 
-Tcp::~Tcp() {
-  _stopping = true;
-  _io_service_ptr->post([this]() { _acceptor.close(); });
-  _connection_pool.disconnect_all();
+void Tcp::stop() {
+  if (!_stopped) {
+    _stopped = true;
+    _io_service_ptr->post([this]() { _acceptor.close(); });
+    _connection_pool.disconnect_all();
+    join();
+  }
+  LOG_DEBUG << this << " TCP stopped";
+}
+
+void Tcp::join() {
   if (_io_context_thread.joinable()) {
     _io_context_thread.join();
   }
+  LOG_DEBUG << this << " TCP joined";
+}
+
+Tcp::~Tcp() {
+  stop();
   LOG_DEBUG << this << " TCP killed";
 }
 
