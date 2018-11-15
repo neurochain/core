@@ -105,6 +105,8 @@ bool ForkManager::merge_fork_blocks() {
 }
 
 bool ForkManager::fork_results() {
+  // TODO optimise this code and remove the return
+  return false;
   LOG_TRACE;
   //! load block 0
   messages::Block block0;
