@@ -25,7 +25,7 @@ class Tcp {
     peer->set_endpoint("127.0.0.1");
     peer->set_port(port);
     tcp2.connect(peer);
-    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
     ASSERT_EQ(tcp1._connection_pool.size(), 1);
     ASSERT_EQ(tcp2._connection_pool.size(), 1);
   }
