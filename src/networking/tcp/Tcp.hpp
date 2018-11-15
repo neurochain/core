@@ -56,6 +56,7 @@ class Tcp : public TransportLayer {
     void disconnect_all();
   };
 
+  std::atomic<bool> _stopped;
   std::shared_ptr<boost::asio::io_service> _io_service_ptr;
   bai::tcp::resolver _resolver;
   Port _listening_port;
@@ -64,7 +65,6 @@ class Tcp : public TransportLayer {
   ConnectionPool _connection_pool;
   std::shared_ptr<bai::tcp::socket> _new_socket;
   std::thread _io_context_thread;
-  std::atomic<bool> _stopped;
 
   void new_connection(std::shared_ptr<bai::tcp::socket> socket,
                       const boost::system::error_code &error,

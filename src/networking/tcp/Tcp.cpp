@@ -126,13 +126,13 @@ void Tcp::accept(const boost::system::error_code &error) {
 Tcp::Tcp(const Port port, ID id, std::shared_ptr<messages::Queue> queue,
          std::shared_ptr<crypto::Ecc> keys)
     : TransportLayer(id, queue, keys),
+      _stopped(false),
       _io_service_ptr(std::make_shared<boost::asio::io_service>()),
       _resolver(*_io_service_ptr),
       _listening_port(port),
       _acceptor(*_io_service_ptr.get(),
                 bai::tcp::endpoint(bai::tcp::v4(), _listening_port)),
-      _connection_pool(id, _io_service_ptr),
-      _stopped(false) {
+      _connection_pool(id, _io_service_ptr) {
   while (!_acceptor.is_open()) {
     std::this_thread::yield();
     LOG_DEBUG << "Waiting for acceptor to be open";
