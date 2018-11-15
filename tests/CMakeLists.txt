@@ -38,6 +38,8 @@ configure_file("configs/key_integration2.pub" "${CMAKE_CURRENT_BINARY_DIR}/key_i
 configure_file("configs/test_sign.priv" "${CMAKE_CURRENT_BINARY_DIR}/test_sign.priv" COPYONLY)
 configure_file("configs/test_sign.pub" "${CMAKE_CURRENT_BINARY_DIR}/test_sign.pub" COPYONLY)
 
+configure_file("../testnet/data.0.testnet" "${CMAKE_CURRENT_BINARY_DIR}/../data.0.testnet" COPYONLY)
+
 set(ProtoFiles "networking/proto/Messages.proto")
 PROTOBUF_GENERATE_CPP(ProtoSources ProtoHeaders ${ProtoFiles})
 
