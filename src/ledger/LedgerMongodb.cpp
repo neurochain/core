@@ -192,6 +192,28 @@ bool LedgerMongodb::get_block_by_previd(const messages::BlockID &previd,
   return true;
 }
 
+bool LedgerMongodb::fork_get_block_by_previd(const messages::BlockID &previd,
+                                             messages::Block *block) {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  LOG_TRACE;
+  auto previd_query = bss::document{} << "header.previousBlockHash"
+                                      << messages::to_bson(previd)
+                                      << bss::finalize;
+
+  const auto res =
+      _blocks_forks.find_one(std::move(previd_query), remove_OID());
+
+  if (!res) {
+    LOG_TRACE;
+    return false;
+  }
+
+  messages::from_bson(res->view(), block);
+
+  LOG_TRACE;
+  return true;
+}
+
 bool LedgerMongodb::get_block_unsafe(const messages::BlockHeight height,
                                      messages::Block *block) {
   auto query = bss::document{} << "height" << height << bss::finalize;

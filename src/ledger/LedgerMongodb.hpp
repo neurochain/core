@@ -80,6 +80,9 @@ class LedgerMongodb : public Ledger {
 
   bool delete_transaction(const messages::Hash &id);
 
+  bool get_block_by_previd_in_collection(const messages::BlockID &previd,
+                                         messages::Block *block);
+
   int get_transaction_pool(messages::Block &block);
 
   int total_nb_transactions();
@@ -102,6 +105,10 @@ class LedgerMongodb : public Ledger {
 
   bool fork_get_block(const messages::BlockHeight height,
                       messages::Block *block);
+
+  bool fork_get_block_by_previd(const messages::BlockID &previd,
+                                messages::Block *block);
+
   void fork_for_each(Functor_block functor);
   void fork_test();
 };

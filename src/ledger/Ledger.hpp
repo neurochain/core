@@ -89,6 +89,8 @@ class Ledger {
                               messages::Block *block) = 0;
   virtual bool fork_get_block(const messages::BlockHeight height,
                               messages::Block *block) = 0;
+  virtual bool fork_get_block_by_previd(const messages::BlockID &previd,
+                                        messages::Block *block) = 0;
   virtual void fork_test() = 0;
   virtual bool get_transaction(const messages::Hash &id,
                                messages::Transaction *transaction) = 0;

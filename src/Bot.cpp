@@ -105,6 +105,7 @@ void Bot::handler_get_block(const messages::Header &header,
 
 void Bot::handler_block(const messages::Header &header,
                         const messages::Body &body) {
+  LOG_TRACE;
   bool reply_message = header.has_request_id();
   _consensus->add_block(body.block(), !reply_message);
   update_ledger();

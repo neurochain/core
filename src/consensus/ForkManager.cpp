@@ -1,4 +1,5 @@
 #include "ForkManager.hpp"
+#include "common/logger.hpp"
 #include "ledger/Ledger.hpp"
 
 namespace neuro {
@@ -82,7 +83,29 @@ ForkManager::ForkStatus ForkManager::fork_status(
   return ForkStatus::Non_Fork;
 }
 
+bool ForkManager::merge_fork_blocks() {
+  LOG_TRACE;
+  // Check if there is a block in the blocksfork collection that should be
+  // merged to the main branch
+  messages::BlockHeader last_block_header;
+  _ledger->get_last_block_header(&last_block_header);
+
+  messages::Block block;
+
+  // TODO check if there are 2 forked blocks with the same prev_id
+  if (_ledger->fork_get_block_by_previd(last_block_header.id(), &block)) {
+    _ledger->push_block(block);
+    _ledger->fork_delete_block(block.header().id());
+    merge_fork_blocks();
+    LOG_TRACE;
+    return true;
+  }
+  LOG_TRACE;
+  return false;
+}
+
 bool ForkManager::fork_results() {
+  LOG_TRACE;
   //! load block 0
   messages::Block block0;
   _ledger->get_block(0, &block0);
@@ -134,8 +157,10 @@ bool ForkManager::fork_results() {
         }
       }
     });
+    LOG_TRACE;
     return true;
   }
+  LOG_TRACE;
   return false;
 }
 
