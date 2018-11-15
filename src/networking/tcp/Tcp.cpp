@@ -141,7 +141,11 @@ Tcp::Tcp(const Port port, ID id, std::shared_ptr<messages::Queue> queue,
   _io_context_thread = std::thread([this]() { this->_io_service_ptr->run(); });
 }
 
-void Tcp::connect(std::shared_ptr<messages::Peer> peer) {
+bool Tcp::connect(std::shared_ptr<messages::Peer> peer) {
+  if (_stopped) {
+    return false;
+  }
+
   bai::tcp::resolver resolver(*_io_service_ptr);
   bai::tcp::resolver::query query(peer->endpoint(),
                                   std::to_string(peer->port()));
@@ -153,6 +157,7 @@ void Tcp::connect(std::shared_ptr<messages::Peer> peer) {
     this->new_connection(socket, error, peer, false);
   };
   boost::asio::async_connect(*socket, endpoint_iterator, handler);
+  return true;
 }
 
 Port Tcp::listening_port() const { return _listening_port; }
@@ -193,7 +198,9 @@ std::optional<Port> Tcp::connection_port(const Connection::ID id) const {
   return _connection_pool.connection_port(id);
 }
 
-void Tcp::terminate(const Connection::ID id) { _connection_pool.disconnect(id); }
+void Tcp::terminate(const Connection::ID id) {
+  _connection_pool.disconnect(id);
+}
 
 bool Tcp::serialize(std::shared_ptr<messages::Message> message,
                     const ProtocolType protocol_type, Buffer *header_tcp,
@@ -223,6 +230,9 @@ bool Tcp::send(std::shared_ptr<messages::Message> message,
     return false;
   }
 
+  if (_stopped) {
+    return false;
+  }
   Buffer header_tcp(sizeof(networking::tcp::HeaderPattern), 0);
   Buffer body_tcp;
 
@@ -234,6 +244,9 @@ bool Tcp::send(std::shared_ptr<messages::Message> message,
 
 bool Tcp::send_unicast(std::shared_ptr<messages::Message> message,
                        ProtocolType protocol_type) {
+  if (_stopped) {
+    return false;
+  }
   assert(message->header().has_peer());
   Buffer header_tcp(sizeof(networking::tcp::HeaderPattern), 0);
   Buffer body_tcp;
