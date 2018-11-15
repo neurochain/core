@@ -145,7 +145,7 @@ pages:
     make -j5
     mkdir /tmp/db && nohup mongod --dbpath /tmp/db & 
     sleep 5
-    python3 ../utils/dockers/times3.py ctest -V || echo ok
+    python3 ../utils/dockers/times3.py ctest -V
     cd .. && python3 -m gcovr -p -r . --html -o coverage.html
   }
 
