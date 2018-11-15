@@ -20,7 +20,8 @@ TEST(Connection, ctor) {
   try {
     tcp::Connection connection_2(0, 0, io_service_ptr, nullptr, socket, peer);
     ASSERT_FALSE(true);
-  } catch (...) {}
+  } catch (...) {
+  }
   try {
     tcp::Connection connection_3(0, 0, io_service_ptr, queue, nullptr, peer);
     ASSERT_FALSE(true);

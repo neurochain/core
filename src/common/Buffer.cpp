@@ -70,7 +70,7 @@ std::string Buffer::str() const {
 
 std::ostream &operator<<(std::ostream &os, const Buffer &buffer) {
   std::ios_base::fmtflags f(os.flags());
-  for (const auto& x: buffer) {
+  for (const auto &x : buffer) {
     os << std::setfill('0') << std::setw(2) << std::hex << (unsigned int)x;
   }
   os.flags(f);

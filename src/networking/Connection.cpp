@@ -5,7 +5,7 @@ namespace neuro {
 namespace networking {
 
 Connection::Connection(const ID id, TransportLayer::ID transport_layer_id,
-                     std::shared_ptr<messages::Queue> queue)
+                       std::shared_ptr<messages::Queue> queue)
     : _id(id), _transport_layer_id(transport_layer_id), _queue(queue) {
   CHECK(_queue != nullptr, "_queue is nullptr");
 }
