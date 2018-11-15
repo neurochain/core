@@ -292,6 +292,7 @@ bool Tcp::disconnect(const Connection::ID id) {
 void Tcp::stop() {
   if (!_stopped) {
     _stopped = true;
+    _signals.cancel();
     _io_service_ptr->post([this]() { _acceptor.close(); });
     _connection_pool.disconnect_all();
     join();
