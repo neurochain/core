@@ -194,7 +194,7 @@ bool Tcp::send(std::shared_ptr<messages::Message> message,
   Buffer header_tcp(sizeof(networking::tcp::HeaderPattern), 0);
   Buffer body_tcp;
 
-  std::cout << "\033[1;34mSending message: >>" << *message << "<<\033[0m\n";
+  LOG_DEBUG << "\033[1;34mSending message: >>" << *message << "<<\033[0m\n";
   serialize(message, protocol_type, &header_tcp, &body_tcp);
 
   bool res = true;
