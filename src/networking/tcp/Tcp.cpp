@@ -123,6 +123,31 @@ void Tcp::accept(const boost::system::error_code &error) {
   start_accept();
 }  // namespace networking
 
+void Tcp::init_signals() {
+#if defined(SIGINT)
+  _signals.add(SIGINT);
+  LOG_INFO << "Tcp transport layer will listen for SIGINT";
+#endif
+#if defined(SIGTERM)
+  _signals.add(SIGTERM);
+  LOG_INFO << "Tcp transport layer will listen for SIGTERM";
+#endif
+#if defined(SIGQUIT)
+  _signals.add(SIGQUIT);
+  LOG_INFO << "Tcp transport layer will listen for SIGQUIT";
+#endif
+  _signals.async_wait([this](const boost::system::error_code &error,
+                             int sig_num) {
+    if (!error) {
+      LOG_INFO << "TCP transport layer stopped by signal code " << sig_num;
+      stop();
+    } else {
+      LOG_INFO << "Signalset aborted with code " << sig_num << ": " << error;
+    }
+  });
+  LOG_INFO << "Signal handler set for TCP transport layer";
+}
+
 Tcp::Tcp(const Port port, ID id, std::shared_ptr<messages::Queue> queue,
          std::shared_ptr<crypto::Ecc> keys)
     : TransportLayer(id, queue, keys),
@@ -132,7 +157,9 @@ Tcp::Tcp(const Port port, ID id, std::shared_ptr<messages::Queue> queue,
       _listening_port(port),
       _acceptor(*_io_service_ptr.get(),
                 bai::tcp::endpoint(bai::tcp::v4(), _listening_port)),
-      _connection_pool(id, _io_service_ptr) {
+      _connection_pool(id, _io_service_ptr),
+      _signals(*_io_service_ptr) {
+  init_signals();
   while (!_acceptor.is_open()) {
     std::this_thread::yield();
     LOG_DEBUG << "Waiting for acceptor to be open";
