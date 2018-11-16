@@ -125,11 +125,12 @@ void Connection::read_body(std::size_t body_size) {
       });
 }
 
-bool Connection::send(const Buffer &message) {
+bool Connection::send(std::shared_ptr<Buffer> &message) {
   boost::asio::async_write(
-      *_socket, boost::asio::buffer(message.data(), message.size()),
-      [_this = ptr()](const boost::system::error_code &error,
-                      std::size_t bytes_transferred) {
+      *_socket, boost::asio::buffer(message->data(), message->size()),
+      [_this = ptr(), message](
+          const boost::system::error_code &error,
+          std::size_t bytes_transferred) {
         if (error) {
           LOG_ERROR << "Could not send message";
           LOG_ERROR << _this << " " << __LINE__ << " Killing connection "

@@ -49,8 +49,8 @@ std::size_t Tcp::ConnectionPool::size() const {
   return _connections.size();
 }
 
-bool Tcp::ConnectionPool::send(const Buffer &header_tcp,
-                               const Buffer &body_tcp) {
+bool Tcp::ConnectionPool::send(std::shared_ptr<Buffer> &header_tcp,
+                               std::shared_ptr<Buffer> &body_tcp) {
   std::lock_guard<std::mutex> lock_queue(_connections_mutex);
   bool res = true;
   for (auto &it : _connections) {
@@ -61,8 +61,9 @@ bool Tcp::ConnectionPool::send(const Buffer &header_tcp,
   return res;
 }
 
-bool Tcp::ConnectionPool::send_unicast(ID id, const Buffer &header_tcp,
-                                       const Buffer &body_tcp) {
+bool Tcp::ConnectionPool::send_unicast(ID id,
+                                       std::shared_ptr<Buffer> &header_tcp,
+                                       std::shared_ptr<Buffer> &body_tcp) {
   std::lock_guard<std::mutex> lock_queue(_connections_mutex);
   auto got = _connections.find(id);
   if (got == _connections.end()) {
@@ -260,11 +261,12 @@ bool Tcp::send(std::shared_ptr<messages::Message> message,
   if (_stopped) {
     return false;
   }
-  Buffer header_tcp(sizeof(networking::tcp::HeaderPattern), 0);
-  Buffer body_tcp;
+  auto header_tcp =
+      std::make_shared<Buffer>(sizeof(networking::tcp::HeaderPattern), 0);
+  auto body_tcp = std::make_shared<Buffer>();
 
   std::cout << "\033[1;34mSending message: >>" << *message << "<<\033[0m\n";
-  serialize(message, protocol_type, &header_tcp, &body_tcp);
+  serialize(message, protocol_type, header_tcp.get(), body_tcp.get());
 
   return _connection_pool.send(header_tcp, body_tcp);
 }
@@ -275,10 +277,11 @@ bool Tcp::send_unicast(std::shared_ptr<messages::Message> message,
     return false;
   }
   assert(message->header().has_peer());
-  Buffer header_tcp(sizeof(networking::tcp::HeaderPattern), 0);
-  Buffer body_tcp;
+  auto header_tcp =
+      std::make_shared<Buffer>(sizeof(networking::tcp::HeaderPattern), 0);
+  auto body_tcp = std::make_shared<Buffer>();
   LOG_DEBUG << "\033[1;34mSending unicast : >>" << *message << "<<\033[0m";
-  serialize(message, protocol_type, &header_tcp, &body_tcp);
+  serialize(message, protocol_type, header_tcp.get(), body_tcp.get());
   return _connection_pool.send_unicast(message->header().peer().connection_id(),
                                        header_tcp, body_tcp);
 }

@@ -50,8 +50,10 @@ class Tcp : public TransportLayer {
         std::shared_ptr<messages::Peer> remote_peer);
     std::optional<Port> connection_port(const Connection::ID id) const;
     std::size_t size() const;
-    bool send(const Buffer &header_tcp, const Buffer &body_tcp);
-    bool send_unicast(ID id, const Buffer &header_tcp, const Buffer &body_tcp);
+    bool send(std::shared_ptr<Buffer> &header_tcp,
+              std::shared_ptr<Buffer> &body_tcp);
+    bool send_unicast(ID id, std::shared_ptr<Buffer> &header_tcp,
+                      std::shared_ptr<Buffer> &body_tcp);
     bool disconnect(ID id);
     void disconnect_all();
   };

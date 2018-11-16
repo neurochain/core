@@ -46,7 +46,7 @@ class Connection : public networking::Connection,
 
   void read();
 
-  bool send(const Buffer &message);
+  bool send(std::shared_ptr<Buffer> &message);
   std::shared_ptr<const messages::Peer> remote_peer() const;
   const IP remote_ip() const;
   const Port remote_port() const;
