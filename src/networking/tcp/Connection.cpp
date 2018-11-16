@@ -41,11 +41,11 @@ void Connection::read_header() {
         if (error) {
           LOG_ERROR << _this << " " << __LINE__ << " Killing connection "
                     << error;
-        } else {
-          auto header_pattern =
-              reinterpret_cast<HeaderPattern *>(_this->_header.data());
-          _this->read_body(header_pattern->size);
+          return;
         }
+        auto header_pattern =
+            reinterpret_cast<HeaderPattern *>(_this->_header.data());
+        _this->read_body(header_pattern->size);
       });
 }
 
@@ -58,71 +58,70 @@ void Connection::read_body(std::size_t body_size) {
         if (error) {
           LOG_ERROR << _this << " " << __LINE__ << " Killing connection "
                     << error;
-        } else {
-          const auto header_pattern =
-              reinterpret_cast<HeaderPattern *>(_this->_header.data());
+          return;
+        }
+        const auto header_pattern =
+            reinterpret_cast<HeaderPattern *>(_this->_header.data());
 
-          auto message = std::make_shared<messages::Message>();
-          messages::from_buffer(_this->_buffer, message.get());
+        auto message = std::make_shared<messages::Message>();
+        messages::from_buffer(_this->_buffer, message.get());
 
-          auto header = message->mutable_header();
+        auto header = message->mutable_header();
 
-          header->mutable_peer()->CopyFrom(*_this->_remote_peer);
-          auto signature = header->mutable_signature();
-          signature->set_type(messages::Hash::SHA256);
-          signature->set_data(header_pattern->signature,
-                              sizeof(header_pattern->signature));
+        header->mutable_peer()->CopyFrom(*_this->_remote_peer);
+        auto signature = header->mutable_signature();
+        signature->set_type(messages::Hash::SHA256);
+        signature->set_data(header_pattern->signature,
+                            sizeof(header_pattern->signature));
 
-          // validate the MessageVersion from the header
-          if (header->version() != neuro::MessageVersion) {
-            LOG_ERROR << " MessageVersion not corresponding: "
-                      << neuro::MessageVersion << " (mine) vs "
-                      << header->version() << " )";
-          } else {
-            for (const auto &body : message->bodies()) {
-              const auto type = get_type(body);
-              LOG_DEBUG << _this << " read_body TYPE " << type;
-              if (type == messages::Type::kHello) {
-                auto hello = body.hello();
+        // validate the MessageVersion from the header
+        if (header->version() != neuro::MessageVersion) {
+          LOG_ERROR << " MessageVersion not corresponding: "
+                    << neuro::MessageVersion << " (mine) vs "
+                    << header->version() << " )";
+          return;
+        }
+        for (const auto &body : message->bodies()) {
+          const auto type = get_type(body);
+          LOG_DEBUG << _this << " read_body TYPE " << type;
+          if (type == messages::Type::kHello) {
+            auto hello = body.hello();
 
-                if (hello.has_listen_port()) {
-                  _this->_listen_port = hello.listen_port();
-                }
-
-                if (!_this->_remote_peer->has_key_pub()) {
-                  LOG_INFO << "Updating peer with hello key pub";
-                  _this->_remote_peer->mutable_key_pub()->CopyFrom(
-                      hello.key_pub());
-                }
-              }
+            if (hello.has_listen_port()) {
+              _this->_listen_port = hello.listen_port();
             }
-            std::cout << "\033[1;32mMessage received: " << *message << "\033[0m"
-                      << std::endl;
 
             if (!_this->_remote_peer->has_key_pub()) {
-              LOG_ERROR << "Not Key pub set";
-              _this->read_header();
-              return;
+              LOG_INFO << "Updating peer with hello key pub";
+              _this->_remote_peer->mutable_key_pub()->CopyFrom(hello.key_pub());
             }
-            crypto::EccPub ecc_pub;
-            const auto key_pub = _this->_remote_peer->key_pub();
-
-            ecc_pub.load(
-                reinterpret_cast<const uint8_t *>(key_pub.raw_data().data()),
-                key_pub.raw_data().size());
-
-            const auto check =
-                ecc_pub.verify(_this->_buffer, header_pattern->signature,
-                               sizeof(header_pattern->signature));
-
-            if (!check) {
-              LOG_ERROR << "Bad signature, dropping message";
-            } else {
-              _this->_queue->publish(message);
-            }
-            _this->read_header();
           }
         }
+        std::cout << "\033[1;32mMessage received: " << *message << "\033[0m"
+                  << std::endl;
+
+        if (!_this->_remote_peer->has_key_pub()) {
+          LOG_ERROR << "Not Key pub set";
+          _this->read_header();
+          return;
+        }
+        crypto::EccPub ecc_pub;
+        const auto key_pub = _this->_remote_peer->key_pub();
+
+        ecc_pub.load(
+            reinterpret_cast<const uint8_t *>(key_pub.raw_data().data()),
+            key_pub.raw_data().size());
+
+        const auto check =
+            ecc_pub.verify(_this->_buffer, header_pattern->signature,
+                           sizeof(header_pattern->signature));
+
+        if (!check) {
+          LOG_ERROR << "Bad signature, dropping message";
+        } else {
+          _this->_queue->publish(message);
+        }
+        _this->read_header();
       });
 }
 
