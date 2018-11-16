@@ -22,8 +22,6 @@ using boost::asio::ip::tcp;
 class Connection : public networking::Connection,
                    public std::enable_shared_from_this<Connection> {
  private:
-  std::shared_ptr<boost::asio::io_context>
-      _io_context;  // kept for lifecycle management
   Buffer _header;
   Buffer _buffer;
   std::shared_ptr<tcp::socket> _socket;
@@ -37,7 +35,6 @@ class Connection : public networking::Connection,
 
  public:
   Connection(const ID id, networking::TransportLayer::ID transport_layer_id,
-             std::shared_ptr<boost::asio::io_context> io_context,
              std::shared_ptr<messages::Queue> queue,
              std::shared_ptr<tcp::socket> socket,
              std::shared_ptr<messages::Peer> remote_peer);

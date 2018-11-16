@@ -27,7 +27,7 @@ std::pair<Tcp::ConnectionPool::iterator, bool> Tcp::ConnectionPool::insert(
   std::lock_guard<std::mutex> lock_queue(_connections_mutex);
 
   auto connection = std::make_shared<tcp::Connection>(
-      _current_id, _parent_id, _io_context, queue, socket, remote_peer);
+      _current_id, _parent_id, queue, socket, remote_peer);
   return _connections.insert(std::make_pair(_current_id++, connection));
 }
 
