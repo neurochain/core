@@ -27,9 +27,9 @@ class Networking {
   Networking(std::shared_ptr<messages::Queue> _queue);
   ~Networking();
 
-  std::pair<std::shared_ptr<Tcp>, TransportLayer::ID> create_tcp(
-      std::shared_ptr<messages::Queue> queue, std::shared_ptr<crypto::Ecc> keys,
-      const Port port);
+  std::shared_ptr<Tcp> create_tcp(std::shared_ptr<messages::Queue> queue,
+                                  std::shared_ptr<crypto::Ecc> keys,
+                                  const Port port);
   void send(std::shared_ptr<messages::Message> message, ProtocolType type);
   void send_unicast(std::shared_ptr<messages::Message> message,
                     ProtocolType type);

@@ -240,8 +240,7 @@ bool Bot::load_networking(messages::config::Config *config) {
   }
 
   auto port = tcpconfig->port();
-  auto tcp_creation = _networking->create_tcp(_queue, _keys, port);
-  _tcp = tcp_creation.first;
+  _tcp = _networking->create_tcp(_queue, _keys, port);
   if (tcpconfig->peers().empty()) {
     LOG_WARNING << this << " There is no information about peers";
   }

@@ -46,14 +46,14 @@ void Networking::send_unicast(std::shared_ptr<messages::Message> message,
       ->send_unicast(message, type);
 }
 
-std::pair<std::shared_ptr<Tcp>, TransportLayer::ID> Networking::create_tcp(
+std::shared_ptr<Tcp> Networking::create_tcp(
     std::shared_ptr<messages::Queue> queue, std::shared_ptr<crypto::Ecc> keys,
     const Port port) {
   const auto id = _transport_layers.size();
   auto tcp = std::make_shared<Tcp>(port, id, _queue, keys);
   LOG_INFO << this << " Accepting connections on port " << port;
   _transport_layers.push_back(tcp);
-  return std::make_pair(tcp, id);
+  return tcp;
 }
 
 std::size_t Networking::peer_count() const {
