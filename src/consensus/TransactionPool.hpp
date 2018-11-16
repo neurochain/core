@@ -31,8 +31,8 @@ class TransactionPool {
       const google::protobuf::RepeatedPtrField<neuro::messages::Transaction>
           &transactions);
 
-  bool build_block(messages::Block &block, messages::BlockHeight height,
-                   const crypto::Ecc *author, uint64_t rewarde = 10);
+  bool build_block(messages::Block *block, messages::BlockHeight height,
+                   const crypto::Ecc *author, uint64_t reward);
   void coinbase(messages::Transaction *transaction,
                 const messages::Address &addr, const messages::NCCSDF &ncc);
 };

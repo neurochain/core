@@ -5,6 +5,7 @@
 #include <google/protobuf/util/json_util.h>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
+#include <filesystem>
 #include <fstream>
 #include <stdexcept>
 #include <string>
@@ -20,10 +21,18 @@ namespace config {
 class Config : public _Config {
  public:
   Config() {}
-  Config(const std::string &filepath) {
-    if (!messages::from_json_file(filepath, this)) {
-      std::string s = "Coult not parse configuration file " + filepath +
-                      " from " + boost::filesystem::current_path().native();
+  explicit Config(const Path &filepath) {
+    if (!messages::from_json_file(filepath.string(), this)) {
+      std::string s = "Could not parse configuration file " +
+                      filepath.string() + " from " +
+                      boost::filesystem::current_path().native();
+      throw std::runtime_error(s);
+    }
+  }
+  explicit Config(const std::string &data) {
+    if (!messages::from_json(data, this)) {
+      const auto s =
+          std::string{"Could not parse configuration <" + data + ">"};
       throw std::runtime_error(s);
     }
   }

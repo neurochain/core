@@ -59,6 +59,26 @@ target_link_libraries(integration
 add_test(integration integration)
 
 
+add_executable(LedgerMongodb
+  ledger/LedgerMongodb.cpp
+  )
+target_link_libraries(LedgerMongodb
+  GTest::main
+  Boost::program_options
+  Boost::filesystem
+  Boost::system
+  Boost::thread
+  Boost::log
+  libonion::onion
+  cpr::cpr
+  libonion::onioncpp
+  ${LIBMONGOCXX_STATIC_LIBRARIES}
+  core
+  protos
+  )
+add_test(LedgerMongodb LedgerMongodb)
+
+
 add_executable(dbreset
     dbreset.cpp
 )
