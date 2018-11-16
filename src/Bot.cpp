@@ -436,9 +436,9 @@ void Bot::handler_deconnection(const messages::Header &header,
   // find the peer in our list of peers and update its status
   // std::lock_guard<std::mutex> lock_connections(_mutex_connections);
   auto peers = _tcp_config->mutable_peers();
-  auto it = std::find(peers->begin(), peers->end(), remote_peer);
   _tcp->terminate(remote_peer.connection_id());
 
+  auto it = std::find(peers->begin(), peers->end(), remote_peer);
   if (it == peers->end()) {
     LOG_WARNING << "Unknown peer disconnected";
     this->keep_max_connections();
