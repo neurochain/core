@@ -97,8 +97,7 @@ void Connection::read_body(std::size_t body_size) {
             }
           }
         }
-        std::cout << "\033[1;32mMessage received: " << *message << "\033[0m"
-                  << std::endl;
+        LOG_DEBUG << "\033[1;32mMessage received: " << *message << "\033[0m";
 
         if (!_this->_remote_peer->has_key_pub()) {
           LOG_ERROR << "Not Key pub set";
