@@ -8,7 +8,7 @@ namespace networking {
 namespace test {
 
 TEST(Connection, constructor) {
-  // simply check it doesn throw
+  // simply check it doesn't throw
   auto io_service_ptr = std::make_shared<boost::asio::io_service>();
   auto socket = std::make_shared<bai::tcp::socket>(*io_service_ptr);
   auto queue = std::make_shared<messages::Queue>();
