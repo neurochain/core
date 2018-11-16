@@ -1,8 +1,9 @@
-#include "networking/tcp/Connection.hpp"
-#include "common/check.hpp"
+#include <cassert>
+
 #include "common/logger.hpp"
 #include "common/types.hpp"
 #include "messages/Queue.hpp"
+#include "networking/tcp/Connection.hpp"
 #include "networking/tcp/Tcp.hpp"
 
 namespace neuro {
@@ -22,8 +23,8 @@ Connection::Connection(const ID id,
       _buffer(128, 0),
       _socket(socket),
       _remote_peer(remote_peer) {
-  CHECK(_socket != nullptr, "_socket is nullptr");
-  CHECK(_remote_peer != nullptr, "_remote_peer is nullptr");
+  assert(_socket != nullptr);
+  assert(_remote_peer != nullptr);
   _listen_port = _remote_peer->port();
 }
 
