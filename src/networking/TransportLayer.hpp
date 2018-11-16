@@ -28,7 +28,7 @@ class TransportLayer {
   ID _id;
 
  public:
-  TransportLayer(ID id, std::shared_ptr<messages::Queue> queue,
+  TransportLayer(const ID id, std::shared_ptr<messages::Queue> queue,
                  std::shared_ptr<crypto::Ecc> keys);
 
   virtual bool send(const std::shared_ptr<messages::Message> message,

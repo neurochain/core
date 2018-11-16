@@ -5,7 +5,7 @@
 namespace neuro {
 namespace networking {
 
-TransportLayer::TransportLayer(ID id, std::shared_ptr<messages::Queue> queue,
+TransportLayer::TransportLayer(const ID id, std::shared_ptr<messages::Queue> queue,
                                std::shared_ptr<crypto::Ecc> keys)
     : _queue(queue), _keys(keys), _id(id) {}
 
