@@ -118,9 +118,9 @@ void Connection::read_body(std::size_t body_size) {
 
         if (!check) {
           LOG_ERROR << "Bad signature, dropping message";
-        } else {
-          _this->_queue->publish(message);
+          return;
         }
+        _this->_queue->publish(message);
         _this->read_header();
       });
 }
@@ -128,9 +128,8 @@ void Connection::read_body(std::size_t body_size) {
 bool Connection::send(std::shared_ptr<Buffer> &message) {
   boost::asio::async_write(
       *_socket, boost::asio::buffer(message->data(), message->size()),
-      [_this = ptr(), message](
-          const boost::system::error_code &error,
-          std::size_t bytes_transferred) {
+      [_this = ptr(), message](const boost::system::error_code &error,
+                               std::size_t bytes_transferred) {
         if (error) {
           LOG_ERROR << "Could not send message";
           LOG_ERROR << _this << " " << __LINE__ << " Killing connection "
