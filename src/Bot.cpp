@@ -569,7 +569,7 @@ void Bot::handler_hello(const messages::Header &header,
 
   // update port by listen_port
   if (remote_peer->has_connection_id()) {
-    auto port = _tcp->connection_port(remote_peer->connection_id());
+    const auto port = _tcp->connection_port(remote_peer->connection_id());
     if (!!port) {
       remote_peer->set_port(*port);
     }
