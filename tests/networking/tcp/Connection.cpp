@@ -7,7 +7,7 @@ namespace neuro {
 namespace networking {
 namespace test {
 
-TEST(Connection, ctor) {
+TEST(Connection, constructor) {
   // simply check it doesn throw
   auto io_service_ptr = std::make_shared<boost::asio::io_service>();
   auto socket = std::make_shared<bai::tcp::socket>(*io_service_ptr);
