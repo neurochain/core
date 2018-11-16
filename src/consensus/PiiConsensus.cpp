@@ -156,6 +156,7 @@ void PiiConsensus::add_block(const neuro::messages::Block &block,
   neuro::messages::Block last_block, prev_block;
   ///!< fix same id block in the ledger
   if (_valide_block && block_in_ledger(block.header().id())) {
+    LOG_DEBUG << "Block already in ledger";
     return;
   }
 
@@ -214,6 +215,7 @@ void PiiConsensus::add_block(const neuro::messages::Block &block,
     }
 
     if (somme_Inputs != outputs_somme + transaction.fees().value()) {
+      LOG_TRACE;
       return;
     }
     for (const auto &input : _input) {
@@ -240,6 +242,7 @@ void PiiConsensus::add_block(const neuro::messages::Block &block,
     // possible do this after n blocks 3 of diff of height
     if (_ForkManager.fork_results()) {
       init();
+      LOG_TRACE;
       return;
     }
     // throw std::runtime_error("Owner not correct");
@@ -256,7 +259,9 @@ void PiiConsensus::add_block(const neuro::messages::Block &block,
     } else {
       /// add it to
       _ledger->fork_add_block(block);
+      LOG_TRACE;
       if (_ForkManager.fork_results()) {
+        LOG_TRACE;
         init();
         return;
       }
@@ -265,8 +270,12 @@ void PiiConsensus::add_block(const neuro::messages::Block &block,
 
   addBlocks(_piithx);
 
+  _ForkManager.merge_fork_blocks();
+
   _last_heigth_block = block.header().height();
   ckeck_run_assembly(_last_heigth_block + 1);
+
+  LOG_TRACE;
 }  // namespace consensus
 
 void PiiConsensus::add_blocks(
