@@ -28,16 +28,16 @@ class Tcp : public TransportLayer {
 
    private:
     using ConnPtr = std::shared_ptr<tcp::Connection>;
-    using Map = std::unordered_map<ID, ConnPtr>;
+    using ConnectionById = std::unordered_map<ID, ConnPtr>;
 
    public:
-    using iterator = Map::iterator;
+    using iterator = ConnectionById::iterator;
 
    private:
     ID _current_id;
     Tcp::ID _parent_id;
     std::shared_ptr<boost::asio::io_service> _io_context;
-    Map _connections;
+    ConnectionById _connections;
     mutable std::mutex _connections_mutex;
 
    public:
