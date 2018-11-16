@@ -85,7 +85,7 @@ void Connection::read_body(std::size_t body_size) {
           const auto type = get_type(body);
           LOG_DEBUG << _this << " read_body TYPE " << type;
           if (type == messages::Type::kHello) {
-            auto hello = body.hello();
+            const auto hello = body.hello();
 
             if (hello.has_listen_port()) {
               _this->_listen_port = hello.listen_port();
