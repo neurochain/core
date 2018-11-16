@@ -48,7 +48,7 @@ void Networking::send_unicast(std::shared_ptr<messages::Message> message,
 
 std::pair<std::shared_ptr<Tcp>, TransportLayer::ID> Networking::create_tcp(
     std::shared_ptr<messages::Queue> queue, std::shared_ptr<crypto::Ecc> keys,
-    ::google::protobuf::int32 port) {
+    const Port port) {
   const auto id = _transport_layers.size();
   auto tcp = std::make_shared<Tcp>(port, id, _queue, keys);
   LOG_INFO << this << " Accepting connections on port " << port;

@@ -29,7 +29,7 @@ class Networking {
 
   std::pair<std::shared_ptr<Tcp>, TransportLayer::ID> create_tcp(
       std::shared_ptr<messages::Queue> queue, std::shared_ptr<crypto::Ecc> keys,
-      ::google::protobuf::int32 port);
+      const Port port);
   void send(std::shared_ptr<messages::Message> message, ProtocolType type);
   void send_unicast(std::shared_ptr<messages::Message> message,
                     ProtocolType type);
