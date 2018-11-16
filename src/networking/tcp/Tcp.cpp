@@ -17,7 +17,7 @@ using namespace std::chrono_literals;
 
 Tcp::ConnectionPool::ConnectionPool(
     Tcp::ID parent_id,
-    const std::shared_ptr<boost::asio::io_service> &io_context)
+    const std::shared_ptr<boost::asio::io_context> &io_context)
     : _current_id(0), _parent_id(parent_id), _io_context(io_context) {}
 
 std::pair<Tcp::ConnectionPool::iterator, bool> Tcp::ConnectionPool::insert(
@@ -97,7 +97,7 @@ Tcp::ConnectionPool::~ConnectionPool() { disconnect_all(); }
 
 void Tcp::start_accept() {
   if (!_stopped) {
-    _new_socket = std::make_shared<bai::tcp::socket>(*_io_service_ptr);
+    _new_socket = std::make_shared<bai::tcp::socket>(*_io_context_ptr);
     _acceptor.async_accept(
         *_new_socket.get(),
         boost::bind(&Tcp::accept, this, boost::asio::placeholders::error));
@@ -152,20 +152,20 @@ Tcp::Tcp(const Port port, ID id, std::shared_ptr<messages::Queue> queue,
          std::shared_ptr<crypto::Ecc> keys)
     : TransportLayer(id, queue, keys),
       _stopped(false),
-      _io_service_ptr(std::make_shared<boost::asio::io_service>()),
-      _resolver(*_io_service_ptr),
+      _io_context_ptr(std::make_shared<boost::asio::io_context>()),
+      _resolver(*_io_context_ptr),
       _listening_port(port),
-      _acceptor(*_io_service_ptr.get(),
+      _acceptor(*_io_context_ptr.get(),
                 bai::tcp::endpoint(bai::tcp::v4(), _listening_port)),
-      _connection_pool(id, _io_service_ptr),
-      _signals(*_io_service_ptr) {
+      _connection_pool(id, _io_context_ptr),
+      _signals(*_io_context_ptr) {
   init_signals();
   while (!_acceptor.is_open()) {
     std::this_thread::yield();
     LOG_DEBUG << "Waiting for acceptor to be open";
   }
   start_accept();
-  _io_context_thread = std::thread([this]() { this->_io_service_ptr->run(); });
+  _io_context_thread = std::thread([this]() { this->_io_context_ptr->run(); });
 }
 
 bool Tcp::connect(std::shared_ptr<messages::Peer> peer) {
@@ -173,12 +173,12 @@ bool Tcp::connect(std::shared_ptr<messages::Peer> peer) {
     return false;
   }
 
-  bai::tcp::resolver resolver(*_io_service_ptr);
+  bai::tcp::resolver resolver(*_io_context_ptr);
   bai::tcp::resolver::query query(peer->endpoint(),
                                   std::to_string(peer->port()));
   bai::tcp::resolver::iterator endpoint_iterator = resolver.resolve(query);
 
-  auto socket = std::make_shared<bai::tcp::socket>(*_io_service_ptr);
+  auto socket = std::make_shared<bai::tcp::socket>(*_io_context_ptr);
   auto handler = [this, socket, peer](boost::system::error_code error,
                                       bai::tcp::resolver::iterator iterator) {
     this->new_connection(socket, error, peer, false);
@@ -293,7 +293,7 @@ void Tcp::stop() {
   if (!_stopped) {
     _stopped = true;
     _signals.cancel();
-    _io_service_ptr->post([this]() { _acceptor.close(); });
+    _io_context_ptr->post([this]() { _acceptor.close(); });
     _connection_pool.disconnect_all();
     join();
   }

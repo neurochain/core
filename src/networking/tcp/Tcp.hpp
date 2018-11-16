@@ -36,13 +36,13 @@ class Tcp : public TransportLayer {
    private:
     ID _current_id;
     Tcp::ID _parent_id;
-    std::shared_ptr<boost::asio::io_service> _io_context;
+    std::shared_ptr<boost::asio::io_context> _io_context;
     ConnectionById _connections;
     mutable std::mutex _connections_mutex;
 
    public:
     ConnectionPool(Tcp::ID parent_id,
-                   const std::shared_ptr<boost::asio::io_service> &io_context);
+                   const std::shared_ptr<boost::asio::io_context> &io_context);
     ~ConnectionPool();
     std::pair<iterator, bool> insert(
         std::shared_ptr<messages::Queue> queue,
@@ -57,7 +57,7 @@ class Tcp : public TransportLayer {
   };
 
   std::atomic<bool> _stopped;
-  std::shared_ptr<boost::asio::io_service> _io_service_ptr;
+  std::shared_ptr<boost::asio::io_context> _io_context_ptr;
   bai::tcp::resolver _resolver;
   Port _listening_port;
   bai::tcp::acceptor _acceptor;

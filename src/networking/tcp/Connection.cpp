@@ -12,7 +12,7 @@ namespace tcp {
 
 Connection::Connection(const ID id,
                        networking::TransportLayer::ID transport_layer_id,
-                       std::shared_ptr<boost::asio::io_service> io_context,
+                       std::shared_ptr<boost::asio::io_context> io_context,
                        std::shared_ptr<messages::Queue> queue,
                        std::shared_ptr<tcp::socket> socket,
                        std::shared_ptr<messages::Peer> remote_peer)
