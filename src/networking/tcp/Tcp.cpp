@@ -16,7 +16,7 @@ namespace networking {
 using namespace std::chrono_literals;
 
 Tcp::ConnectionPool::ConnectionPool(
-    Tcp::ID parent_id,
+    const Tcp::ID parent_id,
     const std::shared_ptr<boost::asio::io_context> &io_context)
     : _current_id(0), _parent_id(parent_id), _io_context(io_context) {}
 

@@ -24,11 +24,11 @@ class Tcp : public TransportLayer {
  private:
   class ConnectionPool {
    public:
-    using ID = Connection::ID;
+    using ID = tcp::Connection::ID;
 
    private:
-    using ConnPtr = std::shared_ptr<tcp::Connection>;
-    using ConnectionById = std::unordered_map<ID, ConnPtr>;
+    using ConnectionById =
+        std::unordered_map<ID, std::shared_ptr<tcp::Connection>>;
 
    public:
     using iterator = ConnectionById::iterator;
@@ -41,7 +41,7 @@ class Tcp : public TransportLayer {
     mutable std::mutex _connections_mutex;
 
    public:
-    ConnectionPool(Tcp::ID parent_id,
+    ConnectionPool(const Tcp::ID parent_id,
                    const std::shared_ptr<boost::asio::io_context> &io_context);
     ~ConnectionPool();
     std::pair<iterator, bool> insert(
