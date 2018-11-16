@@ -44,7 +44,7 @@ void Connection::read_header() {
                     << error;
           return;
         }
-        auto header_pattern =
+        const auto header_pattern =
             reinterpret_cast<HeaderPattern *>(_this->_header.data());
         _this->read_body(header_pattern->size);
       });
