@@ -75,22 +75,28 @@ TEST_F(LedgerMongodb, remove_all) {
 }
 
 TEST_F(LedgerMongodb, get_block) {
-  messages::Block block0, block0bis, block1;
+  messages::Block block0, block0bis, block1, block7;
   create_first_blocks(10);
+  ASSERT_EQ(10, ledger->total_nb_blocks());
 
   ledger->get_block(0, &block0);
   const auto id0 = block0.header().id();
   ASSERT_TRUE(ledger->get_block_by_previd(id0, &block1));
   ASSERT_TRUE(ledger->get_block(id0, &block0bis));
+  std::vector<messages::Block> blocks;
+  ledger->get_blocks(2, 8, blocks);
+  ledger->get_block(7, &block7);
+  ASSERT_EQ(block7, blocks[5]);
   ASSERT_EQ(block0, block0bis);
 }
 
 TEST_F(LedgerMongodb, delete_block) {
   messages::Block block0;
   ledger->get_block(0, &block0);
-
+  ASSERT_EQ(1, ledger->total_nb_blocks());
   ASSERT_EQ(0, ledger->height());
   ASSERT_TRUE(ledger->delete_block(block0.header().id()));
+  ASSERT_EQ(0, ledger->total_nb_blocks());
   ASSERT_FALSE(ledger->delete_block(block0.header().id()));
   ASSERT_FALSE(ledger->get_block(0, &block0));
   ASSERT_EQ(0, ledger->height());
@@ -100,6 +106,7 @@ TEST_F(LedgerMongodb, transactions) {
   messages::Block block0;
   ledger->get_block(0, &block0);
 
+  ASSERT_EQ(4, ledger->total_nb_transactions());
   ASSERT_EQ(4, block0.transactions().size());
   const auto transaction0 = block0.transactions(0);
 
@@ -114,6 +121,8 @@ TEST_F(LedgerMongodb, transactions) {
   ASSERT_TRUE(ledger->get_transaction(transaction0.id(), &transaction0bis));
   ASSERT_EQ(transaction0, transaction0bis);
 }
+
+TEST_F(LedgerMongodb, ) {}
 
 }  // namespace tests
 }  // namespace ledger
