@@ -69,12 +69,12 @@ target_link_libraries(LedgerMongodb
   Boost::system
   Boost::thread
   Boost::log
-  libonion::onion
   cpr::cpr
-  libonion::onioncpp
   ${LIBMONGOCXX_STATIC_LIBRARIES}
   core
   protos
+  libonion::onion
+  libonion::onioncpp
   )
 add_test(LedgerMongodb LedgerMongodb)
 
@@ -88,33 +88,16 @@ target_link_libraries(dbreset
     core
 )
 
-add_executable(block0
-    block0.cpp
-)
 
-target_link_libraries(block0
-    GTest::main
-    core
-)
-#[[
-add_executable(blocks19
-    blocks19.cpp
-)
-
-target_link_libraries(blocks19
-    GTest::main
-    core
-)
-
-add_executable(piitest
-    piitest.cpp
-)
-
-target_link_libraries(piitest
-    GTest::main
-    core
-    cpr::cpr
-)]]
+#add_executable(piitest
+#    piitest.cpp
+#)
+#
+#target_link_libraries(piitest
+#    GTest::main
+#    core
+#    cpr::cpr
+#)
 
 add_test(integration integration)
 #add_test(dbreset  dbreset)
