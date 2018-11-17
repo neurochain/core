@@ -53,14 +53,19 @@ bool LedgerMongodb::get_transactions_from_block(const messages::BlockID &id,
   return get_transactions_from_block(bson_id.view(), block);
 }
 
-void LedgerMongodb::init_block0(const messages::config::Database &config) {
+bool LedgerMongodb::init_block0(const messages::config::Database &config) {
   messages::Block block0;
   if (get_block(0, &block0)) {
-    return;
+    return true;
   }
   messages::Block block0file;
-  std::ifstream t(config.block0_path());
-  std::string str((std::istreambuf_iterator<char>(t)),
+  std::ifstream block0stream(config.block0_path());
+  if (!block0stream.is_open()) {
+    LOG_ERROR << "Could not load block from " << config.block0_path()
+              << " from " << boost::filesystem::current_path().native();
+    return false;
+  }
+  std::string str((std::istreambuf_iterator<char>(block0stream)),
                   std::istreambuf_iterator<char>());
 
   auto d = bss::document{};
@@ -93,6 +98,7 @@ void LedgerMongodb::init_block0(const messages::config::Database &config) {
                                              << bss::finalize);
   _blocks_forks.create_index(bss::document{} << "header.height" << 1
                                              << bss::finalize);
+  return true;
 }
 
 void LedgerMongodb::remove_all() {

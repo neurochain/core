@@ -21,7 +21,7 @@ class LedgerMongodb : public ::testing::Test {
       "  \"url\": \"mongodb://mongo:27017\","
       "  \"dbName\": \"faucet\","
       "  \"block0Format\": \"PROTO\","
-      "  \"block0Path\": \"./tests/data.0.testnet\""
+      "  \"block0Path\": \"./data.0.testnet\""
       "}";
 
  protected:
