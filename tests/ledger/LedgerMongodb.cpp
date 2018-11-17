@@ -68,6 +68,19 @@ TEST_F(LedgerMongodb, load_block_1_to_9) {
   ASSERT_EQ(9, ledger->height());
 }
 
+TEST_F(LedgerMongodb, header) {
+  create_first_blocks(2);
+  messages::Block block;
+  messages::BlockHeader header;
+  messages::BlockHeader last_header;
+  ASSERT_EQ(1, ledger->height());
+  ledger->get_block(1, &block);
+  ASSERT_TRUE(ledger->get_block_header(block.header().id(), &header));
+  ASSERT_TRUE(ledger->get_last_block_header(&last_header));
+  ASSERT_EQ(block.header(), header);
+  ASSERT_EQ(last_header, header);
+}
+
 TEST_F(LedgerMongodb, remove_all) {
   create_first_blocks(10);
   ledger->remove_all();
@@ -122,7 +135,26 @@ TEST_F(LedgerMongodb, transactions) {
   ASSERT_EQ(transaction0, transaction0bis);
 }
 
-TEST_F(LedgerMongodb, ) {}
+TEST_F(LedgerMongodb, push) {
+  messages::Block block, block_fake;
+  create_first_blocks(2);
+  ASSERT_TRUE(ledger->get_block(1, &block));
+  ASSERT_TRUE(ledger->delete_block(block.header().id()));
+  ASSERT_FALSE(ledger->delete_block(block.header().id()));
+  ASSERT_FALSE(ledger->get_block(block.header().id(), &block_fake));
+  ASSERT_TRUE(ledger->push_block(block));
+  // TODO should not allow to insert twice the same block
+  // ASSERT_FALSE(ledger->push_block(block));
+}
+
+TEST_F(LedgerMongodb, forks) {
+  create_first_blocks(10);
+  messages::Block block5;
+  ledger->get_block(5, &block5);
+  ASSERT_TRUE(ledger->fork_add_block(block5));
+  // TODO should not allow to insert twice the same block
+  // ASSERT_FALSE(ledger->fork_add_block(block5));
+}
 
 }  // namespace tests
 }  // namespace ledger
