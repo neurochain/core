@@ -2,9 +2,11 @@
 #define NEURO_SRC_COMMON_TYPES_HPP
 
 #include <boost/asio.hpp>
+#include <boost/filesystem/path.hpp>
 #include <cassert>
 #include <cstdint>
 #include <vector>
+
 #include "common/Buffer.hpp"
 
 #include "common.pb.h"
@@ -25,6 +27,8 @@ enum class ProtocolType { PROTOBUF2, JSON, BSON };
 namespace consensus {
 using Address = std::string;
 }  // namespace consensus
+
+using Path = boost::filesystem::path;
 
 using std::int16_t;
 using std::int32_t;

@@ -15,9 +15,9 @@ LedgerMongodb::LedgerMongodb(const std::string &url, const std::string &db_name)
       _transactions(_db.collection("transactions")),
       _blocks_forks(_db.collection("blocksfork")) {}
 
-LedgerMongodb::LedgerMongodb(const messages::config::Database &db)
-    : LedgerMongodb(db.url(), db.db_name()) {
-  init_block0(db);
+LedgerMongodb::LedgerMongodb(const messages::config::Database &config)
+    : LedgerMongodb(config.url(), config.db_name()) {
+  init_block0(config);
 }
 
 mongocxx::options::find LedgerMongodb::remove_OID() {
@@ -53,26 +53,31 @@ bool LedgerMongodb::get_transactions_from_block(const messages::BlockID &id,
   return get_transactions_from_block(bson_id.view(), block);
 }
 
-void LedgerMongodb::init_block0(const messages::config::Database &db) {
+bool LedgerMongodb::init_block0(const messages::config::Database &config) {
   messages::Block block0;
   if (get_block(0, &block0)) {
-    return;
+    return true;
   }
   messages::Block block0file;
-  std::ifstream t(db.block0_path());
-  std::string str((std::istreambuf_iterator<char>(t)),
+  std::ifstream block0stream(config.block0_path());
+  if (!block0stream.is_open()) {
+    LOG_ERROR << "Could not load block from " << config.block0_path()
+              << " from " << boost::filesystem::current_path().native();
+    return false;
+  }
+  std::string str((std::istreambuf_iterator<char>(block0stream)),
                   std::istreambuf_iterator<char>());
 
   auto d = bss::document{};
-  switch (db.block0_format()) {
-    case messages::config::Database::Block0Format::Database_Block0Format_PROTO:
+  switch (config.block0_format()) {
+    case messages::config::Database::Block0Format::_Database_Block0Format_PROTO:
       block0file.ParseFromString(str);
       break;
-    case messages::config::Database::Block0Format::Database_Block0Format_BSON:
+    case messages::config::Database::Block0Format::_Database_Block0Format_BSON:
       d << str;
       messages::from_bson(d.view(), &block0file);
       break;
-    case messages::config::Database::Block0Format::Database_Block0Format_JSON:
+    case messages::config::Database::Block0Format::_Database_Block0Format_JSON:
       messages::from_json(str, &block0file);
       break;
   }
@@ -93,6 +98,7 @@ void LedgerMongodb::init_block0(const messages::config::Database &db) {
                                              << bss::finalize);
   _blocks_forks.create_index(bss::document{} << "header.height" << 1
                                              << bss::finalize);
+  return true;
 }
 
 void LedgerMongodb::remove_all() {
@@ -270,7 +276,7 @@ bool LedgerMongodb::delete_block(const messages::Hash &id) {
   auto delete_block_query = bss::document{} << "id" << messages::to_bson(id)
                                             << bss::finalize;
   auto res = _blocks.delete_one(std::move(delete_block_query));
-  if (res) {
+  if (res && res->deleted_count() > 0) {
     auto delete_transaction_query =
         bss::document{} << "blockId" << messages::to_bson(id) << bss::finalize;
     auto res_transaction =
@@ -290,7 +296,6 @@ bool LedgerMongodb::get_transaction(const messages::Hash &id,
 
   auto res = _transactions.find_one(std::move(query_transaction), remove_OID());
   if (res) {
-    LOG_DEBUG << "got transaction " << bsoncxx::to_json(res->view());
     messages::from_bson(res->view(), transaction);
     return true;
   }
@@ -353,7 +358,7 @@ int LedgerMongodb::total_nb_blocks() {
   return _blocks.count({});
 }
 
-int LedgerMongodb::get_transaction_pool(messages::Block &block) {
+int LedgerMongodb::get_transaction_pool(messages::Block *block) {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto query_transaction_pool = bss::document{}
                                 << "blockId" << bss::open_document << "$exists"
@@ -365,7 +370,7 @@ int LedgerMongodb::get_transaction_pool(messages::Block &block) {
   auto cursor =
       _transactions.find(std::move(query_transaction_pool), remove_OID());
   for (auto &bson_transaction : cursor) {
-    auto *transaction = block.add_transactions();
+    auto *transaction = block->add_transactions();
     messages::from_bson(bson_transaction, transaction);
     transactions_num++;
   }
@@ -497,7 +502,7 @@ bool LedgerMongodb::fork_delete_block(const messages::Hash &id) {
   auto query_block = bss::document{} << "header.id" << messages::to_bson(id)
                                      << bss::finalize;
   auto res = _blocks_forks.delete_one(std::move(query_block));
-  if (res) {
+  if (res && res->deleted_count() > 0) {
     return true;
   }
   return false;
