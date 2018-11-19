@@ -37,7 +37,7 @@ class LedgerMongodb : public Ledger {
   bool get_transactions_from_block(const messages::BlockID &id,
                                    messages::Block *block);
 
-  bool init_block0(const messages::config::Database &db);
+  bool init_block0(const messages::config::Database &config);
 
   bool get_block_unsafe(const messages::BlockID &id, messages::Block *block);
 
