@@ -128,7 +128,7 @@ TEST_F(LedgerMongodb, transactions) {
   ASSERT_EQ(transaction0, transaction0bis);
 
   ledger->delete_transaction(transaction0bis.id());
-  ASSERT_FALSE(ledger->get_transaction(transaction0.id(), &transaction0bis));
+  ASSERT_FALSE(ledger->get_transaction(transaction0.id(), &transaction0bis, 0));
 
   ledger->add_transaction(transaction0);
   ASSERT_TRUE(ledger->get_transaction(transaction0.id(), &transaction0bis));
@@ -149,11 +149,19 @@ TEST_F(LedgerMongodb, push) {
 
 TEST_F(LedgerMongodb, forks) {
   create_first_blocks(10);
-  messages::Block block5;
-  ledger->get_block(5, &block5);
-  ASSERT_TRUE(ledger->fork_add_block(block5));
+  messages::Block block0;
+  messages::Block block0fork;
+  ledger->get_block(0, &block0);
+  ASSERT_FALSE(ledger->fork_get_block(block0.header().id(), &block0fork));
+  ASSERT_TRUE(ledger->fork_add_block(block0));
+  ASSERT_TRUE(ledger->fork_get_block(block0.header().id(), &block0fork));
+  // TODO Should not be accepted since block exist in non fork collection
+
   // TODO should not allow to insert twice the same block
   // ASSERT_FALSE(ledger->fork_add_block(block5));
+
+  ASSERT_TRUE(ledger->fork_delete_block(block0.header().id()));
+  ASSERT_FALSE(ledger->fork_delete_block(block0.header().id()));
 }
 
 }  // namespace tests

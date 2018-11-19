@@ -502,7 +502,7 @@ bool LedgerMongodb::fork_delete_block(const messages::Hash &id) {
   auto query_block = bss::document{} << "header.id" << messages::to_bson(id)
                                      << bss::finalize;
   auto res = _blocks_forks.delete_one(std::move(query_block));
-  if (res) {
+  if (res && res->deleted_count() > 0) {
     return true;
   }
   return false;
