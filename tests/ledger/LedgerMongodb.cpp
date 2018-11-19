@@ -127,6 +127,9 @@ TEST_F(LedgerMongodb, transactions) {
   ASSERT_TRUE(ledger->get_transaction(transaction0.id(), &transaction0bis));
   ASSERT_EQ(transaction0, transaction0bis);
 
+  int height = 42;
+  ASSERT_TRUE(ledger->get_transaction(transaction0.id(), &transaction0bis, &height));
+  ASSERT_EQ(height, 0);
   ledger->delete_transaction(transaction0bis.id());
   ASSERT_FALSE(ledger->get_transaction(transaction0.id(), &transaction0bis, 0));
 
