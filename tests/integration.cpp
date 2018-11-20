@@ -82,20 +82,12 @@ class BotTest {
 
 TEST(INTEGRATION, simple_interaction) {
   Listener listener;
-  std::vector<std::shared_ptr<Bot>> bots;
   auto bot0 = std::make_shared<Bot>("bot0.json");
   auto bot1 = std::make_shared<Bot>("bot1.json");
+  auto bot2 = std::make_shared<Bot>("bot2.json");
 
   messages::Subscriber subscriber0(bot0->queue());
   messages::Subscriber subscriber1(bot1->queue());
-  std::cout << __LINE__ << std::endl;
-
-  int bot_id = 0;
-  std::cout << __LINE__ << std::endl;
-
-  for (const auto &bot : bots) {
-    std::cout << bot_id++ << " bot_id " << bot.get() << std::endl;
-  }
   std::cout << __LINE__ << std::endl;
 
   subscriber0.subscribe(
@@ -127,17 +119,7 @@ TEST(INTEGRATION, simple_interaction) {
   std::this_thread::sleep_for(500ms);
   std::cout << __LINE__ << std::endl;
 
-  for (const auto &bot : bots) {
-    bot->status();
-  }
-  std::cout << __LINE__ << std::endl;
-
   std::this_thread::sleep_for(3s);
-  // auto message = std::make_shared<messages::Message>();
-  // message->add_bodies()->mutable_hello();
-  // bot0->networking()->send(message, networking::ProtocolType::PROTOBUF2);
-
-  std::this_thread::sleep_for(500ms);
   ASSERT_TRUE(listener.validated());
 
   LOG_DEBUG << " About to go out";
