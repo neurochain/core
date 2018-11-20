@@ -595,7 +595,9 @@ void Bot::handler_hello(const messages::Header &header,
   key_pub->set_type(messages::KeyType::ECP256K1);
   key_pub->set_hex_data(key_pub_buffer.str());
 
-  _networking->send_unicast(message, networking::ProtocolType::PROTOBUF2);
+  if (!_networking->send_unicast(message, networking::ProtocolType::PROTOBUF2)) {
+    LOG_ERROR << this << " Failed to send world message.";
+  }
 }
 
 std::ostream &operator<<(

@@ -267,7 +267,9 @@ bool Tcp::send(std::shared_ptr<messages::Message> message,
   auto body_tcp = std::make_shared<Buffer>();
 
   std::cout << "\033[1;34mSending message: >>" << *message << "<<\033[0m\n";
-  serialize(message, protocol_type, header_tcp.get(), body_tcp.get());
+  if (!serialize(message, protocol_type, header_tcp.get(), body_tcp.get())) {
+    return false;
+  }
 
   return _connection_pool.send(header_tcp, body_tcp);
 }
@@ -282,7 +284,9 @@ bool Tcp::send_unicast(std::shared_ptr<messages::Message> message,
       std::make_shared<Buffer>(sizeof(networking::tcp::HeaderPattern), 0);
   auto body_tcp = std::make_shared<Buffer>();
   LOG_DEBUG << "\033[1;34mSending unicast : >>" << *message << "<<\033[0m";
-  serialize(message, protocol_type, header_tcp.get(), body_tcp.get());
+  if (!serialize(message, protocol_type, header_tcp.get(), body_tcp.get())) {
+    return false;
+  }
   return _connection_pool.send_unicast(message->header().peer().connection_id(),
                                        header_tcp, body_tcp);
 }

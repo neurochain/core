@@ -31,18 +31,21 @@ void Networking::remove_connection(const messages::Header &header,
   // _transport_layers[peer.transport_layer_id()]->terminated(peer.connection_id());
 }
 
-void Networking::send(std::shared_ptr<messages::Message> message,
+bool Networking::send(std::shared_ptr<messages::Message> message,
                       ProtocolType type) {
   message->mutable_header()->set_id(_dist(_rd));
   for (auto &transport_layer : _transport_layers) {
-    transport_layer->send(message, type);
+    if (!transport_layer->send(message, type)) {
+      return false;
+    }
   }
+  return true;
 }
 
-void Networking::send_unicast(std::shared_ptr<messages::Message> message,
+bool Networking::send_unicast(std::shared_ptr<messages::Message> message,
                               ProtocolType type) {
   assert(message->header().has_peer());
-  _transport_layers[message->header().peer().transport_layer_id()]
+  return _transport_layers[message->header().peer().transport_layer_id()]
       ->send_unicast(message, type);
 }
 
