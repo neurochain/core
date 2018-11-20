@@ -3,7 +3,7 @@
 namespace neuro {
 namespace test {
 
-TEST(TransportLayer, ID_Uniqueness) {
+TEST(TransportLayer, id_uniqueness) {
   // todo
 }
 

@@ -74,7 +74,7 @@ bool Tcp::ConnectionPool::send_unicast(ID id,
   return true;
 }
 
-bool Tcp::ConnectionPool::disconnect(ID id) {
+bool Tcp::ConnectionPool::disconnect(const ID id) {
   std::lock_guard<std::mutex> lock_queue(_connections_mutex);
   auto got = _connections.find(id);
   if (got == _connections.end()) {
@@ -86,12 +86,13 @@ bool Tcp::ConnectionPool::disconnect(ID id) {
   return true;
 }
 
-void Tcp::ConnectionPool::disconnect_all() {
+bool Tcp::ConnectionPool::disconnect_all() {
   std::lock_guard<std::mutex> lock_queue(_connections_mutex);
   for (auto &it : _connections) {
     it.second->close();
   }
   _connections.clear();
+  return true;
 }
 
 Tcp::ConnectionPool::~ConnectionPool() { disconnect_all(); }
