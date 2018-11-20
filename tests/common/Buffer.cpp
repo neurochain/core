@@ -92,13 +92,13 @@ TEST(Buffer, save) {
   Buffer tested_buffer({1, 2, 3, 5, 77, 255});
   bool did_throw(false);
   try {
-    tested_buffer.save("/home/test_buffer_save.txt");
+    tested_buffer.save("/tmp/test_buffer_save.txt");
   } catch (...) {
     did_throw = true;
   }
   ASSERT_FALSE(did_throw);
   try {
-    tested_buffer.save("/home/@@@.txt");
+    tested_buffer.save("/tmp/@@@.txt");
   } catch (...) {
     did_throw = true;
   }
