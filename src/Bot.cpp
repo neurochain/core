@@ -589,11 +589,10 @@ void Bot::handler_hello(const messages::Header &header,
   messages::fill_header_reply(header, header_reply);
   world->set_accepted(accepted);
 
-  Buffer key_pub_buffer;
-  _keys->public_key().save(&key_pub_buffer);
   auto key_pub = world->mutable_key_pub();
   key_pub->set_type(messages::KeyType::ECP256K1);
-  key_pub->set_hex_data(key_pub_buffer.str());
+  const auto tmp = _keys->public_key().save();
+  key_pub->set_raw_data(tmp.data(), tmp.size());
 
   if (!_networking->send_unicast(message, networking::ProtocolType::PROTOBUF2)) {
     LOG_ERROR << this << " Failed to send world message.";
