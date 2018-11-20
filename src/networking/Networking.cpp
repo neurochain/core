@@ -66,7 +66,7 @@ std::size_t Networking::peer_count() const {
 }
 
 void Networking::join() {
-  for (const auto layer : _transport_layers) {
+  for (const auto& layer : _transport_layers) {
     layer->join();
   }
 }
