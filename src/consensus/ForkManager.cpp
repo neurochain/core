@@ -95,8 +95,10 @@ bool ForkManager::merge_fork_blocks() {
   // TODO check if there are 2 forked blocks with the same prev_id
   if (_ledger->fork_get_block_by_previd(last_block_header.id(), &block)) {
     _ledger->push_block(block);
-    _ledger->fork_delete_block(block.header().id());
-    merge_fork_blocks();
+    if (_ledger->fork_delete_block(block.header().id())) {
+      merge_fork_blocks();
+    }
+
     LOG_TRACE;
     return true;
   }

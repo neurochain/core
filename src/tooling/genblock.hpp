@@ -121,6 +121,8 @@ bool genblock_from_block(
         total_ncc - how_ncc);  // std::to_string(total_ncc-how_ncc));
 
     new_trans->mutable_fees()->set_value(0);
+    messages::hash_transaction(new_trans);
+
     /*
     std::cout << " --- AAA --- " << std::endl;
     Buffer buf;
@@ -168,6 +170,26 @@ bool genblock_from_last_db_block(
 
   return genblock_from_block(block, last_block, seed, new_height, author,
                              max_trx, max_trail);
+}
+
+void create_first_blocks(const int nb, std::shared_ptr<ledger::Ledger> ledger) {
+  for (int i = 1; i < nb; ++i) {
+    messages::Block block;
+    genblock_from_last_db_block(block, ledger, 1, i);
+
+    ledger->push_block(block);
+  }
+}
+
+void create_fork_blocks(const int nb, std::shared_ptr<ledger::Ledger> ledger) {
+  messages::Block last_block, block;
+  ledger->get_block(ledger->height(), &last_block);
+  for (int i = 0; i < nb; ++i) {
+    genblock_from_block(block, last_block, 1, last_block.header().height() + 1);
+    ledger->fork_add_block(block);
+    last_block.CopyFrom(block);
+    block.Clear();
+  }
 }
 
 }  // namespace genblock

@@ -505,6 +505,8 @@ bool LedgerMongodb::fork_delete_block(const messages::Hash &id) {
   if (res && res->deleted_count() > 0) {
     return true;
   }
+
+  LOG_INFO << "Failed to delete forked block with id " << id;
   return false;
 }
 
