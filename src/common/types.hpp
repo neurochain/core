@@ -47,6 +47,7 @@ const int32_t BLOCK_PERIODE = 15;
 const int32_t ASSEMBLY_MEMBERS_COUNT = 557;
 const int32_t ASSEMBLY_BLOCKS_COUNT = 2000;
 const int32_t MESSAGE_TTL = 60;
+const int32_t MAX_MESSAGE_SIZE = 256 * 1024;
 // using Peers = google::protobuf::RepeatedPtrField<neuro::messages::Peer>;
 
 namespace crypto {
