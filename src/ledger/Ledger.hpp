@@ -15,53 +15,57 @@ namespace ledger {
 
 class Ledger {
  public:
-  using Functor = std::function<bool(const messages::Transaction)>;
+  using Functor = std::function<bool(const messages::Transaction &)>;
   using Functor_block = std::function<void(messages::Block &)>;
 
   class Filter {
    private:
     std::optional<messages::BlockHeight> _lower_height;
     std::optional<messages::BlockHeight> _upper_height;
-    std::optional<messages::Address> _output;
+    std::optional<messages::Address> _output_address;
     std::optional<messages::Hash> _block_id;
 
     std::optional<messages::Hash> _transaction_id;
     std::optional<int32_t> _output_id;
 
    public:
-    void lower_bound(const messages::BlockHeight &height) {
+    void lower_height(const messages::BlockHeight &height) {
       _lower_height = std::make_optional<messages::BlockHeight>(height);
     }
-
-    void upper_bound(const messages::BlockHeight height) {
-      _upper_height = std::make_optional<decltype(height)>(height);
+    std::optional<const messages::BlockHeight> lower_height() const {
+      return _lower_height;
     }
 
-    void output_key_id(const messages::Address &output) {
-      _output = std::make_optional<decltype(output)>(output);
+    void upper_height(const messages::BlockHeight height) {
+      _upper_height = std::make_optional<decltype(height)>(height);
+    }
+    std::optional<const messages::BlockHeight> upper_height() const {
+      return _upper_height;
     }
 
     void input_transaction_id(const messages::Hash &transaction_id) {
       _transaction_id = std::make_optional<messages::Hash>(transaction_id);
     }
+    std::optional<const messages::Hash> input_transaction_id() const {
+      return _transaction_id;
+    }
 
     void output_id(const uint32_t outputid) {
       _output_id = std::make_optional<uint32_t>(outputid);
     }
-
-    std::optional<const messages::BlockHeight> lower_height() const {
-      return _lower_height;
-    }
-    std::optional<const messages::BlockHeight> upper_height() const {
-      return _upper_height;
-    }
-    const std::optional<messages::Address> output() const { return _output; }
-    std::optional<const messages::Hash> block_id() const { return _block_id; }
-
-    std::optional<const messages::Hash> input_transaction_id() const {
-      return _transaction_id;
-    }
     std::optional<const int32_t> output_id() const { return _output_id; }
+
+    void output_address(const messages::Address &addr) {
+      _output_address = std::make_optional<messages::Address>(addr);
+    }
+    const std::optional<messages::Address> output_address() const {
+      return _output_address;
+    }
+
+    void block_id(const messages::Hash &id) {
+      _block_id = std::make_optional<messages::Hash>(id);
+    }
+    std::optional<const messages::Hash> block_id() const { return _block_id; }
   };
 
  private:
@@ -111,7 +115,7 @@ class Ledger {
 
   messages::Transactions list_transactions(const messages::Address &address) {
     Filter filter;
-    filter.output_key_id(address);
+    filter.output_address(address);
     messages::Transactions transactions;
 
     for_each(filter,
@@ -155,7 +159,7 @@ class Ledger {
 
   bool has_received_transaction(const messages::Address &address) {
     Filter filter;
-    filter.output_key_id(address);
+    filter.output_address(address);
 
     bool match = false;
     for_each(filter, [&](const messages::Transaction _) {

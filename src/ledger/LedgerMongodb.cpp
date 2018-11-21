@@ -144,15 +144,12 @@ bool LedgerMongodb::get_block_header(const messages::BlockID &id,
 }
 
 bool LedgerMongodb::get_last_block_header(messages::BlockHeader *block_header) {
-  LOG_TRACE;
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto query = bss::document{} << bss::finalize;
   auto options = remove_OID();
   options.sort(bss::document{} << "height" << -1 << bss::finalize);
 
-  LOG_TRACE;
   const auto res = _blocks.find_one(std::move(query), options);
-  LOG_TRACE;
   if (!res) {
     return false;
   }
@@ -201,7 +198,6 @@ bool LedgerMongodb::get_block_by_previd(const messages::BlockID &previd,
 bool LedgerMongodb::fork_get_block_by_previd(const messages::BlockID &previd,
                                              messages::Block *block) {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
-  LOG_TRACE;
   auto previd_query = bss::document{} << "header.previousBlockHash"
                                       << messages::to_bson(previd)
                                       << bss::finalize;
@@ -210,13 +206,11 @@ bool LedgerMongodb::fork_get_block_by_previd(const messages::BlockID &previd,
       _blocks_forks.find_one(std::move(previd_query), remove_OID());
 
   if (!res) {
-    LOG_TRACE;
     return false;
   }
 
   messages::from_bson(res->view(), block);
 
-  LOG_TRACE;
   return true;
 }
 
@@ -379,7 +373,8 @@ int LedgerMongodb::get_transaction_pool(messages::Block *block) {
 
 bool LedgerMongodb::for_each(const Filter &filter, Functor functor) {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
-  if (!filter.output() && !filter.input_transaction_id()) {
+  if (!filter.output_address() && !filter.input_transaction_id()) {
+    LOG_WARNING << "missing filters for for_each query";
     return false;
   }
 
@@ -413,8 +408,8 @@ bool LedgerMongodb::for_each(const Filter &filter, Functor functor) {
 
   auto query_transaction = bss::document{};
 
-  if (filter.output()) {
-    const auto bson = messages::to_bson(*filter.output());
+  if (filter.output_address()) {
+    const auto bson = messages::to_bson(*filter.output_address());
     query_transaction << "outputs.address" << bson;
   }
 
@@ -429,6 +424,7 @@ bool LedgerMongodb::for_each(const Filter &filter, Functor functor) {
 
   // auto cursor_block = _blocks.find(query_block.view());
   auto query_final = query_transaction << bss::finalize;
+  LOG_DEBUG << "for_each query transaction " << bsoncxx::to_json(query_final);
   auto cursor_transaction =
       _transactions.find(std::move(query_final), remove_OID());
 
