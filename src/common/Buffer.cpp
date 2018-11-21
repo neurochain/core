@@ -13,11 +13,6 @@ Buffer::Buffer(const std::string &string, const InputType input_type) {
         throw std::runtime_error("Bad input size");
       }
       break;
-    // case InputType::B64:
-    //   if (!read_b64(string)) {
-    //     throw std::runtime_error("Bad base64 input.");
-    //   }
-    //   break;
     case InputType::RAW:
       copy(string);
       break;
@@ -88,9 +83,5 @@ bool Buffer::read_hex(const std::string &str) {
   }
   return true;
 }
-
-// bool Buffer::read_b64(const std::string &str) {
-//   return false;  // todo: not yet implemented
-// }
 
 }  // namespace neuro

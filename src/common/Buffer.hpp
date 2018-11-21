@@ -30,7 +30,6 @@ class Buffer : public std::vector<uint8_t> {
   }
 
   bool read_hex(const std::string &str);
-  // bool read_b64(const std::string &str);
 
  public:
   Buffer() = default;
