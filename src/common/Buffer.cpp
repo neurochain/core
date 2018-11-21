@@ -79,6 +79,8 @@ bool Buffer::read_hex(const std::string &str) {
   if ((str.size() % 2) == 1) {
     return false;
   }
+  clear();
+  reserve(str.size() / 2);
   auto it = str.begin(), end = str.end();
   while (it < end) {
     push_back((char2uint(*it) << 4) + char2uint(*(it + 1)));
