@@ -145,11 +145,11 @@ TEST(INTEGRATION, simple_interaction) {
 
 TEST(INTEGRATION, neighbors_propagation) {
   auto bot0 = std::make_shared<Bot>(
-      messages::config::Config("integration_propagation0.json"));
+      messages::config::Config(Path("integration_propagation0.json")));
   auto bot1 = std::make_shared<Bot>(
-      messages::config::Config("integration_propagation1.json"));
+      messages::config::Config(Path("integration_propagation1.json")));
   auto bot2 = std::make_shared<Bot>(
-      messages::config::Config("integration_propagation2.json"));
+      messages::config::Config(Path("integration_propagation2.json")));
 
   std::this_thread::sleep_for(100ms);
   bot0->keep_max_connections();

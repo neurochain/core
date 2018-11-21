@@ -53,6 +53,9 @@ int32_t fill_header_reply(const messages::Header &header_request,
 class Message : public _Message {
  public:
   Message() { fill_header(mutable_header()); }
+  Message(const std::string &json) { from_json(json, this); }
+
+  Message(const Path &path) { from_json_file(path.string(), this); }
   virtual ~Message() {}
 };
 

@@ -64,9 +64,9 @@ void TransactionPool::delete_transactions(
   }
 }
 
-bool TransactionPool::build_block(messages::Block &block,
+bool TransactionPool::build_block(messages::Block *block,
                                   messages::BlockHeight height,
-                                  const crypto::Ecc *author, uint64_t rewarde) {
+                                  const crypto::Ecc *author, uint64_t reward) {
   /// TO DO
 
   // Get author pubkey and address ---oliv
@@ -79,7 +79,7 @@ bool TransactionPool::build_block(messages::Block &block,
 
   messages::Address addr(key_pub_data);
 
-  messages::BlockHeader *blockheader = block.mutable_header();
+  messages::BlockHeader *blockheader = block->mutable_header();
   blockheader->mutable_author()->CopyFrom(author_keypub);
 
   messages::Block last_block;
@@ -90,10 +90,10 @@ bool TransactionPool::build_block(messages::Block &block,
   blockheader->set_height(height);
   blockheader->mutable_timestamp()->set_data(std::time(nullptr));
 
-  messages::Transaction *coinsbase_transaction = block.add_transactions();
+  messages::Transaction *coinsbase_transaction = block->add_transactions();
 
   messages::NCCSDF ncc;
-  ncc.set_value(rewarde);
+  ncc.set_value(reward);
 
   coinbase(coinsbase_transaction, addr, ncc);
 
@@ -103,7 +103,7 @@ bool TransactionPool::build_block(messages::Block &block,
   messages::Address id_block_fake(buffake);
   blockheader->mutable_id()->CopyFrom(id_block_fake);
 
-  Buffer buf(block.SerializeAsString());
+  Buffer buf(block->SerializeAsString());  // WTF
   messages::Address id_block(buf);
   blockheader->mutable_id()->CopyFrom(id_block);
   //! signed block #block1

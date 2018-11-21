@@ -26,7 +26,7 @@ message Rest {
   optional uint64 faucet_amount = 3;
 }
 
-message Database {
+message _Database {
   enum Block0Format {
     PROTO = 1;
     BSON = 2;
@@ -60,7 +60,7 @@ message _Config {
   optional string key_priv_path = 2;
   optional Logs logs = 3;
   required Networking networking = 4;
-  optional Database database = 5;
+  optional _Database database = 5;
   optional Peer.Status keep_status = 6 [default = CONNECTED]; 
   optional SelectionMethod selection_method = 7 [default = RANDOM];
   optional Rest rest = 8;
