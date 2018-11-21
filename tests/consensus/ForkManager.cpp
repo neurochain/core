@@ -64,6 +64,51 @@ TEST_F(ForkManager, merge_fork_blocks) {
   ASSERT_EQ(ledger->height(), 9);
 }
 
+TEST_F(ForkManager, fork_status) {
+  tooling::genblock::create_first_blocks(5, ledger);
+  tooling::genblock::create_fork_blocks(5, ledger);
+  messages::Block last_block, previous_block;
+  ledger->get_block(ledger->height(), &last_block);
+  ledger->get_block(ledger->height() - 1, &previous_block);
+  auto shared_ledger = std::make_shared<ledger::LedgerMongodb>(_config);
+  auto transaction_pool = TransactionPool(shared_ledger);
+  auto fork_manager =
+      neuro::consensus::ForkManager(shared_ledger, transaction_pool);
+  auto status = fork_manager.fork_status(
+      last_block.header(), previous_block.header(), last_block.header());
+  ASSERT_EQ(status, neuro::consensus::ForkManager::ForkStatus::Dual_Block);
+  // TODO make tests that make sense fork_status makes no sense to me
+}
+
+TEST_F(ForkManager, fork_result_no_fork) {
+  tooling::genblock::create_first_blocks(5, ledger);
+  tooling::genblock::create_fork_blocks(5, ledger);
+  tooling::genblock::create_more_blocks(10, ledger);
+  ASSERT_EQ(ledger->total_nb_blocks(), 15);
+
+  auto shared_ledger = std::make_shared<ledger::LedgerMongodb>(_config);
+  auto transaction_pool = TransactionPool(shared_ledger);
+  auto fork_manager =
+      neuro::consensus::ForkManager(shared_ledger, transaction_pool);
+  ASSERT_EQ(fork_manager.fork_results(), false);
+  ASSERT_EQ(ledger->total_nb_blocks(), 15);
+}
+
+TEST_F(ForkManager, fork_result_fork) {
+  tooling::genblock::create_first_blocks(5, ledger);
+  tooling::genblock::create_fork_blocks(10, ledger);
+  tooling::genblock::create_more_blocks(5, ledger);
+  ASSERT_EQ(ledger->total_nb_blocks(), 10);
+
+  auto shared_ledger = std::make_shared<ledger::LedgerMongodb>(_config);
+  auto transaction_pool = TransactionPool(shared_ledger);
+  auto fork_manager =
+      neuro::consensus::ForkManager(shared_ledger, transaction_pool);
+  ASSERT_EQ(fork_manager.fork_results(), true);
+  ASSERT_EQ(ledger->height(), 14);
+  ASSERT_EQ(ledger->total_nb_blocks(), 15);
+}
+
 }  // namespace tests
 }  // namespace consensus
 }  // namespace neuro

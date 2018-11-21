@@ -173,12 +173,17 @@ bool genblock_from_last_db_block(
 }
 
 void create_first_blocks(const int nb, std::shared_ptr<ledger::Ledger> ledger) {
+  messages::Block last_block;
+  ledger->get_block(ledger->height(), &last_block);
   for (int i = 1; i < nb; ++i) {
     messages::Block block;
     genblock_from_last_db_block(block, ledger, 1, i);
-
     ledger->push_block(block);
   }
+}
+
+void create_more_blocks(const int nb, std::shared_ptr<ledger::Ledger> ledger) {
+  create_first_blocks(nb + 1, ledger);
 }
 
 void create_fork_blocks(const int nb, std::shared_ptr<ledger::Ledger> ledger) {
