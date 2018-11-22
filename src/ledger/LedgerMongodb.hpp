@@ -23,9 +23,10 @@ class LedgerMongodb : public Ledger {
 
   mongocxx::options::find remove_OID();
 
-  mongocxx::options::find projection(std::string field);
+  mongocxx::options::find projection(const std::string &field);
 
-  mongocxx::options::find projection(std::string field0, std::string field1);
+  mongocxx::options::find projection(const std::string &field0,
+                                     const std::string &field1);
 
   void init_block0(const messages::config::Database &db);
 

@@ -26,7 +26,7 @@ mongocxx::options::find LedgerMongodb::remove_OID() {
   return find_options;
 }
 
-mongocxx::options::find LedgerMongodb::projection(std::string field) {
+mongocxx::options::find LedgerMongodb::projection(const std::string &field) {
   mongocxx::options::find find_options;
   auto projection_transaction = bss::document{} << "_id" << 0 << field << 1
                                                 << bss::finalize;
@@ -34,8 +34,8 @@ mongocxx::options::find LedgerMongodb::projection(std::string field) {
   return find_options;
 }
 
-mongocxx::options::find LedgerMongodb::projection(std::string field0,
-                                                  std::string field1) {
+mongocxx::options::find LedgerMongodb::projection(const std::string &field0,
+                                                  const std::string &field1) {
   mongocxx::options::find find_options;
   auto projection_transaction = bss::document{} << "_id" << 0 << field0 << 1
                                                 << field1 << 1 << bss::finalize;
