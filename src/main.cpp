@@ -9,6 +9,7 @@
 #include "Bot.hpp"
 #include "config.pb.h"
 #include "messages/Message.hpp"
+#include "messages/config/Config.hpp"
 #include "mongo/mongo.hpp"
 #include "version.h"
 
@@ -22,7 +23,10 @@ int main(int argc, char *argv[]) {
   desc.add_options()("help,h", "Produce help message.")("version,v",
                                                         "Print version.")(
       "configuration,c", po::value<std::string>()->default_value("bot.json"),
-      "Configuration path.");
+      "Configuration path.")("port,p", po::value<Port>(),
+                             "Override listenning port configuration")(
+      "namespace,n", po::value<std::string>(),
+      "Namespace used when running several bots on the same computer");
 
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -43,7 +47,20 @@ int main(int argc, char *argv[]) {
   }
 
   const auto configuration_filepath = vm["configuration"].as<std::string>();
-  Bot bot(configuration_filepath);
+
+  auto configuration = messages::config::Config{configuration_filepath};
+  if (vm.count("port")) {
+    const auto port = vm["port"].as<Port>();
+    configuration.mutable_networking()->mutable_tcp()->set_port(port);
+  }
+  if (vm.count("namespace")) {
+    const auto ns = vm["namespace"].as<std::string>();
+    const auto original_dbname = configuration.database().db_name();
+    const auto new_dbname = original_dbname + "_" + ns;
+    configuration.mutable_database()->set_db_name(new_dbname);
+  }
+
+  Bot bot(configuration);
   bot.join();
   return 0;
 }

@@ -2,9 +2,11 @@
 #define NEURO_SRC_COMMON_TYPES_HPP
 
 #include <boost/asio.hpp>
+#include <boost/filesystem/path.hpp>
 #include <cassert>
 #include <cstdint>
 #include <vector>
+
 #include "common/Buffer.hpp"
 
 #include "common.pb.h"
@@ -26,6 +28,8 @@ namespace consensus {
 using Address = std::string;
 }  // namespace consensus
 
+using Path = boost::filesystem::path;
+
 using std::int16_t;
 using std::int32_t;
 using std::int64_t;
@@ -43,6 +47,7 @@ const int32_t BLOCK_PERIODE = 15;
 const int32_t ASSEMBLY_MEMBERS_COUNT = 557;
 const int32_t ASSEMBLY_BLOCKS_COUNT = 2000;
 const int32_t MESSAGE_TTL = 60;
+const int32_t MAX_MESSAGE_SIZE = 256 * 1024;
 // using Peers = google::protobuf::RepeatedPtrField<neuro::messages::Peer>;
 
 namespace crypto {

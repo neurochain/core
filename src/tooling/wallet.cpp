@@ -7,6 +7,7 @@
 #include "messages.pb.h"
 #include "messages/Hasher.hpp"
 #include "messages/Message.hpp"
+#include "messages/config/Config.hpp"
 #include "tooling/genblock.hpp"
 
 #include <sys/stat.h>
@@ -44,7 +45,7 @@ class Wallet {
   void getTransactions() {
     _trxs.clear();
     ledger::Ledger::Filter _filter;
-    _filter.output_key_id(*_address);
+    _filter.output_address(*_address);
 
     if (_ledger->for_each(_filter, [&](const messages::Transaction &a) {
           _trxs.push_back(std::move(a));

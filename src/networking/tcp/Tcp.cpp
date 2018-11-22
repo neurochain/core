@@ -169,7 +169,7 @@ bool Tcp::serialize(std::shared_ptr<messages::Message> message,
       reinterpret_cast<tcp::HeaderPattern *>(header_tcp->data());
   messages::to_buffer(*message, body_tcp);
 
-  if (body_tcp->size() > (1 << (8 * sizeof(tcp::HeaderPattern::size)))) {
+  if (body_tcp->size() > MAX_MESSAGE_SIZE) {
     LOG_ERROR << "Message is too big (" << body_tcp->size() << ")";
     return false;
   }
@@ -194,7 +194,7 @@ bool Tcp::send(std::shared_ptr<messages::Message> message,
   Buffer header_tcp(sizeof(networking::tcp::HeaderPattern), 0);
   Buffer body_tcp;
 
-  std::cout << "\033[1;34mSending message: >>" << *message << "<<\033[0m\n";
+  LOG_DEBUG << "\033[1;34mSending message: >>" << *message << "<<\033[0m\n";
   serialize(message, protocol_type, &header_tcp, &body_tcp);
 
   bool res = true;

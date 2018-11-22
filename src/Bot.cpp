@@ -16,41 +16,20 @@
 namespace neuro {
 using namespace std::chrono_literals;
 
-Bot::Bot(std::istream &bot_stream)
+Bot::Bot(const messages::config::Config &config)
     : _queue(std::make_shared<messages::Queue>()),
       _networking(std::make_shared<networking::Networking>(_queue)),
       _subscriber(_queue),
       _io_context(std::make_shared<boost::asio::io_context>()),
+      _config(config),
       _update_timer(*_io_context) {
-  std::string tmp;
-  std::stringstream ss;
-  while (!bot_stream.eof()) {
-    bot_stream >> tmp;
-    ss << tmp;
-  }
-  tmp = ss.str();
-  messages::from_json(tmp, &_config);
   if (!init()) {
     throw std::runtime_error("Could not create bot from configuration file");
   }
 }
 
-Bot::Bot(const std::string &configuration_path)
-    : _queue(std::make_shared<messages::Queue>()),
-      _networking(std::make_shared<networking::Networking>(_queue)),
-      _subscriber(_queue),
-      _io_context(std::make_shared<boost::asio::io_context>()),
-      _update_timer(*_io_context) {
-  if (!messages::from_json_file(configuration_path, &_config)) {
-    std::string s = "Coult not parse configuration file " + configuration_path +
-                    " from " + boost::filesystem::current_path().native();
-    throw std::runtime_error(s);
-  }
-  if (!init()) {
-    throw std::runtime_error("Could not create bot from configuration file");
-  }
-}
-
+Bot::Bot(const std::string &config_path)
+    : Bot::Bot(messages::config::Config(config_path)) {}
 bool Bot::load_keys(const messages::config::Config &config) {
   bool keys_save{false};
   bool keys_create{false};
@@ -126,6 +105,7 @@ void Bot::handler_get_block(const messages::Header &header,
 
 void Bot::handler_block(const messages::Header &header,
                         const messages::Body &body) {
+  LOG_TRACE;
   bool reply_message = header.has_request_id();
   _consensus->add_block(body.block(), !reply_message);
   update_ledger();
@@ -330,7 +310,8 @@ void Bot::regular_update() {
 void Bot::update_peerlist() {
   LOG_DEBUG << this << " FROM UPDATE PEERLIST";
   for (auto &peer : *_tcp_config->mutable_peers()) {
-    std::cout << this << " PEER STATUS " << peer << std::endl;
+    LOG_TRACE << this << " PEER STATUS " << peer.endpoint() << ":"
+              << peer.port() << peer.Status_Name(peer.status()) << std::endl;
   }
   auto msg = std::make_shared<messages::Message>();
   messages::fill_header(msg->mutable_header());
@@ -655,7 +636,8 @@ bool Bot::next_to_connect(messages::Peer **peer) {
   auto peers = _tcp_config->mutable_peers();
 
   for (auto &peer : *_tcp_config->mutable_peers()) {
-    std::cout << this << " PEER STATUS " << peer << std::endl;
+    LOG_TRACE << this << " PEER STATUS " << peer.endpoint() << ":"
+              << peer.port() << peer.Status_Name(peer.status()) << std::endl;
   }
 
   switch (_selection_method) {
