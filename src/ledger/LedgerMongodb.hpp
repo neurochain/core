@@ -18,31 +18,20 @@ class LedgerMongodb : public Ledger {
   mutable mongocxx::client _client;
   mutable mongocxx::database _db;
   mutable mongocxx::collection _blocks;
-  mutable mongocxx::collection _transactions;
-  mutable mongocxx::collection _blocks_forks;
 
   std::mutex _ledger_mutex;
 
   mongocxx::options::find remove_OID();
 
-  bool get_block_header(const bsoncxx::document::view &block,
-                        messages::BlockHeader *header);
+  mongocxx::options::find projection(std::string field);
 
-  bool get_transactions_from_block(const bsoncxx::document::view &id,
-                                   messages::Block *block);
-
-  bool get_transactions_from_block(const messages::BlockID &id,
-                                   messages::Block *block);
+  mongocxx::options::find projection(std::string field0, std::string field1);
 
   void init_block0(const messages::config::Database &db);
 
-  bool get_block_unsafe(const messages::BlockID &id, messages::Block *block);
+  MongoQuery query_branch(const messages::Branch &branch);
 
-  bool get_block_unsafe(const messages::BlockHeight height,
-                        messages::Block *block);
-
-  bool get_block_header_unsafe(const messages::BlockID &id,
-                               messages::BlockHeader *header);
+  MongoQuery query_main_branch();
 
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);
@@ -59,12 +48,21 @@ class LedgerMongodb : public Ledger {
 
   bool get_last_block_header(messages::BlockHeader *block_header);
 
+  bool get_block(const messages::BlockID &id,
+                 messages::TaggedBlock *tagged_block);
+
   bool get_block(const messages::BlockID &id, messages::Block *block);
 
   bool get_block_by_previd(const messages::BlockID &previd,
                            messages::Block *block);
 
+  bool get_blocks_by_previd(const messages::BlockID &previd,
+                            std::vector<messages::TaggedBlock> *tagged_blocks);
+
   bool get_block(const messages::BlockHeight height, messages::Block *block);
+
+  bool insert_block(const messages::Block &block,
+                    const messages::Branch &branch);
 
   bool push_block(const messages::Block &block);
 
@@ -76,14 +74,6 @@ class LedgerMongodb : public Ledger {
   bool get_transaction(const messages::Hash &id,
                        messages::Transaction *transaction,
                        messages::BlockHeight *blockheight);
-  bool add_transaction(const messages::Transaction &transaction);
-
-  bool delete_transaction(const messages::Hash &id);
-
-  bool get_block_by_previd_in_collection(const messages::BlockID &previd,
-                                         messages::Block *block);
-
-  int get_transaction_pool(messages::Block &block);
 
   int total_nb_transactions();
 
@@ -92,25 +82,6 @@ class LedgerMongodb : public Ledger {
   bool get_blocks(int start, int size, std::vector<messages::Block> &blocks);
 
   bool for_each(const Filter &filter, Functor functor);
-
-  /**
-   * Functions for forks
-   */
-
-  bool fork_add_block(const messages::Block &block);
-
-  bool fork_delete_block(const messages::Hash &id);
-
-  bool fork_get_block(const messages::BlockID &id, messages::Block *block);
-
-  bool fork_get_block(const messages::BlockHeight height,
-                      messages::Block *block);
-
-  bool fork_get_block_by_previd(const messages::BlockID &previd,
-                                messages::Block *block);
-
-  void fork_for_each(Functor_block functor);
-  void fork_test();
 };
 
 }  // namespace ledger

@@ -82,6 +82,17 @@ message Block {
   repeated Transaction transactions = 20;
 }
 
+enum Branch {
+  MAIN = 0;
+  FORK = 1;
+  DETACHED = 2;
+}
+
+message TaggedBlock {
+  required Block block = 1;
+  required Branch branch = 2;
+}
+
 message ConnectionClosed {
 }
 

@@ -73,25 +73,19 @@ class Ledger {
   virtual bool get_last_block_header(messages::BlockHeader *block_header) = 0;
   virtual bool get_block(const messages::BlockID &id,
                          messages::Block *block) = 0;
+  virtual bool get_block(const messages::BlockID &id,
+                         messages::TaggedBlock *tagged_block) = 0;
   virtual bool get_block_by_previd(const messages::BlockID &previd,
                                    messages::Block *block) = 0;
+  bool get_blocks_by_previd(const messages::BlockID &previd,
+                            std::vector<messages::TaggedBlock> *tagged_blocks);
   virtual bool get_block(const messages::BlockHeight height,
                          messages::Block *block) = 0;
-
+  virtual bool insert_block(const messages::Block &block,
+                            const messages::Branch &branch) = 0;
   virtual bool push_block(const messages::Block &block) = 0;
   virtual bool delete_block(const messages::Hash &id) = 0;
   virtual bool for_each(const Filter &filter, Functor functor) = 0;
-
-  virtual bool fork_add_block(const messages::Block &b) = 0;
-  virtual bool fork_delete_block(const messages::Hash &id) = 0;
-  virtual void fork_for_each(Functor_block functor) = 0;
-  virtual bool fork_get_block(const messages::BlockID &id,
-                              messages::Block *block) = 0;
-  virtual bool fork_get_block(const messages::BlockHeight height,
-                              messages::Block *block) = 0;
-  virtual bool fork_get_block_by_previd(const messages::BlockID &previd,
-                                        messages::Block *block) = 0;
-  virtual void fork_test() = 0;
   virtual bool get_transaction(const messages::Hash &id,
                                messages::Transaction *transaction) = 0;
   virtual bool get_transaction(const messages::Hash &id,
@@ -106,6 +100,18 @@ class Ledger {
   virtual int total_nb_transactions() = 0;
 
   virtual int total_nb_blocks() = 0;
+
+  // Fork methods TODO remove
+  virtual bool fork_add_block(const messages::Block &b) = 0;
+  virtual bool fork_delete_block(const messages::Hash &id) = 0;
+  virtual void fork_for_each(Functor_block functor) = 0;
+  virtual bool fork_get_block(const messages::BlockID &id,
+                              messages::Block *block) = 0;
+  virtual bool fork_get_block(const messages::BlockHeight height,
+                              messages::Block *block) = 0;
+  virtual bool fork_get_block_by_previd(const messages::BlockID &previd,
+                                        messages::Block *block) = 0;
+  virtual void fork_test() = 0;
 
   // helpers
 
