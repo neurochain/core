@@ -13,9 +13,9 @@ LedgerMongodb::LedgerMongodb(const std::string &url, const std::string &db_name)
       _db(_client[db_name]),
       _blocks(_db.collection("blocks")) {}
 
-LedgerMongodb::LedgerMongodb(const messages::config::Database &db)
-    : LedgerMongodb(db.url(), db.db_name()) {
-  init_block0(db);
+LedgerMongodb::LedgerMongodb(const messages::config::Database &config)
+    : LedgerMongodb(config.url(), config.db_name()) {
+  init_block0(config);
 }
 
 mongocxx::options::find LedgerMongodb::remove_OID() {
@@ -43,26 +43,31 @@ mongocxx::options::find LedgerMongodb::projection(const std::string &field0,
   return find_options;
 }
 
-void LedgerMongodb::init_block0(const messages::config::Database &db) {
+bool LedgerMongodb::init_block0(const messages::config::Database &config) {
   messages::Block block0;
   if (get_block(0, &block0)) {
-    return;
+    return true;
   }
   messages::Block block0file;
-  std::ifstream t(db.block0_path());
-  std::string str((std::istreambuf_iterator<char>(t)),
+  std::ifstream block0stream(config.block0_path());
+  if (!block0stream.is_open()) {
+    LOG_ERROR << "Could not load block from " << config.block0_path()
+              << " from " << boost::filesystem::current_path().native();
+    return false;
+  }
+  std::string str((std::istreambuf_iterator<char>(block0stream)),
                   std::istreambuf_iterator<char>());
 
   auto d = bss::document{};
-  switch (db.block0_format()) {
-    case messages::config::Database::Block0Format::Database_Block0Format_PROTO:
+  switch (config.block0_format()) {
+    case messages::config::Database::Block0Format::_Database_Block0Format_PROTO:
       block0file.ParseFromString(str);
       break;
-    case messages::config::Database::Block0Format::Database_Block0Format_BSON:
+    case messages::config::Database::Block0Format::_Database_Block0Format_BSON:
       d << str;
       messages::from_bson(d.view(), &block0file);
       break;
-    case messages::config::Database::Block0Format::Database_Block0Format_JSON:
+    case messages::config::Database::Block0Format::_Database_Block0Format_JSON:
       messages::from_json(str, &block0file);
       break;
   }
@@ -307,7 +312,6 @@ int LedgerMongodb::total_nb_blocks() {
 bool LedgerMongodb::for_each(const Filter &filter, Functor functor) {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   // TODO
-
   return true;
 }
 

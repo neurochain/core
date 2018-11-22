@@ -7,20 +7,17 @@
 namespace neuro {
 
 Buffer::Buffer(const std::string &string, const InputType input_type) {
-  if ((string.size() % 2) == 1) {
-    throw std::runtime_error("Bad input size");
-  }
-
   switch (input_type) {
-    case InputType::HEX: {
-      auto it = string.begin(), end = string.end();
-      while (it < end) {
-        push_back((char2uint(*it) << 4) + char2uint(*(it + 1)));
-        it += 2;
+    case InputType::HEX:
+      if (!read_hex(string)) {
+        throw std::runtime_error("Bad input size");
       }
-    } break;
+      break;
+    case InputType::RAW:
+      copy(string);
+      break;
     default:
-      throw std::runtime_error("Unknown type");
+      throw std::runtime_error("Unknown type: inconsistent implementation.");
   }
 }
 
@@ -75,6 +72,20 @@ std::ostream &operator<<(std::ostream &os, const Buffer &buffer) {
   os.flags(f);
 
   return os;
+}
+
+bool Buffer::read_hex(const std::string &str) {
+  if ((str.size() % 2) == 1) {
+    return false;
+  }
+  clear();
+  reserve(str.size() / 2);
+  auto it = str.begin(), end = str.end();
+  while (it < end) {
+    push_back((char2uint(*it) << 4) + char2uint(*(it + 1)));
+    it += 2;
+  }
+  return true;
 }
 
 }  // namespace neuro

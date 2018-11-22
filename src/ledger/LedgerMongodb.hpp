@@ -3,10 +3,13 @@
 
 #include <mutex>
 
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
 #include "config.pb.h"
 #include "ledger/Ledger.hpp"
 #include "ledger/mongo.hpp"
 #include "messages.pb.h"
+#include "messages/config/Database.hpp"
 
 namespace neuro {
 namespace ledger {
@@ -28,7 +31,7 @@ class LedgerMongodb : public Ledger {
   mongocxx::options::find projection(const std::string &field0,
                                      const std::string &field1);
 
-  void init_block0(const messages::config::Database &db);
+  bool init_block0(const messages::config::Database &config);
 
   MongoQuery query_branch(const messages::Branch &branch);
 
@@ -36,7 +39,7 @@ class LedgerMongodb : public Ledger {
 
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);
-  LedgerMongodb(const messages::config::Database &db);
+  LedgerMongodb(const messages::config::Database &config);
 
   ~LedgerMongodb() {}
 
