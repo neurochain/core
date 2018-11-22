@@ -21,8 +21,8 @@ TEST(Conf, load) {
 
   boost::filesystem::path pub_path(conf.key_pub_path());
   boost::filesystem::path priv_path(conf.key_priv_path());
-  ASSERT_EQ(pub_path.filename(), "key1.pub");
-  ASSERT_EQ(priv_path.filename(), "key1.priv");
+  ASSERT_EQ(pub_path.filename(), "key2.pub");
+  ASSERT_EQ(priv_path.filename(), "key2.priv");
 
   ASSERT_TRUE(conf.has_networking());
   const auto networking = conf.networking();

@@ -13,9 +13,9 @@
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../testnet/data.0.testnet
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-configure_file("configs/bot0.json.in" "${CMAKE_CURRENT_BINARY_DIR}/bot0.json" @ONLY)
-configure_file("configs/bot1.json.in" "${CMAKE_CURRENT_BINARY_DIR}/bot1.json" @ONLY)
-configure_file("configs/bot2.json.in" "${CMAKE_CURRENT_BINARY_DIR}/bot2.json" @ONLY)
+configure_file("configs/bot0.json" "${CMAKE_CURRENT_BINARY_DIR}/bot0.json" COPYONLY)
+configure_file("configs/bot1.json" "${CMAKE_CURRENT_BINARY_DIR}/bot1.json" COPYONLY)
+configure_file("configs/bot2.json" "${CMAKE_CURRENT_BINARY_DIR}/bot2.json" COPYONLY)
 
 configure_file("configs/integration_propagation0.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_propagation0.json" @ONLY)
 configure_file("configs/integration_propagation1.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_propagation1.json" @ONLY)
@@ -37,6 +37,13 @@ configure_file("configs/key_integration2.pub" "${CMAKE_CURRENT_BINARY_DIR}/key_i
 
 configure_file("configs/test_sign.priv" "${CMAKE_CURRENT_BINARY_DIR}/test_sign.priv" COPYONLY)
 configure_file("configs/test_sign.pub" "${CMAKE_CURRENT_BINARY_DIR}/test_sign.pub" COPYONLY)
+
+configure_file("configs/key0.priv" "${CMAKE_CURRENT_BINARY_DIR}/key0.priv" COPYONLY)
+configure_file("configs/key0.pub" "${CMAKE_CURRENT_BINARY_DIR}/key0.pub" COPYONLY)
+configure_file("configs/key1.priv" "${CMAKE_CURRENT_BINARY_DIR}/key1.priv" COPYONLY)
+configure_file("configs/key1.pub" "${CMAKE_CURRENT_BINARY_DIR}/key1.pub" COPYONLY)
+configure_file("configs/key2.priv" "${CMAKE_CURRENT_BINARY_DIR}/key2.priv" COPYONLY)
+configure_file("configs/key2.pub" "${CMAKE_CURRENT_BINARY_DIR}/key2.pub" COPYONLY)
 
 configure_file("../testnet/data.0.testnet" "${CMAKE_CURRENT_BINARY_DIR}/../data.0.testnet" COPYONLY)
 

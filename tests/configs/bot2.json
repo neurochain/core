@@ -1,6 +1,6 @@
 {
-    "key_pub_path": "@CMAKE_BINARY_DIR@/key1.pub",
-    "key_priv_path": "@CMAKE_BINARY_DIR@/key1.priv",
+    "key_pub_path": "key2.pub",
+    "key_priv_path": "key2.priv",
     "logs": {
 	"severity": "debug",
 	"to_stdout": true

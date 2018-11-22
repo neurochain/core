@@ -96,6 +96,11 @@ TEST(INTEGRATION, simple_interaction) {
         listener.handler_hello(header, body);
       });
   subscriber1.subscribe(
+      messages::Type::kHello,
+      [&listener](const messages::Header &header, const messages::Body &body) {
+        listener.handler_hello(header, body);
+      });
+  subscriber1.subscribe(
       messages::Type::kWorld,
       [&listener](const messages::Header &header, const messages::Body &body) {
         listener.handler_world(header, body);
@@ -121,8 +126,6 @@ TEST(INTEGRATION, simple_interaction) {
 
   std::this_thread::sleep_for(3s);
   ASSERT_TRUE(listener.validated());
-
-  LOG_DEBUG << " About to go out";
 }
 
 TEST(INTEGRATION, neighbors_propagation) {
