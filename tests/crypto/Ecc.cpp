@@ -16,6 +16,22 @@ TEST(Ecc, save_load_file) {
   ASSERT_EQ(keys0, keys1);
 }
 
+TEST(Ecc, check_key_value_expectations) {
+  crypto::Ecc keys0;
+  keys0.save("test_keys.priv", "test_keys.pub");
+  crypto::Ecc keys1("test_keys.priv", "test_keys.pub");
+  std::ifstream pub_key_file("test_keys.pub", std::ifstream::binary);
+  ASSERT_TRUE(pub_key_file.is_open());
+  std::vector<uint8_t> buffer1(std::istreambuf_iterator<char>(pub_key_file), {});
+  ASSERT_FALSE(buffer1.empty());
+  std::cout << "Key from test_keys.pub: " << keys1.public_key() << std::endl;
+  const auto raw_data = keys1.public_key().save();
+  ASSERT_EQ(buffer1, raw_data);
+  Buffer buffer2;
+  keys1.public_key().save(&buffer2);
+  ASSERT_EQ(buffer1, buffer2);
+}
+
 TEST(Ecc, save_load_buffer) {
   const crypto::Ecc keys0;
   crypto::Ecc keys1;
