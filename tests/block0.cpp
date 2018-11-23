@@ -24,7 +24,7 @@ TEST(Blocks, Set_Block0) {
 
 TEST(Blocks, Set_Find) {
   neuro::messages::config::Config _config;
-  messages::from_json_file("../../bot1.json", &_config);
+  messages::from_json_file("bot_block0.json", &_config);
 
   auto database = _config.database();
   ledger::LedgerMongodb _ledger(database);
