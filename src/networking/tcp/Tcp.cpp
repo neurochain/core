@@ -266,7 +266,8 @@ bool Tcp::send(std::shared_ptr<messages::Message> message,
       std::make_shared<Buffer>(sizeof(networking::tcp::HeaderPattern), 0);
   auto body_tcp = std::make_shared<Buffer>();
 
-  std::cout << "\033[1;34mSending message: >>" << *message << "<<\033[0m\n";
+  std::cout << "\033[1;34mSending message[" << this->listening_port() << "]: >>"
+            << *message << "<<\033[0m\n";
   if (!serialize(message, protocol_type, header_tcp.get(), body_tcp.get())) {
     return false;
   }
@@ -283,7 +284,7 @@ bool Tcp::send_unicast(std::shared_ptr<messages::Message> message,
   auto header_tcp =
       std::make_shared<Buffer>(sizeof(networking::tcp::HeaderPattern), 0);
   auto body_tcp = std::make_shared<Buffer>();
-  LOG_DEBUG << "\033[1;34mSending unicast : >>" << *message << "<<\033[0m";
+  LOG_DEBUG << "\033[1;34mSending unicast [" << this->listening_port() << "]: >>" << *message << "<<\033[0m";
   if (!serialize(message, protocol_type, header_tcp.get(), body_tcp.get())) {
     return false;
   }
