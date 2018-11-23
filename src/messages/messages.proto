@@ -132,7 +132,7 @@ message Score {
   optional float64 score_float = 2;
 }
 
-message Assembly {
+message Election {
   required int32 id = 1;
   required Hash block_id_begin = 2;
   required Hash block_id_end = 3;

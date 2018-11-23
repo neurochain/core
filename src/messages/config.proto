@@ -70,6 +70,6 @@ message _Config {
 
 message Pii {
   required int32 assembly_block_count = 1;
-  required int32 assembly_start_block = 2;
+  required int32 election_block = 2;
   required int32 block_interval = 3;
 }
