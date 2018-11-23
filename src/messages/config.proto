@@ -66,3 +66,10 @@ message _Config {
   optional Rest rest = 8;
   optional string connection_graph_uri = 9;
 }
+
+
+message Pii {
+  required int32 assembly_block_count = 1;
+  required int32 assembly_start_block = 2;
+  required int32 block_interval = 3;
+}

@@ -1,118 +1,57 @@
-#ifndef NEURO_SRC_CONCENSUS_PII_HPP
-#define NEURO_SRC_CONCENSUS_PII_HPP
-
-#include <algorithm>
-#include <cmath>
-#include <iostream>
-#include <memory>
-#include <tuple>
-#include <unordered_map>
-#include <vector>
-
-#include "common/types.hpp"
-#include "messages/Address.hpp"
-#include "messages/Message.hpp"
+#ifndef NEURO_SRC_CONSENSUS_PII_HPP
+#define NEURO_SRC_CONSENSUS_PII_HPP
 
 namespace neuro {
 namespace consensus {
-///
-/// \class pii class
-///
+
+class Transactions {
+ public:
+  using TransactionID = messages::Transaction *;
+  using AddressID = messages::Address *;
+
+  class Address {
+   private:
+    const crypto::Address _address;
+    Score _previous;
+    Score _current;
+    std::unordered_multimap<const AddressID, const TransactionID> _in;
+    std::unordered_multimap<const AddressID, const TransactionID> _out;
+
+   public:
+    Address(const crypto::Address &address);
+    bool add_incoming(const AddressID address_id,
+                      const TransactionID transaction_id);
+    bool add_outgoing(const AddressID address_id,
+                      const TransactionID transaction_id);
+  };
+
+ private:
+  std::vector<std::unique_ptr<messages::Transaction>> _transactions;
+  std::unordered_set<std::unique_ptr<messages::Address>> _addresss;
+
+ public:
+  bool add_block(const messages::Block &block);
+};
+
 class Pii {
  public:
-  ///
-  /// \struct piiThx "pii.h"
-  /// \brief a simple struct of "transaction interaction" between 2 addr
-  ///
-  struct Transaction {
-   public:
-    std::string from; /*!< from the addr sender*/
-    std::string to;   /*!< to the addr recever*/
-    double ncc;       /*!< ncc the nombre of ncc*/
-    uint64_t timencc; /*!< timencc time of ncc*/
+  using Score = Double;
 
-    friend std::ostream& operator<<(std::ostream& os, const Transaction& a) {
-      os << a.from << ":" << a.to << "[" << a.ncc << "," << a.timencc << "]";
-      return os;
-    }
-  };
-
-  /**
-   *   \brief a help structure to store intermediate results
-   */
-  struct Calculus {
-   public:
-    struct PiiData {
-      double nbinput, nboutput, mtin, mtout;
-      PiiData() : nbinput(0), nboutput(0), mtin(0), mtout(0) {}
-    };
-
-    double entropie;  ///<! Ei (-1)
-    // std::vector<std::tuple<double,double,double>> Erps;
-    double sum_inputs, sum_outputs;
-
-    std::unordered_map<Address, PiiData> entropie_Tij;
-
-    Calculus() : entropie(1), sum_inputs(0), sum_outputs(0) {}
-    Calculus(const Calculus&) = default;
-
-    void update(const double new_entropie) {
-      entropie = new_entropie;
-      sum_inputs = sum_outputs = 0;
-      entropie_Tij.clear();
-    }
-
-    friend bool operator>(const Calculus& l, const Calculus& r) {
-      return l.entropie > r.entropie;
-    }
-  };
-
- protected:
-  std::unordered_map<std::string, Calculus> _entropies;
-  std::vector<std::string> _owner_ordered;
-  int _assembly_owners = ASSEMBLY_MEMBERS_COUNT;
-  int32_t _assembly_blocks;
+ private:
+  Transactions _transactions;
 
  public:
-  /**
-   *   \brief
-   */
-  Pii() {}
+  Pii(const config::Pii &config, std::shared_ptr<Ledger> ledger,
+      std::shared_ptr<Networking> networking) {}
 
-  /**
-   * \brief add new piiThx
-   * \param ptx the transaction interaction
-   */
-  void addBlock(const Transaction& piitransaction);
+  bool add_block(const messages::Block &block);
+  // change bool with state [refused, forked, detached, main] when it's merged
 
-  /**
-   *  \brief add more piiThx
-   *  \param [in] vpt vector of piiTHx
-   */
-  void addBlocks(const std::vector<Transaction>& piitransactions);
-
-  /**
-   *   \brief Run the calcule of PII ( last step :) )
-   */
-  void calcul();
-
-  /**
-   *   \brief
-   */
-  std::string operator()(uint32_t index) const;
-
-  void show_results() const;
-
-  std::string humaineaddre(const std::string message) const {
-    messages::Address addr;
-    addr.ParseFromString(message);
-    std::string t;
-    messages::to_json(addr, &t);
-    return t;
-  }
-  virtual ~Pii(){};
+  bool add_transaction(const messages::Transaction &transaction);
 };
 
 }  // namespace consensus
 }  // namespace neuro
-#endif  // NEURO_SRC_CONCENSUS_PII_HPP
+}  // neuro
+
+#endif /* NEURO_SRC_CONSENSUS_PII_HPP */

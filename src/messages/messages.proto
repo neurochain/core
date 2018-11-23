@@ -126,3 +126,15 @@ message UnspentTransaction {
   required Hash transaction_id = 1;
   required NCCSDF value = 2;
 }
+
+message Score {
+  required Hash address = 1;
+  optional float64 score_float = 2;
+}
+
+message Assembly {
+  required int32 id = 1;
+  required Hash block_id_begin = 2;
+  required Hash block_id_end = 3;
+  repeated Score scores = 4;
+}
