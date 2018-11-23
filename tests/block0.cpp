@@ -32,11 +32,13 @@ TEST(Blocks, Set_Find) {
   messages::Block _block;
   bool res = _ledger.get_block(0, &_block);
 
+  ASSERT_EQ(true, res);
+  
   messages::Block block;
 
   res = _ledger.get_block_by_previd(_block.header().id(), &block);
 
-  ASSERT_EQ(true, res);
+  ASSERT_EQ(false, res);
 }
 }  // namespace test
 }  // namespace neuro
