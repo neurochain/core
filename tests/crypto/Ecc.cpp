@@ -24,7 +24,6 @@ TEST(Ecc, check_key_value_expectations) {
   ASSERT_TRUE(pub_key_file.is_open());
   std::vector<uint8_t> buffer1(std::istreambuf_iterator<char>(pub_key_file), {});
   ASSERT_FALSE(buffer1.empty());
-  std::cout << "Key from test_keys.pub: " << keys1.public_key() << std::endl;
   const auto raw_data = keys1.public_key().save();
   ASSERT_EQ(buffer1, raw_data);
   Buffer buffer2;
