@@ -18,7 +18,7 @@ LedgerMongodb::LedgerMongodb(const messages::config::Database &config)
   init_block0(config);
 }
 
-mongocxx::options::find LedgerMongodb::remove_OID() {
+mongocxx::options::find LedgerMongodb::remove_OID() const {
   mongocxx::options::find find_options;
   auto projection_transaction = bss::document{} << "_id" << 0
                                                 << bss::finalize;  // remove _id
@@ -26,7 +26,8 @@ mongocxx::options::find LedgerMongodb::remove_OID() {
   return find_options;
 }
 
-mongocxx::options::find LedgerMongodb::projection(const std::string &field) {
+mongocxx::options::find LedgerMongodb::projection(
+    const std::string &field) const {
   mongocxx::options::find find_options;
   auto projection_transaction = bss::document{} << "_id" << 0 << field << 1
                                                 << bss::finalize;
@@ -34,8 +35,8 @@ mongocxx::options::find LedgerMongodb::projection(const std::string &field) {
   return find_options;
 }
 
-mongocxx::options::find LedgerMongodb::projection(const std::string &field0,
-                                                  const std::string &field1) {
+mongocxx::options::find LedgerMongodb::projection(
+    const std::string &field0, const std::string &field1) const {
   mongocxx::options::find find_options;
   auto projection_transaction = bss::document{} << "_id" << 0 << field0 << 1
                                                 << field1 << 1 << bss::finalize;
@@ -87,13 +88,14 @@ bool LedgerMongodb::init_block0(const messages::config::Database &config) {
   _blocks.create_index(bss::document{}
                        << "block.transactions.outputs.address.data" << 1
                        << bss::finalize);
+  return true;
 }
 
-MongoQuery LedgerMongodb::query_branch(const messages::Branch &branch) {
+MongoQuery LedgerMongodb::query_branch(const messages::Branch &branch) const {
   return bss::document{} << "branch" << messages::Branch_Name(branch);
 }
 
-MongoQuery LedgerMongodb::query_main_branch() {
+MongoQuery LedgerMongodb::query_main_branch() const {
   return query_branch(messages::Branch::MAIN);
 }
 
@@ -240,7 +242,7 @@ bool LedgerMongodb::insert_block(const messages::Block &block,
 
 bool LedgerMongodb::push_block(const messages::Block &block) {
   // TODO remove transactions from the transaction pool?
-  insert_block(block, messages::Branch::MAIN);
+  return insert_block(block, messages::Branch::MAIN);
 }
 
 bool LedgerMongodb::delete_block(const messages::Hash &id) {
@@ -312,31 +314,7 @@ int LedgerMongodb::total_nb_blocks() {
 bool LedgerMongodb::for_each(const Filter &filter, Functor functor) {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   // TODO
-  return true;
-}
-
-bool LedgerMongodb::get_blocks(int start, int size,
-                               std::vector<messages::Block> &blocks) {
-  std::lock_guard<std::mutex> lock(_ledger_mutex);
-  blocks.clear();
-  auto query = query_main_branch() << bss::finalize;
-  mongocxx::options::find options = remove_OID();
-  options.sort(bss::document{} << "height" << 1 << bss::finalize);
-  options.skip(start).limit(size);
-
-  auto bson_blocks = _blocks.find(std::move(query), options);
-
-  if (bson_blocks.begin() == bson_blocks.end()) {
-    return false;
-  }
-
-  for (auto &&bson_block : bson_blocks) {
-    messages::Block block;
-    messages::from_bson(bson_block["block"].get_document(), &block);
-    blocks.push_back(block);
-  }
-
-  return true;
+  return false;
 }
 
 }  // namespace ledger

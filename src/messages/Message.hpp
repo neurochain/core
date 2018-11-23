@@ -7,8 +7,8 @@
 #include <string>
 #include "common/types.hpp"
 #include "crypto/EccPriv.hpp"
+#include "ledger/mongo.hpp"
 #include "messages.pb.h"
-#include "mongo/mongo.hpp"
 
 namespace neuro {
 namespace messages {

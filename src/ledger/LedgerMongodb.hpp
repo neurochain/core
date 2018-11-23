@@ -24,18 +24,18 @@ class LedgerMongodb : public Ledger {
 
   std::mutex _ledger_mutex;
 
-  mongocxx::options::find remove_OID();
+  mongocxx::options::find remove_OID() const;
 
-  mongocxx::options::find projection(const std::string &field);
+  mongocxx::options::find projection(const std::string &field) const;
 
   mongocxx::options::find projection(const std::string &field0,
-                                     const std::string &field1);
+                                     const std::string &field1) const;
 
   bool init_block0(const messages::config::Database &config);
 
-  MongoQuery query_branch(const messages::Branch &branch);
+  MongoQuery query_branch(const messages::Branch &branch) const;
 
-  MongoQuery query_main_branch();
+  MongoQuery query_main_branch() const;
 
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);

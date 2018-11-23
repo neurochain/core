@@ -8,9 +8,9 @@
 
 #include "Bot.hpp"
 #include "config.pb.h"
+#include "ledger/mongo.hpp"
 #include "messages/Message.hpp"
 #include "messages/config/Config.hpp"
-#include "mongo/mongo.hpp"
 #include "version.h"
 
 namespace neuro {

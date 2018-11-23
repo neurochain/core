@@ -4,6 +4,7 @@
 #include <bsoncxx/builder/stream/array.hpp>
 #include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/document/value.hpp>
+#include <bsoncxx/json.hpp>
 #include <mongocxx/client.hpp>
 #include <mongocxx/instance.hpp>
 #include <mongocxx/options/find.hpp>
@@ -22,7 +23,7 @@ using bss::document;
 using bss::finalize;
 using bss::open_array;
 using bss::open_document;
-typedef bss::key_context<bss::closed_context> MongoQuery;
+using MongoQuery = bss::key_context<bss::closed_context>;
 
 }  // namespace ledger
 }  // namespace neuro
