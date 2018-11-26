@@ -49,7 +49,6 @@ class Bot {
 
   // for the peers
   messages::config::Tcp *_tcp_config;
-  std::size_t _connected_peers{0};
   std::size_t _max_connections;
 
   std::shared_ptr<networking::Tcp> _tcp;

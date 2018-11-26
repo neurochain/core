@@ -389,7 +389,6 @@ void Bot::handler_connection(const messages::Header &header,
 
   auto peer = header.peer();
   auto connection_ready = body.connection_ready();
-  _connected_peers = _networking->peer_count();
 
   if (connection_ready.from_remote()) {
     // Nothing to do; just wait for the hello message from remote peer
@@ -422,7 +421,8 @@ void Bot::handler_connection(const messages::Header &header,
   key_pub->set_raw_data(tmp.data(), tmp.size());
 
   _networking->send_unicast(message, networking::ProtocolType::PROTOBUF2);
-  LOG_DEBUG << this << " updating _connected_peers to ++ " << _connected_peers;
+  LOG_DEBUG << this << __LINE__
+            << " _networking->peer_count(): " << _networking->peer_count();
 }
 
 void Bot::handler_deconnection(const messages::Header &header,
@@ -443,8 +443,8 @@ void Bot::handler_deconnection(const messages::Header &header,
     return;
   }
 
-  _connected_peers = _networking->peer_count();
-  LOG_DEBUG << this << " updating _connected_peers to -- " << _connected_peers;
+  LOG_DEBUG << this << " " << __LINE__
+            << " _networking->peer_count(): " << _networking->peer_count();
   it->set_status(messages::Peer::REACHABLE);
 
   this->keep_max_connections();
@@ -491,7 +491,7 @@ void Bot::handler_world(const messages::Header &header,
     // Should I call terminate from the connection
     _tcp->terminate(remote_peer->connection_id());
   } else {
-    bool accepted = (_connected_peers < _max_connections);
+    bool accepted = (_networking->peer_count() < _max_connections);
 
     if (!accepted) {
       LOG_DEBUG << this
@@ -521,7 +521,7 @@ void Bot::handler_hello(const messages::Header &header,
   // == Create world message for replying ==
   auto message = std::make_shared<messages::Message>();
   auto world = message->add_bodies()->mutable_world();
-  bool accepted = _connected_peers < (2 * _max_connections);
+  bool accepted = _networking->peer_count() < (2 * _max_connections);
 
   auto peers = _tcp_config->mutable_peers();
   auto peer_header = header.peer();
@@ -592,7 +592,8 @@ void Bot::handler_hello(const messages::Header &header,
   key_pub->set_type(messages::KeyType::ECP256K1);
   key_pub->set_hex_data(key_pub_buffer.str());
 
-  if (!_networking->send_unicast(message, networking::ProtocolType::PROTOBUF2)) {
+  if (!_networking->send_unicast(message,
+                                 networking::ProtocolType::PROTOBUF2)) {
     LOG_ERROR << this << " Failed to send world message.";
   }
 }
@@ -619,7 +620,8 @@ std::ostream &operator<<(std::ostream &os, const neuro::Bot &b) {
 Bot::Status Bot::status() const {
   // std::lock_guard<std::mutex> lock_connections(_mutex_connections);
   auto peers_size = _tcp_config->peers().size();
-  auto status = Bot::Status(_connected_peers, _max_connections, peers_size);
+  auto status =
+      Bot::Status(_networking->peer_count(), _max_connections, peers_size);
   return status;
 }
 
@@ -697,18 +699,18 @@ void Bot::keep_max_connections() {
   }
   LOG_DEBUG << this << " peer count " << peers_size;
 
-  if (_connected_peers >= _max_connections) {
-    LOG_INFO << this << " Already connected to " << _connected_peers << "/"
-             << _max_connections;
+  if (_networking->peer_count() >= _max_connections) {
+    LOG_INFO << this << " Already connected to " << _networking->peer_count()
+             << "/" << _max_connections;
     return;
   }
 
-  if (_connected_peers == peers_size) {
+  if (_networking->peer_count() == peers_size) {
     LOG_WARNING << this << " No available peer to check";
     return;
   }
 
-  if (_connected_peers < _max_connections) {
+  if (_networking->peer_count() < _max_connections) {
     messages::Peer *peer;
     if (this->next_to_connect(&peer)) {
       LOG_DEBUG << this << " Asking to connect to " << *peer;
@@ -721,8 +723,8 @@ void Bot::keep_max_connections() {
       // this->update_peerlist();
     }
   } else {
-    LOG_INFO << this << " Already connected to " << _connected_peers << "/"
-             << _max_connections;
+    LOG_INFO << this << " Already connected to " << _networking->peer_count()
+             << "/" << _max_connections;
   }
 }
 
