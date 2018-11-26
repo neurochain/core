@@ -699,18 +699,19 @@ void Bot::keep_max_connections() {
   }
   LOG_DEBUG << this << " peer count " << peers_size;
 
-  if (_networking->peer_count() >= _max_connections) {
-    LOG_INFO << this << " Already connected to " << _networking->peer_count()
-             << "/" << _max_connections;
+  std::size_t current_peer_count = _networking->peer_count();
+  if (current_peer_count >= _max_connections) {
+    LOG_INFO << this << " Already connected to " << current_peer_count << "/"
+             << _max_connections;
     return;
   }
 
-  if (_networking->peer_count() == peers_size) {
+  if (current_peer_count == peers_size) {
     LOG_WARNING << this << " No available peer to check";
     return;
   }
 
-  if (_networking->peer_count() < _max_connections) {
+  if (current_peer_count < _max_connections) {
     messages::Peer *peer;
     if (this->next_to_connect(&peer)) {
       LOG_DEBUG << this << " Asking to connect to " << *peer;
@@ -723,7 +724,7 @@ void Bot::keep_max_connections() {
       // this->update_peerlist();
     }
   } else {
-    LOG_INFO << this << " Already connected to " << _networking->peer_count()
+    LOG_INFO << this << " Already connected to " << current_peer_count
              << "/" << _max_connections;
   }
 }
