@@ -416,9 +416,6 @@ void Bot::handler_connection(const messages::Header &header,
   auto hello = message->add_bodies()->mutable_hello();
   hello->set_listen_port(_tcp->listening_port());
 
-  Buffer key_pub_buffer;
-  _keys->public_key().save(&key_pub_buffer);
-
   auto key_pub = hello->mutable_key_pub();
   key_pub->set_type(messages::KeyType::ECP256K1);
   const auto tmp = _keys->public_key().save();
