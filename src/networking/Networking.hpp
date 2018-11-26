@@ -35,8 +35,6 @@ class Networking {
                     ProtocolType type);
   messages::Peers connected_peers() const;
   std::size_t peer_count() const;
-  void remove_connection(const messages::Header &header,
-                         const messages::Body &body);
   void join();
 };
 
