@@ -66,7 +66,6 @@ message Transaction {
   repeated KeyPub key_pubs = 4;
   optional NCCSDF fees = 5;
   optional Hash id = 6;
-  optional Hash block_id = 7;
 }
 
 message BlockHeader {
@@ -91,6 +90,12 @@ enum Branch {
 message TaggedBlock {
   required Block block = 1;
   required Branch branch = 2;
+  repeated uint32 branch_path = 3;
+}
+
+message TaggedTransaction {
+  required Transaction transaction = 1;
+  optional Hash block_id = 2;
 }
 
 message ConnectionClosed {

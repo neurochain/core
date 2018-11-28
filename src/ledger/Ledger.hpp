@@ -85,9 +85,7 @@ class Ledger {
                             std::vector<messages::TaggedBlock> *tagged_blocks);
   virtual bool get_block(const messages::BlockHeight height,
                          messages::Block *block) = 0;
-  virtual bool insert_block(const messages::Block &block,
-                            const messages::Branch &branch) = 0;
-  virtual bool push_block(const messages::Block &block) = 0;
+  virtual bool insert_block(messages::TaggedBlock *tagged_block) = 0;
   virtual bool delete_block(const messages::Hash &id) = 0;
   virtual bool for_each(const Filter &filter, Functor functor) = 0;
   virtual bool get_transaction(const messages::Hash &id,

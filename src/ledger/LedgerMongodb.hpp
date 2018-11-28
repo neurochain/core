@@ -21,6 +21,7 @@ class LedgerMongodb : public Ledger {
   mutable mongocxx::client _client;
   mutable mongocxx::database _db;
   mutable mongocxx::collection _blocks;
+  mutable mongocxx::collection _transactions;
 
   std::mutex _ledger_mutex;
 
@@ -36,6 +37,16 @@ class LedgerMongodb : public Ledger {
   MongoQuery query_branch(const messages::Branch &branch) const;
 
   MongoQuery query_main_branch() const;
+
+  bool is_ancestor(const messages::TaggedBlock &ancestor,
+                   const messages::TaggedBlock &block);
+
+  bool is_main_branch(const messages::TaggedTransaction &tagged_transaction);
+
+  bool get_block_transactions(messages::Block *block);
+
+  bool unsafe_get_block(const messages::BlockID &id,
+                        messages::TaggedBlock *tagged_block);
 
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);
@@ -65,10 +76,7 @@ class LedgerMongodb : public Ledger {
 
   bool get_block(const messages::BlockHeight height, messages::Block *block);
 
-  bool insert_block(const messages::Block &block,
-                    const messages::Branch &branch);
-
-  bool push_block(const messages::Block &block);
+  bool insert_block(messages::TaggedBlock *tagged_block);
 
   bool delete_block(const messages::Hash &id);
 

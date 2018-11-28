@@ -28,7 +28,6 @@ bool TransactionPool::add_transactions(
   }
 
   messages::Transaction trans(transaction);
-  trans.clear_block_id();
   trans.clear_id();
 
   Buffer buf;

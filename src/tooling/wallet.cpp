@@ -94,7 +94,6 @@ void load_id_transaction(neuro::messages::Block *block) {
     if (!transaction->has_id()) {
       neuro::messages::Transaction _transaction(*transaction);
       _transaction.clear_id();
-      _transaction.clear_block_id();
 
       Buffer buf;
       messages::to_buffer(_transaction, &buf);
