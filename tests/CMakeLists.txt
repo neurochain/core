@@ -134,6 +134,14 @@ target_link_libraries(dbreset
     core
 )
 
+add_executable(block0
+    block0.cpp
+)
+
+target_link_libraries(block0
+    GTest::main
+    core
+)
 
 #add_executable(piitest
 #    piitest.cpp
