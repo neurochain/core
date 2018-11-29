@@ -11,13 +11,14 @@ namespace test {
 
 TEST(Conf, load) {
   bool did_throw(false);
+  Path config_path("./bot2.json");
   try {
-    auto configuration = messages::config::Config{"./bot2.json"};
+    auto configuration = messages::config::Config{config_path};
   }
   catch(...) { did_throw = true; }
   ASSERT_NE(did_throw, true);
 
-  auto conf = messages::config::Config{"./bot2.json"};
+  auto conf = messages::config::Config{config_path};
 
   boost::filesystem::path pub_path(conf.key_pub_path());
   boost::filesystem::path priv_path(conf.key_priv_path());
