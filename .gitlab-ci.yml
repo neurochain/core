@@ -31,7 +31,7 @@ build_job:ubuntu_18_04:
       - testnet/data.0.testnet
 
 build_job:ubuntu_18_04_release:
-  image: registry.gitlab.com/neurochaintech/core/ubuntu:18.04
+  image: registry.gitlab.com/neurochaintech/core/ubuntu/release:18.04
   stage: build
   tags:
     - cpp
