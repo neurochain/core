@@ -239,7 +239,7 @@ bool Tcp::serialize(std::shared_ptr<messages::Message> message,
       reinterpret_cast<tcp::HeaderPattern *>(header_tcp->data());
   messages::to_buffer(*message, body_tcp);
 
-  if (body_tcp->size() > (1 << (8 * sizeof(tcp::HeaderPattern::size)))) {
+  if (body_tcp->size() > MAX_MESSAGE_SIZE) {
     LOG_ERROR << "Message is too big (" << body_tcp->size() << ")";
     return false;
   }

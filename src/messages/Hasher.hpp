@@ -16,11 +16,13 @@ class Hasher : public messages::Hash {
  public:
   Hasher() {}
 
-  Hasher(const Buffer &data) {
+  void from_buffer(const Buffer &data) {
     crypto::hash_sha3_256(data, _data.get());
     this->set_type(Hash::SHA256);
     this->set_data(_data->data(), _data->size());
   }
+
+  Hasher(const Buffer &data) { from_buffer(data); }
 
   Hasher(const crypto::EccPub &ecc_pub) {
     Buffer data;

@@ -44,6 +44,7 @@ class ForkManager {
                          const messages::BlockHeader &prev_blockheader,
                          const messages::BlockHeader &last_blockheader);
 
+  bool merge_fork_blocks();
   bool fork_results();
 };
 

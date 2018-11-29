@@ -114,18 +114,17 @@ void PiiConsensus::build_block() {
   }
   auto it = _wallets_keys.find(next_owner);
   if (it != _wallets_keys.end()) {
-    messages::Block blocks;
-    int h = _transaction_pool.build_block(blocks, next_height, it->second.get(),
-                                          858993459200lu);
-    _transaction_pool.delete_transactions(blocks.transactions());
-    LOG_INFO << "Build Block " << std::to_string(next_height)
-             << " with : " << std::to_string(h) << " transactions";
-    add_block(blocks);
-    // auto message =
     auto message = std::make_shared<messages::Message>();
     auto header = message->mutable_header();
     messages::fill_header(header);
-    message->add_bodies()->mutable_block()->CopyFrom(blocks);
+    auto new_block = message->add_bodies()->mutable_block();
+    int h = _transaction_pool.build_block(new_block, next_height,
+                                          it->second.get(), 858993459200lu);
+    _transaction_pool.delete_transactions(new_block->transactions());
+    LOG_INFO << "Build Block " << std::to_string(next_height)
+             << " with : " << std::to_string(h) << " transactions";
+    add_block(*new_block);
+    // auto message =
     _network->send(message, networking::ProtocolType::PROTOBUF2);
   }
 }
@@ -156,6 +155,7 @@ void PiiConsensus::add_block(const neuro::messages::Block &block,
   neuro::messages::Block last_block, prev_block;
   ///!< fix same id block in the ledger
   if (_valide_block && block_in_ledger(block.header().id())) {
+    LOG_DEBUG << "Block already in ledger";
     return;
   }
 
@@ -214,6 +214,7 @@ void PiiConsensus::add_block(const neuro::messages::Block &block,
     }
 
     if (somme_Inputs != outputs_somme + transaction.fees().value()) {
+      LOG_TRACE;
       return;
     }
     for (const auto &input : _input) {
@@ -240,6 +241,7 @@ void PiiConsensus::add_block(const neuro::messages::Block &block,
     // possible do this after n blocks 3 of diff of height
     if (_ForkManager.fork_results()) {
       init();
+      LOG_TRACE;
       return;
     }
     // throw std::runtime_error("Owner not correct");
@@ -256,7 +258,9 @@ void PiiConsensus::add_block(const neuro::messages::Block &block,
     } else {
       /// add it to
       _ledger->fork_add_block(block);
+      LOG_TRACE;
       if (_ForkManager.fork_results()) {
+        LOG_TRACE;
         init();
         return;
       }
@@ -265,8 +269,12 @@ void PiiConsensus::add_block(const neuro::messages::Block &block,
 
   addBlocks(_piithx);
 
+  _ForkManager.merge_fork_blocks();
+
   _last_heigth_block = block.header().height();
   ckeck_run_assembly(_last_heigth_block + 1);
+
+  LOG_TRACE;
 }  // namespace consensus
 
 void PiiConsensus::add_blocks(

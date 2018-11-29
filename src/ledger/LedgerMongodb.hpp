@@ -3,10 +3,13 @@
 
 #include <mutex>
 
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
 #include "config.pb.h"
 #include "ledger/Ledger.hpp"
 #include "ledger/mongo.hpp"
 #include "messages.pb.h"
+#include "messages/config/Database.hpp"
 
 namespace neuro {
 namespace ledger {
@@ -34,7 +37,7 @@ class LedgerMongodb : public Ledger {
   bool get_transactions_from_block(const messages::BlockID &id,
                                    messages::Block *block);
 
-  void init_block0(const messages::config::Database &db);
+  bool init_block0(const messages::config::Database &config);
 
   bool get_block_unsafe(const messages::BlockID &id, messages::Block *block);
 
@@ -46,7 +49,7 @@ class LedgerMongodb : public Ledger {
 
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);
-  LedgerMongodb(const messages::config::Database &db);
+  LedgerMongodb(const messages::config::Database &config);
 
   ~LedgerMongodb() {}
 
@@ -80,7 +83,7 @@ class LedgerMongodb : public Ledger {
 
   bool delete_transaction(const messages::Hash &id);
 
-  int get_transaction_pool(messages::Block &block);
+  int get_transaction_pool(messages::Block *block);
 
   int total_nb_transactions();
 
@@ -102,6 +105,10 @@ class LedgerMongodb : public Ledger {
 
   bool fork_get_block(const messages::BlockHeight height,
                       messages::Block *block);
+
+  bool fork_get_block_by_previd(const messages::BlockID &previd,
+                                messages::Block *block);
+
   void fork_for_each(Functor_block functor);
   void fork_test();
 };

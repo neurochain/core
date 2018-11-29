@@ -105,6 +105,7 @@ void Bot::handler_get_block(const messages::Header &header,
 
 void Bot::handler_block(const messages::Header &header,
                         const messages::Body &body) {
+  LOG_TRACE;
   bool reply_message = header.has_request_id();
   _consensus->add_block(body.block(), !reply_message);
   update_ledger();
@@ -306,7 +307,8 @@ void Bot::regular_update() {
 void Bot::update_peerlist() {
   LOG_DEBUG << this << " FROM UPDATE PEERLIST";
   for (auto &peer : *_tcp_config->mutable_peers()) {
-    std::cout << this << " PEER STATUS " << peer << std::endl;
+    LOG_TRACE << this << " PEER STATUS " << peer.endpoint() << ":"
+              << peer.port() << peer.Status_Name(peer.status()) << std::endl;
   }
   auto msg = std::make_shared<messages::Message>();
   messages::fill_header(msg->mutable_header());
@@ -630,7 +632,8 @@ bool Bot::next_to_connect(messages::Peer **peer) {
   auto peers = _tcp_config->mutable_peers();
 
   for (auto &peer : *_tcp_config->mutable_peers()) {
-    std::cout << this << " PEER STATUS " << peer << std::endl;
+    LOG_TRACE << this << " PEER STATUS " << peer.endpoint() << ":"
+              << peer.port() << peer.Status_Name(peer.status()) << std::endl;
   }
 
   switch (_selection_method) {
