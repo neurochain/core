@@ -43,7 +43,7 @@ class LedgerMongodb : public Ledger {
 
   bool is_main_branch(const messages::TaggedTransaction &tagged_transaction);
 
-  bool get_block_transactions(messages::Block *block);
+  int get_block_transactions(messages::Block *block);
 
   bool unsafe_get_block(const messages::BlockID &id,
                         messages::TaggedBlock *tagged_block);
@@ -91,11 +91,15 @@ class LedgerMongodb : public Ledger {
 
   int total_nb_blocks();
 
-  bool get_blocks(int start, int size, std::vector<messages::Block> &blocks);
-
   bool for_each(const Filter &filter, Functor functor);
 
   int new_branch_id();
+
+  bool add_transaction(const messages::TaggedTransaction &tagged_transaction);
+
+  bool delete_transaction(const messages::Hash &id);
+
+  int get_transaction_pool(messages::Block *block);
 };
 
 }  // namespace ledger

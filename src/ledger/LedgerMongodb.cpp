@@ -180,7 +180,7 @@ bool LedgerMongodb::get_last_block_header(messages::BlockHeader *block_header) {
   return true;
 }
 
-bool LedgerMongodb::get_block_transactions(messages::Block *block) {
+int LedgerMongodb::get_block_transactions(messages::Block *block) {
   assert(block->transactions().size() == 0);
   auto query = bss::document{} << "blockId" << to_bson(block->header().id())
                                << bss::finalize;
@@ -188,12 +188,14 @@ bool LedgerMongodb::get_block_transactions(messages::Block *block) {
   options.sort(bss::document{} << "transaction.id" << 1 << bss::finalize);
   auto cursor = _transactions.find(std::move(query), options);
 
+  int num_transactions = 0;
   for (const auto &bson_transaction : cursor) {
+    num_transactions++;
     auto transaction = block->add_transactions();
     from_bson(bson_transaction["transaction"].get_document(), transaction);
   }
 
-  return true;
+  return num_transactions;
 }
 
 bool LedgerMongodb::unsafe_get_block(const messages::BlockID &id,
@@ -413,6 +415,7 @@ bool LedgerMongodb::for_each(const Filter &filter, Functor functor) {
 }
 
 int LedgerMongodb::new_branch_id() {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto query = bss::document{} << bss::finalize;
   mongocxx::options::find find_options;
   auto projection_doc = bss::document{} << "_id" << 0 << "branch_path"
@@ -423,6 +426,48 @@ int LedgerMongodb::new_branch_id() {
 
   auto max_branch_id = _blocks.find_one(std::move(query), find_options);
   return max_branch_id->view()["branch_path"][0].get_int32() + 1;
+}
+
+bool LedgerMongodb::add_transaction(
+    const messages::TaggedTransaction &tagged_transaction) {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  auto bson_transaction = messages::to_bson(tagged_transaction);
+  auto result = _transactions.insert_one(std::move(bson_transaction));
+  if (result) {
+    return true;
+  }
+  return false;
+}
+
+bool LedgerMongodb::delete_transaction(const messages::Hash &id) {
+  // Delete a transaction in the transaction pool
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  auto query = bss::document{} << "transaction.id" << messages::to_bson(id)
+                               << "blockId" << bsoncxx::types::b_null{}
+                               << bss::finalize;
+  return (bool)_transactions.delete_one(std::move(query));
+}
+
+int LedgerMongodb::get_transaction_pool(messages::Block *block) {
+  // This method put the whole transaction pool in a block but does not cleanup
+  // the transaction pool.
+  // TODO add a way to limit the number of transactions you want to include
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  auto query = bss::document{} << "blockId" << bsoncxx::types::b_null{}
+                               << bss::finalize;
+
+  auto options = projection("transaction");
+  options.sort(bss::document{} << "transaction.id" << 1 << bss::finalize);
+  auto cursor = _transactions.find(std::move(query), options);
+
+  int num_transactions = 0;
+  for (const auto &bson_transaction : cursor) {
+    num_transactions++;
+    auto transaction = block->add_transactions();
+    from_bson(bson_transaction["transaction"].get_document(), transaction);
+  }
+
+  return num_transactions;
 }
 
 }  // namespace ledger

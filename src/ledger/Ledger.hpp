@@ -93,29 +93,18 @@ class Ledger {
   virtual bool get_transaction(const messages::Hash &id,
                                messages::Transaction *transaction,
                                messages::BlockHeight *blockheight) = 0;
-  virtual bool add_transaction(const messages::Transaction &transaction) = 0;
+  virtual bool add_transaction(
+      const messages::TaggedTransaction &tagged_transaction) = 0;
   virtual bool delete_transaction(const messages::Hash &id) = 0;
   virtual int get_transaction_pool(messages::Block *block) = 0;
 
-  virtual bool get_blocks(int start, int size,
-                          std::vector<messages::Block> &blocks) = 0;
+  // virtual bool get_blocks(int start, int size,
+  // std::vector<messages::Block> &blocks) = 0;
   virtual int total_nb_transactions() = 0;
 
   virtual int total_nb_blocks() = 0;
 
   virtual int new_branch_id() = 0;
-
-  // Fork methods TODO remove
-  virtual bool fork_add_block(const messages::Block &b) = 0;
-  virtual bool fork_delete_block(const messages::Hash &id) = 0;
-  virtual void fork_for_each(Functor_block functor) = 0;
-  virtual bool fork_get_block(const messages::BlockID &id,
-                              messages::Block *block) = 0;
-  virtual bool fork_get_block(const messages::BlockHeight height,
-                              messages::Block *block) = 0;
-  virtual bool fork_get_block_by_previd(const messages::BlockID &previd,
-                                        messages::Block *block) = 0;
-  virtual void fork_test() = 0;
 
   // helpers
 

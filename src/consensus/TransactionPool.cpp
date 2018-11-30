@@ -13,29 +13,6 @@ TransactionPool::TransactionPool(std::shared_ptr<ledger::Ledger> ledger)
 
 bool TransactionPool::add_transactions(
     const messages::Transaction &transaction) {
-  if (!crypto::verify(transaction)) {
-    return false;
-  }
-
-  if (transaction.has_id()) {
-    messages::Transaction oldtrans;
-    auto id_transaction = transaction.id();
-    if (_ledger->get_transaction(id_transaction, &oldtrans)) {
-      return false;
-    }
-  } else {
-    return false;
-  }
-
-  messages::Transaction trans(transaction);
-  trans.clear_id();
-
-  Buffer buf;
-  messages::to_buffer(trans, &buf);
-  messages::Address id(buf);
-
-  trans.mutable_id()->CopyFrom(id);
-  _ledger->add_transaction(trans);
   return true;
 }
 
