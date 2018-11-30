@@ -59,7 +59,7 @@ class Tcp : public TransportLayer {
   };
 
   std::atomic<bool> _stopped;
-  std::shared_ptr<boost::asio::io_context> _io_context_ptr;
+  std::shared_ptr<boost::asio::io_context> _io_context;
   bai::tcp::resolver _resolver;
   Port _listening_port;
   bai::tcp::acceptor _acceptor;

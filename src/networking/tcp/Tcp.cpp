@@ -99,7 +99,7 @@ Tcp::ConnectionPool::~ConnectionPool() { disconnect_all(); }
 
 void Tcp::start_accept() {
   if (!_stopped) {
-    _new_socket = std::make_shared<bai::tcp::socket>(*_io_context_ptr);
+    _new_socket = std::make_shared<bai::tcp::socket>(*_io_context);
     _acceptor.async_accept(
         *_new_socket.get(),
         boost::bind(&Tcp::accept, this, boost::asio::placeholders::error));
@@ -129,18 +129,18 @@ Tcp::Tcp(const Port port, ID id, std::shared_ptr<messages::Queue> queue,
          std::shared_ptr<crypto::Ecc> keys)
     : TransportLayer(id, queue, keys),
       _stopped(false),
-      _io_context_ptr(std::make_shared<boost::asio::io_context>()),
-      _resolver(*_io_context_ptr),
+      _io_context(std::make_shared<boost::asio::io_context>()),
+      _resolver(*_io_context),
       _listening_port(port),
-      _acceptor(*_io_context_ptr.get(),
+      _acceptor(*_io_context.get(),
                 bai::tcp::endpoint(bai::tcp::v4(), _listening_port)),
-      _connection_pool(id, _io_context_ptr) {
+      _connection_pool(id, _io_context) {
   while (!_acceptor.is_open()) {
     std::this_thread::yield();
     LOG_DEBUG << "Waiting for acceptor to be open";
   }
   start_accept();
-  _io_context_thread = std::thread([this]() { this->_io_context_ptr->run(); });
+  _io_context_thread = std::thread([this]() { this->_io_context->run(); });
 }
 
 bool Tcp::connect(std::shared_ptr<messages::Peer> peer) {
@@ -148,12 +148,12 @@ bool Tcp::connect(std::shared_ptr<messages::Peer> peer) {
     return false;
   }
 
-  bai::tcp::resolver resolver(*_io_context_ptr);
+  bai::tcp::resolver resolver(*_io_context);
   bai::tcp::resolver::query query(peer->endpoint(),
                                   std::to_string(peer->port()));
   bai::tcp::resolver::iterator endpoint_iterator = resolver.resolve(query);
 
-  auto socket = std::make_shared<bai::tcp::socket>(*_io_context_ptr);
+  auto socket = std::make_shared<bai::tcp::socket>(*_io_context);
   auto handler = [this, socket, peer](boost::system::error_code error,
                                       bai::tcp::resolver::iterator iterator) {
     this->new_connection(socket, error, peer, false);
@@ -275,7 +275,7 @@ bool Tcp::disconnect(const Connection::ID id) {
 void Tcp::stop() {
   if (!_stopped) {
     _stopped = true;
-    _io_context_ptr->post([this]() { _acceptor.close(); });
+    _io_context->post([this]() { _acceptor.close(); });
     _connection_pool.disconnect_all();
     join();
   }
