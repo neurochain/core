@@ -1,153 +1,150 @@
-// #include <gtest/gtest.h>
-// #include <chrono>
-// #include <sstream>
-// #include <thread>
-// #include "Bot.hpp"
-// #include "common/logger.hpp"
-// #include "common/types.hpp"
-// #include "consensus/PiiConsensus.hpp"
-// #include "crypto/Sign.hpp"
-// #include "ledger/LedgerMongodb.hpp"
-// #include "messages/Subscriber.hpp"
-// #include "messages/config/Config.hpp"
-// #include "tooling/genblock.hpp"
+#include <gtest/gtest.h>
+#include <chrono>
+#include <sstream>
+#include <thread>
+#include "Bot.hpp"
+#include "common/logger.hpp"
+#include "common/types.hpp"
+#include "consensus/PiiConsensus.hpp"
+#include "crypto/Sign.hpp"
+#include "ledger/LedgerMongodb.hpp"
+#include "messages/Subscriber.hpp"
+#include "messages/config/Config.hpp"
+#include "tooling/genblock.hpp"
 
-// namespace neuro {
+namespace neuro {
 
-// namespace tests {
+namespace tests {
 
-// using namespace std::chrono_literals;
+using namespace std::chrono_literals;
 
-// class Listener {
-//  private:
-//   std::size_t _received_connection0{0};
-//   std::size_t _received_connection1{0};
-//   std::size_t _received_hello{0};
-//   std::size_t _received_world{0};
-//   std::size_t _received_deconnection{0};
+class Listener {
+ private:
+  std::size_t _received_connection{0};
+  std::size_t _received_hello{0};
+  std::size_t _received_world{0};
+  std::size_t _received_deconnection{0};
 
-//  public:
-//   Listener() {}
+ public:
+  Listener() {}
 
-//   void handler_hello(const messages::Header &header,
-//                      const messages::Body &hello) {
-//     LOG_DEBUG << __FILE__ << ": It entered the handler_hello !!";
-//     ++_received_hello;
-//   }
-//   void handler_world(const messages::Header &header,
-//                      const messages::Body &hello) {
-//     LOG_DEBUG << __FILE__ << ": It entered the handler_world !!";
-//     ++_received_world;
-//   }
-//   void handler_connection0(const messages::Header &header,
-//                            const messages::Body &body) {
-//     LOG_DEBUG << __FILE__ << ": It entered the handler_connection0 !!";
-//     ++_received_connection0;
-//   }
-//   void handler_connection1(const messages::Header &header,
-//                            const messages::Body &body) {
-//     LOG_DEBUG << __FILE__ << ": It entered the handler_connection1 !!";
-//     ++_received_connection1;
-//   }
+  void handler_hello(const messages::Header &header,
+                     const messages::Body &hello) {
+    LOG_DEBUG << __FILE__ << ": It entered the handler_hello !!";
+    ++_received_hello;
+  }
+  void handler_world(const messages::Header &header,
+                     const messages::Body &hello) {
+    LOG_DEBUG << __FILE__ << ": It entered the handler_world !!";
+    ++_received_world;
+  }
+  void handler_connection(const messages::Header &header,
+                           const messages::Body &body) {
+    LOG_DEBUG << __FILE__ << ": It entered the handler_connection !!";
+    ++_received_connection;
+  }
+  void handler_deconnection(const messages::Header &header,
+                            const messages::Body &body) {
+    ++_received_deconnection;
+  }
 
-//   void handler_deconnection(const messages::Header &header,
-//                             const messages::Body &body) {
-//     ++_received_deconnection;
-//   }
+  std::size_t received_connection() const { return _received_connection; };
+  std::size_t received_hello() const { return _received_hello; };
+  std::size_t received_world() const { return _received_world; };
+  std::size_t received_deconnection() const { return _received_deconnection; };
+};
 
-//   std::size_t received_connection0() const { return _received_connection0; };
-//   std::size_t received_connection1() const { return _received_connection1; };
-//   std::size_t received_hello() const { return _received_hello; };
-//   std::size_t received_world() const { return _received_world; };
-//   std::size_t received_deconnection() const { return _received_deconnection; };
-// };
+class BotTest {
+ private:
+  neuro::Bot _bot;
 
-// class BotTest {
-//  private:
-//   neuro::Bot _bot;
+ public:
+  BotTest(const std::string &configpath) : _bot(configpath) {}
 
-//  public:
-//   BotTest(const std::string &configpath) : _bot(configpath) {}
+  int nb_blocks() { return _bot._ledger->total_nb_blocks(); }
 
-//   int nb_blocks() { return _bot._ledger->total_nb_blocks(); }
+  void add_block() {
+    messages::Block new_block;
+    neuro::tooling::genblock::genblock_from_last_db_block(new_block,
+                                                          _bot._ledger, 1, 0);
+    _bot._ledger->push_block(new_block);
+  }
+};
 
-//   void add_block() {
-//     messages::Block new_block;
-//     neuro::tooling::genblock::genblock_from_last_db_block(new_block,
-//                                                           _bot._ledger, 1, 0);
-//     _bot._ledger->push_block(new_block);
-//   }
-// };
+TEST(INTEGRATION, simple_interaction) {
+  Listener listener;
+  Path config_path0("bot0.json");
+  messages::config::Config config0(config_path0);
+  auto bot0 = std::make_shared<Bot>(config0);
+  messages::Subscriber subscriber0(bot0->queue());
+  subscriber0.subscribe(
+      messages::Type::kHello,
+      [&listener](const messages::Header &header, const messages::Body &body) {
+        listener.handler_hello(header, body);
+      });
+  subscriber0.subscribe(
+      messages::Type::kWorld,
+      [&listener](const messages::Header &header, const messages::Body &body) {
+        listener.handler_world(header, body);
+      });
+  subscriber0.subscribe(
+      messages::Type::kConnectionReady,
+      [&listener](const messages::Header &header, const messages::Body &body) {
+        listener.handler_connection(header, body);
+      });
 
-// TEST(INTEGRATION, simple_interaction) {
-//   Listener listener;
-//   auto bot0 = std::make_shared<Bot>("bot0.json");
-//   auto bot1 = std::make_shared<Bot>("bot1.json");
-//   auto bot2 = std::make_shared<Bot>("bot2.json");
+  Path config_path1("bot1.json");
+  messages::config::Config config1(config_path1);
+  auto bot1 = std::make_shared<Bot>(config1);
+  messages::Subscriber subscriber1(bot1->queue());
+  subscriber1.subscribe(
+      messages::Type::kHello,
+      [&listener](const messages::Header &header, const messages::Body &body) {
+        listener.handler_hello(header, body);
+      });
+  subscriber1.subscribe(
+      messages::Type::kWorld,
+      [&listener](const messages::Header &header, const messages::Body &body) {
+        listener.handler_world(header, body);
+      });
+  subscriber1.subscribe(
+      messages::Type::kConnectionReady,
+      [&listener](const messages::Header &header, const messages::Body &body) {
+        listener.handler_connection(header, body);
+      });
 
-//   messages::Subscriber subscriber0(bot0->queue());
-//   messages::Subscriber subscriber1(bot1->queue());
-//   messages::Subscriber subscriber2(bot2->queue());
-//   std::cout << __LINE__ << std::endl;
+  Path config_path2("bot2.json");
+  messages::config::Config config2(config_path2);
+  auto bot2 = std::make_shared<Bot>(config2);
+  messages::Subscriber subscriber2(bot2->queue());
+  subscriber2.subscribe(
+      messages::Type::kHello,
+      [&listener](const messages::Header &header, const messages::Body &body) {
+        listener.handler_hello(header, body);
+      });
+  subscriber2.subscribe(
+      messages::Type::kWorld,
+      [&listener](const messages::Header &header, const messages::Body &body) {
+        listener.handler_world(header, body);
+      });
+  subscriber2.subscribe(
+      messages::Type::kConnectionReady,
+      [&listener](const messages::Header &header, const messages::Body &body) {
+        listener.handler_connection(header, body);
+      });
 
-//   subscriber0.subscribe(
-//       messages::Type::kHello,
-//       [&listener](const messages::Header &header, const messages::Body &body) {
-//         listener.handler_hello(header, body);
-//       });
-//   subscriber1.subscribe(
-//       messages::Type::kHello,
-//       [&listener](const messages::Header &header, const messages::Body &body) {
-//         listener.handler_hello(header, body);
-//       });
-//   subscriber2.subscribe(
-//       messages::Type::kHello,
-//       [&listener](const messages::Header &header, const messages::Body &body) {
-//         listener.handler_hello(header, body);
-//       });
-//   subscriber0.subscribe(
-//       messages::Type::kWorld,
-//       [&listener](const messages::Header &header, const messages::Body &body) {
-//         listener.handler_world(header, body);
-//       });
-//   subscriber1.subscribe(
-//       messages::Type::kWorld,
-//       [&listener](const messages::Header &header, const messages::Body &body) {
-//         listener.handler_world(header, body);
-//       });
-//   subscriber2.subscribe(
-//       messages::Type::kWorld,
-//       [&listener](const messages::Header &header, const messages::Body &body) {
-//         listener.handler_world(header, body);
-//       });
-//   subscriber0.subscribe(
-//       messages::Type::kConnectionReady,
-//       [&listener](const messages::Header &header, const messages::Body &body) {
-//         listener.handler_connection0(header, body);
-//       });
-//   subscriber1.subscribe(
-//       messages::Type::kConnectionReady,
-//       [&listener](const messages::Header &header, const messages::Body &body) {
-//         listener.handler_connection1(header, body);
-//       });
+  std::this_thread::sleep_for(1s);
+  bot0->keep_max_connections();
+  bot1->keep_max_connections();
+  std::this_thread::sleep_for(500ms);
 
-//   std::this_thread::sleep_for(1s);
-//   std::cout << __LINE__ << std::endl;
-//   bot0->keep_max_connections();
-//   bot1->keep_max_connections();
-//   std::cout << __LINE__ << std::endl;
-//   std::this_thread::sleep_for(500ms);
-//   std::cout << __LINE__ << std::endl;
+  std::this_thread::sleep_for(3s);
 
-//   std::this_thread::sleep_for(3s);
-
-//   ASSERT_GT(listener.received_connection0() + listener.received_connection1(), 0);
-//   ASSERT_GT(listener.received_connection0(), 0);
-//   ASSERT_GT(listener.received_connection1(), 0);
-//   ASSERT_GT(listener.received_hello(), 0);
-//   ASSERT_GT(listener.received_world(), 0);
-//   ASSERT_EQ(listener.received_deconnection(), 0);
-// }
+  ASSERT_GT(listener.received_connection(), 0);
+  ASSERT_GT(listener.received_hello(), 0);
+  ASSERT_GT(listener.received_world(), 0);
+  ASSERT_EQ(listener.received_deconnection(), 0);
+}
 
 // TEST(INTEGRATION, neighbors_propagation) {
 //   auto bot0 = std::make_shared<Bot>(
@@ -302,6 +299,6 @@
 //             << " Nb of blocks: " << bot1.nb_blocks() << std::endl;
 // }
 
-// }  // namespace tests
+}  // namespace tests
 
-// }  // namespace neuro
+}  // namespace neuro
