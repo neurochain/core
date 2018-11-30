@@ -94,6 +94,8 @@ class LedgerMongodb : public Ledger {
   bool get_blocks(int start, int size, std::vector<messages::Block> &blocks);
 
   bool for_each(const Filter &filter, Functor functor);
+
+  int new_branch_id();
 };
 
 }  // namespace ledger

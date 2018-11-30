@@ -103,6 +103,8 @@ class Ledger {
 
   virtual int total_nb_blocks() = 0;
 
+  virtual int new_branch_id() = 0;
+
   // Fork methods TODO remove
   virtual bool fork_add_block(const messages::Block &b) = 0;
   virtual bool fork_delete_block(const messages::Hash &id) = 0;

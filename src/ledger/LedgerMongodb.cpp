@@ -21,18 +21,18 @@ LedgerMongodb::LedgerMongodb(const messages::config::Database &config)
 
 mongocxx::options::find LedgerMongodb::remove_OID() const {
   mongocxx::options::find find_options;
-  auto projection_transaction = bss::document{} << "_id" << 0
-                                                << bss::finalize;  // remove _id
-  find_options.projection(std::move(projection_transaction));
+  auto projection_doc = bss::document{} << "_id" << 0
+                                        << bss::finalize;  // remove _id
+  find_options.projection(std::move(projection_doc));
   return find_options;
 }
 
 mongocxx::options::find LedgerMongodb::projection(
     const std::string &field) const {
   mongocxx::options::find find_options;
-  auto projection_transaction = bss::document{} << "_id" << 0 << field << 1
-                                                << bss::finalize;
-  find_options.projection(std::move(projection_transaction));
+  auto projection_doc = bss::document{} << "_id" << 0 << field << 1
+                                        << bss::finalize;
+  find_options.projection(std::move(projection_doc));
   return find_options;
 }
 
@@ -78,7 +78,7 @@ bool LedgerMongodb::init_block0(const messages::config::Database &config) {
   tagged_block0.set_branch(messages::Branch::MAIN);
   tagged_block0.add_branch_path(0);
   *tagged_block0.mutable_block() = block0;
-  insert_block(tagged_block0);
+  insert_block(&tagged_block0);
 
   //! add index to mongo collection
   _blocks.create_index(bss::document{} << "block.header.id" << 1
@@ -89,7 +89,8 @@ bool LedgerMongodb::init_block0(const messages::config::Database &config) {
                                        << bss::finalize);
   _blocks.create_index(bss::document{} << "block.header.previousBlockHash" << 1
                                        << bss::finalize);
-  _blocks.create_index(bss::document{} << "branch_path" << 1 << bss::finalize);
+  _blocks.create_index(bss::document{} << "branch_path.0" << 1
+                                       << bss::finalize);
   _transactions.create_index(bss::document{} << "transaction.id" << 1
                                              << bss::finalize);
   _transactions.create_index(bss::document{} << "blockId" << 1
@@ -135,7 +136,7 @@ bool LedgerMongodb::is_ancestor(const messages::TaggedBlock &ancestor,
       ancestor.branch_path_size() > block.branch_path_size()) {
     return false;
   }
-  for (int i = 0; i < ancestor.branch_path_size(); i++) {
+  for (int i = ancestor.branch_path_size() - 1; i >= 0; i--) {
     if (ancestor.branch_path(i) != block.branch_path(i)) {
       return false;
     }
@@ -409,6 +410,19 @@ bool LedgerMongodb::for_each(const Filter &filter, Functor functor) {
   }
 
   return applied_functor;
+}
+
+int LedgerMongodb::new_branch_id() {
+  auto query = bss::document{} << bss::finalize;
+  mongocxx::options::find find_options;
+  auto projection_doc = bss::document{} << "_id" << 0 << "branch_path"
+                                        << bss::document{} << "$slice" << 1
+                                        << bss::finalize;
+  find_options.projection(std::move(projection_doc));
+  find_options.sort(bss::document{} << "branch_path.0" << -1 << bss::finalize);
+
+  auto max_branch_id = _blocks.find_one(std::move(query), find_options);
+  return max_branch_id->view()["branch_path"][0].get_int32() + 1;
 }
 
 }  // namespace ledger
