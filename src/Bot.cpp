@@ -527,6 +527,7 @@ void Bot::handler_hello(const messages::Header &header,
 
   auto peers = _tcp_config->mutable_peers();
   auto peer_header = header.peer();
+  peer_header.mutable_key_pub()->CopyFrom(hello.key_pub());
 
   // find the peer in my list of peer matching connection_id
   auto peer_it = std::find_if(
@@ -563,7 +564,6 @@ void Bot::handler_hello(const messages::Header &header,
     remote_peer = &(*peer_it);
   }
 
-  remote_peer->mutable_key_pub()->CopyFrom(hello.key_pub());
   remote_peer->set_status(messages::Peer::CONNECTED);
 
   // update port by listen_port
