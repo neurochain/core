@@ -16,12 +16,13 @@ Networking::Networking(std::shared_ptr<messages::Queue> queue)
 bool Networking::send(std::shared_ptr<messages::Message> message,
                       ProtocolType type) {
   message->mutable_header()->set_id(_dist(_rd));
+  bool all_ok{true};
   for (auto &transport_layer : _transport_layers) {
     if (!transport_layer->send(message, type)) {
-      return false;
+      all_ok = false;
     }
   }
-  return true;
+  return all_ok;
 }
 
 bool Networking::send_unicast(std::shared_ptr<messages::Message> message,
