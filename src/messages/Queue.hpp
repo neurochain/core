@@ -19,11 +19,11 @@
 namespace neuro {
 namespace messages {
 
-class Subscriber;
-
 namespace test {
 class QueueTest;
-}
+}  // namespace test
+
+class Subscriber;
 
 /*!
    \Class Queue

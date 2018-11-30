@@ -49,7 +49,6 @@ class Bot {
 
   // for the peers
   messages::config::Tcp *_tcp_config;
-  std::size_t _connected_peers{0};
   std::size_t _max_connections;
 
   std::shared_ptr<networking::Tcp> _tcp;
@@ -134,10 +133,10 @@ class Bot {
   Bot(const Bot &) = delete;
   Bot(Bot &&) = delete;
 
+  void join();
+
   virtual ~Bot();  // save_config(_config);
 
-  void stop();
-  void join();
   const std::vector<messages::Peer> connected_peers() const;
   Bot::Status status() const;
   void keep_max_connections();
