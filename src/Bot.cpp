@@ -702,7 +702,7 @@ void Bot::keep_max_connections() {
   }
   LOG_DEBUG << this << " peer count " << peers_size;
 
-  std::size_t current_peer_count = _networking->peer_count();
+  auto current_peer_count = _networking->peer_count();
   if (current_peer_count >= _max_connections) {
     LOG_INFO << this << " Already connected to " << current_peer_count << "/"
              << _max_connections;
