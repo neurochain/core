@@ -34,10 +34,6 @@ class LedgerMongodb : public Ledger {
 
   bool init_block0(const messages::config::Database &config);
 
-  MongoQuery query_branch(const messages::Branch &branch) const;
-
-  MongoQuery query_main_branch() const;
-
   bool is_ancestor(const messages::TaggedBlock &ancestor,
                    const messages::TaggedBlock &block);
 

@@ -5,6 +5,9 @@
 namespace neuro {
 namespace ledger {
 
+const std::string MAIN_BRANCH_NAME =
+    messages::Branch_Name(messages::Branch::MAIN);
+
 mongocxx::instance LedgerMongodb::_instance{};
 
 LedgerMongodb::LedgerMongodb(const std::string &url, const std::string &db_name)
@@ -101,14 +104,6 @@ bool LedgerMongodb::init_block0(const messages::config::Database &config) {
   return true;
 }
 
-MongoQuery LedgerMongodb::query_branch(const messages::Branch &branch) const {
-  return bss::document{} << "branch" << messages::Branch_Name(branch);
-}
-
-MongoQuery LedgerMongodb::query_main_branch() const {
-  return query_branch(messages::Branch::MAIN);
-}
-
 void LedgerMongodb::remove_all() {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   _blocks.delete_many(bss::document{} << bss::finalize);
@@ -117,7 +112,7 @@ void LedgerMongodb::remove_all() {
 
 messages::BlockHeight LedgerMongodb::height() {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
-  auto query = query_main_branch() << bss::finalize;
+  auto query = bss::document{} << "branch" << MAIN_BRANCH_NAME << bss::finalize;
 
   auto options = projection("block.header.height");
   options.sort(bss::document{} << "height" << -1 << bss::finalize);
@@ -166,7 +161,7 @@ bool LedgerMongodb::get_block_header(const messages::BlockID &id,
 
 bool LedgerMongodb::get_last_block_header(messages::BlockHeader *block_header) {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
-  auto query = query_main_branch() << bss::finalize;
+  auto query = bss::document{} << "branch" << MAIN_BRANCH_NAME << bss::finalize;
   auto options = projection("block.header");
   options.sort(bss::document{} << "height" << -1 << bss::finalize);
 
@@ -236,8 +231,9 @@ bool LedgerMongodb::get_block_by_previd(const messages::BlockID &previd,
   // Look for a block in the main branch.
   // There may be several blocks with the same previd in forks.
   std::lock_guard<std::mutex> lock(_ledger_mutex);
-  auto query = query_main_branch()
-               << "previousBlockHash" << to_bson(previd) << bss::finalize;
+  auto query = bss::document{} << "branch" << MAIN_BRANCH_NAME
+                               << "previousBlockHash" << to_bson(previd)
+                               << bss::finalize;
 
   const auto result = _blocks.find_one(std::move(query), projection("block"));
 
@@ -274,8 +270,12 @@ bool LedgerMongodb::get_blocks_by_previd(
 
 bool LedgerMongodb::get_block(const messages::BlockHeight height,
                               messages::Block *block) {
-  auto query = query_main_branch()
-               << "block.header.height" << height << bss::finalize;
+  auto query = bss::document{} << "branch" << MAIN_BRANCH_NAME
+                               << "block.header.height" << height
+                               << bss::finalize;
+
+  // auto query = bss::document{} << "block.header.height" << height
+  //<< bss::finalize;
   const auto result = _blocks.find_one(std::move(query), projection("block"));
   if (!result) {
     return false;
@@ -370,7 +370,7 @@ int LedgerMongodb::total_nb_transactions() {
 
 int LedgerMongodb::total_nb_blocks() {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
-  auto query = query_main_branch() << bss::finalize;
+  auto query = bss::document{} << "branch" << MAIN_BRANCH_NAME << bss::finalize;
   return _blocks.count(std::move(query));
 }
 

@@ -23,7 +23,6 @@ using bss::document;
 using bss::finalize;
 using bss::open_array;
 using bss::open_document;
-using MongoQuery = bss::key_context<bss::closed_context>;
 
 }  // namespace ledger
 }  // namespace neuro
