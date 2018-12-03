@@ -327,6 +327,17 @@ const std::vector<messages::Peer> Bot::connected_peers() const {
   return res;
 }
 
+std::size_t Bot::nb_connected_peers() const {
+  std::size_t ans = 0;
+  std::vector<messages::Peer> res;
+  for (const auto &peer : _tcp_config->peers()) {
+    if (peer.status() == messages::Peer::CONNECTED) {
+      ++ans;
+    }
+  }
+  return ans;
+}
+
 void Bot::update_connection_graph() {
   if (!_config.has_connection_graph_uri()) {
     return;
@@ -425,6 +436,8 @@ void Bot::handler_connection(const messages::Header &header,
   _networking->send_unicast(message, networking::ProtocolType::PROTOBUF2);
   LOG_DEBUG << this << __LINE__
             << " _networking->peer_count(): " << _networking->peer_count();
+  LOG_DEBUG << this << __LINE__
+            << " nb_connected_peers: " << nb_connected_peers();
 }
 
 void Bot::handler_deconnection(const messages::Header &header,
@@ -447,6 +460,8 @@ void Bot::handler_deconnection(const messages::Header &header,
 
   LOG_DEBUG << this << " " << __LINE__
             << " _networking->peer_count(): " << _networking->peer_count();
+  LOG_DEBUG << this << " " << __LINE__
+            << " nb_connected_peers: " << nb_connected_peers();
   it->set_status(messages::Peer::REACHABLE);
 
   this->keep_max_connections();
@@ -493,11 +508,11 @@ void Bot::handler_world(const messages::Header &header,
     // Should I call terminate from the connection
     _tcp->terminate(remote_peer->connection_id());
   } else {
-    bool accepted = (_networking->peer_count() < _max_connections);
+    bool accepted = (nb_connected_peers() < _max_connections);
 
     if (!accepted) {
       LOG_DEBUG << this
-                << " Closing a connection because remote is already full";
+                << " Closing a connection because bot is already full";
       remote_peer->set_status(messages::Peer::REACHABLE);
       _tcp->terminate(remote_peer->connection_id());
     } else {
@@ -523,7 +538,7 @@ void Bot::handler_hello(const messages::Header &header,
   // == Create world message for replying ==
   auto message = std::make_shared<messages::Message>();
   auto world = message->add_bodies()->mutable_world();
-  bool accepted = _networking->peer_count() < (2 * _max_connections);
+  bool accepted = nb_connected_peers() < _max_connections;
 
   auto peers = _tcp_config->mutable_peers();
   auto peer_header = header.peer();
@@ -623,7 +638,7 @@ Bot::Status Bot::status() const {
   // std::lock_guard<std::mutex> lock_connections(_mutex_connections);
   auto peers_size = _tcp_config->peers().size();
   auto status =
-      Bot::Status(_networking->peer_count(), _max_connections, peers_size);
+      Bot::Status(nb_connected_peers(), _max_connections, peers_size);
   return status;
 }
 
@@ -702,7 +717,7 @@ void Bot::keep_max_connections() {
   }
   LOG_DEBUG << this << " peer count " << peers_size;
 
-  auto current_peer_count = _networking->peer_count();
+  std::size_t current_peer_count = nb_connected_peers();
   if (current_peer_count >= _max_connections) {
     LOG_INFO << this << " Already connected to " << current_peer_count << "/"
              << _max_connections;

@@ -140,6 +140,16 @@ TEST(INTEGRATION, simple_interaction) {
 
   std::this_thread::sleep_for(3s);
 
+  LOG_DEBUG << "listener.received_connection() = "
+            << listener.received_connection();
+
+  LOG_DEBUG << "listener.received_hello() = " << listener.received_hello();
+
+  LOG_DEBUG << "listener.received_world() = " << listener.received_world();
+
+  LOG_DEBUG << "listener.received_deconnection() = "
+            << listener.received_deconnection();
+
   ASSERT_GT(listener.received_connection(), 0);
   ASSERT_GT(listener.received_hello(), 0);
   ASSERT_GT(listener.received_world(), 0);

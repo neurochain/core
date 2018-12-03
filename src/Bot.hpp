@@ -116,9 +116,18 @@ class Bot {
     //   res = &(*got);
     //   return res;
     // }
-
+    for (const auto &p: *peers) {
+      LOG_DEBUG << this << " PEER: " << p;
+    }
     res = _tcp_config->add_peers();
     (*res)->CopyFrom(peer);
+    for (const auto p : *peers) {
+      LOG_DEBUG << this << " PEER: " << p;
+    }
+    if (peers->size() > 2) {
+      LOG_DEBUG << "peers.size = " << peers->size();
+      LOG_DEBUG << "checkpoint";
+    }
 
     return res;
   }
@@ -141,6 +150,7 @@ class Bot {
   virtual ~Bot();  // save_config(_config);
 
   const std::vector<messages::Peer> connected_peers() const;
+  std::size_t nb_connected_peers() const;
   Bot::Status status() const;
   void keep_max_connections();
   std::shared_ptr<networking::Networking> networking();
