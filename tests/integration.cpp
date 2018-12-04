@@ -39,7 +39,7 @@ class Listener {
     ++_received_world;
   }
   void handler_connection(const messages::Header &header,
-                           const messages::Body &body) {
+                          const messages::Body &body) {
     LOG_DEBUG << __FILE__ << ": It entered the handler_connection !!";
     ++_received_connection;
   }
@@ -151,7 +151,6 @@ TEST(INTEGRATION, simple_interaction) {
             << listener.received_deconnection();
 
   ASSERT_GT(listener.received_connection(), 0);
-  ASSERT_GT(listener.received_hello(), 0);
   ASSERT_GT(listener.received_world(), 0);
   ASSERT_EQ(listener.received_deconnection(), 0);
 }
@@ -246,7 +245,8 @@ TEST(INTEGRATION, simple_interaction) {
 
 //   subscriber0.subscribe(
 //       messages::Type::kConnectionClosed,
-//       [&listener](const messages::Header &header, const messages::Body &body) {
+//       [&listener](const messages::Header &header, const messages::Body &body)
+//       {
 //         listener.handler_deconnection(header, body);
 //       });
 
