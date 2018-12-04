@@ -300,7 +300,7 @@ class Ledger {
       const messages::Address &address, const messages::NCCSDF &amount,
       const crypto::EccPriv &key_priv,
       const std::optional<messages::NCCSDF> &fees = {}) {
-    auto bot_address = messages::Address(key_priv.make_public_key());
+    messages::Address bot_address(key_priv.make_public_key());
     std::vector<messages::UnspentTransaction> unspent_transactions =
         list_unspent_transactions(bot_address);
 
