@@ -436,6 +436,8 @@ bool LedgerMongodb::add_transaction(
   if (result) {
     return true;
   }
+
+  LOG_INFO << "Failed to delete forked block with id " << id;
   return false;
 }
 
