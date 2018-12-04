@@ -43,8 +43,8 @@ message Input {
   required Hash id = 1;
   required int32 output_id = 2;
   required int32 key_id = 3;
-  optional Hash block_id = 4;
-  optional int32 signature_id = 5;
+  required int32 signature_id = 4;
+  extensions 100 to 120;
 }
 
 message Output {
@@ -145,7 +145,7 @@ message UnspentTransaction {
 
 message Score {
   required Hash address = 1;
-  optional float64 score_float = 2;
+  optional float score_float = 2;
 }
 
 message Election {

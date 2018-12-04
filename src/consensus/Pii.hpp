@@ -1,6 +1,9 @@
 #ifndef NEURO_SRC_CONSENSUS_PII_HPP
 #define NEURO_SRC_CONSENSUS_PII_HPP
 
+#include "messages.pb.h"
+#include "common.pb.h"
+
 namespace neuro {
 namespace consensus {
 

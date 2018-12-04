@@ -3,6 +3,7 @@ set(ProtoFiles
   "${CMAKE_CURRENT_SOURCE_DIR}/messages/config.proto"
   "${CMAKE_CURRENT_SOURCE_DIR}/messages/messages.proto"
   "${CMAKE_CURRENT_SOURCE_DIR}/messages/rest.proto"
+  "${CMAKE_CURRENT_SOURCE_DIR}/messages/pii.proto"
   )
 
 PROTOBUF_GENERATE_CPP(ProtoSources ProtoHeaders ${ProtoFiles})
@@ -71,17 +72,8 @@ add_library(core
   ./Bot.hpp
   ./rest/Rest.cpp
   ./rest/Rest.hpp
-  ./consensus/Consensus.hpp
-  ./consensus/ForkTree.hpp
-  ./consensus/ForkTree.cpp
-  ./consensus/ForkManager.hpp
-  ./consensus/ForkManager.cpp
   ./consensus/Pii.hpp
   ./consensus/Pii.cpp
-  ./consensus/PiiConsensus.hpp
-  ./consensus/PiiConsensus.cpp
-  ./consensus/TransactionPool.hpp
-  ./consensus/TransactionPool.cpp
   )
 
 target_link_libraries(core
