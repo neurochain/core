@@ -104,8 +104,9 @@ class Bot {
     // auto got = std::find(peers->begin(), peers->end(), peer);
     for (auto &p : *peers) {
       if (p.key_pub() == peer.key_pub()) {
-        if (!p.has_connection_id()) {
-          p.set_connection_id(peer.connection_id());
+        if (p.status() == messages::Peer::CONNECTED ||
+            p.status() == messages::Peer::CONNECTING) {
+          return res;
         }
         res = &p;
         return res;
