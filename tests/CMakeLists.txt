@@ -13,38 +13,43 @@
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../testnet/data.0.testnet
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-configure_file("configs/bot0.json" "${CMAKE_CURRENT_BINARY_DIR}/bot0.json" COPYONLY)
-configure_file("configs/bot1.json" "${CMAKE_CURRENT_BINARY_DIR}/bot1.json" COPYONLY)
-configure_file("configs/bot2.json" "${CMAKE_CURRENT_BINARY_DIR}/bot2.json" COPYONLY)
-configure_file("configs/bot_block0.json" "${CMAKE_CURRENT_BINARY_DIR}/bot_block0.json" COPYONLY)
-configure_file("configs/bot_block0.json" "${CMAKE_CURRENT_BINARY_DIR}/bot_block0.json" COPYONLY)
-
-file(GLOB files "configs/integration_*.json.in")
-foreach(file ${files})
-  configure_file(${file} "${CMAKE_CURRENT_BINARY_DIR}/${file}" @ONLY)
+set(integ_conf "integration_propagation0.json.in"
+               "integration_propagation1.json.in"
+               "integration_propagation2.json.in"
+               "integration_update0.json.in"
+               "integration_update1.json.in"
+               "integration_update2.json.in"
+               "integration_keepmax0.json.in"
+               "integration_keepmax1.json.in"
+               "integration_keepmax2.json.in")
+foreach(file ${integ_conf})
+  configure_file("configs/${file}" "${CMAKE_CURRENT_BINARY_DIR}/${file}" @ONLY)
 endforeach()
 
-configure_file("configs/integration_keepmax0.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_keepmax0.json" @ONLY)
-configure_file("configs/integration_keepmax1.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_keepmax1.json" @ONLY)
-configure_file("configs/integration_keepmax2.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_keepmax2.json" @ONLY)
-
-file(GLOB files "configs/key_integration*.*")
+set(files "key_integration0.priv"
+          "key_integration0.pub"
+          "key_integration1.priv"
+          "key_integration1.pub"
+          "key_integration2.priv"
+          "key_integration2.pub"
+          "test_sign.priv"
+          "test_sign.pub"
+          "key_faucet.priv"
+          "key_faucet.pub"
+          "key0.pub"
+          "key0.priv"
+          "key1.pub"
+          "key1.priv"
+          "key2.pub"
+          "key2.priv"
+          "bot0.json"
+          "bot1.json"
+          "bot2.json"
+          "bot_block0.json"
+          "data.0.testnet")
 foreach(file ${files})
-  configure_file(${file} "${CMAKE_CURRENT_BINARY_DIR}/${file}" COPYONLY)
+  configure_file("configs/${file}" "${CMAKE_CURRENT_BINARY_DIR}/${file}" COPYONLY)
 endforeach()
-
-configure_file("configs/test_sign.priv" "${CMAKE_CURRENT_BINARY_DIR}/test_sign.priv" COPYONLY)
-configure_file("configs/test_sign.pub" "${CMAKE_CURRENT_BINARY_DIR}/test_sign.pub" COPYONLY)
-
-configure_file("configs/key_faucet.priv" "${CMAKE_CURRENT_BINARY_DIR}/key_faucet.priv" COPYONLY)
-configure_file("configs/key_faucet.pub" "${CMAKE_CURRENT_BINARY_DIR}/key_faucet.pub" COPYONLY)
-
-file(GLOB files "configs/key*.p*")
-foreach(file ${files})
-  configure_file(${file} "${CMAKE_CURRENT_BINARY_DIR}/${file}" COPYONLY)
-endforeach()
-
-configure_file("configs/data.0.testnet" "${CMAKE_CURRENT_BINARY_DIR}/data.0.testnet" COPYONLY)
 
 set(ProtoFiles "networking/proto/Messages.proto")
 PROTOBUF_GENERATE_CPP(ProtoSources ProtoHeaders ${ProtoFiles})
