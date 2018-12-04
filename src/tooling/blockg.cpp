@@ -43,6 +43,8 @@ void coinbase(const crypto::EccPub &key_pub, const messages::NCCSDF &ncc,
   output->set_data(datavalue);
   transaction.mutable_fees()->set_value(0);
 
+  transaction.mutable_id()->set_type(messages::Hash::SHA256);
+  transaction.mutable_id()->set_data("");
   auto id = messages::Hasher(transaction);
   transaction.mutable_id()->CopyFrom(id);
 }
