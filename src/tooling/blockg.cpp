@@ -42,7 +42,9 @@ void coinbase(const crypto::EccPub &key_pub, const messages::NCCSDF &ncc,
   // std::string h("trax killed me");
   output->set_data(datavalue);
   transaction.mutable_fees()->set_value(0);
-  // return transaction;
+
+  auto id = messages::Hasher(transaction);
+  transaction.mutable_id()->CopyFrom(id);
 }
 
 void block0(uint32_t bots, const std::string &pathdir, messages::NCCSDF &nccsdf,
@@ -207,7 +209,6 @@ int main(int argc, char *argv[]) {
   nccsdf.set_value(ncc);
 
   auto db = _config.database();
-  ledger::LedgerMongodb ledger(db);
   /*block0(bots, keypath, nccsdf, ledger);*/
   testnet_blockg(bots, keypath, nccsdf);
 
