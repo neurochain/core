@@ -81,7 +81,12 @@ void block0(uint32_t bots, const std::string &pathdir, messages::NCCSDF &nccsdf,
   neuro::Buffer tmpbuffer(b.SerializeAsString());
   messages::Hasher hash_id(tmpbuffer);
   header->mutable_id()->CopyFrom(hash_id);
-  ledger.push_block(b);
+
+  messages::TaggedBlock tagged_block0;
+  tagged_block0.set_branch(messages::Branch::MAIN);
+  tagged_block0.add_branch_path(0);
+  *tagged_block0.mutable_block() = b;
+  ledger.insert_block(&tagged_block0);
 
   std::ofstream blockfile0;
   blockfile0.open("block.0.bp");

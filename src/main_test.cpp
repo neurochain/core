@@ -9,7 +9,7 @@
 #include <google/protobuf/message.h>
 #include <google/protobuf/text_format.h>
 #include "config.pb.h"
-#include "mongo/mongo.hpp"
+#include "ledger/mongo.hpp"
 
 namespace neuro {
 

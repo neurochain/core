@@ -153,12 +153,7 @@ bool genblock_from_last_db_block(
     height = ledger->height();
   }
   neuro::messages::Block last_block;
-  if (!ledger->get_block(height, &last_block)) {
-    if (!ledger->fork_get_block(height, &last_block)) {
-      throw std::runtime_error({"Not found block - " + std::to_string(height)});
-      return false;
-    }
-  }
+  ledger->get_block(height, &last_block);
 
   if (last_block.header().height() != height) {
     throw std::runtime_error({"Not found block 2 - " + std::to_string(height) +

@@ -13,27 +13,38 @@
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../testnet/data.0.testnet
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-configure_file("configs/bot0.json.in" "${CMAKE_CURRENT_BINARY_DIR}/bot0.json" @ONLY)
-configure_file("configs/bot1.json.in" "${CMAKE_CURRENT_BINARY_DIR}/bot1.json" @ONLY)
-configure_file("configs/bot2.json.in" "${CMAKE_CURRENT_BINARY_DIR}/bot2.json" @ONLY)
+configure_file("configs/bot0.json" "${CMAKE_CURRENT_BINARY_DIR}/bot0.json" COPYONLY)
+configure_file("configs/bot1.json" "${CMAKE_CURRENT_BINARY_DIR}/bot1.json" COPYONLY)
+configure_file("configs/bot2.json" "${CMAKE_CURRENT_BINARY_DIR}/bot2.json" COPYONLY)
+configure_file("configs/bot_block0.json" "${CMAKE_CURRENT_BINARY_DIR}/bot_block0.json" COPYONLY)
+configure_file("configs/bot_block0.json" "${CMAKE_CURRENT_BINARY_DIR}/bot_block0.json" COPYONLY)
 
-configure_file("configs/integration_propagation0.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_propagation0.json" @ONLY)
-configure_file("configs/integration_propagation1.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_propagation1.json" @ONLY)
-configure_file("configs/integration_propagation2.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_propagation2.json" @ONLY)
-configure_file("configs/integration_update0.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_update0.json" @ONLY)
-configure_file("configs/integration_update1.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_update1.json" @ONLY)
-configure_file("configs/integration_update2.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_update2.json" @ONLY)
+file(GLOB files "configs/integration_*.json.in")
+foreach(file ${files})
+  configure_file(${file} "${CMAKE_CURRENT_BINARY_DIR}/${file}" @ONLY)
+endforeach()
 
 configure_file("configs/integration_keepmax0.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_keepmax0.json" @ONLY)
 configure_file("configs/integration_keepmax1.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_keepmax1.json" @ONLY)
 configure_file("configs/integration_keepmax2.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_keepmax2.json" @ONLY)
 
-configure_file("configs/key_integration0.priv" "${CMAKE_CURRENT_BINARY_DIR}/key_integration0.priv" COPYONLY)
-configure_file("configs/key_integration1.priv" "${CMAKE_CURRENT_BINARY_DIR}/key_integration1.priv" COPYONLY)
-configure_file("configs/key_integration2.priv" "${CMAKE_CURRENT_BINARY_DIR}/key_integration2.priv" COPYONLY)
-configure_file("configs/key_integration0.pub" "${CMAKE_CURRENT_BINARY_DIR}/key_integration0.pub" COPYONLY)
-configure_file("configs/key_integration1.pub" "${CMAKE_CURRENT_BINARY_DIR}/key_integration1.pub" COPYONLY)
-configure_file("configs/key_integration2.pub" "${CMAKE_CURRENT_BINARY_DIR}/key_integration2.pub" COPYONLY)
+file(GLOB files "configs/key_integration*.*")
+foreach(file ${files})
+  configure_file(${file} "${CMAKE_CURRENT_BINARY_DIR}/${file}" COPYONLY)
+endforeach()
+
+configure_file("configs/test_sign.priv" "${CMAKE_CURRENT_BINARY_DIR}/test_sign.priv" COPYONLY)
+configure_file("configs/test_sign.pub" "${CMAKE_CURRENT_BINARY_DIR}/test_sign.pub" COPYONLY)
+
+configure_file("configs/key_faucet.priv" "${CMAKE_CURRENT_BINARY_DIR}/key_faucet.priv" COPYONLY)
+configure_file("configs/key_faucet.pub" "${CMAKE_CURRENT_BINARY_DIR}/key_faucet.pub" COPYONLY)
+
+file(GLOB files "configs/key*.p*")
+foreach(file ${files})
+  configure_file(${file} "${CMAKE_CURRENT_BINARY_DIR}/${file}" COPYONLY)
+endforeach()
+
+configure_file("configs/data.0.testnet" "${CMAKE_CURRENT_BINARY_DIR}/data.0.testnet" COPYONLY)
 
 set(ProtoFiles "networking/proto/Messages.proto")
 PROTOBUF_GENERATE_CPP(ProtoSources ProtoHeaders ${ProtoFiles})
@@ -57,6 +68,35 @@ target_link_libraries(integration
   ${LIBMONGOCXX_STATIC_LIBRARIES}
   )
 add_test(integration integration)
+
+add_executable(ut
+  ./common/Buffer.cpp
+  ./crypto/Hash.cpp
+  ./crypto/Ecc.cpp
+  ./messages/Config.cpp
+  ./messages/Queue.cpp
+  ./messages/Subscriber.cpp
+  ./networking/TransportLayer.cpp
+  ./networking/tcp/Tcp.cpp
+  ./networking/tcp/Connection.cpp
+  )
+
+target_link_libraries(ut
+  GTest::main
+  core
+  protos
+  Boost::log
+  Boost::program_options
+  Boost::system
+  Boost::filesystem
+  Boost::thread
+  libonion::onion
+  cpr::cpr
+  libonion::onioncpp
+  ${LIBMONGOCXX_STATIC_LIBRARIES}
+  )
+
+add_test(ut ut)
 
 
 add_executable(LedgerMongodb
@@ -88,6 +128,14 @@ target_link_libraries(dbreset
     core
 )
 
+add_executable(block0
+    block0.cpp
+)
+
+target_link_libraries(block0
+    GTest::main
+    core
+)
 
 #add_executable(piitest
 #    piitest.cpp

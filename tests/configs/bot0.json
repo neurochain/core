@@ -1,6 +1,6 @@
 {
-    "key_pub_path": "@CMAKE_BINARY_DIR@/key1.pub",
-    "key_priv_path": "@CMAKE_BINARY_DIR@/key1.priv",
+    "key_pub_path": "key0.pub",
+    "key_priv_path": "key0.priv",
     "logs": {
 	"severity": "debug",
 	"to_stdout": true
@@ -8,14 +8,14 @@
     "networking": {
 	"max_connections": 3,
 	"tcp": {
-	    "port": 1338,
+	    "port": 1337,
 	    "peers": [
 		{
 		    "endpoint": "127.0.0.1",
-		    "port": 1337,
+		    "port": 1338,
 		    "keyPub": {
 			"type": "ECP256K1",
-			"rawData":"MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABAqh/GaK+zXAydO8h4sDf4apFNmW8SFaIqRqXioYDXy8hC+chk0UR4chWxuSQY3FIttKKlQDwSEVZ6Enazkt1a0="
+			"rawData":"MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABOBPdJmNMRu7dZ0O4+b/jG5CyuLeI870VKYu0DrtJ8I8VW3wt5NcbqfqIk7OI0+9cE7+xCPtKwF1vAHi730nMJ0=",
 		    }
 		},
 		{
@@ -31,11 +31,11 @@
     },
     "database": {
 	"url": "mongodb://localhost:27017/neuro",
-	"db_name": "neuro1338",
+	"db_name": "neuro1337",
 	"block0_format": "PROTO",
-	"block0_path": "@CMAKE_BINARY_DIR@/data.0.testnet"
+	"block0_path": "data.0.testnet"
     },
     "rest": {
-	"port": 8081
+	"port": 8080
     }
 }

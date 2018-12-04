@@ -240,11 +240,8 @@ bool Bot::load_networking(messages::config::Config *config) {
     LOG_DEBUG << this << " Peer: " << peer;
   }
 
-  _tcp = std::make_shared<networking::Tcp>(_queue, _keys);
   auto port = tcpconfig->port();
-  _tcp->accept(port);
-  LOG_INFO << this << " Accepting connections on port " << port;
-  _networking->push(_tcp);
+  _tcp = _networking->create_tcp(_queue, _keys, port);
   if (tcpconfig->peers().empty()) {
     LOG_WARNING << this << " There is no information about peers";
   }
@@ -394,7 +391,6 @@ void Bot::handler_connection(const messages::Header &header,
 
   auto peer = header.peer();
   auto connection_ready = body.connection_ready();
-  _connected_peers = _networking->peer_count();
 
   if (connection_ready.from_remote()) {
     // Nothing to do; just wait for the hello message from remote peer
@@ -421,16 +417,14 @@ void Bot::handler_connection(const messages::Header &header,
   auto hello = message->add_bodies()->mutable_hello();
   hello->set_listen_port(_tcp->listening_port());
 
-  Buffer key_pub_buffer;
-  _keys->public_key().save(&key_pub_buffer);
-
   auto key_pub = hello->mutable_key_pub();
   key_pub->set_type(messages::KeyType::ECP256K1);
   const auto tmp = _keys->public_key().save();
   key_pub->set_raw_data(tmp.data(), tmp.size());
 
   _networking->send_unicast(message, networking::ProtocolType::PROTOBUF2);
-  LOG_DEBUG << this << " updating _connected_peers to ++ " << _connected_peers;
+  LOG_DEBUG << this << __LINE__
+            << " _networking->peer_count(): " << _networking->peer_count();
 }
 
 void Bot::handler_deconnection(const messages::Header &header,
@@ -441,9 +435,9 @@ void Bot::handler_deconnection(const messages::Header &header,
   // find the peer in our list of peers and update its status
   // std::lock_guard<std::mutex> lock_connections(_mutex_connections);
   auto peers = _tcp_config->mutable_peers();
-  auto it = std::find(peers->begin(), peers->end(), remote_peer);
-  _tcp->terminated(remote_peer.connection_id());
+  _tcp->terminate(remote_peer.connection_id());
 
+  auto it = std::find(peers->begin(), peers->end(), remote_peer);
   if (it == peers->end()) {
     LOG_WARNING << "Unknown peer disconnected";
     this->keep_max_connections();
@@ -451,8 +445,8 @@ void Bot::handler_deconnection(const messages::Header &header,
     return;
   }
 
-  _connected_peers = _networking->peer_count();
-  LOG_DEBUG << this << " updating _connected_peers to -- " << _connected_peers;
+  LOG_DEBUG << this << " " << __LINE__
+            << " _networking->peer_count(): " << _networking->peer_count();
   it->set_status(messages::Peer::REACHABLE);
 
   this->keep_max_connections();
@@ -497,15 +491,15 @@ void Bot::handler_world(const messages::Header &header,
     LOG_DEBUG << this << " Not accepted, disconnecting ...";
     remote_peer->set_status(messages::Peer::FULL);
     // Should I call terminate from the connection
-    _tcp->terminated(remote_peer->connection_id());
+    _tcp->terminate(remote_peer->connection_id());
   } else {
-    bool accepted = (_connected_peers < _max_connections);
+    bool accepted = (_networking->peer_count() < _max_connections);
 
     if (!accepted) {
       LOG_DEBUG << this
                 << " Closing a connection because remote is already full";
       remote_peer->set_status(messages::Peer::REACHABLE);
-      _tcp->terminated(remote_peer->connection_id());
+      _tcp->terminate(remote_peer->connection_id());
     } else {
       remote_peer->set_status(messages::Peer::CONNECTED);
     }
@@ -529,10 +523,11 @@ void Bot::handler_hello(const messages::Header &header,
   // == Create world message for replying ==
   auto message = std::make_shared<messages::Message>();
   auto world = message->add_bodies()->mutable_world();
-  bool accepted = _connected_peers < (2 * _max_connections);
+  bool accepted = _networking->peer_count() < (2 * _max_connections);
 
   auto peers = _tcp_config->mutable_peers();
   auto peer_header = header.peer();
+  peer_header.mutable_key_pub()->CopyFrom(hello.key_pub());
 
   // find the peer in my list of peer matching connection_id
   auto peer_it = std::find_if(
@@ -569,16 +564,13 @@ void Bot::handler_hello(const messages::Header &header,
     remote_peer = &(*peer_it);
   }
 
-  remote_peer->mutable_key_pub()->CopyFrom(hello.key_pub());
   remote_peer->set_status(messages::Peer::CONNECTED);
 
   // update port by listen_port
   if (remote_peer->has_connection_id()) {
-    bool connection_found;
-    const auto &connection =
-        _tcp->connection(remote_peer->connection_id(), connection_found);
-    if (connection_found) {
-      remote_peer->set_port(connection->listen_port());
+    const auto port = _tcp->connection_port(remote_peer->connection_id());
+    if (!!port) {
+      remote_peer->set_port(*port);
     }
   } else {
     // TODO check this;
@@ -602,7 +594,10 @@ void Bot::handler_hello(const messages::Header &header,
   key_pub->set_type(messages::KeyType::ECP256K1);
   key_pub->set_hex_data(key_pub_buffer.str());
 
-  _networking->send_unicast(message, networking::ProtocolType::PROTOBUF2);
+  if (!_networking->send_unicast(message,
+                                 networking::ProtocolType::PROTOBUF2)) {
+    LOG_ERROR << this << " Failed to send world message.";
+  }
 }
 
 std::ostream &operator<<(
@@ -627,7 +622,8 @@ std::ostream &operator<<(std::ostream &os, const neuro::Bot &b) {
 Bot::Status Bot::status() const {
   // std::lock_guard<std::mutex> lock_connections(_mutex_connections);
   auto peers_size = _tcp_config->peers().size();
-  auto status = Bot::Status(_connected_peers, _max_connections, peers_size);
+  auto status =
+      Bot::Status(_networking->peer_count(), _max_connections, peers_size);
   return status;
 }
 
@@ -706,18 +702,19 @@ void Bot::keep_max_connections() {
   }
   LOG_DEBUG << this << " peer count " << peers_size;
 
-  if (_connected_peers >= _max_connections) {
-    LOG_INFO << this << " Already connected to " << _connected_peers << "/"
+  auto current_peer_count = _networking->peer_count();
+  if (current_peer_count >= _max_connections) {
+    LOG_INFO << this << " Already connected to " << current_peer_count << "/"
              << _max_connections;
     return;
   }
 
-  if (_connected_peers == peers_size) {
+  if (current_peer_count == peers_size) {
     LOG_WARNING << this << " No available peer to check";
     return;
   }
 
-  if (_connected_peers < _max_connections) {
+  if (current_peer_count < _max_connections) {
     messages::Peer *peer;
     if (this->next_to_connect(&peer)) {
       LOG_DEBUG << this << " Asking to connect to " << *peer;
@@ -730,7 +727,7 @@ void Bot::keep_max_connections() {
       // this->update_peerlist();
     }
   } else {
-    LOG_INFO << this << " Already connected to " << _connected_peers << "/"
+    LOG_INFO << this << " Already connected to " << current_peer_count << "/"
              << _max_connections;
   }
 }
@@ -769,6 +766,10 @@ Bot::~Bot() {
     std::this_thread::sleep_for(10ms);
   }
   _subscriber.unsubscribe();
+  _consensus.reset();
+  if (_io_context_thread.joinable()) {
+    _io_context_thread.join();
+  }
   LOG_DEBUG << this << " From Bot destructor " << &_subscriber;
 }
 

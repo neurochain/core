@@ -9,8 +9,8 @@
 #include "messages.pb.h"
 #include "messages/Queue.hpp"
 #include "messages/Subscriber.hpp"
-#include "networking/TransportLayer.hpp"
 #include "networking/tcp/Connection.hpp"
+#include "networking/tcp/Tcp.hpp"
 
 namespace neuro {
 namespace networking {
@@ -27,16 +27,14 @@ class Networking {
   Networking(std::shared_ptr<messages::Queue> _queue);
   ~Networking();
 
-  TransportLayer::ID push(std::shared_ptr<TransportLayer> transport_layer);
-  void send(std::shared_ptr<messages::Message> message, ProtocolType type);
-  void send_unicast(std::shared_ptr<messages::Message> message,
+  std::shared_ptr<Tcp> create_tcp(std::shared_ptr<messages::Queue> queue,
+                                  std::shared_ptr<crypto::Ecc> keys,
+                                  const Port port);
+  bool send(std::shared_ptr<messages::Message> message, ProtocolType type);
+  bool send_unicast(std::shared_ptr<messages::Message> message,
                     ProtocolType type);
   messages::Peers connected_peers() const;
   std::size_t peer_count() const;
-  void remove_connection(const messages::Header &header,
-                         const messages::Body &body);
-
-  void stop();
   void join();
 };
 

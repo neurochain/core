@@ -34,7 +34,6 @@ bool verify(const messages::Transaction &transaction) {
   auto transaction_raw = transaction;
   transaction_raw.clear_signatures();
   transaction_raw.clear_id();
-  transaction_raw.clear_block_id();
   messages::to_buffer(transaction_raw, &bin);
 
   for (const auto &input : transaction.inputs()) {

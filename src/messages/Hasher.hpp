@@ -10,16 +10,14 @@ namespace neuro {
 namespace messages {
 
 class Hasher : public messages::Hash {
- private:
-  std::shared_ptr<Buffer> _data{std::make_shared<Buffer>()};
-
  public:
   Hasher() {}
 
   void from_buffer(const Buffer &data) {
-    crypto::hash_sha3_256(data, _data.get());
+    Buffer hash;
+    crypto::hash_sha3_256(data, &hash);
     this->set_type(Hash::SHA256);
-    this->set_data(_data->data(), _data->size());
+    this->set_data(hash.data(), hash.size());
   }
 
   Hasher(const Buffer &data) { from_buffer(data); }
@@ -32,9 +30,13 @@ class Hasher : public messages::Hash {
     this->set_data(tmp.data(), tmp.size());
   }
 
-  Hasher(const Packet &packet) { to_buffer(packet, _data.get()); }
+  Hasher(const Packet &packet) {
+    Buffer data;
+    to_buffer(packet, &data);
+    from_buffer(data);
+  }
 
-  std::shared_ptr<Buffer> raw() const { return _data; }
+  std::string raw() const { return this->data(); }
 };
 
 }  // namespace messages

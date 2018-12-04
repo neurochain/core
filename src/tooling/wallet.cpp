@@ -88,26 +88,6 @@ messages::KeyPub load_key_pub(int i) {
   return author;
 }
 
-void load_id_transaction(neuro::messages::Block *block) {
-  for (int i = 0; i < block->transactions_size(); ++i) {
-    neuro::messages::Transaction *transaction = block->mutable_transactions(i);
-    if (!transaction->has_id()) {
-      neuro::messages::Transaction _transaction(*transaction);
-      _transaction.clear_id();
-      _transaction.clear_block_id();
-
-      Buffer buf;
-      messages::to_buffer(_transaction, &buf);
-      messages::Hasher newit(buf);
-      transaction->mutable_id()->CopyFrom(newit);
-    }
-
-    if (!transaction->has_block_id()) {
-      transaction->mutable_block_id()->CopyFrom(block->header().id());
-    }
-  }
-}
-
 int main(int argc, char *argv[]) {
   po::options_description desc("Allowed options");
   desc.add_options()("help,h", "Produce help message.")(
