@@ -59,7 +59,7 @@ class BotTest {
   neuro::Bot _bot;
 
  public:
-  BotTest(const std::string &configpath) : _bot(configpath) {}
+  BotTest(const messages::config::Config &conf) : _bot(conf) {}
 
   int nb_blocks() { return _bot._ledger->total_nb_blocks(); }
 
@@ -317,21 +317,38 @@ TEST(INTEGRATION, keep_max_connections) {
   bot2.reset();
 }
 
-// TEST(INTEGRATION, block_exchange) {
-//   ASSERT_TRUE(true);
+TEST(INTEGRATION, block_exchange) {
+  ASSERT_TRUE(true);
+  // TODO: implement relevant test
 
-//   BotTest bot0("integration_propagation0.json");
-//   bot0.add_block();
-//   BotTest bot1("integration_propagation1.json");
+  Path config_path0("integration_propagation0.json");
+  messages::config::Config config0(config_path0);
+  BotTest bot0(config0);
+  bot0.add_block();
 
-//   // std::this_thread::sleep_for(35s);
+  std::cout << std::endl << "AVANT" << std::endl << std::endl;
+  std::cout << __FILE__ << ":" << __LINE__
+            << " Nb of blocks bot 0: " << bot0.nb_blocks() << std::endl;
 
-//   std::cout << __FILE__ << ":" << __LINE__
-//             << " Nb of blocks: " << bot0.nb_blocks() << std::endl;
+  std::this_thread::sleep_for(500ms);
 
-//   std::cout << __FILE__ << ":" << __LINE__
-//             << " Nb of blocks: " << bot1.nb_blocks() << std::endl;
-// }
+  Path config_path1("integration_propagation1.json");
+  messages::config::Config config1(config_path1);
+  BotTest bot1(config1);
+
+  std::cout << std::endl << "AVANT SLEEP" << std::endl << std::endl;
+  std::cout << __FILE__ << ":" << __LINE__
+            << " Nb of blocks bot 0: " << bot0.nb_blocks() << std::endl;
+
+  std::this_thread::sleep_for(500ms);
+
+  std::cout << std::endl << "APRES" << std::endl << std::endl;
+  std::cout << __FILE__ << ":" << __LINE__
+            << " Nb of blocks bot 0: " << bot0.nb_blocks() << std::endl;
+
+  std::cout << __FILE__ << ":" << __LINE__
+            << " Nb of blocks: bot 1: " << bot1.nb_blocks() << std::endl;
+}
 
 }  // namespace tests
 
