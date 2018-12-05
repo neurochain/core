@@ -281,31 +281,41 @@ TEST(INTEGRATION, terminate_on_bad_version) {
   ASSERT_GT(listener.received_deconnection(), 0);
 }
 
-// TEST(INTEGRATION, keep_max_connections) {
-//   auto bot0 = std::make_shared<neuro::Bot>("integration_keepmax0.json");
-//   std::this_thread::sleep_for(750ms);
-//   auto bot1 = std::make_shared<neuro::Bot>("integration_keepmax1.json");
-//   std::this_thread::sleep_for(750ms);
-//   auto bot2 = std::make_shared<neuro::Bot>("integration_keepmax2.json");
-//   std::this_thread::sleep_for(750ms);
+TEST(INTEGRATION, keep_max_connections) {
+  Path config_path0("integration_keepmax0.json");
+  messages::config::Config config0(config_path0);
+  auto bot0 = std::make_shared<Bot>(config0);
+  std::this_thread::sleep_for(750ms);
+  Path config_path1("integration_keepmax1.json");
+  messages::config::Config config1(config_path1);
+  auto bot1 = std::make_shared<Bot>(config1);
+  std::this_thread::sleep_for(750ms);
+  Path config_path2("integration_keepmax2.json");
+  messages::config::Config config2(config_path2);
+  auto bot2 = std::make_shared<Bot>(config2);
+  std::this_thread::sleep_for(750ms);
 
-//   auto peers_bot0 = bot0->connected_peers();
-//   auto peers_bot1 = bot1->connected_peers();
-//   auto peers_bot2 = bot2->connected_peers();
+  auto peers_bot0 = bot0->connected_peers();
+  auto peers_bot1 = bot1->connected_peers();
+  auto peers_bot2 = bot2->connected_peers();
 
-//   ASSERT_TRUE(peers_bot0.size() == 1);
-//   ASSERT_TRUE(peers_bot1.size() == 2);
-//   ASSERT_TRUE(peers_bot2.size() == 1);
+  ASSERT_TRUE(peers_bot0.size() == 1);
+  ASSERT_TRUE(peers_bot1.size() == 2);
+  ASSERT_TRUE(peers_bot2.size() == 1);
 
-//   ASSERT_TRUE(peers_bot0[0].endpoint() == "127.0.0.1" &&
-//               peers_bot0[0].port() == 1338);
+  ASSERT_TRUE(peers_bot0[0].endpoint() == "127.0.0.1" &&
+              peers_bot0[0].port() == 1338);
 
-//   ASSERT_TRUE(peers_bot1[0].endpoint() == "127.0.0.1" &&
-//               peers_bot1[0].port() == 1337);
+  ASSERT_TRUE(peers_bot1[0].endpoint() == "127.0.0.1" &&
+              peers_bot1[0].port() == 1337);
 
-//   ASSERT_TRUE(peers_bot2[0].endpoint() == "127.0.0.1" &&
-//               peers_bot2[0].port() == 1338);
-// }
+  ASSERT_TRUE(peers_bot2[0].endpoint() == "127.0.0.1" &&
+              peers_bot2[0].port() == 1338);
+  // TODO: remove this. It is just a dirty way to stabilize avoinding crach on Queue
+  bot0.reset();
+  bot1.reset();
+  bot2.reset();
+}
 
 // TEST(INTEGRATION, block_exchange) {
 //   ASSERT_TRUE(true);
