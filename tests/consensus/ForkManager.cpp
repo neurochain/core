@@ -30,16 +30,8 @@ class ForkManager : public ::testing::Test {
   messages::config::Database _config;
   std::shared_ptr<::neuro::ledger::LedgerMongodb> ledger;
 
-  void create_empty_db(const messages::config::Database &config) {
-    // instance started in static in LedgerMongodb
-    mongocxx::uri uri(config.url());
-    mongocxx::client client(uri);
-    mongocxx::database db(client[config.db_name()]);
-    db.drop();
-  }
-
   ForkManager() : _config(config_str) {
-    create_empty_db(_config);
+    tooling::genblock::create_empty_db(_config);
     ledger = std::make_shared<::neuro::ledger::LedgerMongodb>(_config);
   }
 

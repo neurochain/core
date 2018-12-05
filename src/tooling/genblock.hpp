@@ -52,50 +52,18 @@ bool genblock_from_block(
   // DO Transaction
   std::srand(seed);
   std::vector<int> used_transaction;
-  int num_transaction = std::max(std::rand(), max_trx);
   int num_last_transaction = last_block.transactions_size();
+  int num_transaction = num_last_transaction;
 
   for (int i = 0; i < num_transaction; ++i) {
-    int how_trial = 0;
-    int rinput = std::rand() % num_last_transaction,
-        routput = std::rand() % num_last_transaction;
-
-    while (std::find(used_transaction.begin(), used_transaction.end(),
-                     rinput) != used_transaction.end()) {
-      rinput = std::rand() % num_last_transaction;
-      how_trial++;
-      if (how_trial > max_trail) break;
-    }
-    if (how_trial > max_trail) break;
-
-    how_trial = 0;
-    used_transaction.push_back(rinput);
-
-    while (routput >= last_block.transactions_size()) {
-      routput = std::rand() % num_last_transaction;
-      how_trial++;
-      if (how_trial > max_trail) break;
-    }
-    if (how_trial > max_trail) break;
-
-    const neuro::messages::Transaction &sender =
-        last_block.transactions(rinput);
-    const neuro::messages::Transaction &recevied =
-        last_block.transactions(routput);
+    const neuro::messages::Transaction &sender = last_block.transactions(i);
+    const neuro::messages::Transaction &recevied = last_block.transactions(i);
 
     int32_t num_output = 0;  // To use rand
     uint64_t total_ncc =
         sender.outputs(num_output)
             .value()
             .value();  // std::atol(sender.outputs(num_output).value().value().c_str());
-    if (total_ncc < 2) {
-      break;
-    }
-    uint64_t how_ncc =
-        std::min(total_ncc - 1, std::abs(std::rand()) % total_ncc);
-    if (how_ncc == 0) {
-      break;
-    }
 
     neuro::messages::Transaction *new_trans = block.add_transactions();
 
@@ -111,36 +79,13 @@ bool genblock_from_block(
     neuro::messages::Output *output_revevied = new_trans->add_outputs();
     output_revevied->mutable_address()->CopyFrom(
         recevied.outputs(num_output).address());
-    output_revevied->mutable_value()->set_value(
-        how_ncc);  // std::to_string(how_ncc));
-
-    neuro::messages::Output *output_sender = new_trans->add_outputs();
-    output_sender->mutable_address()->CopyFrom(
-        sender.outputs(num_output).address());
-    output_sender->mutable_value()->set_value(
-        total_ncc - how_ncc);  // std::to_string(total_ncc-how_ncc));
+    output_revevied->mutable_value()->set_value(total_ncc);
 
     new_trans->mutable_fees()->set_value(0);
     messages::hash_transaction(new_trans);
-
-    /*
-    std::cout << " --- AAA --- " << std::endl;
-    Buffer buf;
-    messages::to_buffer(*new_trans, &buf);
-    messages::Hasher newit(buf);
-    new_trans->mutable_id()->CopyFrom(newit);*/
   }
 
-  neuro::Buffer buffake("123456");  // #1 fix require id in header of block
-  neuro::messages::Hasher fake_id(buffake);
-  header->mutable_id()->CopyFrom(fake_id);
-
-  neuro::Buffer bufid;
-  neuro::messages::to_buffer(block, &bufid);
-
-  neuro::messages::Hasher blockid(bufid);
-  header->mutable_id()->CopyFrom(blockid);
-
+  messages::hash_block(&block);
   return true;
 }
 
@@ -173,7 +118,11 @@ void create_first_blocks(const int nb, std::shared_ptr<ledger::Ledger> ledger) {
   for (int i = 1; i < nb; ++i) {
     messages::Block block;
     genblock_from_last_db_block(block, ledger, 1, i);
-    ledger->push_block(block);
+    messages::TaggedBlock tagged_block;
+    tagged_block.set_branch(messages::Branch::MAIN);
+    tagged_block.add_branch_path(0);
+    *tagged_block.mutable_block() = block;
+    ledger->insert_block(&tagged_block);
   }
 }
 
@@ -186,10 +135,22 @@ void create_fork_blocks(const int nb, std::shared_ptr<ledger::Ledger> ledger) {
   ledger->get_block(ledger->height(), &last_block);
   for (int i = 0; i < nb; ++i) {
     genblock_from_block(block, last_block, 1, last_block.header().height() + 1);
-    ledger->fork_add_block(block);
+    messages::TaggedBlock tagged_block;
+    tagged_block.set_branch(messages::Branch::FORK);
+    tagged_block.add_branch_path(1);
+    *tagged_block.mutable_block() = block;
+    ledger->insert_block(&tagged_block);
     last_block.CopyFrom(block);
     block.Clear();
   }
+}
+
+void create_empty_db(const messages::config::Database &config) {
+  // instance started in static in LedgerMongodb
+  mongocxx::uri uri(config.url());
+  mongocxx::client client(uri);
+  mongocxx::database db(client[config.db_name()]);
+  db.drop();
 }
 
 }  // namespace genblock

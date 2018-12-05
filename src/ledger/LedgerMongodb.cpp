@@ -115,7 +115,7 @@ messages::BlockHeight LedgerMongodb::height() {
   auto query = bss::document{} << "branch" << MAIN_BRANCH_NAME << bss::finalize;
 
   auto options = projection("block.header.height");
-  options.sort(bss::document{} << "height" << -1 << bss::finalize);
+  options.sort(bss::document{} << "block.header.height" << -1 << bss::finalize);
 
   const auto result = _blocks.find_one(std::move(query), options);
   if (!result) {
@@ -163,7 +163,7 @@ bool LedgerMongodb::get_last_block_header(messages::BlockHeader *block_header) {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto query = bss::document{} << "branch" << MAIN_BRANCH_NAME << bss::finalize;
   auto options = projection("block.header");
-  options.sort(bss::document{} << "height" << -1 << bss::finalize);
+  options.sort(bss::document{} << "block.header.height" << -1 << bss::finalize);
 
   const auto result = _blocks.find_one(std::move(query), options);
   if (!result) {
@@ -232,8 +232,8 @@ bool LedgerMongodb::get_block_by_previd(const messages::BlockID &previd,
   // There may be several blocks with the same previd in forks.
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto query = bss::document{} << "branch" << MAIN_BRANCH_NAME
-                               << "previousBlockHash" << to_bson(previd)
-                               << bss::finalize;
+                               << "block.header.previousBlockHash"
+                               << to_bson(previd) << bss::finalize;
 
   const auto result = _blocks.find_one(std::move(query), projection("block"));
 
@@ -288,6 +288,12 @@ bool LedgerMongodb::get_block(const messages::BlockHeight height,
 
 bool LedgerMongodb::insert_block(messages::TaggedBlock *tagged_block) {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
+  messages::TaggedBlock unused;
+  if (unsafe_get_block(tagged_block->block().header().id(), &unused)) {
+    // The block already exists
+    return false;
+  }
+
   const auto header = tagged_block->block().header();
   auto bson_header = messages::to_bson(header);
 
@@ -295,6 +301,7 @@ bool LedgerMongodb::insert_block(messages::TaggedBlock *tagged_block) {
   for (const auto &transaction : tagged_block->block().transactions()) {
     messages::TaggedTransaction tagged_transaction;
     *tagged_transaction.mutable_transaction() = transaction;
+    *tagged_transaction.mutable_block_id() = header.id();
     bson_transactions.push_back(messages::to_bson(tagged_transaction));
     if (tagged_block->branch() == messages::Branch::MAIN) {
       auto query = bss::document{}
@@ -309,9 +316,11 @@ bool LedgerMongodb::insert_block(messages::TaggedBlock *tagged_block) {
   inserted_block.set_branch(tagged_block->branch());
   tagged_block->mutable_block()->clear_transactions();
   auto bson_block = messages::to_bson(*tagged_block);
-  _blocks.insert_one(std::move(bson_block));
-  _transactions.insert_many(std::move(bson_transactions));
-  return true;
+  auto result = _blocks.insert_one(std::move(bson_block));
+  if (bson_transactions.size() > 0) {
+    _transactions.insert_many(std::move(bson_transactions));
+  }
+  return (bool)result;
 }
 
 bool LedgerMongodb::delete_block(const messages::Hash &id) {
@@ -320,16 +329,14 @@ bool LedgerMongodb::delete_block(const messages::Hash &id) {
                                             << messages::to_bson(id)
                                             << bss::finalize;
   auto result = _blocks.delete_one(std::move(delete_block_query));
-  if (result && result->deleted_count() > 0) {
+  bool did_delete = result && result->deleted_count() > 0;
+  if (did_delete) {
     auto delete_transaction_query =
         bss::document{} << "blockId" << messages::to_bson(id) << bss::finalize;
     auto res_transaction =
         _transactions.delete_many(std::move(delete_transaction_query));
   }
-  if (result) {
-    return true;
-  }
-  return false;
+  return did_delete;
 }
 
 bool LedgerMongodb::get_transaction(const messages::Hash &id,
@@ -365,7 +372,28 @@ bool LedgerMongodb::get_transaction(const messages::Hash &id,
 
 int LedgerMongodb::total_nb_transactions() {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
-  return 0;  // TODO this may be slow...
+  auto lookup = bss::document{} << "from"
+                                << "blocks"
+                                << "foreignField"
+                                << "block.header.id"
+                                << "localField"
+                                << "blockId"
+                                << "as"
+                                << "tagged_block" << bss::finalize;
+
+  auto match = bss::document{} << "tagged_block.branch"
+                               << "MAIN" << bss::finalize;
+
+  auto group = bss::document{} << "_id" << bsoncxx::types::b_null{} << "count"
+                               << bss::open_document << "$sum" << 1
+                               << bss::close_document << bss::finalize;
+
+  mongocxx::pipeline pipeline;
+  pipeline.lookup(lookup.view());
+  pipeline.match(match.view());
+  pipeline.group(group.view());
+  auto cursor = _transactions.aggregate(pipeline);
+  return (*cursor.begin())["count"].get_int32();
 }
 
 int LedgerMongodb::total_nb_blocks() {
@@ -436,8 +464,7 @@ bool LedgerMongodb::add_transaction(
   if (result) {
     return true;
   }
-
-  LOG_INFO << "Failed to delete forked block with id " << id;
+  LOG_INFO << "Failed to insert transaction " << tagged_transaction;
   return false;
 }
 
@@ -447,7 +474,13 @@ bool LedgerMongodb::delete_transaction(const messages::Hash &id) {
   auto query = bss::document{} << "transaction.id" << messages::to_bson(id)
                                << "blockId" << bsoncxx::types::b_null{}
                                << bss::finalize;
-  return (bool)_transactions.delete_one(std::move(query));
+  auto result = _transactions.delete_one(std::move(query));
+  bool did_delete = result && result->deleted_count();
+  if (did_delete) {
+    return true;
+  }
+  LOG_INFO << "Failed to delete transaction with id " << id;
+  return did_delete;
 }
 
 int LedgerMongodb::get_transaction_pool(messages::Block *block) {
