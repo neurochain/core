@@ -159,13 +159,13 @@ target_link_libraries(blockg
   Boost::program_options
   )
 
-add_executable(wallet
-  tooling/wallet.cpp
-  )
-target_link_libraries(wallet
-  core
-  Boost::program_options
-  )
+#add_executable(wallet
+#  tooling/wallet.cpp
+#  )
+#target_link_libraries(wallet
+#  core
+#  Boost::program_options
+#  )
 
 add_executable(transaction
   tooling/transaction.cpp

@@ -306,8 +306,6 @@ class Ledger {
 
     std::vector<messages::Address> unspent_transactions_ids;
     for (auto unspent_transaction : unspent_transactions) {
-      auto &unspent_transaction_id = unspent_transactions_ids.emplace_back();
-      unspent_transaction_id.CopyFrom(unspent_transaction.transaction_id());
     }
 
     // Set outputs

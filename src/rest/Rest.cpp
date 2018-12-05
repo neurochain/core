@@ -13,12 +13,10 @@ namespace rest {
 
 Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
            std::shared_ptr<crypto::Ecc> keys,
-           std::shared_ptr<consensus::Consensus> consensus,
            const messages::config::Rest &config)
     : _bot(bot),
       _ledger(ledger),
       _keys(keys),
-      _consensus(consensus),
       _config(config),
       _port(_config.port()),
       _static_path(_config.static_path()),

@@ -1,0 +1,12 @@
+syntax = "proto2";
+
+package neuro.messages;
+
+import "common.proto";
+import "messages.proto";
+
+extend Input {
+  optional Timestamp ts = 100;
+  optional NCCSDF amount = 101;
+}
+

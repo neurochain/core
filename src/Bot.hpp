@@ -3,7 +3,6 @@
 
 #include <memory>
 #include "Bot.hpp"
-#include "consensus/Consensus.hpp"
 #include "crypto/Ecc.hpp"
 #include "ledger/LedgerMongodb.hpp"
 #include "messages/Message.hpp"
@@ -43,7 +42,6 @@ class Bot {
   std::shared_ptr<crypto::Ecc> _keys;
   std::shared_ptr<ledger::Ledger> _ledger;
   std::shared_ptr<rest::Rest> _rest;
-  std::shared_ptr<consensus::Consensus> _consensus;
   std::unordered_set<int32_t> _request_ids;
   std::thread _io_context_thread;
 
