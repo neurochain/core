@@ -6,7 +6,11 @@
 namespace neuro {
 namespace crypto {
 
-EccPub::EccPub(const std::string &filepath) { load(filepath); }
+EccPub::EccPub(const std::string &filepath) {
+  if (!load(filepath)) {
+    throw std::runtime_error("Failed to load public key from file.");
+  }
+}
 
 EccPub::EccPub(const Buffer &pub_key) {
   if (!load(pub_key)) {
@@ -26,10 +30,13 @@ bool EccPub::save(const std::string &filepath) const {
 }
 
 bool EccPub::load(const std::string &filepath) {
-  CryptoPP::FileSource fs(filepath.c_str(), true);
-  _key.Load(fs);
-
-  return true;
+  std::ifstream key_file(filepath, std::ifstream::binary);
+  if (!key_file.is_open()) {
+    return false;
+  }
+  std::vector<uint8_t> tmp(std::istreambuf_iterator<char>(key_file), {});
+  Buffer buff(tmp.data(), tmp.size());
+  return load(buff);
 }
 
 bool EccPub::load(const Buffer &buffer) {

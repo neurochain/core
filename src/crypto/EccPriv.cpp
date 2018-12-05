@@ -18,7 +18,7 @@ EccPriv::EccPriv(std::shared_ptr<CryptoPP::AutoSeededRandomPool> prng,
                  const std::string &filepath)
     : _prng(prng) {
   if (!load(filepath)) {
-    throw std::runtime_error("Public key validation failed");
+    throw std::runtime_error("Failed to load private key from file.");
   }
 }
 
@@ -48,8 +48,15 @@ bool EccPriv::load(const std::string &filepath) {
   _params = CryptoPP::DL_GroupParameters_EC<CryptoPP::ECP>(
       CryptoPP::ASN1::secp256k1());
   _key.Initialize(*_prng, _params);
-  CryptoPP::FileSource fs(filepath.c_str(), true);
-  _key.Load(fs);
+  std::ifstream key_file(filepath, std::ifstream::binary);
+  if (!key_file.is_open()) {
+    return false;
+  }
+  std::vector<uint8_t> tmp(std::istreambuf_iterator<char>(key_file), {});
+  Buffer buff(tmp.data(), tmp.size());
+  if (!load(buff)) {
+    return false;
+  }
   return (_key.Validate(*_prng, 3));
 }
 
