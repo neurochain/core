@@ -13,20 +13,16 @@
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../testnet/data.0.testnet
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-set(integ_conf "integration_propagation0.json.in"
-               "integration_propagation1.json.in"
-               "integration_propagation2.json.in"
-               "integration_update0.json.in"
-               "integration_update1.json.in"
-               "integration_update2.json.in"
-               "integration_keepmax0.json.in"
-               "integration_keepmax1.json.in"
-               "integration_keepmax2.json.in")
-foreach(file ${integ_conf})
-  configure_file("configs/${file}" "${CMAKE_CURRENT_BINARY_DIR}/${file}" @ONLY)
-endforeach()
-
-set(files "key_integration0.priv"
+set(files "integration_propagation0.json"
+          "integration_propagation1.json"
+          "integration_propagation2.json"
+          "integration_update0.json"
+          "integration_update1.json"
+          "integration_update2.json"
+          "integration_keepmax0.json"
+          "integration_keepmax1.json"
+          "integration_keepmax2.json"
+          "key_integration0.priv"
           "key_integration0.pub"
           "key_integration1.priv"
           "key_integration1.pub"

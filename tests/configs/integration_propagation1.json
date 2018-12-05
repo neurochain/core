@@ -1,13 +1,13 @@
 {
-    "key_pub_path": "@CMAKE_CURRENT_BINARY_DIR@/key_integration1.pub",
-    "key_priv_path": "@CMAKE_CURRENT_BINARY_DIR@/key_integration1.priv",
+    "key_pub_path": "key_integration1.pub",
+    "key_priv_path": "key_integration1.priv",
     "logs": {
         "severity": "debug",
         "to_stdout": true
     },
     "networking": {
         "max_connections": 3,
-        "peers_update_time": 15,
+        "peers_update_time": 20,
         "tcp": {
             "port": 1338,
             "peers": [
@@ -24,8 +24,8 @@
     },
     "database": {
         "url": "mongodb://localhost:27017/neuro",
-        "db_name": "neuro_tests_max1338",
+        "db_name": "neuro_tests_propa1338",
         "block0_format": "PROTO",
-        "block0_path": "@CMAKE_CURRENT_BINARY_DIR@/data.0.testnet"
+        "block0_path": "data.0.testnet"
     }
 }

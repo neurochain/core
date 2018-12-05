@@ -1,6 +1,6 @@
 {
-    "key_pub_path": "@CMAKE_CURRENT_BINARY_DIR@/key_integration2.pub",
-    "key_priv_path": "@CMAKE_CURRENT_BINARY_DIR@/key_integration2.priv",
+    "key_pub_path": "key_integration2.pub",
+    "key_priv_path": "key_integration2.priv",
     "logs": {
         "severity": "debug",
         "to_stdout": true
@@ -26,6 +26,6 @@
         "url": "mongodb://localhost:27017/neuro",
         "db_name": "neuro_tests_propa1339",
         "block0_format": "PROTO",
-        "block0_path": "@CMAKE_CURRENT_BINARY_DIR@/data.0.testnet"
+        "block0_path": "data.0.testnet"
     }
 }
