@@ -106,7 +106,7 @@ class Ledger {
 
   virtual int total_nb_blocks() const = 0;
 
-  virtual int new_branch_id() const = 0;
+  virtual messages::BranchID new_branch_id() const = 0;
 
   // helpers
 

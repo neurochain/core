@@ -77,17 +77,24 @@ bool operator==(const messages::Peer &a, const messages::Peer &b) {
 }
 
 void hash_transaction(Transaction *transaction) {
+  // Fill the id which is a required field. This makes the transaction
+  // serializable.
   transaction->mutable_id()->set_type(messages::Hash::SHA256);
   transaction->mutable_id()->set_data("");
-  auto id = messages::Hasher(*transaction);
+
+  const auto id = messages::Hasher(*transaction);
   transaction->mutable_id()->CopyFrom(id);
 }
 
 void hash_block(Block *block) {
   auto header = block->mutable_header();
+
+  // Fill the id which is a required field. This makes the block
+  // serializable.
   header->mutable_id()->set_type(messages::Hash::SHA256);
   header->mutable_id()->set_data("");
-  auto id = messages::Hasher(*block);
+
+  const auto id = messages::Hasher(*block);
   header->mutable_id()->CopyFrom(id);
 }
 

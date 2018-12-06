@@ -19,6 +19,7 @@ using TransactionID = decltype(((Transaction *)nullptr)->id());
 using Packet = google::protobuf::Message;
 
 using Type = Body::BodyCase;
+using BranchID = uint32_t;
 
 Type get_type(const Body &body);
 

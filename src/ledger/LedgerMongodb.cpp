@@ -443,7 +443,7 @@ bool LedgerMongodb::for_each(const Filter &filter, Functor functor) const {
   return applied_functor;
 }
 
-int LedgerMongodb::new_branch_id() const {
+messages::BranchID LedgerMongodb::new_branch_id() const {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto query = bss::document{} << bss::finalize;
   mongocxx::options::find find_options;

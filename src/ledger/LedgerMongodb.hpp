@@ -92,7 +92,7 @@ class LedgerMongodb : public Ledger {
 
   bool for_each(const Filter &filter, Functor functor) const;
 
-  int new_branch_id() const;
+  messages::BranchID new_branch_id() const;
 
   bool add_transaction(const messages::TaggedTransaction &tagged_transaction);
 
