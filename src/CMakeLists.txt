@@ -40,7 +40,6 @@ add_library(core
   ./common/logger.hpp
   ./common/logger.cpp
   ./common/types.hpp
-  ./mongo/mongo.hpp
   ./networking/tcp/HeaderPattern.hpp
   ./networking/tcp/Tcp.hpp
   ./networking/tcp/Connection.cpp

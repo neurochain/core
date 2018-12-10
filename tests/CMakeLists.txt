@@ -118,7 +118,6 @@ target_link_libraries(LedgerMongodb
   )
 add_test(LedgerMongodb LedgerMongodb)
 
-
 add_executable(dbreset
     dbreset.cpp
 )

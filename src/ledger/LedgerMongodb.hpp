@@ -22,30 +22,28 @@ class LedgerMongodb : public Ledger {
   mutable mongocxx::database _db;
   mutable mongocxx::collection _blocks;
   mutable mongocxx::collection _transactions;
-  mutable mongocxx::collection _blocks_forks;
 
-  std::mutex _ledger_mutex;
+  mutable std::mutex _ledger_mutex;
 
-  mongocxx::options::find remove_OID();
+  mongocxx::options::find remove_OID() const;
 
-  bool get_block_header(const bsoncxx::document::view &block,
-                        messages::BlockHeader *header);
+  mongocxx::options::find projection(const std::string &field) const;
 
-  bool get_transactions_from_block(const bsoncxx::document::view &id,
-                                   messages::Block *block);
-
-  bool get_transactions_from_block(const messages::BlockID &id,
-                                   messages::Block *block);
+  mongocxx::options::find projection(const std::string &field0,
+                                     const std::string &field1) const;
 
   bool init_block0(const messages::config::Database &config);
 
-  bool get_block_unsafe(const messages::BlockID &id, messages::Block *block);
+  bool is_ancestor(const messages::TaggedBlock &ancestor,
+                   const messages::TaggedBlock &block) const;
 
-  bool get_block_unsafe(const messages::BlockHeight height,
-                        messages::Block *block);
+  bool is_main_branch(
+      const messages::TaggedTransaction &tagged_transaction) const;
 
-  bool get_block_header_unsafe(const messages::BlockID &id,
-                               messages::BlockHeader *header);
+  int fill_block_transactions(messages::Block *block) const;
+
+  bool unsafe_get_block(const messages::BlockID &id,
+                        messages::TaggedBlock *tagged_block) const;
 
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);
@@ -55,62 +53,52 @@ class LedgerMongodb : public Ledger {
 
   void remove_all();
 
-  messages::BlockHeight height();
+  messages::BlockHeight height() const;
 
   bool get_block_header(const messages::BlockID &id,
-                        messages::BlockHeader *header);
+                        messages::BlockHeader *header) const;
 
-  bool get_last_block_header(messages::BlockHeader *block_header);
+  bool get_last_block_header(messages::BlockHeader *block_header) const;
 
-  bool get_block(const messages::BlockID &id, messages::Block *block);
+  bool get_block(const messages::BlockID &id,
+                 messages::TaggedBlock *tagged_block) const;
+
+  bool get_block(const messages::BlockID &id, messages::Block *block) const;
 
   bool get_block_by_previd(const messages::BlockID &previd,
-                           messages::Block *block);
+                           messages::Block *block) const;
 
-  bool get_block(const messages::BlockHeight height, messages::Block *block);
+  bool get_blocks_by_previd(
+      const messages::BlockID &previd,
+      std::vector<messages::TaggedBlock> *tagged_blocks) const;
 
-  bool push_block(const messages::Block &block);
+  bool get_block(const messages::BlockHeight height,
+                 messages::Block *block) const;
+
+  bool insert_block(messages::TaggedBlock *tagged_block);
 
   bool delete_block(const messages::Hash &id);
 
   bool get_transaction(const messages::Hash &id,
-                       messages::Transaction *transaction);
+                       messages::Transaction *transaction) const;
 
   bool get_transaction(const messages::Hash &id,
                        messages::Transaction *transaction,
-                       messages::BlockHeight *blockheight);
-  bool add_transaction(const messages::Transaction &transaction);
+                       messages::BlockHeight *blockheight) const;
+
+  std::size_t total_nb_transactions() const;
+
+  std::size_t total_nb_blocks() const;
+
+  bool for_each(const Filter &filter, Functor functor) const;
+
+  messages::BranchID new_branch_id() const;
+
+  bool add_transaction(const messages::TaggedTransaction &tagged_transaction);
 
   bool delete_transaction(const messages::Hash &id);
 
-  int get_transaction_pool(messages::Block *block);
-
-  int total_nb_transactions();
-
-  int total_nb_blocks();
-
-  bool get_blocks(int start, int size, std::vector<messages::Block> &blocks);
-
-  bool for_each(const Filter &filter, Functor functor);
-
-  /**
-   * Functions for forks
-   */
-
-  bool fork_add_block(const messages::Block &block);
-
-  bool fork_delete_block(const messages::Hash &id);
-
-  bool fork_get_block(const messages::BlockID &id, messages::Block *block);
-
-  bool fork_get_block(const messages::BlockHeight height,
-                      messages::Block *block);
-
-  bool fork_get_block_by_previd(const messages::BlockID &previd,
-                                messages::Block *block);
-
-  void fork_for_each(Functor_block functor);
-  void fork_test();
+  std::size_t get_transaction_pool(messages::Block *block);
 };
 
 }  // namespace ledger

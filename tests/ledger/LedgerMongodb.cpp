@@ -19,7 +19,7 @@ class LedgerMongodb : public ::testing::Test {
   const std::string config_str =
       "{"
       "  \"url\": \"mongodb://mongo:27017\","
-      "  \"dbName\": \"faucet\","
+      "  \"dbName\": \"test_ledger\","
       "  \"block0Format\": \"PROTO\","
       "  \"block0Path\": \"./data.0.testnet\""
       "}";
@@ -28,25 +28,8 @@ class LedgerMongodb : public ::testing::Test {
   messages::config::Database _config;
   std::shared_ptr<::neuro::ledger::LedgerMongodb> ledger;
 
-  void create_empty_db(const messages::config::Database &config) {
-    // instance started in static in LedgerMongodb
-    mongocxx::uri uri(config.url());
-    mongocxx::client client(uri);
-    mongocxx::database db(client[config.db_name()]);
-    db.drop();
-  }
-
-  void create_first_blocks(const int nb) {
-    for (int i = 1; i < nb; ++i) {
-      messages::Block block;
-      tooling::genblock::genblock_from_last_db_block(block, ledger, 1, i);
-
-      ledger->push_block(block);
-    }
-  }
-
   LedgerMongodb() : _config(config_str) {
-    create_empty_db(_config);
+    tooling::genblock::create_empty_db(_config);
     ledger = std::make_shared<::neuro::ledger::LedgerMongodb>(_config);
   }
 
@@ -64,12 +47,12 @@ TEST_F(LedgerMongodb, load_block_0) {
 }
 
 TEST_F(LedgerMongodb, load_block_1_to_9) {
-  create_first_blocks(10);
+  tooling::genblock::append_blocks(9, ledger);
   ASSERT_EQ(9, ledger->height());
 }
 
 TEST_F(LedgerMongodb, header) {
-  create_first_blocks(2);
+  tooling::genblock::append_blocks(1, ledger);
   messages::Block block;
   messages::BlockHeader header;
   messages::BlockHeader last_header;
@@ -82,25 +65,20 @@ TEST_F(LedgerMongodb, header) {
 }
 
 TEST_F(LedgerMongodb, remove_all) {
-  create_first_blocks(10);
+  tooling::genblock::append_blocks(9, ledger);
   ledger->remove_all();
   ASSERT_EQ(0, ledger->height());
 }
 
 TEST_F(LedgerMongodb, get_block) {
   messages::Block block0, block0bis, block1, block7;
-  create_first_blocks(10);
+  tooling::genblock::append_blocks(9, ledger);
   ASSERT_EQ(10, ledger->total_nb_blocks());
 
   ledger->get_block(0, &block0);
   const auto id0 = block0.header().id();
   ASSERT_TRUE(ledger->get_block_by_previd(id0, &block1));
   ASSERT_TRUE(ledger->get_block(id0, &block0bis));
-  std::vector<messages::Block> blocks;
-  ledger->get_blocks(2, 8, blocks);
-  ledger->get_block(7, &block7);
-  ASSERT_EQ(block7, blocks[5]);
-  ASSERT_EQ(block0, block0bis);
 }
 
 TEST_F(LedgerMongodb, delete_block) {
@@ -119,8 +97,8 @@ TEST_F(LedgerMongodb, transactions) {
   messages::Block block0;
   ledger->get_block(0, &block0);
 
-  ASSERT_EQ(4, ledger->total_nb_transactions());
-  ASSERT_EQ(4, block0.transactions().size());
+  ASSERT_EQ(2, ledger->total_nb_transactions());
+  ASSERT_EQ(2, block0.transactions().size());
   const auto transaction0 = block0.transactions(0);
 
   messages::Transaction transaction0bis;
@@ -131,41 +109,34 @@ TEST_F(LedgerMongodb, transactions) {
   ASSERT_TRUE(
       ledger->get_transaction(transaction0.id(), &transaction0bis, &height));
   ASSERT_EQ(height, 0);
-  ledger->delete_transaction(transaction0bis.id());
-  ASSERT_FALSE(ledger->get_transaction(transaction0.id(), &transaction0bis, 0));
+  ASSERT_FALSE(ledger->delete_transaction(transaction0bis.id()));
 
-  ledger->add_transaction(transaction0);
-  ASSERT_TRUE(ledger->get_transaction(transaction0.id(), &transaction0bis));
-  ASSERT_EQ(transaction0, transaction0bis);
+  // Add a transaction to the transaction pool
+  messages::TaggedTransaction tagged_transaction;
+  *tagged_transaction.mutable_transaction() = transaction0;
+  ledger->add_transaction(tagged_transaction);
+  messages::Block block;
+  ledger->get_transaction_pool(&block);
+  ASSERT_EQ(block.transactions_size(), 1);
+  ASSERT_TRUE(ledger->delete_transaction(transaction0.id()));
+  block.Clear();
+  ledger->get_transaction_pool(&block);
+  ASSERT_EQ(block.transactions_size(), 0);
 }
 
-TEST_F(LedgerMongodb, push) {
+TEST_F(LedgerMongodb, insert) {
   messages::Block block, block_fake;
-  create_first_blocks(2);
+  tooling::genblock::append_blocks(1, ledger);
   ASSERT_TRUE(ledger->get_block(1, &block));
   ASSERT_TRUE(ledger->delete_block(block.header().id()));
   ASSERT_FALSE(ledger->delete_block(block.header().id()));
   ASSERT_FALSE(ledger->get_block(block.header().id(), &block_fake));
-  ASSERT_TRUE(ledger->push_block(block));
-  // TODO should not allow to insert twice the same block
-  // ASSERT_FALSE(ledger->push_block(block));
-}
-
-TEST_F(LedgerMongodb, forks) {
-  create_first_blocks(10);
-  messages::Block block0;
-  messages::Block block0fork;
-  ledger->get_block(0, &block0);
-  ASSERT_FALSE(ledger->fork_get_block(block0.header().id(), &block0fork));
-  ASSERT_TRUE(ledger->fork_add_block(block0));
-  ASSERT_TRUE(ledger->fork_get_block(block0.header().id(), &block0fork));
-  // TODO Should not be accepted since block exist in non fork collection
-
-  // TODO should not allow to insert twice the same block
-  // ASSERT_FALSE(ledger->fork_add_block(block5));
-
-  ASSERT_TRUE(ledger->fork_delete_block(block0.header().id()));
-  ASSERT_FALSE(ledger->fork_delete_block(block0.header().id()));
+  messages::TaggedBlock tagged_block;
+  tagged_block.set_branch(messages::Branch::MAIN);
+  tagged_block.add_branch_path(0);
+  *tagged_block.mutable_block() = block;
+  ASSERT_TRUE(ledger->insert_block(&tagged_block));
+  ASSERT_FALSE(ledger->insert_block(&tagged_block));
 }
 
 }  // namespace tests

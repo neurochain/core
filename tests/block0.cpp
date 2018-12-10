@@ -33,7 +33,7 @@ TEST(Blocks, Set_Find) {
   bool res = _ledger.get_block(0, &_block);
 
   ASSERT_EQ(true, res);
-  
+
   messages::Block block;
 
   res = _ledger.get_block_by_previd(_block.header().id(), &block);

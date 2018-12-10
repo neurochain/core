@@ -7,8 +7,8 @@
 #include <string>
 #include "common/types.hpp"
 #include "crypto/EccPriv.hpp"
+#include "ledger/mongo.hpp"
 #include "messages.pb.h"
-#include "mongo/mongo.hpp"
 
 namespace neuro {
 namespace messages {
@@ -19,6 +19,7 @@ using TransactionID = decltype(((Transaction *)nullptr)->id());
 using Packet = google::protobuf::Message;
 
 using Type = Body::BodyCase;
+using BranchID = uint32_t;
 
 Type get_type(const Body &body);
 
@@ -45,7 +46,8 @@ std::ostream &operator<<(
 bool operator==(const Packet &a, const Packet &b);
 bool operator==(const messages::Peer &a, const messages::Peer &b);
 
-void hash_transaction(Transaction *transaction);
+void set_transaction_hash(Transaction *transaction);
+void set_block_hash(Block *block);
 int32_t fill_header(messages::Header *header);
 int32_t fill_header_reply(const messages::Header &header_request,
                           messages::Header *header_reply);

@@ -10,7 +10,6 @@
 #include "config.pb.h"
 #include "messages/Message.hpp"
 #include "messages/config/Config.hpp"
-#include "mongo/mongo.hpp"
 #include "version.h"
 
 namespace neuro {
