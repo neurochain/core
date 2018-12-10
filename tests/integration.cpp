@@ -133,9 +133,6 @@ TEST(INTEGRATION, simple_interaction) {
         listener.handler_connection(header, body);
       });
 
-  std::this_thread::sleep_for(1s);
-  bot0->keep_max_connections();
-  bot1->keep_max_connections();
   std::this_thread::sleep_for(500ms);
 
   std::this_thread::sleep_for(3s);
@@ -166,13 +163,8 @@ TEST(INTEGRATION, neighbors_propagation) {
   messages::config::Config config2(config_path2);
   auto bot2 = std::make_shared<Bot>(config2);
 
-  std::this_thread::sleep_for(100ms);
-  bot0->keep_max_connections();
   std::this_thread::sleep_for(500ms);
-  bot1->keep_max_connections();
-  std::this_thread::sleep_for(500ms);
-  bot2->keep_max_connections();
-  std::this_thread::sleep_for(2500ms);
+
   auto peers_bot0 = bot0->connected_peers();
   auto peers_bot1 = bot1->connected_peers();
   auto peers_bot2 = bot2->connected_peers();
@@ -212,9 +204,8 @@ TEST(INTEGRATION, neighbors_update) {
   Path config_path2("integration_update2.json");
   messages::config::Config config2(config_path2);
   auto bot2 = std::make_shared<Bot>(config2);
-  std::this_thread::sleep_for(1s);
 
-  std::this_thread::sleep_for(15s);
+  std::this_thread::sleep_for(5s);
 
   auto peers_bot0 = bot0->connected_peers();
   auto peers_bot1 = bot1->connected_peers();
