@@ -56,12 +56,12 @@ TEST_F(LedgerMongodb, load_block_0) {
 }
 
 TEST_F(LedgerMongodb, load_block_1_to_9) {
-  tooling::genblock::create_first_blocks(10, ledger);
+  tooling::genblock::append_blocks(9, ledger);
   ASSERT_EQ(9, ledger->height());
 }
 
 TEST_F(LedgerMongodb, header) {
-  tooling::genblock::create_first_blocks(2, ledger);
+  tooling::genblock::append_blocks(1, ledger);
   messages::Block block;
   messages::BlockHeader header;
   messages::BlockHeader last_header;
@@ -74,14 +74,14 @@ TEST_F(LedgerMongodb, header) {
 }
 
 TEST_F(LedgerMongodb, remove_all) {
-  tooling::genblock::create_first_blocks(10, ledger);
+  tooling::genblock::append_blocks(9, ledger);
   ledger->remove_all();
   ASSERT_EQ(0, ledger->height());
 }
 
 TEST_F(LedgerMongodb, get_block) {
   messages::Block block0, block0bis, block1, block7;
-  tooling::genblock::create_first_blocks(10, ledger);
+  tooling::genblock::append_blocks(9, ledger);
   ASSERT_EQ(10, ledger->total_nb_blocks());
 
   ledger->get_block(0, &block0);
@@ -135,7 +135,7 @@ TEST_F(LedgerMongodb, transactions) {
 
 TEST_F(LedgerMongodb, insert_tagged_block) {
   messages::Block block, fake_block;
-  tooling::genblock::create_first_blocks(2, ledger);
+  tooling::genblock::append_blocks(2, ledger);
   ASSERT_TRUE(ledger->get_block(1, &block));
   ASSERT_TRUE(ledger->delete_block(block.header().id()));
   ASSERT_FALSE(ledger->delete_block(block.header().id()));

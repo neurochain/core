@@ -412,7 +412,7 @@ bool LedgerMongodb::get_transaction(const messages::Hash &id,
   return false;
 }
 
-int LedgerMongodb::total_nb_transactions() const {
+std::size_t LedgerMongodb::total_nb_transactions() const {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto lookup = bss::document{} << "from"
                                 << "blocks"
@@ -438,7 +438,7 @@ int LedgerMongodb::total_nb_transactions() const {
   return (*cursor.begin())["count"].get_int32();
 }
 
-int LedgerMongodb::total_nb_blocks() const {
+std::size_t LedgerMongodb::total_nb_blocks() const {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto query = bss::document{} << "branch" << MAIN_BRANCH_NAME << bss::finalize;
   return _blocks.count(std::move(query));
@@ -524,7 +524,7 @@ bool LedgerMongodb::delete_transaction(const messages::Hash &id) {
   return did_delete;
 }
 
-int LedgerMongodb::get_transaction_pool(messages::Block *block) {
+std::size_t LedgerMongodb::get_transaction_pool(messages::Block *block) {
   // This method put the whole transaction pool in a block but does not cleanup
   // the transaction pool.
   // TODO add a way to limit the number of transactions you want to include

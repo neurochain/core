@@ -85,7 +85,7 @@ bool operator==(const messages::Peer &a, const messages::Peer &b) {
   return a.endpoint() == b.endpoint() && a.port() == b.port();
 }
 
-void hash_transaction(Transaction *transaction) {
+void set_transaction_hash(Transaction *transaction) {
   // Fill the id which is a required field. This makes the transaction
   // serializable.
   transaction->mutable_id()->set_type(messages::Hash::SHA256);
@@ -95,7 +95,7 @@ void hash_transaction(Transaction *transaction) {
   transaction->mutable_id()->CopyFrom(id);
 }
 
-void hash_block(Block *block) {
+void set_block_hash(Block *block) {
   auto header = block->mutable_header();
 
   // Fill the id which is a required field. This makes the block

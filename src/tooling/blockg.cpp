@@ -43,7 +43,7 @@ void coinbase(const crypto::EccPub &key_pub, const messages::NCCSDF &ncc,
   output->set_data(datavalue);
   transaction.mutable_fees()->set_value(0);
 
-  messages::hash_transaction(&transaction);
+  messages::set_transaction_hash(&transaction);
 }
 
 void block0(uint32_t bots, const std::string &pathdir, messages::NCCSDF &nccsdf,

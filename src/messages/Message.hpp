@@ -49,8 +49,8 @@ std::ostream &operator<<(
 bool operator==(const Packet &a, const Packet &b);
 bool operator==(const messages::Peer &a, const messages::Peer &b);
 
-void hash_transaction(Transaction *transaction);
-void hash_block(Block *block);
+void set_transaction_hash(Transaction *transaction);
+void set_block_hash(Block *block);
 int32_t fill_header(messages::Header *header);
 int32_t fill_header_reply(const messages::Header &header_request,
                           messages::Header *header_reply);
