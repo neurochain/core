@@ -135,8 +135,6 @@ TEST(INTEGRATION, simple_interaction) {
 
   std::this_thread::sleep_for(500ms);
 
-  std::this_thread::sleep_for(3s);
-
   LOG_DEBUG << "listener.received_connection() = "
             << listener.received_connection();
 
@@ -150,6 +148,32 @@ TEST(INTEGRATION, simple_interaction) {
   ASSERT_GT(listener.received_connection(), 0);
   ASSERT_GT(listener.received_world(), 0);
   ASSERT_EQ(listener.received_deconnection(), 0);
+
+  auto peers_bot0 = bot0->connected_peers();
+  auto peers_bot1 = bot1->connected_peers();
+  auto peers_bot2 = bot2->connected_peers();
+
+  ASSERT_EQ(peers_bot0.size(), peers_bot1.size());
+  ASSERT_EQ(peers_bot1.size(), peers_bot2.size());
+  ASSERT_EQ(peers_bot2.size(), 2);
+
+  ASSERT_EQ(peers_bot0[0].endpoint(), "127.0.0.1");
+  ASSERT_EQ(peers_bot0[1].endpoint(), "127.0.0.1");
+  ASSERT_TRUE(peers_bot0[0].port() == 1338 || peers_bot0[0].port() == 1339);
+  ASSERT_TRUE(peers_bot0[1].port() == 1338 || peers_bot0[1].port() == 1339);
+  ASSERT_NE(peers_bot0[0].port(), peers_bot0[1].port());
+
+  ASSERT_EQ(peers_bot1[0].endpoint(), "127.0.0.1");
+  ASSERT_EQ(peers_bot1[1].endpoint(), "127.0.0.1");
+  ASSERT_TRUE(peers_bot1[0].port() == 1337 || peers_bot1[0].port() == 1339);
+  ASSERT_TRUE(peers_bot1[1].port() == 1337 || peers_bot1[1].port() == 1339);
+  ASSERT_NE(peers_bot1[0].port(), peers_bot1[1].port());
+
+  ASSERT_EQ(peers_bot2[0].endpoint(), "127.0.0.1");
+  ASSERT_EQ(peers_bot2[1].endpoint(), "127.0.0.1");
+  ASSERT_TRUE(peers_bot2[0].port() == 1337 || peers_bot2[0].port() == 1338);
+  ASSERT_TRUE(peers_bot2[1].port() == 1337 || peers_bot2[1].port() == 1338);
+  ASSERT_NE(peers_bot2[0].port(), peers_bot2[1].port());
 }
 
 TEST(INTEGRATION, neighbors_propagation) {
@@ -160,6 +184,87 @@ TEST(INTEGRATION, neighbors_propagation) {
   messages::config::Config config1(config_path1);
   auto bot1 = std::make_shared<Bot>(config1);
   Path config_path2("integration_propagation2.json");
+  messages::config::Config config2(config_path2);
+  auto bot2 = std::make_shared<Bot>(config2);
+
+  std::this_thread::sleep_for(500ms);
+
+  auto peers_bot0 = bot0->connected_peers();
+  auto peers_bot1 = bot1->connected_peers();
+  auto peers_bot2 = bot2->connected_peers();
+
+  ASSERT_EQ(peers_bot0.size(), peers_bot1.size());
+  ASSERT_EQ(peers_bot1.size(), peers_bot2.size());
+  ASSERT_EQ(peers_bot2.size(), 2);
+
+  ASSERT_EQ(peers_bot0[0].endpoint(), "127.0.0.1");
+  ASSERT_EQ(peers_bot0[1].endpoint(), "127.0.0.1");
+  ASSERT_TRUE(peers_bot0[0].port() == 1338 || peers_bot0[0].port() == 1339);
+  ASSERT_TRUE(peers_bot0[1].port() == 1338 || peers_bot0[1].port() == 1339);
+  ASSERT_NE(peers_bot0[0].port(), peers_bot0[1].port());
+
+  ASSERT_EQ(peers_bot1[0].endpoint(), "127.0.0.1");
+  ASSERT_EQ(peers_bot1[1].endpoint(), "127.0.0.1");
+  ASSERT_TRUE(peers_bot1[0].port() == 1337 || peers_bot1[0].port() == 1339);
+  ASSERT_TRUE(peers_bot1[1].port() == 1337 || peers_bot1[1].port() == 1339);
+  ASSERT_NE(peers_bot1[0].port(), peers_bot1[1].port());
+
+  ASSERT_EQ(peers_bot2[0].endpoint(), "127.0.0.1");
+  ASSERT_EQ(peers_bot2[1].endpoint(), "127.0.0.1");
+  ASSERT_TRUE(peers_bot2[0].port() == 1337 || peers_bot2[0].port() == 1338);
+  ASSERT_TRUE(peers_bot2[1].port() == 1337 || peers_bot2[1].port() == 1338);
+  ASSERT_NE(peers_bot2[0].port(), peers_bot2[1].port());
+}
+
+TEST(INTEGRATION, neighbors_connections) {
+  Path config_path0("bot0.json");
+  messages::config::Config config0(config_path0);
+  auto bot0 = std::make_shared<Bot>(config0);
+  Path config_path1("bot1.json");
+  messages::config::Config config1(config_path1);
+  auto bot1 = std::make_shared<Bot>(config1);
+  Path config_path2("bot2.json");
+  messages::config::Config config2(config_path2);
+  auto bot2 = std::make_shared<Bot>(config2);
+
+  std::this_thread::sleep_for(500ms);
+
+  auto peers_bot0 = bot0->connected_peers();
+  auto peers_bot1 = bot1->connected_peers();
+  auto peers_bot2 = bot2->connected_peers();
+
+  ASSERT_EQ(peers_bot0.size(), peers_bot1.size());
+  ASSERT_EQ(peers_bot1.size(), peers_bot2.size());
+  ASSERT_EQ(peers_bot2.size(), 2);
+
+  ASSERT_EQ(peers_bot0[0].endpoint(), "127.0.0.1");
+  ASSERT_EQ(peers_bot0[1].endpoint(), "127.0.0.1");
+  ASSERT_TRUE(peers_bot0[0].port() == 1338 || peers_bot0[0].port() == 1339);
+  ASSERT_TRUE(peers_bot0[1].port() == 1338 || peers_bot0[1].port() == 1339);
+  ASSERT_NE(peers_bot0[0].port(), peers_bot0[1].port());
+
+  ASSERT_EQ(peers_bot1[0].endpoint(), "127.0.0.1");
+  ASSERT_EQ(peers_bot1[1].endpoint(), "127.0.0.1");
+  ASSERT_TRUE(peers_bot1[0].port() == 1337 || peers_bot1[0].port() == 1339);
+  ASSERT_TRUE(peers_bot1[1].port() == 1337 || peers_bot1[1].port() == 1339);
+  ASSERT_NE(peers_bot1[0].port(), peers_bot1[1].port());
+
+  ASSERT_EQ(peers_bot2[0].endpoint(), "127.0.0.1");
+  ASSERT_EQ(peers_bot2[1].endpoint(), "127.0.0.1");
+  ASSERT_TRUE(peers_bot2[0].port() == 1337 || peers_bot2[0].port() == 1338);
+  ASSERT_TRUE(peers_bot2[1].port() == 1337 || peers_bot2[1].port() == 1338);
+  ASSERT_NE(peers_bot2[0].port(), peers_bot2[1].port());
+}
+
+TEST(INTEGRATION, neighbors_connections_with_delays) {
+  Path config_path0("bot0.json");
+  messages::config::Config config0(config_path0);
+  auto bot0 = std::make_shared<Bot>(config0);
+  std::this_thread::sleep_for(3s);
+  Path config_path1("bot1.json");
+  messages::config::Config config1(config_path1);
+  auto bot1 = std::make_shared<Bot>(config1);
+  Path config_path2("bot2.json");
   messages::config::Config config2(config_path2);
   auto bot2 = std::make_shared<Bot>(config2);
 
