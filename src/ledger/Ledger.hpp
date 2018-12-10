@@ -98,13 +98,13 @@ class Ledger {
   virtual bool add_transaction(
       const messages::TaggedTransaction &tagged_transaction) = 0;
   virtual bool delete_transaction(const messages::Hash &id) = 0;
-  virtual int get_transaction_pool(messages::Block *block) = 0;
+  virtual std::size_t get_transaction_pool(messages::Block *block) = 0;
 
   // virtual bool get_blocks(int start, int size,
   // std::vector<messages::Block> &blocks) = 0;
-  virtual int total_nb_transactions() const = 0;
+  virtual std::size_t total_nb_transactions() const = 0;
 
-  virtual int total_nb_blocks() const = 0;
+  virtual std::size_t total_nb_blocks() const = 0;
 
   virtual messages::BranchID new_branch_id() const = 0;
 
@@ -167,7 +167,8 @@ class Ledger {
     return match;
   }
 
-  std::vector<messages::Block> get_last_blocks(const uint32_t nb_blocks) const {
+  std::vector<messages::Block> get_last_blocks(
+      const std::size_t nb_blocks) const {
     auto last_height = height();
     messages::Block block;
     get_block(last_height, &block);
@@ -294,7 +295,7 @@ class Ledger {
     crypto::sign(keys, &transaction);
 
     // Hash the transaction
-    messages::hash_transaction(&transaction);
+    messages::set_transaction_hash(&transaction);
 
     return transaction;
   }

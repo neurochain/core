@@ -86,9 +86,9 @@ class LedgerMongodb : public Ledger {
                        messages::Transaction *transaction,
                        messages::BlockHeight *blockheight) const;
 
-  int total_nb_transactions() const;
+  std::size_t total_nb_transactions() const;
 
-  int total_nb_blocks() const;
+  std::size_t total_nb_blocks() const;
 
   bool for_each(const Filter &filter, Functor functor) const;
 
@@ -98,7 +98,7 @@ class LedgerMongodb : public Ledger {
 
   bool delete_transaction(const messages::Hash &id);
 
-  int get_transaction_pool(messages::Block *block);
+  std::size_t get_transaction_pool(messages::Block *block);
 };
 
 }  // namespace ledger

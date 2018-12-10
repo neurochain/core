@@ -82,10 +82,10 @@ bool genblock_from_block(
     output_revevied->mutable_value()->set_value(total_ncc);
 
     new_trans->mutable_fees()->set_value(0);
-    messages::hash_transaction(new_trans);
+    messages::set_transaction_hash(new_trans);
   }
 
-  messages::hash_block(&block);
+  messages::set_block_hash(&block);
   return true;
 }
 
@@ -112,12 +112,12 @@ bool genblock_from_last_db_block(
                              max_trx, max_trail);
 }
 
-void create_first_blocks(const int nb, std::shared_ptr<ledger::Ledger> ledger) {
+void append_blocks(const int nb, std::shared_ptr<ledger::Ledger> ledger) {
   messages::Block last_block;
   ledger->get_block(ledger->height(), &last_block);
-  for (int i = 1; i < nb; ++i) {
+  for (int i = 0; i < nb; ++i) {
     messages::Block block;
-    genblock_from_last_db_block(block, ledger, 1, i);
+    genblock_from_last_db_block(block, ledger, 1, i + 1);
     messages::TaggedBlock tagged_block;
     tagged_block.set_branch(messages::Branch::MAIN);
     tagged_block.add_branch_path(0);
@@ -126,11 +126,7 @@ void create_first_blocks(const int nb, std::shared_ptr<ledger::Ledger> ledger) {
   }
 }
 
-void create_more_blocks(const int nb, std::shared_ptr<ledger::Ledger> ledger) {
-  create_first_blocks(nb + 1, ledger);
-}
-
-void create_fork_blocks(const int nb, std::shared_ptr<ledger::Ledger> ledger) {
+void append_fork_blocks(const int nb, std::shared_ptr<ledger::Ledger> ledger) {
   messages::Block last_block, block;
   ledger->get_block(ledger->height(), &last_block);
   for (int i = 0; i < nb; ++i) {
