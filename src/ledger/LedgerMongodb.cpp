@@ -7,6 +7,8 @@ namespace ledger {
 
 const std::string MAIN_BRANCH_NAME =
     messages::Branch_Name(messages::Branch::MAIN);
+const std::string FORK_BRANCH_NAME =
+    messages::Branch_Name(messages::Branch::FORK);
 
 mongocxx::instance LedgerMongodb::_instance{};
 
@@ -88,12 +90,11 @@ bool LedgerMongodb::init_block0(const messages::config::Database &config) {
                                        << bss::finalize);
   _blocks.create_index(bss::document{} << "block.header.height" << 1
                                        << bss::finalize);
-  _blocks.create_index(bss::document{} << "block.header.score" << 1
-                                       << bss::finalize);
   _blocks.create_index(bss::document{} << "block.header.previousBlockHash" << 1
                                        << bss::finalize);
   _blocks.create_index(bss::document{} << "branch_path.0" << 1
                                        << bss::finalize);
+  _blocks.create_index(bss::document{} << "block.score" << 1 << bss::finalize);
   _transactions.create_index(bss::document{} << "transaction.id" << 1
                                              << bss::finalize);
   _transactions.create_index(bss::document{} << "blockId" << 1
@@ -194,8 +195,9 @@ int LedgerMongodb::fill_block_transactions(messages::Block *block) const {
   return num_transactions;
 }
 
-bool LedgerMongodb::unsafe_get_block(
-    const messages::BlockID &id, messages::TaggedBlock *tagged_block) const {
+bool LedgerMongodb::unsafe_get_block(const messages::BlockID &id,
+                                     messages::TaggedBlock *tagged_block,
+                                     bool include_transactions) const {
   auto query = bss::document{} << "block.header.id" << to_bson(id)
                                << bss::finalize;
   auto result = _blocks.find_one(std::move(query), remove_OID());
@@ -203,7 +205,9 @@ bool LedgerMongodb::unsafe_get_block(
     return false;
   }
   messages::from_bson(result->view(), tagged_block);
-  fill_block_transactions(tagged_block->mutable_block());
+  if (include_transactions) {
+    fill_block_transactions(tagged_block->mutable_block());
+  }
   return true;
 }
 
@@ -247,12 +251,12 @@ bool LedgerMongodb::get_block_by_previd(const messages::BlockID &previd,
   return true;
 }
 
-bool LedgerMongodb::get_blocks_by_previd(
+bool LedgerMongodb::unsafe_get_blocks_by_previd(
     const messages::BlockID &previd,
-    std::vector<messages::TaggedBlock> *tagged_blocks) const {
-  std::lock_guard<std::mutex> lock(_ledger_mutex);
-  auto query = bss::document{} << "previousBlockHash" << to_bson(previd)
-                               << bss::finalize;
+    std::vector<messages::TaggedBlock> *tagged_blocks,
+    bool include_transactions) const {
+  auto query = bss::document{} << "block.header.previousBlockHash"
+                               << to_bson(previd) << bss::finalize;
 
   auto bson_blocks = _blocks.find(std::move(query), remove_OID());
 
@@ -261,34 +265,67 @@ bool LedgerMongodb::get_blocks_by_previd(
   }
 
   for (const auto &bson_block : bson_blocks) {
-    auto tagged_block = tagged_blocks->emplace_back();
+    messages::TaggedBlock tagged_block;
+    // auto tagged_block = tagged_blocks->emplace_back();
+    // TODO this crashed and I don't know why
     messages::from_bson(bson_block, &tagged_block);
-    fill_block_transactions(tagged_block.mutable_block());
+    tagged_blocks->push_back(tagged_block);
+    if (include_transactions) {
+      fill_block_transactions(tagged_block.mutable_block());
+    }
   }
 
   return true;
 }
 
+bool LedgerMongodb::get_blocks_by_previd(
+    const messages::BlockID &previd,
+    std::vector<messages::TaggedBlock> *tagged_blocks,
+    bool include_transactions) const {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  return unsafe_get_blocks_by_previd(previd, tagged_blocks,
+                                     include_transactions);
+}
+
 bool LedgerMongodb::get_block(const messages::BlockHeight height,
-                              messages::Block *block) const {
+                              messages::Block *block,
+                              bool include_transactions) const {
   auto query = bss::document{} << "branch" << MAIN_BRANCH_NAME
                                << "block.header.height" << height
                                << bss::finalize;
 
-  // auto query = bss::document{} << "block.header.height" << height
-  //<< bss::finalize;
   const auto result = _blocks.find_one(std::move(query), projection("block"));
   if (!result) {
     return false;
   }
 
   messages::from_bson(result->view()["block"].get_document(), block);
-  fill_block_transactions(block);
+  if (include_transactions) {
+    fill_block_transactions(block);
+  }
   return true;
 }
 
-bool LedgerMongodb::insert_block(messages::TaggedBlock *tagged_block) {
-  std::lock_guard<std::mutex> lock(_ledger_mutex);
+bool LedgerMongodb::get_block(const messages::BlockHeight height,
+                              messages::TaggedBlock *tagged_block,
+                              bool include_transactions) const {
+  auto query = bss::document{} << "branch" << MAIN_BRANCH_NAME
+                               << "block.header.height" << height
+                               << bss::finalize;
+
+  const auto result = _blocks.find_one(std::move(query), remove_OID());
+  if (!result) {
+    return false;
+  }
+
+  messages::from_bson(result->view(), tagged_block);
+  if (include_transactions) {
+    fill_block_transactions(tagged_block->mutable_block());
+  }
+  return true;
+}
+
+bool LedgerMongodb::unsafe_insert_block(messages::TaggedBlock *tagged_block) {
   messages::TaggedBlock unused;
   if (unsafe_get_block(tagged_block->block().header().id(), &unused)) {
     // The block already exists
@@ -311,17 +348,21 @@ bool LedgerMongodb::insert_block(messages::TaggedBlock *tagged_block) {
       _transactions.delete_one(std::move(query));
     }
   }
-  messages::TaggedBlock inserted_block;
-  *inserted_block.mutable_block()->mutable_header() =
-      tagged_block->block().header();
-  inserted_block.set_branch(tagged_block->branch());
   tagged_block->mutable_block()->clear_transactions();
   auto bson_block = messages::to_bson(*tagged_block);
   auto result = _blocks.insert_one(std::move(bson_block));
-  if (bson_transactions.size() > 0) {
-    _transactions.insert_many(std::move(bson_transactions));
+  if (!result) {
+    return false;
   }
-  return (bool)result;
+  if (bson_transactions.size() > 0) {
+    return (bool)_transactions.insert_many(std::move(bson_transactions));
+  }
+  return true;
+}
+
+bool LedgerMongodb::insert_block(messages::TaggedBlock *tagged_block) {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  return unsafe_insert_block(tagged_block);
 }
 
 bool LedgerMongodb::delete_block(const messages::Hash &id) {
@@ -444,11 +485,10 @@ bool LedgerMongodb::for_each(const Filter &filter, Functor functor) const {
 }
 
 messages::BranchID LedgerMongodb::new_branch_id() const {
-  std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto query = bss::document{} << bss::finalize;
   mongocxx::options::find find_options;
-  auto projection_doc = bss::document{} << "_id" << 0 << "branch_path"
-                                        << bss::document{} << "$slice" << 1
+
+  auto projection_doc = bss::document{} << "_id" << 0 << "branch_path" << 1
                                         << bss::finalize;
   find_options.projection(std::move(projection_doc));
   find_options.sort(bss::document{} << "branch_path.0" << -1 << bss::finalize);
@@ -504,6 +544,136 @@ int LedgerMongodb::get_transaction_pool(messages::Block *block) {
   }
 
   return num_transactions;
+}
+
+bool LedgerMongodb::insert_block(messages::Block *block) {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  messages::TaggedBlock tagged_block;
+  tagged_block.mutable_block()->CopyFrom(*block);
+  tagged_block.set_branch(messages::Branch::DETACHED);
+  return unsafe_insert_block(&tagged_block) &&
+         set_branch_path(tagged_block.block().header());
+}
+
+bool LedgerMongodb::set_branch_path(
+    const messages::BlockHeader &block_header,
+    const std::vector<messages::BranchID> &branch_path) {
+  // Set the branch path of the given block
+  auto filter = bss::document{} << "block.header.id"
+                                << to_bson(block_header.id()) << bss::finalize;
+  auto update = bss::document{} << "$set" << bss::open_document << "branch_path"
+                                << messages::to_bson(branch_path) << "branch"
+                                << FORK_BRANCH_NAME << bss::close_document
+                                << bss::finalize;
+  auto update_result = _blocks.update_one(std::move(filter), std::move(update));
+  if (!(update_result && update_result->modified_count() > 0)) {
+    return false;
+  }
+
+  // Set the branch path of the children
+  std::vector<messages::TaggedBlock> tagged_blocks;
+  unsafe_get_blocks_by_previd(block_header.id(), &tagged_blocks, false);
+  for (uint32_t i = 0; i < tagged_blocks.size(); i++) {
+    const auto tagged_block = tagged_blocks.at(i);
+    assert(tagged_block.branch_path_size() == 0);
+    assert(tagged_block.branch() == messages::Branch::DETACHED);
+    if (i == 0) {
+      if (!set_branch_path(tagged_block.block().header(), branch_path)) {
+        return false;
+      }
+    } else {
+      // If there are several children there is a fork which needs a new branch
+      // ID
+      std::vector<uint32_t> new_branch_path{branch_path};
+      new_branch_path.insert(new_branch_path.begin(), new_branch_id());
+      if (!set_branch_path(tagged_block.block().header(), new_branch_path)) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+bool LedgerMongodb::set_branch_path(const messages::BlockHeader &block_header) {
+  // Set the branch path of a block depending on the branch path of its parent
+  messages::TaggedBlock parent;
+  unsafe_get_block(block_header.previous_block_hash(), &parent, false);
+
+  if (parent.branch_path().size() == 0) {
+    // If the parent does not have a branch path it is a detached block and
+    // there is nothing to do
+    return true;
+  }
+
+  std::vector<messages::BranchID> branch_path;
+  for (const auto &branch_id : parent.branch_path()) {
+    branch_path.push_back(branch_id);
+  }
+
+  std::vector<messages::TaggedBlock> children;
+  unsafe_get_blocks_by_previd(block_header.previous_block_hash(), &children,
+                              false);
+
+  if (children.size() > 1) {
+    // If our parent has more than one child it means the current block is a
+    // fork and needs a new branch ID
+    branch_path.insert(branch_path.begin(), new_branch_id());
+  }
+  return set_branch_path(block_header, branch_path);
+};
+
+bool LedgerMongodb::get_unscored_forks(
+    std::vector<messages::TaggedBlock> *tagged_blocks,
+    bool include_transactions) const {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  auto query = bss::document{} << "branch" << FORK_BRANCH_NAME << "score"
+                               << bsoncxx::types::b_null{} << bss::finalize;
+  auto result = _blocks.find(std::move(query), remove_OID());
+  for (const auto &bson_block : result) {
+    auto tagged_block = tagged_blocks->emplace_back();
+    from_bson(bson_block, &tagged_block);
+    if (include_transactions) {
+      fill_block_transactions(tagged_block.mutable_block());
+    }
+  }
+  return true;
+}
+
+bool LedgerMongodb::set_block_score(const messages::Hash &id,
+                                    messages::BlockScore score) {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  auto filter = bss::document{} << "block.header.id" << to_bson(id)
+                                << bss::finalize;
+  auto update = bss::document{} << "$set" << bss::open_document << "score"
+                                << score << bss::close_document
+                                << bss::finalize;
+  auto update_result = _blocks.update_one(std::move(filter), std::move(update));
+  if (!(update_result && update_result->modified_count() > 0)) {
+    return false;
+  }
+  return true;
+}
+
+bool LedgerMongodb::update_main_branch(messages::TaggedBlock *main_branch_tip) {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  auto query = bss::document{} << bss::finalize;
+  auto options = remove_OID();
+  options.sort(bss::document{} << "score" << -1 << bss::finalize);
+  auto bson_block = _blocks.find_one(std::move(query), options);
+  if (!bson_block) {
+    return false;
+  }
+  messages::TaggedBlock tagged_block;
+  messages::from_bson(bson_block->view(), &tagged_block);
+
+  // So now I have the new tip
+  // I need to make all the previous blocks be in the main branch
+  //
+
+  assert(tagged_block.branch() != messages::Branch::DETACHED);
+  if (tagged_block.branch() == messages::Branch::FORK) {
+  }
+  return true;
 }
 
 }  // namespace ledger

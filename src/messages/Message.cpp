@@ -55,6 +55,15 @@ bsoncxx::document::value to_bson(const Packet &packet) {
   return bsoncxx::from_json(json);
 }
 
+bsoncxx::builder::basic::array to_bson(
+    const std::vector<messages::BranchID> branch_path) {
+  auto result = bsoncxx::builder::basic::array{};
+  for (const auto &branch_id : branch_path) {
+    result.append((int32_t)branch_id);
+  }
+  return result;
+}
+
 std::ostream &operator<<(std::ostream &os, const Packet &packet) {
   std::string buff;
   to_json(packet, &buff);

@@ -23,10 +23,9 @@ namespace tooling {
 namespace genblock {
 
 bool genblock_from_block(
-    messages::Block &block, messages::Block &last_block, const uint64_t seed,
-    int32_t height,
-    std::optional<neuro::messages::KeyPub> author = std::nullopt,
-    const int max_trx = 20, const int max_trail = 5) {
+    messages::Block *block, const messages::Block &last_block, int32_t height,
+    const uint64_t seed = 1,
+    std::optional<neuro::messages::KeyPub> author = std::nullopt) {
   /*uint32_t height = last_height;
   if (height == 0) {
     height = ledger->height();
@@ -36,7 +35,7 @@ bool genblock_from_block(
     return false;
   }*/
 
-  neuro::messages::BlockHeader *header = block.mutable_header();
+  neuro::messages::BlockHeader *header = block->mutable_header();
 
   if (author) {
     header->mutable_author()->CopyFrom(*author);
@@ -65,7 +64,7 @@ bool genblock_from_block(
             .value()
             .value();  // std::atol(sender.outputs(num_output).value().value().c_str());
 
-    neuro::messages::Transaction *new_trans = block.add_transactions();
+    neuro::messages::Transaction *new_trans = block->add_transactions();
 
     // Input from sender
     neuro::messages::Input *input = new_trans->add_inputs();
@@ -85,16 +84,15 @@ bool genblock_from_block(
     messages::hash_transaction(new_trans);
   }
 
-  messages::hash_block(&block);
+  messages::hash_block(block);
   return true;
 }
 
 bool genblock_from_last_db_block(
-    messages::Block &block, std::shared_ptr<ledger::Ledger> ledger,
+    messages::Block *block, std::shared_ptr<ledger::Ledger> ledger,
     const uint64_t seed, const int32_t new_height,
     std::optional<neuro::messages::KeyPub> author = std::nullopt,
-    const int32_t last_height = 0, const int max_trx = 20,
-    const int max_trail = 5) {
+    const int32_t last_height = 0) {
   int32_t height = last_height;
   if (height == 0) {
     height = ledger->height();
@@ -108,8 +106,7 @@ bool genblock_from_last_db_block(
                               std::to_string(last_block.header().height())});
   }
 
-  return genblock_from_block(block, last_block, seed, new_height, author,
-                             max_trx, max_trail);
+  return genblock_from_block(block, last_block, new_height, seed, author);
 }
 
 void create_first_blocks(const int nb, std::shared_ptr<ledger::Ledger> ledger) {
@@ -117,7 +114,7 @@ void create_first_blocks(const int nb, std::shared_ptr<ledger::Ledger> ledger) {
   ledger->get_block(ledger->height(), &last_block);
   for (int i = 1; i < nb; ++i) {
     messages::Block block;
-    genblock_from_last_db_block(block, ledger, 1, i);
+    genblock_from_last_db_block(&block, ledger, 1, i);
     messages::TaggedBlock tagged_block;
     tagged_block.set_branch(messages::Branch::MAIN);
     tagged_block.add_branch_path(0);
@@ -134,7 +131,7 @@ void create_fork_blocks(const int nb, std::shared_ptr<ledger::Ledger> ledger) {
   messages::Block last_block, block;
   ledger->get_block(ledger->height(), &last_block);
   for (int i = 0; i < nb; ++i) {
-    genblock_from_block(block, last_block, 1, last_block.header().height() + 1);
+    genblock_from_block(&block, last_block, last_block.header().height() + 1);
     messages::TaggedBlock tagged_block;
     tagged_block.set_branch(messages::Branch::FORK);
     tagged_block.add_branch_path(1);

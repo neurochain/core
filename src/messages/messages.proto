@@ -91,6 +91,7 @@ message TaggedBlock {
   required Block block = 1;
   required Branch branch = 2;
   repeated uint32 branch_path = 3;
+  optional double score = 4;
 }
 
 message TaggedTransaction {

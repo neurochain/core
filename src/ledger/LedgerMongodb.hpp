@@ -43,7 +43,22 @@ class LedgerMongodb : public Ledger {
   int fill_block_transactions(messages::Block *block) const;
 
   bool unsafe_get_block(const messages::BlockID &id,
-                        messages::TaggedBlock *tagged_block) const;
+                        messages::TaggedBlock *tagged_block,
+                        bool include_transactions = true) const;
+
+  bool unsafe_get_blocks_by_previd(
+      const messages::BlockID &previd,
+      std::vector<messages::TaggedBlock> *tagged_blocks,
+      bool include_transactions = true) const;
+
+  messages::BranchID new_branch_id() const;
+
+  bool set_branch_path(const messages::BlockHeader &block_header,
+                       const std::vector<messages::BranchID> &branch_path);
+
+  bool set_branch_path(const messages::BlockHeader &block_header);
+
+  bool unsafe_insert_block(messages::TaggedBlock *tagged_block);
 
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);
@@ -68,14 +83,20 @@ class LedgerMongodb : public Ledger {
   bool get_block_by_previd(const messages::BlockID &previd,
                            messages::Block *block) const;
 
-  bool get_blocks_by_previd(
-      const messages::BlockID &previd,
-      std::vector<messages::TaggedBlock> *tagged_blocks) const;
+  bool get_blocks_by_previd(const messages::BlockID &previd,
+                            std::vector<messages::TaggedBlock> *tagged_blocks,
+                            bool include_transactions = true) const;
+
+  bool get_block(const messages::BlockHeight height, messages::Block *block,
+                 bool include_transactions = true) const;
 
   bool get_block(const messages::BlockHeight height,
-                 messages::Block *block) const;
+                 messages::TaggedBlock *tagged_block,
+                 bool include_transaction = true) const;
 
   bool insert_block(messages::TaggedBlock *tagged_block);
+
+  bool insert_block(messages::Block *block);
 
   bool delete_block(const messages::Hash &id);
 
@@ -92,13 +113,18 @@ class LedgerMongodb : public Ledger {
 
   bool for_each(const Filter &filter, Functor functor) const;
 
-  messages::BranchID new_branch_id() const;
-
   bool add_transaction(const messages::TaggedTransaction &tagged_transaction);
 
   bool delete_transaction(const messages::Hash &id);
 
   int get_transaction_pool(messages::Block *block);
+
+  bool get_unscored_forks(std::vector<messages::TaggedBlock> *tagged_blocks,
+                          bool include_transactions = true) const;
+
+  bool set_block_score(const messages::Hash &id, messages::BlockScore score);
+
+  bool update_main_branch(messages::TaggedBlock *main_branch_tip);
 };
 
 }  // namespace ledger
