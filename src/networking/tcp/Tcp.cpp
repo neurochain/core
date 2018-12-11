@@ -16,23 +16,19 @@ namespace networking {
 using namespace std::chrono_literals;
 
 Tcp::ConnectionPool::ConnectionPool(
-    const Tcp::ID parent_id,
     const std::shared_ptr<boost::asio::io_context> &io_context)
-    : _current_id(0), _parent_id(parent_id), _io_context(io_context) {}
+    : _io_context(io_context) {}
 
 std::pair<Tcp::ConnectionPool::iterator, bool> Tcp::ConnectionPool::insert(
-    std::shared_ptr<messages::Queue> queue,
-    std::shared_ptr<boost::asio::ip::tcp::socket> socket,
-    std::shared_ptr<messages::Peer> remote_peer) {
+  const RemoteKey& id,
+  const std::shared_ptr<tcp::Connection>& paired_connection) {
   std::lock_guard<std::mutex> lock_queue(_connections_mutex);
 
-  auto connection = std::make_shared<tcp::Connection>(
-      _current_id, _parent_id, queue, socket, remote_peer);
-  return _connections.insert(std::make_pair(_current_id++, connection));
+  return _connections.insert(std::make_pair(id, paired_connection));
 }
 
 std::optional<Port> Tcp::ConnectionPool::connection_port(
-    const Connection::ID id) const {
+    const ID& id) const {
   std::optional<Port> ans;
   std::lock_guard<std::mutex> lock_queue(_connections_mutex);
   auto got = _connections.find(id);
@@ -61,7 +57,7 @@ bool Tcp::ConnectionPool::send(std::shared_ptr<Buffer> &header_tcp,
   return res;
 }
 
-bool Tcp::ConnectionPool::send_unicast(ID id,
+bool Tcp::ConnectionPool::send_unicast(const ID& id,
                                        std::shared_ptr<Buffer> &header_tcp,
                                        std::shared_ptr<Buffer> &body_tcp) {
   std::lock_guard<std::mutex> lock_queue(_connections_mutex);
@@ -74,7 +70,7 @@ bool Tcp::ConnectionPool::send_unicast(ID id,
   return true;
 }
 
-bool Tcp::ConnectionPool::disconnect(const ID id) {
+bool Tcp::ConnectionPool::disconnect(const ID& id) {
   std::lock_guard<std::mutex> lock_queue(_connections_mutex);
   auto got = _connections.find(id);
   if (got == _connections.end()) {
@@ -114,8 +110,6 @@ void Tcp::accept(const boost::system::error_code &error) {
     auto peer = std::make_shared<messages::Peer>();
     peer->set_endpoint(remote_endpoint);
     peer->set_port(_new_socket->remote_endpoint().port());
-    peer->set_status(messages::Peer::CONNECTING);
-    peer->set_transport_layer_id(_id);
 
     this->new_connection(_new_socket, error, peer, true);
   } else {
@@ -125,16 +119,16 @@ void Tcp::accept(const boost::system::error_code &error) {
   start_accept();
 }  // namespace networking
 
-Tcp::Tcp(const Port port, ID id, std::shared_ptr<messages::Queue> queue,
+Tcp::Tcp(const Port port, std::shared_ptr<messages::Queue> queue,
          std::shared_ptr<crypto::Ecc> keys)
-    : TransportLayer(id, queue, keys),
+    : TransportLayer(queue, keys),
       _stopped(false),
       _io_context(std::make_shared<boost::asio::io_context>()),
       _resolver(*_io_context),
       _listening_port(port),
       _acceptor(*_io_context.get(),
                 bai::tcp::endpoint(bai::tcp::v4(), _listening_port)),
-      _connection_pool(id, _io_context) {
+      _connection_pool(_io_context) {
   while (!_acceptor.is_open()) {
     std::this_thread::yield();
     LOG_DEBUG << "Waiting for acceptor to be open";
@@ -175,9 +169,11 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
   auto msg_body = message->add_bodies();
 
   if (!error) {
-    auto conn_insertion = _connection_pool.insert(_queue, socket, peer);
+    RemoteKey id; // todo, deal with this properly.
+    auto new_connection =
+        std::make_shared<tcp::Connection>(_queue, socket, peer);
+    auto conn_insertion = _connection_pool.insert(id, new_connection);
     auto &connection_ptr = conn_insertion.first->second;
-    peer->set_connection_id(connection_ptr->id());
 
     auto connection_ready = msg_body->mutable_connection_ready();
 
@@ -196,16 +192,15 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
   }
 }
 
-std::optional<Port> Tcp::connection_port(const Connection::ID id) const {
+std::optional<Port> Tcp::connection_port(const RemoteKey& id) const {
   return _connection_pool.connection_port(id);
 }
 
-void Tcp::terminate(const Connection::ID id) {
+void Tcp::terminate(const RemoteKey& id) {
   _connection_pool.disconnect(id);
 }
 
-bool Tcp::serialize(std::shared_ptr<messages::Message> message,
-                    const ProtocolType protocol_type, Buffer *header_tcp,
+bool Tcp::serialize(const std::shared_ptr<messages::Message>& message, Buffer *header_tcp,
                     Buffer *body_tcp) {
   LOG_DEBUG << this << " Before reinterpret and signing";
   auto header_pattern =
@@ -220,13 +215,10 @@ bool Tcp::serialize(std::shared_ptr<messages::Message> message,
   header_pattern->size = body_tcp->size();
   _keys->sign(body_tcp->data(), body_tcp->size(),
               reinterpret_cast<uint8_t *>(&header_pattern->signature));
-  header_pattern->type = protocol_type;
-
   return true;
 }
 
-bool Tcp::send(std::shared_ptr<messages::Message> message,
-               ProtocolType protocol_type) {
+bool Tcp::send(const std::shared_ptr<messages::Message>& message) {
   if (_connection_pool.size() == 0) {
     LOG_ERROR << "Could not send message because there is no connection";
     return false;
@@ -241,15 +233,14 @@ bool Tcp::send(std::shared_ptr<messages::Message> message,
 
   std::cout << "\033[1;34mSending message[" << this->listening_port() << "]: >>"
             << *message << "<<\033[0m\n";
-  if (!serialize(message, protocol_type, header_tcp.get(), body_tcp.get())) {
+  if (!serialize(message, header_tcp.get(), body_tcp.get())) {
     return false;
   }
 
   return _connection_pool.send(header_tcp, body_tcp);
 }
 
-bool Tcp::send_unicast(std::shared_ptr<messages::Message> message,
-                       ProtocolType protocol_type) {
+bool Tcp::send_unicast(const RemoteKey& id, const std::shared_ptr<messages::Message>& message) {
   if (_stopped) {
     return false;
   }
@@ -259,17 +250,16 @@ bool Tcp::send_unicast(std::shared_ptr<messages::Message> message,
   auto body_tcp = std::make_shared<Buffer>();
   LOG_DEBUG << "\033[1;34mSending unicast [" << this->listening_port()
             << "]: >>" << *message << "<<\033[0m";
-  if (!serialize(message, protocol_type, header_tcp.get(), body_tcp.get())) {
+  if (!serialize(message, header_tcp.get(), body_tcp.get())) {
     return false;
   }
-  return _connection_pool.send_unicast(message->header().peer().connection_id(),
-                                       header_tcp, body_tcp);
+  return _connection_pool.send_unicast(id, header_tcp, body_tcp);
 }
 
 std::size_t Tcp::peer_count() const { return _connection_pool.size(); }
 
-bool Tcp::disconnect(const Connection::ID id) {
-  return _connection_pool.disconnect(id);
+bool Tcp::disconnect(const RemoteKey& key) {
+  return _connection_pool.disconnect(key);
 }
 
 void Tcp::stop() {

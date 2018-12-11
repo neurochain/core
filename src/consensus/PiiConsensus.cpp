@@ -125,7 +125,7 @@ void PiiConsensus::build_block() {
              << " with : " << std::to_string(h) << " transactions";
     add_block(*new_block);
     // auto message =
-    _network->send(message, networking::ProtocolType::PROTOBUF2);
+    _network->send(message);
   }
 }
 

@@ -52,7 +52,6 @@ class Bot {
   std::size_t _max_connections;
 
   std::shared_ptr<networking::Tcp> _tcp;
-  messages::Peer::Status _keep_status;
   messages::config::Config::SelectionMethod _selection_method;
 
   mutable std::mutex _mutex_connections;
@@ -104,10 +103,6 @@ class Bot {
     // auto got = std::find(peers->begin(), peers->end(), peer);
     for (auto &p : *peers) {
       if (p.key_pub() == peer.key_pub()) {
-        if (p.status() == messages::Peer::CONNECTED ||
-            p.status() == messages::Peer::CONNECTING) {
-          return res;
-        }
         res = &p;
         return res;
       }

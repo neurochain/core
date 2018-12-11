@@ -7,7 +7,6 @@ namespace tcp {
 
 struct __attribute__((__packed__)) HeaderPattern {
   uint32_t size;
-  ProtocolType type;
   uint8_t signature[64];
 };
 

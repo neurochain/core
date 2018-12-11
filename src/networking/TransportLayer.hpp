@@ -19,27 +19,23 @@ namespace networking {
 class Networking;
 
 class TransportLayer {
- public:
-  using ID = int16_t;
+  public:
+   using RemoteKey = Buffer;
 
- protected:
-  std::shared_ptr<messages::Queue> _queue;
-  std::shared_ptr<crypto::Ecc> _keys;
-  ID _id;
+  protected:
+   std::shared_ptr<messages::Queue> _queue;
+   std::shared_ptr<crypto::Ecc> _keys;
 
- public:
-  TransportLayer(const ID id, std::shared_ptr<messages::Queue> queue,
-                 std::shared_ptr<crypto::Ecc> keys);
+  public:
+   TransportLayer(std::shared_ptr<messages::Queue> queue,
+                  std::shared_ptr<crypto::Ecc> keys);
 
-  virtual bool send(const std::shared_ptr<messages::Message> message,
-                    ProtocolType type) = 0;
-  virtual bool send_unicast(const std::shared_ptr<messages::Message> message,
-                            ProtocolType type) = 0;
-  virtual std::size_t peer_count() const = 0;
+   virtual bool send(const std::shared_ptr<messages::Message>& message) = 0;
+   virtual bool send_unicast(const RemoteKey& id, const std::shared_ptr<messages::Message>& message) = 0;
+   virtual std::size_t peer_count() const = 0;
 
-  ID id() const;
-  virtual ~TransportLayer(){};
-  virtual void join() = 0;
+   virtual ~TransportLayer(){};
+   virtual void join() = 0;
 };
 
 }  // namespace networking

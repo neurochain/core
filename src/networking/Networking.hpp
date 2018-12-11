@@ -16,26 +16,27 @@ namespace neuro {
 namespace networking {
 
 class Networking {
- private:
-  std::vector<std::shared_ptr<TransportLayer>> _transport_layers;
+  public:
+   using RemoteKey = TransportLayer::RemoteKey;
 
-  std::random_device _rd;
-  std::shared_ptr<messages::Queue> _queue;
-  std::uniform_int_distribution<int> _dist;
+  private:
+   std::shared_ptr<TransportLayer> _transport_layer;
+   std::random_device _rd;
+   std::shared_ptr<messages::Queue> _queue;
+   std::uniform_int_distribution<int> _dist;
 
- public:
-  Networking(std::shared_ptr<messages::Queue> _queue);
-  ~Networking();
+  public:
+   Networking(std::shared_ptr<messages::Queue>& _queue);
+   ~Networking();
 
-  std::shared_ptr<Tcp> create_tcp(std::shared_ptr<messages::Queue> queue,
-                                  std::shared_ptr<crypto::Ecc> keys,
-                                  const Port port);
-  bool send(std::shared_ptr<messages::Message> message, ProtocolType type);
-  bool send_unicast(std::shared_ptr<messages::Message> message,
-                    ProtocolType type);
-  messages::Peers connected_peers() const;
-  std::size_t peer_count() const;
-  void join();
+   std::shared_ptr<Tcp> create_tcp(std::shared_ptr<crypto::Ecc> keys,
+                                   const Port port);
+   bool send(const std::shared_ptr<messages::Message>& message);
+   bool send_unicast(
+       const RemoteKey& id, const std::shared_ptr<messages::Message>& message);
+   messages::Peers connected_peers() const;
+   std::size_t peer_count() const;
+   void join();
 };
 
 }  // namespace networking

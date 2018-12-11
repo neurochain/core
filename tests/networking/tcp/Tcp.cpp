@@ -19,8 +19,8 @@ class Tcp {
     auto keys1 = std::make_shared<crypto::Ecc>(),
          keys2 = std::make_shared<crypto::Ecc>();
     Port port{31212};  // Maybe change this to the port to be used by the bot
-    networking::Tcp tcp1(port, 1, queue, keys1);
-    networking::Tcp tcp2(port + 1, 2, queue, keys2);
+    networking::Tcp tcp1(port, queue, keys1);
+    networking::Tcp tcp2(port + 1, queue, keys2);
     auto peer = std::make_shared<messages::Peer>();
     peer->set_endpoint("127.0.0.1");
     peer->set_port(port);

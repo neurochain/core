@@ -34,8 +34,7 @@ class Connection : public networking::Connection,
   std::shared_ptr<Connection> ptr() { return shared_from_this(); }
 
  public:
-  Connection(const ID id, const networking::TransportLayer::ID transport_layer_id,
-             const std::shared_ptr<messages::Queue>& queue,
+  Connection(const std::shared_ptr<messages::Queue>& queue,
              const std::shared_ptr<tcp::socket>& socket,
              const std::shared_ptr<messages::Peer>& remote_peer);
 

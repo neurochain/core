@@ -14,10 +14,11 @@ TEST(Connection, constructor) {
   auto queue = std::make_shared<messages::Queue>();
   ASSERT_NE(queue, nullptr);
   auto peer = std::make_shared<messages::Peer>();
-  tcp::Connection connection_0(0, 0, queue, socket, peer);
-  tcp::Connection connection_1(345, 6456, queue, socket, peer);
+  tcp::Connection connection_0(queue, socket, peer);
+  tcp::Connection connection_1(queue, socket, peer);
 }
 
 }  // namespace test
 }  // namespace networking
 }  // namespace neuro
+

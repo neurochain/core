@@ -1368,7 +1368,7 @@ TEST(INTEGRATION, terminate_on_bad_version) {
     auto header = msg->mutable_header();
     messages::fill_header(header);
     header->set_version(neuro::MessageVersion + 100);
-    bot0->networking()->send(msg, neuro::networking::ProtocolType::PROTOBUF2);
+    bot0->networking()->send(msg);
   }
   std::this_thread::sleep_for(500ms);
 
