@@ -62,7 +62,7 @@ class Tcp : public TransportLayer {
   bai::tcp::acceptor _acceptor;
   IP _local_ip{};
   ConnectionPool _connection_pool;
-  KnownRemotes _knowRemotes;
+  KnownRemotes _know_remotes;
   std::shared_ptr<bai::tcp::socket> _new_socket;
   std::thread _io_context_thread;
 
