@@ -18,6 +18,11 @@ class Ledger {
   using Functor = std::function<bool(const messages::Transaction &)>;
   using Functor_block = std::function<void(messages::Block &)>;
 
+  struct MainBranchTip {
+    messages::TaggedBlock main_branch_tip;
+    bool updated;
+  };
+
   class Filter {
    private:
     std::optional<messages::BlockHeight> _lower_height;
@@ -81,12 +86,18 @@ class Ledger {
   virtual bool get_block(const messages::BlockID &id,
                          messages::TaggedBlock *tagged_block) const = 0;
   virtual bool get_block_by_previd(const messages::BlockID &previd,
-                                   messages::Block *block) const = 0;
+                                   messages::Block *block,
+                                   bool include_transactions = true) const = 0;
   virtual bool get_blocks_by_previd(
       const messages::BlockID &previd,
-      std::vector<messages::TaggedBlock> *tagged_blocks) const = 0;
+      std::vector<messages::TaggedBlock> *tagged_blocks,
+      bool include_transactions = true) const = 0;
   virtual bool get_block(const messages::BlockHeight height,
-                         messages::Block *block) const = 0;
+                         messages::Block *block,
+                         bool include_transactions = true) const = 0;
+  virtual bool get_block(const messages::BlockHeight height,
+                         messages::TaggedBlock *tagged_block,
+                         bool include_transactions = true) const = 0;
   virtual bool insert_block(messages::TaggedBlock *tagged_block) = 0;
   virtual bool delete_block(const messages::Hash &id) = 0;
   virtual bool for_each(const Filter &filter, Functor functor) const = 0;
@@ -106,7 +117,11 @@ class Ledger {
 
   virtual std::size_t total_nb_blocks() const = 0;
 
-  virtual messages::BranchID new_branch_id() const = 0;
+  virtual messages::BranchPath fork_from(
+      const messages::BranchPath &branch_path) const = 0;
+
+  virtual messages::BranchPath first_child(
+      const messages::BranchPath &branch_path) const = 0;
 
   // helpers
 

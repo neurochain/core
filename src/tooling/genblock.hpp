@@ -23,10 +23,9 @@ namespace tooling {
 namespace genblock {
 
 bool genblock_from_block(
-    messages::Block &block, messages::Block &last_block, const uint64_t seed,
-    int32_t height,
-    std::optional<neuro::messages::KeyPub> author = std::nullopt,
-    const int max_trx = 20, const int max_trail = 5) {
+    messages::Block *block, const messages::Block &last_block,
+    const int32_t height, const uint64_t seed = 1,
+    std::optional<neuro::messages::KeyPub> author = std::nullopt) {
   /*uint32_t height = last_height;
   if (height == 0) {
     height = ledger->height();
@@ -36,7 +35,7 @@ bool genblock_from_block(
     return false;
   }*/
 
-  neuro::messages::BlockHeader *header = block.mutable_header();
+  neuro::messages::BlockHeader *header = block->mutable_header();
 
   if (author) {
     header->mutable_author()->CopyFrom(*author);
@@ -65,7 +64,7 @@ bool genblock_from_block(
             .value()
             .value();  // std::atol(sender.outputs(num_output).value().value().c_str());
 
-    neuro::messages::Transaction *new_trans = block.add_transactions();
+    neuro::messages::Transaction *new_trans = block->add_transactions();
 
     // Input from sender
     neuro::messages::Input *input = new_trans->add_inputs();
@@ -85,16 +84,15 @@ bool genblock_from_block(
     messages::set_transaction_hash(new_trans);
   }
 
-  messages::set_block_hash(&block);
+  messages::set_block_hash(block);
   return true;
 }
 
 bool genblock_from_last_db_block(
-    messages::Block &block, std::shared_ptr<ledger::Ledger> ledger,
+    messages::Block *block, std::shared_ptr<ledger::Ledger> ledger,
     const uint64_t seed, const int32_t new_height,
     std::optional<neuro::messages::KeyPub> author = std::nullopt,
-    const int32_t last_height = 0, const int max_trx = 20,
-    const int max_trail = 5) {
+    const int32_t last_height = 0) {
   int32_t height = last_height;
   if (height == 0) {
     height = ledger->height();
@@ -108,8 +106,7 @@ bool genblock_from_last_db_block(
                               std::to_string(last_block.header().height())});
   }
 
-  return genblock_from_block(block, last_block, seed, new_height, author,
-                             max_trx, max_trail);
+  return genblock_from_block(block, last_block, new_height, seed, author);
 }
 
 void append_blocks(const int nb, std::shared_ptr<ledger::Ledger> ledger) {
@@ -117,27 +114,34 @@ void append_blocks(const int nb, std::shared_ptr<ledger::Ledger> ledger) {
   ledger->get_block(ledger->height(), &last_block);
   for (int i = 0; i < nb; ++i) {
     messages::Block block;
-    genblock_from_last_db_block(block, ledger, 1, i + 1);
+    genblock_from_last_db_block(&block, ledger, 1, i + 1);
     messages::TaggedBlock tagged_block;
     tagged_block.set_branch(messages::Branch::MAIN);
-    tagged_block.add_branch_path(0);
+    tagged_block.mutable_branch_path()->add_branch_ids(0);
+    tagged_block.mutable_branch_path()->add_block_numbers(0);
     *tagged_block.mutable_block() = block;
     ledger->insert_block(&tagged_block);
   }
 }
 
 void append_fork_blocks(const int nb, std::shared_ptr<ledger::Ledger> ledger) {
-  messages::Block last_block, block;
+  messages::TaggedBlock last_block, tagged_block;
   ledger->get_block(ledger->height(), &last_block);
   for (int i = 0; i < nb; ++i) {
-    genblock_from_block(block, last_block, 1, last_block.header().height() + 1);
-    messages::TaggedBlock tagged_block;
+    genblock_from_block(tagged_block.mutable_block(), last_block.block(),
+                        last_block.block().header().height() + 1);
     tagged_block.set_branch(messages::Branch::FORK);
-    tagged_block.add_branch_path(1);
-    *tagged_block.mutable_block() = block;
+    messages::BranchPath branch_path;
+    if (i == 0) {
+      branch_path = ledger->fork_from(last_block.branch_path());
+    } else {
+      branch_path = ledger->first_child(last_block.branch_path());
+    }
+    tagged_block.mutable_branch_path()->CopyFrom(branch_path);
+    tagged_block.mutable_branch_path()->add_block_numbers(0);
     ledger->insert_block(&tagged_block);
-    last_block.CopyFrom(block);
-    block.Clear();
+    last_block.CopyFrom(tagged_block);
+    tagged_block.Clear();
   }
 }
 

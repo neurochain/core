@@ -20,6 +20,7 @@ using Packet = google::protobuf::Message;
 
 using Type = Body::BodyCase;
 using BranchID = uint32_t;
+using BlockScore = double;
 
 Type get_type(const Body &body);
 
