@@ -51,8 +51,9 @@ mongocxx::options::find LedgerMongodb::projection(
 }
 
 bool LedgerMongodb::init_block0(const messages::config::Database &config) {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
   messages::Block block0;
-  if (get_block(0, &block0)) {
+  if (unsafe_get_block(0, &block0)) {
     return true;
   }
   block0.Clear();
@@ -81,9 +82,10 @@ bool LedgerMongodb::init_block0(const messages::config::Database &config) {
 
   messages::TaggedBlock tagged_block0;
   tagged_block0.set_branch(messages::Branch::MAIN);
-  tagged_block0.add_branch_path(0);
+  tagged_block0.mutable_branch_path()->add_branch_ids(0);
+  tagged_block0.mutable_branch_path()->add_block_numbers(0);
   *tagged_block0.mutable_block() = block0;
-  insert_block(&tagged_block0);
+  unsafe_insert_block(&tagged_block0);
 
   //! add index to mongo collection
   _blocks.create_index(bss::document{} << "block.header.id" << 1
@@ -92,7 +94,7 @@ bool LedgerMongodb::init_block0(const messages::config::Database &config) {
                                        << bss::finalize);
   _blocks.create_index(bss::document{} << "block.header.previousBlockHash" << 1
                                        << bss::finalize);
-  _blocks.create_index(bss::document{} << "branch_path.0" << 1
+  _blocks.create_index(bss::document{} << "branchPath.branchIds.0" << 1
                                        << bss::finalize);
   _blocks.create_index(bss::document{} << "block.score" << 1 << bss::finalize);
   _transactions.create_index(bss::document{} << "transaction.id" << 1
@@ -128,16 +130,45 @@ messages::BlockHeight LedgerMongodb::height() const {
 
 bool LedgerMongodb::is_ancestor(const messages::TaggedBlock &ancestor,
                                 const messages::TaggedBlock &block) const {
-  if (ancestor.branch_path_size() == 0 ||
-      ancestor.branch_path_size() > block.branch_path_size()) {
+  if (!ancestor.has_branch_path() || !block.has_branch_path()) {
     return false;
   }
-  for (int i = ancestor.branch_path_size() - 1; i >= 0; i--) {
-    if (ancestor.branch_path(i) != block.branch_path(i)) {
+  auto block_path = block.branch_path();
+  auto ancestor_path = ancestor.branch_path();
+  auto ancestor_size = ancestor_path.branch_ids_size();
+  auto block_size = block_path.branch_ids_size();
+  assert(block_path.block_numbers_size() == block_size);
+  assert(ancestor_path.block_numbers_size() == ancestor_size);
+  if (ancestor_size == 0 || ancestor_size > block_size) {
+    return false;
+  }
+
+  // A block A is the ancestor of a block B if
+  //     - the branch_ids of B ends with the branch_ids of A
+  // and - the block_numbers of B ends with (the block_numbers of A without the
+  //       first element) and
+  // and - the block number of B (bnB) corresponding to the first
+  //       block number of A (bnA) obeys bnB >= bnA
+  for (int i = 0; i < ancestor_size; i++) {
+    if (ancestor_path.branch_ids(ancestor_size - 1 - i) !=
+        block_path.branch_ids(block_size - 1 - i)) {
       return false;
     }
+    auto ancestor_block_number =
+        ancestor_path.block_numbers(ancestor_size - 1 - i);
+    auto block_number = block_path.block_numbers(block_size - 1 - i);
+    if (i != ancestor_size - 1) {
+      if (block_number != ancestor_block_number) {
+        return false;
+      }
+    } else {
+      return ancestor_block_number <= block_number;
+    }
   }
-  return true;
+
+  // You should never arrive here
+  assert(false);
+  return false;
 }
 
 bool LedgerMongodb::is_main_branch(
@@ -231,11 +262,11 @@ bool LedgerMongodb::get_block(const messages::BlockID &id,
   return true;
 }
 
-bool LedgerMongodb::get_block_by_previd(const messages::BlockID &previd,
-                                        messages::Block *block) const {
+bool LedgerMongodb::unsafe_get_block_by_previd(
+    const messages::BlockID &previd, messages::Block *block,
+    bool include_transactions) const {
   // Look for a block in the main branch.
   // There may be several blocks with the same previd in forks.
-  std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto query = bss::document{} << "branch" << MAIN_BRANCH_NAME
                                << "block.header.previousBlockHash"
                                << to_bson(previd) << bss::finalize;
@@ -247,8 +278,17 @@ bool LedgerMongodb::get_block_by_previd(const messages::BlockID &previd,
   }
 
   messages::from_bson(result->view()["block"].get_document(), block);
-  fill_block_transactions(block);
+  if (include_transactions) {
+    fill_block_transactions(block);
+  }
   return true;
+}
+
+bool LedgerMongodb::get_block_by_previd(const messages::BlockID &previd,
+                                        messages::Block *block,
+                                        bool include_transactions) const {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  return unsafe_get_block_by_previd(previd, block, include_transactions);
 }
 
 bool LedgerMongodb::unsafe_get_blocks_by_previd(
@@ -287,9 +327,9 @@ bool LedgerMongodb::get_blocks_by_previd(
                                      include_transactions);
 }
 
-bool LedgerMongodb::get_block(const messages::BlockHeight height,
-                              messages::Block *block,
-                              bool include_transactions) const {
+bool LedgerMongodb::unsafe_get_block(const messages::BlockHeight height,
+                                     messages::Block *block,
+                                     bool include_transactions) const {
   auto query = bss::document{} << "branch" << MAIN_BRANCH_NAME
                                << "block.header.height" << height
                                << bss::finalize;
@@ -307,8 +347,15 @@ bool LedgerMongodb::get_block(const messages::BlockHeight height,
 }
 
 bool LedgerMongodb::get_block(const messages::BlockHeight height,
-                              messages::TaggedBlock *tagged_block,
+                              messages::Block *block,
                               bool include_transactions) const {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  return unsafe_get_block(height, block, include_transactions);
+}
+
+bool LedgerMongodb::unsafe_get_block(const messages::BlockHeight height,
+                                     messages::TaggedBlock *tagged_block,
+                                     bool include_transactions) const {
   auto query = bss::document{} << "branch" << MAIN_BRANCH_NAME
                                << "block.header.height" << height
                                << bss::finalize;
@@ -323,6 +370,13 @@ bool LedgerMongodb::get_block(const messages::BlockHeight height,
     fill_block_transactions(tagged_block->mutable_block());
   }
   return true;
+}
+
+bool LedgerMongodb::get_block(const messages::BlockHeight height,
+                              messages::TaggedBlock *tagged_block,
+                              bool include_transactions) const {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  return unsafe_get_block(height, tagged_block, include_transactions);
 }
 
 bool LedgerMongodb::unsafe_insert_block(messages::TaggedBlock *tagged_block) {
@@ -488,13 +542,15 @@ messages::BranchID LedgerMongodb::new_branch_id() const {
   auto query = bss::document{} << bss::finalize;
   mongocxx::options::find find_options;
 
-  auto projection_doc = bss::document{} << "_id" << 0 << "branch_path" << 1
-                                        << bss::finalize;
+  auto projection_doc = bss::document{} << "_id" << 0 << "branchPath.branchIds"
+                                        << 1 << bss::finalize;
+
   find_options.projection(std::move(projection_doc));
-  find_options.sort(bss::document{} << "branch_path.0" << -1 << bss::finalize);
+  find_options.sort(bss::document{} << "branchPath.branchIds.0" << -1
+                                    << bss::finalize);
 
   auto max_branch_id = _blocks.find_one(std::move(query), find_options);
-  return max_branch_id->view()["branch_path"][0].get_int32() + 1;
+  return max_branch_id->view()["branchPath"]["branchIds"][0].get_int32() + 1;
 }
 
 bool LedgerMongodb::add_transaction(
@@ -555,9 +611,46 @@ bool LedgerMongodb::insert_block(messages::Block *block) {
          set_branch_path(tagged_block.block().header());
 }
 
-bool LedgerMongodb::set_branch_path(
-    const messages::BlockHeader &block_header,
-    const std::vector<messages::BranchID> &branch_path) {
+messages::BranchPath LedgerMongodb::unsafe_fork_from(
+    const messages::BranchPath &branch_path) const {
+  // We must add the new branch_id at the beginning of the repeated field
+  // And sadly protobuf does not support that
+  messages::BranchPath new_branch_path;
+  new_branch_path.add_branch_ids(new_branch_id());
+  new_branch_path.add_block_numbers(0);
+  for (const auto &branch_id : branch_path.branch_ids()) {
+    new_branch_path.add_branch_ids(branch_id);
+  }
+  for (const auto &block_number : branch_path.block_numbers()) {
+    new_branch_path.add_block_numbers(block_number);
+  }
+  return new_branch_path;
+}
+
+messages::BranchPath LedgerMongodb::fork_from(
+    const messages::BranchPath &branch_path) const {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  return unsafe_fork_from(branch_path);
+}
+
+messages::BranchPath LedgerMongodb::unsafe_first_child(
+    const messages::BranchPath &branch_path) const {
+  auto new_branch_path = messages::BranchPath(branch_path);
+  *new_branch_path.mutable_block_numbers()->Mutable(0) =
+      branch_path.block_numbers(0) + 1;
+  return new_branch_path;
+}
+
+messages::BranchPath LedgerMongodb::first_child(
+    const messages::BranchPath &branch_path) const {
+  // The mutex is not really useful here but all public method should have a
+  // mutex
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  return unsafe_first_child(branch_path);
+}
+
+bool LedgerMongodb::set_branch_path(const messages::BlockHeader &block_header,
+                                    const messages::BranchPath &branch_path) {
   // Set the branch path of the given block
   auto filter = bss::document{} << "block.header.id"
                                 << to_bson(block_header.id()) << bss::finalize;
@@ -575,18 +668,18 @@ bool LedgerMongodb::set_branch_path(
   unsafe_get_blocks_by_previd(block_header.id(), &tagged_blocks, false);
   for (uint32_t i = 0; i < tagged_blocks.size(); i++) {
     const auto tagged_block = tagged_blocks.at(i);
-    assert(tagged_block.branch_path_size() == 0);
+    assert(!tagged_block.has_branch_path());
     assert(tagged_block.branch() == messages::Branch::DETACHED);
     if (i == 0) {
-      if (!set_branch_path(tagged_block.block().header(), branch_path)) {
+      if (!set_branch_path(tagged_block.block().header(),
+                           unsafe_first_child(branch_path))) {
         return false;
       }
     } else {
       // If there are several children there is a fork which needs a new branch
       // ID
-      std::vector<uint32_t> new_branch_path{branch_path};
-      new_branch_path.insert(new_branch_path.begin(), new_branch_id());
-      if (!set_branch_path(tagged_block.block().header(), new_branch_path)) {
+      if (!set_branch_path(tagged_block.block().header(),
+                           unsafe_fork_from(branch_path))) {
         return false;
       }
     }
@@ -597,28 +690,23 @@ bool LedgerMongodb::set_branch_path(
 bool LedgerMongodb::set_branch_path(const messages::BlockHeader &block_header) {
   // Set the branch path of a block depending on the branch path of its parent
   messages::TaggedBlock parent;
-  unsafe_get_block(block_header.previous_block_hash(), &parent, false);
 
-  if (parent.branch_path().size() == 0) {
+  if (!unsafe_get_block(block_header.previous_block_hash(), &parent, false) ||
+      parent.branch() == messages::Branch::DETACHED) {
     // If the parent does not have a branch path it is a detached block and
     // there is nothing to do
     return true;
-  }
-
-  std::vector<messages::BranchID> branch_path;
-  for (const auto &branch_id : parent.branch_path()) {
-    branch_path.push_back(branch_id);
   }
 
   std::vector<messages::TaggedBlock> children;
   unsafe_get_blocks_by_previd(block_header.previous_block_hash(), &children,
                               false);
 
-  if (children.size() > 1) {
-    // If our parent has more than one child it means the current block is a
-    // fork and needs a new branch ID
-    branch_path.insert(branch_path.begin(), new_branch_id());
-  }
+  // If our parent has more than one child it means the current block is a
+  // fork and needs a new branch ID
+  const auto branch_path = children.size() > 1
+                               ? unsafe_fork_from(parent.branch_path())
+                               : unsafe_first_child(parent.branch_path());
   return set_branch_path(block_header, branch_path);
 };
 
@@ -654,6 +742,20 @@ bool LedgerMongodb::set_block_score(const messages::Hash &id,
   return true;
 }
 
+bool LedgerMongodb::update_branch_tag(const messages::Hash &id,
+                                      const messages::Branch &branch) {
+  auto filter = bss::document{} << "block.header.id" << to_bson(id)
+                                << bss::finalize;
+  auto update = bss::document{} << "$set" << bss::open_document << "branch"
+                                << messages::Branch_Name(branch)
+                                << bss::close_document << bss::finalize;
+  auto update_result = _blocks.update_one(std::move(filter), std::move(update));
+  if (!(update_result && update_result->modified_count() > 0)) {
+    return false;
+  }
+  return true;
+}
+
 bool LedgerMongodb::update_main_branch(messages::TaggedBlock *main_branch_tip) {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto query = bss::document{} << bss::finalize;
@@ -663,16 +765,48 @@ bool LedgerMongodb::update_main_branch(messages::TaggedBlock *main_branch_tip) {
   if (!bson_block) {
     return false;
   }
-  messages::TaggedBlock tagged_block;
-  messages::from_bson(bson_block->view(), &tagged_block);
+  messages::from_bson(bson_block->view(), main_branch_tip);
 
-  // So now I have the new tip
-  // I need to make all the previous blocks be in the main branch
-  //
-
-  assert(tagged_block.branch() != messages::Branch::DETACHED);
-  if (tagged_block.branch() == messages::Branch::FORK) {
+  assert(main_branch_tip->branch() != messages::Branch::DETACHED);
+  if (main_branch_tip->branch() == messages::Branch::MAIN) {
+    return true;
   }
+
+  // Go back from the new tip to a block tagged MAIN
+  std::vector<messages::Hash> new_main_branch;
+  messages::TaggedBlock tagged_block{*main_branch_tip};
+  do {
+    new_main_branch.push_back(tagged_block.block().header().id());
+    assert(unsafe_get_block(tagged_block.block().header().previous_block_hash(),
+                            &tagged_block, false));
+  } while (tagged_block.branch() != messages::Branch::MAIN);
+
+  // Go up from this MAIN block to the previous MAIN tip
+  std::vector<messages::Hash> previous_main_branch;
+  messages::Block block{tagged_block.block()};
+  while (unsafe_get_block_by_previd(block.header().id(), &block)) {
+    previous_main_branch.push_back(block.header().id());
+  }
+
+  // This order makes the database never be in an inconsistent state
+  std::reverse(previous_main_branch.begin(), previous_main_branch.end());
+  for (const auto &id : previous_main_branch) {
+    if (!update_branch_tag(id, messages::Branch::FORK)) {
+      return false;
+    }
+  }
+
+  // This order makes the database never be in a inconsistent state
+  std::reverse(new_main_branch.begin(), new_main_branch.end());
+  for (const auto &id : new_main_branch) {
+    if (!update_branch_tag(id, messages::Branch::MAIN)) {
+      return false;
+    }
+  }
+
+  // In my code I trust, update_branch_tag modified the branch of the tip
+  main_branch_tip->set_branch(messages::Branch::MAIN);
+
   return true;
 }
 

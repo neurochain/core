@@ -117,24 +117,31 @@ void append_blocks(const int nb, std::shared_ptr<ledger::Ledger> ledger) {
     genblock_from_last_db_block(&block, ledger, 1, i + 1);
     messages::TaggedBlock tagged_block;
     tagged_block.set_branch(messages::Branch::MAIN);
-    tagged_block.add_branch_path(0);
+    tagged_block.mutable_branch_path()->add_branch_ids(0);
+    tagged_block.mutable_branch_path()->add_block_numbers(0);
     *tagged_block.mutable_block() = block;
     ledger->insert_block(&tagged_block);
   }
 }
 
 void append_fork_blocks(const int nb, std::shared_ptr<ledger::Ledger> ledger) {
-  messages::Block last_block, block;
+  messages::TaggedBlock last_block, tagged_block;
   ledger->get_block(ledger->height(), &last_block);
   for (int i = 0; i < nb; ++i) {
-    genblock_from_block(&block, last_block, last_block.header().height() + 1);
-    messages::TaggedBlock tagged_block;
+    genblock_from_block(tagged_block.mutable_block(), last_block.block(),
+                        last_block.block().header().height() + 1);
     tagged_block.set_branch(messages::Branch::FORK);
-    tagged_block.add_branch_path(1);
-    *tagged_block.mutable_block() = block;
+    messages::BranchPath branch_path;
+    if (i == 0) {
+      branch_path = ledger->fork_from(last_block.branch_path());
+    } else {
+      branch_path = ledger->first_child(last_block.branch_path());
+    }
+    tagged_block.mutable_branch_path()->CopyFrom(branch_path);
+    tagged_block.mutable_branch_path()->add_block_numbers(0);
     ledger->insert_block(&tagged_block);
-    last_block.CopyFrom(block);
-    block.Clear();
+    last_block.CopyFrom(tagged_block);
+    tagged_block.Clear();
   }
 }
 

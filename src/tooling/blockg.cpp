@@ -85,7 +85,8 @@ void block0(uint32_t bots, const std::string &pathdir, messages::NCCSDF &nccsdf,
 
   messages::TaggedBlock tagged_block0;
   tagged_block0.set_branch(messages::Branch::MAIN);
-  tagged_block0.add_branch_path(0);
+  tagged_block0.mutable_branch_path()->add_branch_ids(0);
+  tagged_block0.mutable_branch_path()->add_block_numbers(0);
   tagged_block0.mutable_block()->CopyFrom(b);
   ledger.insert_block(&tagged_block0);
 

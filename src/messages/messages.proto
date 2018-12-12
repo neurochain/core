@@ -87,10 +87,28 @@ enum Branch {
   DETACHED = 2;
 }
 
+// The branch path is a strange beast.
+// It should tell you where a block is in the block tree.
+// The block0 has this branch path: {branch_ids: [0], block_numbers: [0]}.
+// This indicates that the block0 is the block number 0 of the branch 0.
+// The block at height 1 gets {branch_ids: [0], block_numbers: [1]}.
+// It indicates that this block is the block number 1 of the branch 0.
+// As long as you don't have a fork all blocks will stay in the branch 0.
+// But let's say that you then add 2 blocks at height 2
+// The first one you receive will have this branch path
+// {branch_ids: [0], block_numbers: [2]}.
+// And the second one will have {branch_ids: [1, 0], block_numbers: [0, 1]}
+// This indicates that this block is the block number 0 of the branch 1
+// and that it forked from the branch 0 at block number 1.
+message BranchPath {
+  repeated uint32 branch_ids = 1;
+  repeated uint32 block_numbers = 2;
+}
+
 message TaggedBlock {
   required Block block = 1;
   required Branch branch = 2;
-  repeated uint32 branch_path = 3;
+  optional BranchPath branch_path = 3;
   optional double score = 4;
 }
 

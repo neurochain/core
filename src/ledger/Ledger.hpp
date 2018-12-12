@@ -86,7 +86,8 @@ class Ledger {
   virtual bool get_block(const messages::BlockID &id,
                          messages::TaggedBlock *tagged_block) const = 0;
   virtual bool get_block_by_previd(const messages::BlockID &previd,
-                                   messages::Block *block) const = 0;
+                                   messages::Block *block,
+                                   bool include_transactions = true) const = 0;
   virtual bool get_blocks_by_previd(
       const messages::BlockID &previd,
       std::vector<messages::TaggedBlock> *tagged_blocks,
@@ -115,6 +116,12 @@ class Ledger {
   virtual std::size_t total_nb_transactions() const = 0;
 
   virtual std::size_t total_nb_blocks() const = 0;
+
+  virtual messages::BranchPath fork_from(
+      const messages::BranchPath &branch_path) const = 0;
+
+  virtual messages::BranchPath first_child(
+      const messages::BranchPath &branch_path) const = 0;
 
   // helpers
 

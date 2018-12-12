@@ -14,15 +14,6 @@ namespace neuro {
 namespace ledger {
 namespace tests {
 
-std::vector<messages::BranchID> to_vector(
-    google::protobuf::RepeatedField<messages::BranchID> branch_path) {
-  std::vector<messages::BranchID> result;
-  for (const auto &branch_id : branch_path) {
-    result.push_back(branch_id);
-  }
-  return result;
-}
-
 class LedgerMongodb : public ::testing::Test {
  public:
   const std::string config_str =
@@ -47,6 +38,65 @@ class LedgerMongodb : public ::testing::Test {
   std::string db_url() const { return _config.url(); }
 
   messages::config::Database config() const { return _config; }
+
+ public:
+  void test_is_ancestor() {
+    messages::TaggedBlock block0, block1, block2, fork0, fork1;
+    auto branch_path = block0.mutable_branch_path();
+    branch_path->add_branch_ids(0);
+    branch_path->add_block_numbers(0);
+    branch_path = block1.mutable_branch_path();
+    branch_path->add_branch_ids(0);
+    branch_path->add_block_numbers(1);
+    branch_path = block2.mutable_branch_path();
+    branch_path->add_branch_ids(0);
+    branch_path->add_block_numbers(2);
+    branch_path = fork0.mutable_branch_path();
+    branch_path->add_branch_ids(1);
+    branch_path->add_branch_ids(0);
+    branch_path->add_block_numbers(0);
+    branch_path->add_block_numbers(1);
+    branch_path = fork1.mutable_branch_path();
+    branch_path->add_branch_ids(1);
+    branch_path->add_branch_ids(0);
+    branch_path->add_block_numbers(1);
+    branch_path->add_block_numbers(1);
+
+    // Block0
+    ASSERT_TRUE(ledger->is_ancestor(block0, block0));
+    ASSERT_TRUE(ledger->is_ancestor(block0, block1));
+    ASSERT_TRUE(ledger->is_ancestor(block0, block2));
+    ASSERT_TRUE(ledger->is_ancestor(block0, fork0));
+    ASSERT_TRUE(ledger->is_ancestor(block0, fork1));
+
+    // Block1
+    ASSERT_FALSE(ledger->is_ancestor(block1, block0));
+    ASSERT_TRUE(ledger->is_ancestor(block1, block1));
+    ASSERT_TRUE(ledger->is_ancestor(block1, block2));
+    ASSERT_TRUE(ledger->is_ancestor(block1, fork0));
+    ASSERT_TRUE(ledger->is_ancestor(block1, fork1));
+
+    // Block2
+    ASSERT_FALSE(ledger->is_ancestor(block2, block0));
+    ASSERT_FALSE(ledger->is_ancestor(block2, block1));
+    ASSERT_TRUE(ledger->is_ancestor(block2, block2));
+    ASSERT_FALSE(ledger->is_ancestor(block2, fork0));
+    ASSERT_FALSE(ledger->is_ancestor(block2, fork1));
+
+    // Fork0
+    ASSERT_FALSE(ledger->is_ancestor(fork0, block0));
+    ASSERT_FALSE(ledger->is_ancestor(fork0, block1));
+    ASSERT_FALSE(ledger->is_ancestor(fork0, block2));
+    ASSERT_TRUE(ledger->is_ancestor(fork0, fork0));
+    ASSERT_TRUE(ledger->is_ancestor(fork0, fork1));
+
+    // Fork1
+    ASSERT_FALSE(ledger->is_ancestor(fork1, block0));
+    ASSERT_FALSE(ledger->is_ancestor(fork1, block1));
+    ASSERT_FALSE(ledger->is_ancestor(fork1, block2));
+    ASSERT_FALSE(ledger->is_ancestor(fork1, fork0));
+    ASSERT_TRUE(ledger->is_ancestor(fork1, fork1));
+  }
 };
 
 TEST_F(LedgerMongodb, load_block_0) {
@@ -142,7 +192,8 @@ TEST_F(LedgerMongodb, insert_tagged_block) {
   ASSERT_FALSE(ledger->get_block(block.header().id(), &fake_block));
   messages::TaggedBlock tagged_block;
   tagged_block.set_branch(messages::Branch::MAIN);
-  tagged_block.add_branch_path(0);
+  tagged_block.mutable_branch_path()->add_branch_ids(0);
+  tagged_block.mutable_branch_path()->add_block_numbers(1);
   *tagged_block.mutable_block() = block;
   ASSERT_TRUE(ledger->insert_block(&tagged_block));
   ASSERT_FALSE(ledger->insert_block(&tagged_block));
@@ -160,13 +211,17 @@ TEST_F(LedgerMongodb, insert_block) {
   ASSERT_TRUE(ledger->insert_block(&block2));
   ASSERT_TRUE(ledger->get_block(block1.header().id(), &tagged_block));
   ASSERT_EQ(tagged_block.branch(), messages::Branch::FORK);
-  ASSERT_EQ(to_vector(tagged_block.branch_path()),
-            std::vector<messages::BranchID>{0});
+  messages::BranchPath branch_path;
+  branch_path.add_branch_ids(0);
+  branch_path.add_block_numbers(1);
+  ASSERT_EQ(tagged_block.branch_path(), branch_path);
   tagged_block.Clear();
   ASSERT_TRUE(ledger->get_block(block2.header().id(), &tagged_block));
   ASSERT_EQ(tagged_block.branch(), messages::Branch::FORK);
-  ASSERT_EQ(to_vector(tagged_block.branch_path()),
-            std::vector<messages::BranchID>{0});
+  branch_path.Clear();
+  branch_path.add_branch_ids(0);
+  branch_path.add_block_numbers(2);
+  ASSERT_EQ(tagged_block.branch_path(), branch_path);
 }
 
 TEST_F(LedgerMongodb, insert_block_attach) {
@@ -178,25 +233,27 @@ TEST_F(LedgerMongodb, insert_block_attach) {
   ASSERT_TRUE(ledger->insert_block(&block2));
   ASSERT_TRUE(ledger->get_block(block2.header().id(), &tagged_block));
   ASSERT_EQ(tagged_block.branch(), messages::Branch::DETACHED);
-  ASSERT_EQ(to_vector(tagged_block.branch_path()),
-            std::vector<messages::BranchID>{});
+  ASSERT_FALSE(tagged_block.has_branch_path());
   ASSERT_TRUE(ledger->insert_block(&block1));
   tagged_block.Clear();
   ASSERT_TRUE(ledger->get_block(block1.header().id(), &tagged_block));
   ASSERT_EQ(tagged_block.branch(), messages::Branch::FORK);
-  ASSERT_EQ(to_vector(tagged_block.branch_path()),
-            std::vector<messages::BranchID>{0});
+  messages::BranchPath branch_path;
+  branch_path.add_branch_ids(0);
+  branch_path.add_block_numbers(1);
+  ASSERT_EQ(tagged_block.branch_path(), branch_path);
   tagged_block.Clear();
   ASSERT_TRUE(ledger->get_block(block2.header().id(), &tagged_block));
   ASSERT_EQ(tagged_block.branch(), messages::Branch::FORK);
-  ASSERT_EQ(to_vector(tagged_block.branch_path()),
-            std::vector<messages::BranchID>{0});
+  branch_path.Clear();
+  branch_path.add_branch_ids(0);
+  branch_path.add_block_numbers(2);
+  ASSERT_EQ(tagged_block.branch_path(), branch_path);
 }
 
 TEST_F(LedgerMongodb, branch_path) {
   messages::Block block0, block1, block2, fork1, fork2;
-  messages::TaggedBlock tagged_block;
-  ASSERT_TRUE(ledger->get_block(ledger->height(), &block0));
+  ASSERT_TRUE(ledger->get_block(0, &block0));
   tooling::genblock::genblock_from_block(&block1, block0, 1);
   tooling::genblock::genblock_from_block(&block2, block1, 2);
 
@@ -213,16 +270,22 @@ TEST_F(LedgerMongodb, branch_path) {
   ASSERT_TRUE(ledger->insert_block(&fork2));
 
   // Check the branch path
+  messages::TaggedBlock tagged_block;
   ASSERT_TRUE(ledger->get_block(block2.header().id(), &tagged_block));
   ASSERT_EQ(tagged_block.branch(), messages::Branch::FORK);
-  ASSERT_EQ(to_vector(tagged_block.branch_path()),
-            std::vector<messages::BranchID>{0});
+  messages::BranchPath branch_path;
+  branch_path.add_branch_ids(0);
+  branch_path.add_block_numbers(2);
+  ASSERT_EQ(tagged_block.branch_path(), branch_path);
   tagged_block.Clear();
   ASSERT_TRUE(ledger->get_block(fork2.header().id(), &tagged_block));
   ASSERT_EQ(tagged_block.branch(), messages::Branch::FORK);
-  auto branch_path = std::vector<messages::BranchID>{1};
-  branch_path.push_back(0);
-  ASSERT_EQ(to_vector(tagged_block.branch_path()), branch_path);
+  branch_path.Clear();
+  branch_path.add_branch_ids(1);
+  branch_path.add_branch_ids(0);
+  branch_path.add_block_numbers(1);
+  branch_path.add_block_numbers(0);
+  ASSERT_EQ(tagged_block.branch_path(), branch_path);
 }
 
 TEST_F(LedgerMongodb, set_block_score) {
@@ -233,6 +296,106 @@ TEST_F(LedgerMongodb, set_block_score) {
   ASSERT_TRUE(ledger->get_block(block0.header().id(), &tagged_block));
   ASSERT_EQ(tagged_block.score(), 17);
 }
+
+TEST_F(LedgerMongodb, get_unscored_forks) {
+  messages::Block block0, block1, block2, fork1, fork2;
+  ASSERT_TRUE(ledger->get_block(0, &block0));
+  tooling::genblock::genblock_from_block(&block1, block0, 1);
+  tooling::genblock::genblock_from_block(&block2, block1, 2);
+
+  // Use a different height so that the fork has a different id
+  tooling::genblock::genblock_from_block(&fork1, block0, 2);
+  tooling::genblock::genblock_from_block(&fork2, fork1, 3);
+
+  // Insert the block2 which should be detached
+  ASSERT_TRUE(ledger->insert_block(&block2));
+  messages::TaggedBlock tagged_block;
+  ASSERT_TRUE(ledger->get_block(block2.header().id(), &tagged_block));
+  ASSERT_EQ(tagged_block.branch(), messages::Branch::DETACHED);
+  std::vector<messages::TaggedBlock> unscored_forks;
+  ASSERT_TRUE(ledger->get_unscored_forks(&unscored_forks));
+  ASSERT_EQ(unscored_forks.size(), 0);
+
+  // Insert the block1 which should attach the block2
+  ASSERT_TRUE(ledger->insert_block(&block1));
+  tagged_block.Clear();
+  ASSERT_TRUE(ledger->get_block(block1.header().id(), &tagged_block));
+  ASSERT_EQ(tagged_block.branch(), messages::Branch::FORK);
+  ASSERT_TRUE(ledger->get_block(block2.header().id(), &tagged_block));
+  ASSERT_EQ(tagged_block.branch(), messages::Branch::FORK);
+  unscored_forks.clear();
+  ASSERT_TRUE(ledger->get_unscored_forks(&unscored_forks));
+  ASSERT_EQ(unscored_forks.size(), 2);
+
+  ASSERT_TRUE(ledger->set_block_score(block1.header().id(), 1.17));
+  unscored_forks.clear();
+  ASSERT_TRUE(ledger->get_unscored_forks(&unscored_forks));
+  ASSERT_EQ(unscored_forks.size(), 1);
+
+  ASSERT_TRUE(ledger->set_block_score(block2.header().id(), 2.17));
+  unscored_forks.clear();
+  ASSERT_TRUE(ledger->get_unscored_forks(&unscored_forks));
+  ASSERT_EQ(unscored_forks.size(), 0);
+}
+
+TEST_F(LedgerMongodb, update_main_branch) {
+  messages::Block block0, block1, block2, fork1, fork2, fork3;
+  ASSERT_TRUE(ledger->get_block(0, &block0));
+  tooling::genblock::genblock_from_block(&block1, block0, 1);
+  tooling::genblock::genblock_from_block(&block2, block1, 2);
+
+  // Use a different height so that the fork has a different id
+  tooling::genblock::genblock_from_block(&fork1, block0, 2);
+  tooling::genblock::genblock_from_block(&fork2, fork1, 3);
+  tooling::genblock::genblock_from_block(&fork3, fork2, 4);
+
+  // Insert the main branch
+  ASSERT_TRUE(ledger->insert_block(&block1));
+  ASSERT_TRUE(ledger->insert_block(&block2));
+
+  // Insert the fork branch
+  ASSERT_TRUE(ledger->insert_block(&fork1));
+  ASSERT_TRUE(ledger->insert_block(&fork2));
+
+  ASSERT_TRUE(ledger->set_block_score(block0.header().id(), 1));
+  ASSERT_TRUE(ledger->set_block_score(block1.header().id(), 2));
+  ASSERT_TRUE(ledger->set_block_score(block2.header().id(), 3));
+  ASSERT_TRUE(ledger->set_block_score(fork1.header().id(), 2));
+  ASSERT_TRUE(ledger->set_block_score(fork2.header().id(), 2.5));
+
+  messages::TaggedBlock tip, tagged_block;
+  ASSERT_TRUE(ledger->update_main_branch(&tip));
+  ASSERT_EQ(tip.block().header().id(), block2.header().id());
+  ASSERT_EQ(tip.branch(), messages::Branch::MAIN);
+  ASSERT_TRUE(ledger->get_block(block2.header().id(), &tagged_block));
+  ASSERT_EQ(tagged_block.branch(), messages::Branch::MAIN);
+  ASSERT_TRUE(ledger->get_block(block1.header().id(), &tagged_block));
+  ASSERT_EQ(tagged_block.branch(), messages::Branch::MAIN);
+  ASSERT_TRUE(ledger->get_block(fork1.header().id(), &tagged_block));
+  ASSERT_EQ(tagged_block.branch(), messages::Branch::FORK);
+  ASSERT_TRUE(ledger->get_block(fork2.header().id(), &tagged_block));
+  ASSERT_EQ(tagged_block.branch(), messages::Branch::FORK);
+
+  // Switch MAIN branch
+  ASSERT_TRUE(ledger->insert_block(&fork3));
+  ASSERT_TRUE(ledger->set_block_score(fork3.header().id(), 3.5));
+  tip.Clear();
+  ASSERT_TRUE(ledger->update_main_branch(&tip));
+  ASSERT_EQ(tip.block().header().id(), fork3.header().id());
+  ASSERT_EQ(tip.branch(), messages::Branch::MAIN);
+  ASSERT_TRUE(ledger->get_block(fork3.header().id(), &tagged_block));
+  ASSERT_EQ(tagged_block.branch(), messages::Branch::MAIN);
+  ASSERT_TRUE(ledger->get_block(fork2.header().id(), &tagged_block));
+  ASSERT_EQ(tagged_block.branch(), messages::Branch::MAIN);
+  ASSERT_TRUE(ledger->get_block(fork1.header().id(), &tagged_block));
+  ASSERT_EQ(tagged_block.branch(), messages::Branch::MAIN);
+  ASSERT_TRUE(ledger->get_block(block1.header().id(), &tagged_block));
+  ASSERT_EQ(tagged_block.branch(), messages::Branch::FORK);
+  ASSERT_TRUE(ledger->get_block(block2.header().id(), &tagged_block));
+  ASSERT_EQ(tagged_block.branch(), messages::Branch::FORK);
+}
+
+TEST_F(LedgerMongodb, is_ancestor) { test_is_ancestor(); }
 
 }  // namespace tests
 }  // namespace ledger
