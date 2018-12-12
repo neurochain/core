@@ -228,14 +228,14 @@ class Ledger {
   }
 
   std::vector<messages::Input> build_inputs(
-      const std::vector<messages::Address> &unspent_transactions_ids,
+      const std::vector<messages::Hasher> &unspent_transactions_ids,
       const messages::Address &address) {
     std::vector<messages::Input> inputs;
 
     // Process the outputs and lookup their output_id to build the inputs
-    for (auto transaction_id : unspent_transactions_ids) {
+    for (const auto & transaction_id : unspent_transactions_ids) {
       auto transaction_outputs =
-          get_outputs_for_address(transaction_id, address);
+	get_outputs_for_address(transaction_id, address);
 
       for (auto output : transaction_outputs) {
         auto &input = inputs.emplace_back();
@@ -248,7 +248,7 @@ class Ledger {
   }
 
   messages::Transaction build_transaction(
-      const std::vector<messages::Address> &unspent_transactions_ids,
+      const std::vector<messages::Hasher> &unspent_transactions_ids,
       const std::vector<messages::Output> &outputs,
       const crypto::EccPriv &key_priv,
       const std::optional<const messages::NCCSDF> &fees = {}) {
@@ -266,7 +266,7 @@ class Ledger {
       const crypto::EccPriv &key_priv,
       const std::optional<messages::NCCSDF> &fees = {}) {
     messages::Transaction transaction;
-
+    
     // Build keys
     const crypto::EccPub key_pub = key_priv.make_public_key();
     const auto address = messages::Address(key_pub);
@@ -304,7 +304,7 @@ class Ledger {
     std::vector<messages::UnspentTransaction> unspent_transactions =
         list_unspent_transactions(bot_address);
 
-    std::vector<messages::Address> unspent_transactions_ids;
+    std::vector<messages::Hasher> unspent_transactions_ids;
     for (auto unspent_transaction : unspent_transactions) {
     }
 

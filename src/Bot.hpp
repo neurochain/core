@@ -11,7 +11,9 @@
 #include "messages/config/Config.hpp"
 #include "networking/Networking.hpp"
 #include "networking/tcp/Tcp.hpp"
-#include "rest/Rest.hpp"
+//#include "rest/Rest.hpp"
+#include "consensus/Consensus.hpp"
+
 namespace neuro {
 
 namespace tests {
@@ -41,7 +43,8 @@ class Bot {
   boost::asio::steady_timer _update_timer;
   std::shared_ptr<crypto::Ecc> _keys;
   std::shared_ptr<ledger::Ledger> _ledger;
-  std::shared_ptr<rest::Rest> _rest;
+  std::shared_ptr<consensus::Consensus> _consensus;
+  //std::shared_ptr<rest::Rest> _rest;
   std::unordered_set<int32_t> _request_ids;
   std::thread _io_context_thread;
 

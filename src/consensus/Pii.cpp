@@ -3,26 +3,29 @@
 namespace neuro {
 namespace consensus {
 
-bool Transactions::add_transaction(const messages::Transaction &transaction) {
-  bool is_unspent_output(const messages::Transaction &transaction,
-                         const int output_id)
+bool Pii::add_transaction(const messages::Transaction &transaction) {
+  // bool is_unspent_output(const messages::Transaction &transaction,
+  //                        const int output_id) {
+  return false;
 }
 
-bool Transactions::add_block(const messages::Block &block) {
+bool Pii::add_block(const messages::Block &block) {
   for (const auto &transaction : block.transactions()) {
-    auto emplaced_transaction = _transactions.emplace_back(transaction);
-    TaggedTransaction tagger_transaction;
-
+    _transactions.push_back(std::make_unique<messages::Transaction>(transaction));
+    const auto inputs = transaction.inputs();
+    
     for (const auto &input : inputs) {
       const auto &key_pub = transaction.key_pubs(input.key_id());
-      if (!ledger->get_transaction(input.id(), &prev_transaction)) {
+      messages::Transaction prev_transaction;
+      if (!_ledger->get_transaction(input.id(), &prev_transaction)) {
         LOG_ERROR << "Could not find previous transaction " << input.id();
         return false;
       }
     }
 
-    for (const auto &output : outputs) {
-    }
+    //const auto outputs = transactions.outputs();
+    // for (const auto &output : outputs) {
+    // }
   }
 }
 

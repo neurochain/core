@@ -31,7 +31,6 @@ class Rest {
   std::string list_transactions(const std::string &address) const;
   messages::Transaction build_transaction(
       const messages::TransactionToPublish &transaction_to_publish) const;
-  messages::Hasher load_hash(const std::string &hash_str) const;
   messages::GeneratedKeys generate_keys() const;
   messages::Transaction build_faucet_transaction(
       const messages::Address &address, const uint64_t amount);

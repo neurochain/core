@@ -103,7 +103,6 @@ bool genblock_from_block(
     neuro::messages::Input *input = new_trans->add_inputs();
     input->mutable_id()->CopyFrom(sender.id());
     input->set_output_id(num_output);
-    input->mutable_block_id()->CopyFrom(last_block.header().id());
     input->set_key_id(0);
 
     // Output to recevied

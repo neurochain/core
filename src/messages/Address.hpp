@@ -10,10 +10,10 @@ namespace messages {
 
 class Address : public _Address {
  private:
-  int hash_size = 10;
-  int checksum_size = 2;
+  std::size_t hash_size = 10;
+  std::size_t checksum_size = 2;
 
-  void load(const messages::KeyPub &key_pub) {
+  void init(const messages::KeyPub &key_pub) {
     auto key = crypto::hash_sha3_256(key_pub);
     auto checksum = crypto::hash_sha3_256(key);
     checksum.resize(checksum_size);
@@ -22,16 +22,13 @@ class Address : public _Address {
   }
 
  public:
-  Address(const messages::KeyPub &key_pub) { load(key_pub); }
+  Address(const messages::KeyPub &key_pub) { init(key_pub); }
 
   Address(const crypto::EccPub &ecc_pub) {
     messages::KeyPub key_pub;
     ecc_pub.save(&key_pub);
-    load(key_pub);
+    init(key_pub);
   }
-
-  Address(const Address &address) {}
-  Address &operator=(const Address &) {}
 
   bool verify() const {
     if (!has_data()) {

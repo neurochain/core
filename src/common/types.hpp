@@ -24,10 +24,10 @@ enum class ProtocolType { PROTOBUF2, JSON, BSON };
 
 }  // namespace networking
 
-namespace Pii {
+namespace consensus {
 // we might change double implementation later
 using Double = double;
-}  // namespace Pii
+}  // namespace consensus
 
 namespace consensus {
 using Address = std::string;
