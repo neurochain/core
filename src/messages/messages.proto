@@ -100,6 +100,8 @@ enum Branch {
 // And the second one will have {branch_ids: [1, 0], block_numbers: [0, 1]}
 // This indicates that this block is the block number 0 of the branch 1
 // and that it forked from the branch 0 at block number 1.
+// If another block arrives which also has height 1 it gets
+// {branch_ids: [2, 0], block_numbers: [0, 1]}.
 message BranchPath {
   repeated uint32 branch_ids = 1;
   repeated uint32 block_numbers = 2;
