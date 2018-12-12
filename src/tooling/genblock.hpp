@@ -23,8 +23,8 @@ namespace tooling {
 namespace genblock {
 
 bool genblock_from_block(
-    messages::Block *block, const messages::Block &last_block, int32_t height,
-    const uint64_t seed = 1,
+    messages::Block *block, const messages::Block &last_block,
+    const int32_t height, const uint64_t seed = 1,
     std::optional<neuro::messages::KeyPub> author = std::nullopt) {
   /*uint32_t height = last_height;
   if (height == 0) {

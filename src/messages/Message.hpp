@@ -33,8 +33,6 @@ bool from_bson(const bsoncxx::document::view &doc, Packet *packet);
 std::size_t to_buffer(const Packet &packet, Buffer *buffer);
 void to_json(const Packet &packet, std::string *output);
 bsoncxx::document::value to_bson(const Packet &packet);
-bsoncxx::builder::basic::array to_bson(
-    const std::vector<messages::BranchID> branch_path);
 std::ostream &operator<<(std::ostream &os, const Packet &packet);
 
 template <typename T>
