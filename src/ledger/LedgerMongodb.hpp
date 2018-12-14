@@ -156,6 +156,8 @@ class LedgerMongodb : public Ledger {
   messages::BranchPath first_child(
       const messages::BranchPath &branch_path) const;
 
+  void empty_database();
+
   friend class neuro::ledger::tests::LedgerMongodb;
 };
 

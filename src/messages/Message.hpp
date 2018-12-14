@@ -23,6 +23,7 @@ using BranchID = uint32_t;
 using BlockScore = double;
 
 Type get_type(const Body &body);
+NCCSDF ncc_amount(uint64_t amount);
 
 bool from_buffer(const Buffer &buffer, Packet *packet);
 bool from_json(const std::string &json, Packet *packet);

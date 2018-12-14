@@ -123,6 +123,8 @@ class Ledger {
   virtual messages::BranchPath first_child(
       const messages::BranchPath &branch_path) const = 0;
 
+  virtual void empty_database() = 0;
+
   // helpers
 
   messages::Transactions list_transactions(

@@ -3,7 +3,7 @@
 #include "config.pb.h"
 #include "src/ledger/LedgerMongodb.hpp"
 #include "src/messages/Message.hpp"
-#include "src/tooling/genblock.hpp"
+#include "src/tooling/blockgen.hpp"
 
 namespace neuro {
 namespace test {
@@ -17,7 +17,7 @@ TEST(Blocks, Set_Block1_9) {
 
   for (int i = 1; i < 10; ++i) {
     messages::Block block;
-    tooling::genblock::genblock_from_last_db_block(block, ledger, 1, i);
+    tooling::blockgen::blockgen_from_last_db_block(block, ledger, 1, i);
 
     ledger->push_block(block);
   }

@@ -810,5 +810,7 @@ bool LedgerMongodb::update_main_branch(messages::TaggedBlock *main_branch_tip) {
   return true;
 }
 
+void LedgerMongodb::empty_database() { _db.drop(); }
+
 }  // namespace ledger
 }  // namespace neuro

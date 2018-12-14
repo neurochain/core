@@ -10,7 +10,7 @@
 // #include "ledger/LedgerMongodb.hpp"
 // #include "messages/Subscriber.hpp"
 // #include "messages/config/Config.hpp"
-// #include "tooling/genblock.hpp"
+// #include "tooling/blockgen.hpp"
 
 // namespace neuro {
 
@@ -73,7 +73,7 @@
 
 //   void add_block() {
 //     messages::Block new_block;
-//     neuro::tooling::genblock::genblock_from_last_db_block(new_block,
+//     neuro::tooling::blockgen::blockgen_from_last_db_block(new_block,
 //                                                           _bot._ledger, 1, 0);
 //     _bot._ledger->push_block(new_block);
 //   }

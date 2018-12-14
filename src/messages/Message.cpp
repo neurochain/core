@@ -7,6 +7,12 @@ namespace messages {
 
 Type get_type(const Body &body) { return body.body_case(); }
 
+NCCSDF ncc_amount(uint64_t amount) {
+  NCCSDF ncc;
+  ncc.set_value(amount);
+  return ncc;
+}
+
 bool from_buffer(const Buffer &buffer, Packet *packet) {
   return packet->ParseFromArray(buffer.data(), buffer.size());
 }
