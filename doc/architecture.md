@@ -1,6 +1,26 @@
 # Architecture 
 
-[TOC]
+<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
+**Table of Contents**
+
+- [Architecture](#architecture)
+- [Communication](#communication)
+    - [Message](#message)
+        - [Format](#format)
+        - [Pipeline](#pipeline)
+    - [Directory](#directory)
+    - [Handshake](#handshake)
+- [Crypto](#crypto)
+    - [Signature](#signature)
+    - [Keys](#keys)
+- [Rest](#rest)
+- [Wallet](#wallet)
+- [Ledger](#ledger)
+- [Miners](#miners)
+    - [Mining algorithm](#mining-algorithm)
+    - [Writting blocks](#writting-blocks)
+
+<!-- markdown-toc end -->
 
 # Communication 
 
@@ -60,8 +80,30 @@ Two types of keys are used:
 
 The bot exposes a local REST endpoint (http). 
 
-It allows 
+It allows to request the ledger, and send transaction to the network. 
 
 # Wallet 
 
 ![wallet](../../doc/img/wallet.png "Wallet")
+
+Known issues: 
+* Either keys or password passed in clear to the wallet bakend.
+
+# Ledger 
+
+Contains the blockchain. It stored in a mongo local database (each bot has its own).
+Two collections are used, one containing block headers, and other one containing transactions. When 
+
+# Miners 
+
+Miners need to register by writting a "special" transaction into the blockchain. Later, this transaction will be used to separate keys signing blocks from keys earning Pii.
+
+## Mining algorithm
+
+Mining algorithm are not written (yet). Developpers can write their own using the rest API (or by hacking the actual C++ code). 
+
+## Writting blocks
+
+In order to write blocks (and to be rewarded), miners will need to register their into the bot. 
+For safety reasons, 
+ 
