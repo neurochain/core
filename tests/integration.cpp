@@ -1363,9 +1363,9 @@ TEST(INTEGRATION, terminate_on_bad_version) {
     ASSERT_TRUE(peers_bot0[0].endpoint() == "127.0.0.1" &&
                 peers_bot0[0].port() == 1338);
 
-    auto msg = std::make_shared<messages::Message>();
-    msg->add_bodies()->mutable_get_peers();
-    auto header = msg->mutable_header();
+    messages::Message msg;
+    msg.add_bodies()->mutable_get_peers();
+    auto header = msg.mutable_header();
     messages::fill_header(header);
     header->set_version(neuro::MessageVersion + 100);
     bot0->networking()->send(msg);

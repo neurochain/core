@@ -21,7 +21,6 @@ std::shared_ptr<messages::Message> getWorldMessage() {
       "NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP/////"
       "///////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABOBPdJmNMRu7dZ0O4+b/"
       "jG5CyuLeI870VKYu0DrtJ8I8VW3wt5NcbqfqIk7OI0+9cE7+xCPtKwF1vAHi730nMJ0=");
-  world->set_accepted(true);
   return message_world;
 }
 

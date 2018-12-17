@@ -114,10 +114,10 @@ void PiiConsensus::build_block() {
   }
   auto it = _wallets_keys.find(next_owner);
   if (it != _wallets_keys.end()) {
-    auto message = std::make_shared<messages::Message>();
-    auto header = message->mutable_header();
+    messages::Message message;
+    auto header = message.mutable_header();
     messages::fill_header(header);
-    auto new_block = message->add_bodies()->mutable_block();
+    auto new_block = message.add_bodies()->mutable_block();
     int h = _transaction_pool.build_block(new_block, next_height,
                                           it->second.get(), 858993459200lu);
     _transaction_pool.delete_transactions(new_block->transactions());

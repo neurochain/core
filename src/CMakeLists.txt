@@ -45,6 +45,10 @@ add_library(core
   ./networking/tcp/Tcp.hpp
   ./networking/tcp/Connection.cpp
   ./networking/tcp/Connection.hpp
+  ./networking/tcp/InboundConnection.cpp
+  ./networking/tcp/InboundConnection.hpp
+  ./networking/tcp/OutboundConnection.cpp
+  ./networking/tcp/OutboundConnection.hpp
   ./networking/tcp/client.hpp
   ./networking/tcp/Tcp.cpp
   ./networking/tcp/Client.hpp

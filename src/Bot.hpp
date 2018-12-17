@@ -63,10 +63,6 @@ class Bot {
  private:
   bool init();
 
-  void handler_hello(const messages::Header &header,
-                     const messages::Body &body);
-  void handler_world(const messages::Header &header,
-                     const messages::Body &body);
   void update_connection_graph();
   void handler_connection(const messages::Header &header,
                           const messages::Body &body);

@@ -30,10 +30,11 @@ class Networking {
    ~Networking();
 
    std::shared_ptr<Tcp> create_tcp(std::shared_ptr<crypto::Ecc> keys,
-                                   const Port port);
-   bool send(const std::shared_ptr<messages::Message>& message);
+                                   const Port port,
+                                   const std::size_t max_connections);
+   bool send(messages::Message& message);
    bool send_unicast(
-       const RemoteKey& id, const std::shared_ptr<messages::Message>& message);
+       const RemoteKey& id, messages::Message& message);
    messages::Peers connected_peers() const;
    std::size_t peer_count() const;
    void join();

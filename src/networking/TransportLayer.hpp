@@ -30,8 +30,8 @@ class TransportLayer {
    TransportLayer(std::shared_ptr<messages::Queue> queue,
                   std::shared_ptr<crypto::Ecc> keys);
 
-   virtual bool send(const std::shared_ptr<messages::Message>& message) = 0;
-   virtual bool send_unicast(const RemoteKey& id, const std::shared_ptr<messages::Message>& message) = 0;
+   virtual bool send(const messages::Message& message) = 0;
+   virtual bool send_unicast(const RemoteKey& id, const messages::Message& message) = 0;
    virtual std::size_t peer_count() const = 0;
 
    virtual ~TransportLayer(){};

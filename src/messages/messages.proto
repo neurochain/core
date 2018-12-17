@@ -10,9 +10,7 @@ message Hello {
 }
 
 message World {
-  required bool accepted = 1;
-  required KeyPub key_pub = 2;
-  repeated Peer peers = 3;
+  required KeyPub key_pub = 1;
 }
 
 message GetPeers {
@@ -86,7 +84,6 @@ message ConnectionClosed {
 }
 
 message ConnectionReady {
-  required bool from_remote = 1;
 }
 
 message BodyCount {}
@@ -114,7 +111,6 @@ message Header {
   optional Hash signature = 3;
   optional int32 id = 11;
   optional int32 request_id = 12;
-  optional Peer peer = 13;
 }
 
 message _Message {

@@ -37,9 +37,9 @@ class Ecc {
 
   bool save(const std::string &filepath_private,
             const std::string &filepath_public) const;
-  Buffer sign(const Buffer &input);
-  Buffer sign(const uint8_t *data, const std::size_t size);
-  void sign(const uint8_t *data, const std::size_t size, uint8_t *dest);
+  Buffer sign(const Buffer &input) const;
+  Buffer sign(const uint8_t *data, const std::size_t size) const;
+  void sign(const uint8_t *data, const std::size_t size, uint8_t *dest) const;
   static constexpr std::size_t sign_length() { return EccPriv::sign_length(); }
   friend class test::Ecc;
 };

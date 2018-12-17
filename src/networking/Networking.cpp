@@ -13,19 +13,20 @@ Networking::Networking(std::shared_ptr<messages::Queue>& queue)
   _queue->run();
 }
 
-bool Networking::send(const std::shared_ptr<messages::Message>& message) {
-  message->mutable_header()->set_id(_dist(_rd));
+bool Networking::send(messages::Message& message) {
+  message.mutable_header()->set_id(_dist(_rd));
   return _transport_layer->send(message);
 }
 
-bool Networking::send_unicast(const RemoteKey& key, const std::shared_ptr<messages::Message>& message) {
-  assert(message->header().has_peer());
+bool Networking::send_unicast(const RemoteKey& key, messages::Message& message) {
   return _transport_layer->send_unicast(key, message);
 }
 
 std::shared_ptr<Tcp> Networking::create_tcp(std::shared_ptr<crypto::Ecc> keys,
-    const Port port) {
-  std::shared_ptr<Tcp> tcp = std::make_shared<Tcp>(port, _queue, keys);
+                                            const Port port,
+                                            const std::size_t max_connections) {
+  std::shared_ptr<Tcp> tcp =
+      std::make_shared<Tcp>(port, _queue, keys, max_connections);
   _transport_layer = tcp;
   return tcp;
 }

@@ -1,8 +1,6 @@
 #ifndef NEURO_SRC_NETWORKING_TCP_TCP_HPP
 #define NEURO_SRC_NETWORKING_TCP_TCP_HPP
 
-#include <boost/asio.hpp>
-#include <boost/bind.hpp>
 #include <unordered_map>
 
 #include "common/types.hpp"
@@ -36,21 +34,22 @@ class Tcp : public TransportLayer {
    private:
     std::shared_ptr<boost::asio::io_context> _io_context;
     ConnectedPeers _connections;
+    std::size_t _max_size;
     mutable std::mutex _connections_mutex;
 
    public:
-    ConnectionPool(const std::shared_ptr<boost::asio::io_context> &io_context);
+    ConnectionPool(std::size_t max_size,
+                   const std::shared_ptr<boost::asio::io_context>& io_context);
     ~ConnectionPool();
-    std::pair<iterator, bool> insert(const ID& id,
-        const std::shared_ptr<tcp::Connection>& peered_connection);
-    std::optional<Port> connection_port(const ID& id) const;
+    bool insert(const ID& id,
+                const std::shared_ptr<tcp::Connection>& paired_connection);
+    // std::optional<Port> connection_port(const ID& id) const;
     std::size_t size() const;
-    bool send(std::shared_ptr<Buffer> &header_tcp,
-              std::shared_ptr<Buffer> &body_tcp);
-    bool send_unicast(const ID& id, std::shared_ptr<Buffer>& header_tcp,
-                      std::shared_ptr<Buffer>& body_tcp);
+    bool send(const messages::Message& message);
+    bool send_unicast(const ID& id, const messages::Message& message);
     bool disconnect(const ID& id);
     bool disconnect_all();
+    bool is_full() const;
   };
 
   using KnownRemotes = std::set<messages::Peer>;
@@ -66,30 +65,33 @@ class Tcp : public TransportLayer {
   std::shared_ptr<bai::tcp::socket> _new_socket;
   std::thread _io_context_thread;
 
-  void new_connection(std::shared_ptr<bai::tcp::socket> socket,
-                      const boost::system::error_code &error,
-                      std::shared_ptr<messages::Peer> peer,
-                      const bool from_remote);
+  std::shared_ptr<messages::Message> build_new_connection_message() const;
+  std::shared_ptr<messages::Message> build_disconnection_message() const;
+  void new_outbound_connection(const std::shared_ptr<bai::tcp::socket>& socket,
+                               const boost::system::error_code& error,
+                               std::shared_ptr<messages::Peer> peer);
 
-  bool serialize(const std::shared_ptr<messages::Message>& message, Buffer *header_tcp,
-                 Buffer *body_tcp);
+  void new_inbound_connection(const std::shared_ptr<bai::tcp::socket>& socket,
+                              const boost::system::error_code& error,
+                              std::shared_ptr<messages::Peer> peer);
 
   void start_accept();
-  void accept(const boost::system::error_code &error);
+  void accept(const boost::system::error_code& error);
   void terminate(const RemoteKey& id);
-  bool disconnect(const RemoteKey &id);
+  bool disconnect(const RemoteKey& id);
 
  public:
-  Tcp(Tcp &&) = delete;
-  Tcp(const Tcp &) = delete;
+  Tcp(Tcp&&) = delete;
+  Tcp(const Tcp&) = delete;
   Tcp(Port port, std::shared_ptr<messages::Queue> queue,
-      std::shared_ptr<crypto::Ecc> keys);
-  bool send(const std::shared_ptr<messages::Message>& message);
-  bool send_unicast(const RemoteKey& id, const std::shared_ptr<messages::Message>& message);
+      std::shared_ptr<crypto::Ecc> keys, std::size_t max_size);
+  bool send(const messages::Message& message);
+  bool send_unicast(const RemoteKey& id,
+                    const messages::Message& message);
   Port listening_port() const;
   IP local_ip() const;
   std::size_t peer_count() const;
-  std::optional<Port> connection_port(const RemoteKey& id) const;
+//   std::optional<Port> connection_port(const RemoteKey& id) const;
   void stop();
   void join();
   ~Tcp();

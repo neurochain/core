@@ -48,13 +48,13 @@ bool Ecc::save(const std::string &filepath_private,
   return true;
 }
 
-Buffer Ecc::sign(const Buffer &input) { return _key_private.sign(input); }
+Buffer Ecc::sign(const Buffer &input) const { return _key_private.sign(input); }
 
-Buffer Ecc::sign(const uint8_t *data, const std::size_t size) {
+Buffer Ecc::sign(const uint8_t *data, const std::size_t size) const {
   return _key_private.sign(data, size);
 }
 
-void Ecc::sign(const uint8_t *data, const std::size_t size, uint8_t *dest) {
+void Ecc::sign(const uint8_t *data, const std::size_t size, uint8_t *dest) const {
   return _key_private.sign(data, size, dest);
 }
 

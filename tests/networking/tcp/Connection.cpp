@@ -1,6 +1,7 @@
 #include "networking/tcp/Connection.hpp"
 #include <gtest/gtest.h>
 
+#include "crypto/Ecc.hpp"
 #include "src/messages/Queue.hpp"
 
 namespace neuro {
@@ -13,12 +14,12 @@ TEST(Connection, constructor) {
   auto socket = std::make_shared<bai::tcp::socket>(*io_context_ptr);
   auto queue = std::make_shared<messages::Queue>();
   ASSERT_NE(queue, nullptr);
-  auto peer = std::make_shared<messages::Peer>();
-  tcp::Connection connection_0(queue, socket, peer);
-  tcp::Connection connection_1(queue, socket, peer);
+  auto ecc_keys0 = std::make_shared<crypto::Ecc>();
+  auto ecc_keys1 = std::make_shared<crypto::Ecc>();
+  std::size_t count_disconnection = 0;
+  ASSERT_EQ(count_disconnection, 0);
 }
 
 }  // namespace test
 }  // namespace networking
 }  // namespace neuro
-
