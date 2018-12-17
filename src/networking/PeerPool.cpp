@@ -9,7 +9,9 @@ bool PeerPool::insert(const PeerPtr& peer) {
   if (!peer->has_key_pub()) {
     return false;
   }
-  auto key = std::hash(peer->key_pub());
+  crypto::EccPub ecc_pub;
+  ecc_pub.load(peer->key_pub());
+  auto key = std::hash(ecc_pun.save());
   return _peers.insert(std::make_pair(key, peer)).second;
 }
 
