@@ -30,19 +30,6 @@ bool Tcp::ConnectionPool::insert(
   return _connections.insert(std::make_pair(id, paired_connection)).second;
 }
 
-// std::optional<Port> Tcp::ConnectionPool::connection_port(
-//     const ID& id) const {
-//   std::optional<Port> ans;
-//   std::lock_guard<std::mutex> lock_queue(_connections_mutex);
-//   auto got = _connections.find(id);
-//   if (got != _connections.end()) {
-//     ans = got->second->listen_port();
-//   } else {
-//     LOG_ERROR << this << " " << __LINE__ << " Connection not found";
-//   }
-//   return ans;
-// }
-
 std::size_t Tcp::ConnectionPool::size() const {
   std::lock_guard<std::mutex> lock_queue(_connections_mutex);
   return _connections.size();
@@ -231,10 +218,6 @@ void Tcp::new_inbound_connection(
                 << error.message();
   }
 }
-
-// std::optional<Port> Tcp::connection_port(const RemoteKey& id) const {
-//   return _connection_pool.connection_port(id);
-// }
 
 void Tcp::terminate(const RemoteKey& id) { _connection_pool.disconnect(id); }
 

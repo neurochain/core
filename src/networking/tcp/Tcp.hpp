@@ -43,7 +43,6 @@ class Tcp : public TransportLayer {
     ~ConnectionPool();
     bool insert(const ID& id,
                 const std::shared_ptr<tcp::Connection>& paired_connection);
-    // std::optional<Port> connection_port(const ID& id) const;
     std::size_t size() const;
     bool send(const messages::Message& message);
     bool send_unicast(const ID& id, const messages::Message& message);
@@ -91,7 +90,6 @@ class Tcp : public TransportLayer {
   Port listening_port() const;
   IP local_ip() const;
   std::size_t peer_count() const;
-//   std::optional<Port> connection_port(const RemoteKey& id) const;
   void stop();
   void join();
   ~Tcp();
