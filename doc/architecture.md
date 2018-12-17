@@ -24,15 +24,15 @@ Every message is signed with the "communication keys (cf [keys](Keys)).
 
 ## Directory 
 
-A bot comes with a configuration containing trusted bot address: 
+A bot comes with a configuration containing trusted bots. 
 * Hostname.
-* Port 
+* Port.
 * Public key.
 
 The trusted bots act as:
 * Entry point to the network.
 * Directory to find other bots. 
-* Send the tip of the main branch. 
+* Send the tip of the main branch (to avoid long range attacks).
 
 Everytime two bots connect to each others, they exchange credentials and keep them for further use (so every bot act as directory).
 
@@ -40,8 +40,8 @@ Everytime two bots connect to each others, they exchange credentials and keep th
 ## Handshake 
 
 After a tcp connection is established:
-The bot that initiate the connection send a Hello message with its port and public key. 
-The remote answer with its a peer list (see [Directory](Directory)) and if it want to keep the connection or not. Keeping the connection is based on the actual number of connection a bot already has, to avoid getting a [star network](https://en.wikipedia.org/wiki/Star_network). With those really few rules, we are able to achieve a connected, scalable and decentralized mesh network. 
+The bot that initiates the connection sends a Hello message with its port and public key. 
+The remote answers with its a peer list (see [Directory](Directory)) and if it wants to keep the connection or not. Keeping the connection is based on the actual number of connections a bot already has, to avoid getting a [star network](https://en.wikipedia.org/wiki/Star_network). With those really few rules, we are able to achieve a connected, scalable and decentralized mesh network. 
 
 
 # Crypto 
@@ -53,12 +53,15 @@ The remote answer with its a peer list (see [Directory](Directory)) and if it wa
 ## Keys 
 
 Two types of keys are used: 
-* Communication, each bot auto generate a pair the first time it start, and store them on disk (unprotected, and we should do something about it). 
+* Communication, each bot auto generates a pair the first time it starts, and stores them on disk (unprotected, and we should do something about it). 
 * Transaction (some call them Wallet) keys. Those that "hold" your NCC.
 
 # Rest 
 
-The bot expose a local REST endpoint. API 
+The bot exposes a local REST endpoint (http). 
+
+It allows 
 
 # Wallet 
 
+![wallet](../../doc/img/wallet.png "Wallet")
