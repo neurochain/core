@@ -92,42 +92,50 @@
 
 //   subscriber0.subscribe(
 //       messages::Type::kHello,
-//       [&listener](const messages::Header &header, const messages::Body &body) {
+//       [&listener](const messages::Header &header, const messages::Body &body)
+//       {
 //         listener.handler_hello(header, body);
 //       });
 //   subscriber1.subscribe(
 //       messages::Type::kHello,
-//       [&listener](const messages::Header &header, const messages::Body &body) {
+//       [&listener](const messages::Header &header, const messages::Body &body)
+//       {
 //         listener.handler_hello(header, body);
 //       });
 //   subscriber2.subscribe(
 //       messages::Type::kHello,
-//       [&listener](const messages::Header &header, const messages::Body &body) {
+//       [&listener](const messages::Header &header, const messages::Body &body)
+//       {
 //         listener.handler_hello(header, body);
 //       });
 //   subscriber0.subscribe(
 //       messages::Type::kWorld,
-//       [&listener](const messages::Header &header, const messages::Body &body) {
+//       [&listener](const messages::Header &header, const messages::Body &body)
+//       {
 //         listener.handler_world(header, body);
 //       });
 //   subscriber1.subscribe(
 //       messages::Type::kWorld,
-//       [&listener](const messages::Header &header, const messages::Body &body) {
+//       [&listener](const messages::Header &header, const messages::Body &body)
+//       {
 //         listener.handler_world(header, body);
 //       });
 //   subscriber2.subscribe(
 //       messages::Type::kWorld,
-//       [&listener](const messages::Header &header, const messages::Body &body) {
+//       [&listener](const messages::Header &header, const messages::Body &body)
+//       {
 //         listener.handler_world(header, body);
 //       });
 //   subscriber0.subscribe(
 //       messages::Type::kConnectionReady,
-//       [&listener](const messages::Header &header, const messages::Body &body) {
+//       [&listener](const messages::Header &header, const messages::Body &body)
+//       {
 //         listener.handler_connection0(header, body);
 //       });
 //   subscriber1.subscribe(
 //       messages::Type::kConnectionReady,
-//       [&listener](const messages::Header &header, const messages::Body &body) {
+//       [&listener](const messages::Header &header, const messages::Body &body)
+//       {
 //         listener.handler_connection1(header, body);
 //       });
 
@@ -141,7 +149,8 @@
 
 //   std::this_thread::sleep_for(3s);
 
-//   ASSERT_GT(listener.received_connection0() + listener.received_connection1(), 0);
+//   ASSERT_GT(listener.received_connection0() +
+//   listener.received_connection1(), 0);
 //   ASSERT_GT(listener.received_connection0(), 0);
 //   ASSERT_GT(listener.received_connection1(), 0);
 //   ASSERT_GT(listener.received_hello(), 0);
@@ -239,7 +248,8 @@
 
 //   subscriber0.subscribe(
 //       messages::Type::kConnectionClosed,
-//       [&listener](const messages::Header &header, const messages::Body &body) {
+//       [&listener](const messages::Header &header, const messages::Body &body)
+//       {
 //         listener.handler_deconnection(header, body);
 //       });
 

@@ -14,7 +14,8 @@ message Hello {
 
 message World {
   required bool accepted = 1; // are accepting to keep the remote bot
-  repeated Peer peers = 2;
+  required Hash main_tip = 2;
+  repeated Peer peers = 3;
 }
 
 // Update 
@@ -52,7 +53,6 @@ message Input {
   required int32 output_id = 2;
   required int32 key_id = 3;
   optional Hash block_id = 4;
-  optional int32 signature_id = 5;
 }
 
 message Output {
@@ -72,8 +72,8 @@ message Transaction {
   repeated Input inputs = 2;
   repeated Output outputs = 3;
   repeated Signature signatures = 4;
-  repeated KeyPub key_pubs = 5;
-  optional NCCSDF fees = 6;
+  optional NCCSDF fees = 5;
+  optional bytes data = 6;
 }
 
 message BlockHeader {

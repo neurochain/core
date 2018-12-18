@@ -3,7 +3,6 @@
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
 **Table of Contents**
 
-- [Architecture](#architecture)
 - [Communication](#communication)
     - [Message](#message)
         - [Request Reply](#request-reply)
@@ -22,6 +21,10 @@
 - [Wallet](#wallet)
 - [Ledger](#ledger)
     - [Update](#update)
+    - [Address](#address)
+    - [Transaction](#transaction)
+    - [Block](#block)
+- [PII TL;DR](#pii-tldr)
 - [Miners](#miners)
     - [Mining algorithm](#mining-algorithm)
     - [Writting blocks](#writting-blocks)
@@ -150,6 +153,48 @@ This last point rely on the identity of the serialization (Protobuf <=> Json <=>
 
 When connecting for the first time, or reconnecting after an absence, a bot needs to update its ledger. This is a critical moment for non POW chains as fake are easy to forge. 
 During the handshake, bots exchange the tip of their main branch. From there, the bot can ask its peers for parent block to update itself.
+
+## Address 
+
+Format is strongly inspired from (Bitcoin's address)[https://en.bitcoin.it/wiki/Technical_background_of_version_1_Bitcoin_addresses]. We hash the public key, take the 20 first bytes. Hash them and take the 4 first byte (as a checksum). Concatenate everything and encode it in base 58.
+
+## Transaction 
+
+A transaction has:
+* An id (the hash of the transaction).
+* An array of public keys and signature.
+* 0 or many inputs. 
+  * An input refer to an unspent output transaction by its hash and output id.
+  * The index of the public and signature.
+* 0 or many outputs.
+  * An address.
+  * An amount.
+  * Output id.
+  * Optional data.
+* Optional fees (for block miner).
+* Optional data. 
+
+To write a transaction you first to set to empty the signatures and id (and fill the remaining fileds).
+Sign, set the signatures, hash and set the id. 
+
+## Block
+
+# PII TL;DR
+
+The PII is an algorithm rating address based on their transactions. 
+
+After a period called assembly, an election is made, mean rating and ranking all the address which has made transaction during this period. 
+The 500 first address will be allowed to write blocks during the "after the next" (not the following, the one after) assembly. We delay the use of the ranking to smooth 
+PII computation and not stole the blockchain.
+
+During an assembly address amongs the 500 are chosen randomly to write 24 blocks in a row.
+
+The seed for randomness is the sha3-256 of the parity of the hash of every block of the election assembly. 
+
+Example: 
+* During election assembly block hash are: 0xdead, 0xc0de, 0x4242, 0x1337 => hashing 0001 
+
+Since last miner of the assembly period can "choose" the hash parity by selecting transaction it inserts the block. Last miner can only choose between two seeds. 
 
 # Miners 
 
