@@ -175,9 +175,20 @@ A transaction has:
 * Optional data. 
 
 To write a transaction you first to set to empty the signatures and id (and fill the remaining fileds).
-Sign, set the signatures, hash and set the id. 
+Sign, set the signatures, hash and set the 
+
+0 inputs and outputs are for free (no fees) transactions that just write data into the blockchain.
 
 ## Block
+
+Contains a header: 
+* Id (hash of the block, done with empty id).
+* Timestamp. 
+* Previous block's hash. 
+* Public key of author. 
+* height.
+
+And a list of transactions. Transaction are sorted by their hash.
 
 # PII TL;DR
 
