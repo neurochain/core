@@ -77,7 +77,7 @@ Everytime two bots connect to each others, they exchange credentials and keep th
 
 ## Message Sequence
 
-![message sequence](img/message_sequence.png "Message Sequence")
+![message sequence](img/message_exchange.png "Message Sequence")
 
 
 ### Tcp Connection 
