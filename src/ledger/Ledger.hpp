@@ -108,6 +108,8 @@ class Ledger {
                                messages::BlockHeight *blockheight) const = 0;
   virtual bool add_transaction(
       const messages::TaggedTransaction &tagged_transaction) = 0;
+  virtual bool add_to_transaction_pool(
+      const messages::Transaction &transaction) = 0;
   virtual bool delete_transaction(const messages::Hash &id) = 0;
   virtual std::size_t get_transaction_pool(messages::Block *block) = 0;
 
@@ -221,6 +223,15 @@ class Ledger {
       }
     }
     return unspent_transactions;
+  }
+
+  messages::NCCSDF available_ncc(const messages::Address &address) {
+    uint64_t total = 0;
+    const auto unspent_transactions = list_unspent_transactions(address);
+    for (const auto &unspent_transaction : unspent_transactions) {
+      total += unspent_transaction.value().value();
+    }
+    return messages::ncc_amount(total);
   }
 
   void add_change(messages::Transaction *transaction,

@@ -33,6 +33,7 @@ bool from_bson(const bsoncxx::document::view &doc, Packet *packet);
 
 std::size_t to_buffer(const Packet &packet, Buffer *buffer);
 void to_json(const Packet &packet, std::string *output);
+std::string to_json(const Packet &packet);
 bsoncxx::document::value to_bson(const Packet &packet);
 std::ostream &operator<<(std::ostream &os, const Packet &packet);
 

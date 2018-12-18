@@ -25,7 +25,7 @@ namespace blockgen {
 
 void coinbase(const crypto::EccPub &key_pub, const messages::NCCSDF &ncc,
               messages::Transaction *transaction,
-              const std::string output_data) {
+              const std::string output_data = "") {
   Buffer key_pub_raw;
   key_pub.save(&key_pub_raw);
   messages::Hasher address(key_pub_raw);

@@ -6,6 +6,13 @@ namespace crypto {
 
 bool sign(const std::vector<const crypto::Ecc *> keys,
           messages::Transaction *transaction) {
+  // Fill the id which is a required field. This makes the transaction
+  // serializable.
+  // The transaction should always be hashed after setting the signature so this
+  // should not be overwriting anything
+  transaction->mutable_id()->set_type(messages::Hash::SHA256);
+  transaction->mutable_id()->set_data("");
+
   Buffer transaction_serialized;
   messages::to_buffer(*transaction, &transaction_serialized);
 

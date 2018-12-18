@@ -1,4 +1,5 @@
 #include "messages/Message.hpp"
+#include <boost/stacktrace.hpp>
 #include "common/logger.hpp"
 #include "messages/Hasher.hpp"
 
@@ -44,15 +45,30 @@ bool from_bson(const bsoncxx::document::view &doc, Packet *packet) {
 }
 
 std::size_t to_buffer(const Packet &packet, Buffer *buffer) {
-  const auto size = packet.ByteSizeLong();
-  buffer->resize(size);
-  packet.SerializeToArray(buffer->data(), buffer->size());
-
-  return size;
+  try {
+    const auto size = packet.ByteSizeLong();
+    buffer->resize(size);
+    packet.SerializeToArray(buffer->data(), buffer->size());
+    return size;
+  } catch (...) {
+    std::cout << boost::stacktrace::stacktrace() << std::endl;
+    throw;
+  }
 }
 
 void to_json(const Packet &packet, std::string *output) {
-  google::protobuf::util::MessageToJsonString(packet, output);
+  try {
+    google::protobuf::util::MessageToJsonString(packet, output);
+  } catch (...) {
+    std::cout << boost::stacktrace::stacktrace() << std::endl;
+    throw;
+  }
+}
+
+std::string to_json(const Packet &packet) {
+  std::string output;
+  to_json(packet, &output);
+  return output;
 }
 
 bsoncxx::document::value to_bson(const Packet &packet) {
