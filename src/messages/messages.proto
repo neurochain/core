@@ -4,16 +4,21 @@ package neuro.messages;
 
 import "common.proto";
 
+
+// Handshake
+// =========
 message Hello {
-  required KeyPub key_pub = 1;
-  optional int32 listen_port = 2;
+  required KeyPub key_pub = 1; // yours
+  optional int32 listen_port = 2; 
 }
 
 message World {
-  required bool accepted = 1;
-  required KeyPub key_pub = 2;
-  repeated Peer peers = 3;
+  required bool accepted = 1; // are accepting to keep the remote bot
+  repeated Peer peers = 2;
 }
+
+// Update 
+// ======
 
 message GetPeers {
 }
@@ -22,6 +27,9 @@ message Peers {
   repeated Peer peers = 1;
 }
 
+
+// Ask for block hash
+// ------------------
 message GetRoots {
   optional Hash last_known_root = 1;
   optional int32 count = 2; // ask for count last roots 
