@@ -4,6 +4,7 @@
 #include <unordered_map>
 
 #include "common/types.hpp"
+#include "networking/PeerPool.hpp"
 #include "networking/TransportLayer.hpp"
 #include "networking/tcp/Connection.hpp"
 
@@ -37,6 +38,9 @@ class Tcp : public TransportLayer {
     std::size_t _max_size;
     mutable std::mutex _connections_mutex;
 
+   private:
+    std::set<const ID*> get_connection_ids() const;
+
    public:
     ConnectionPool(std::size_t max_size,
                    const std::shared_ptr<boost::asio::io_context>& io_context);
@@ -48,7 +52,7 @@ class Tcp : public TransportLayer {
     bool send_unicast(const ID& id, const messages::Message& message);
     bool disconnect(const ID& id);
     bool disconnect_all();
-    bool is_full() const;
+    std::optional<PeerPool::PeerPtr> next_to_connect(PeerPool& known_peers);
   };
 
   using KnownRemotes = std::set<messages::Peer>;
@@ -85,15 +89,13 @@ class Tcp : public TransportLayer {
   Tcp(Port port, std::shared_ptr<messages::Queue> queue,
       std::shared_ptr<crypto::Ecc> keys, std::size_t max_size);
   bool send(const messages::Message& message);
-  bool send_unicast(const RemoteKey& id,
-                    const messages::Message& message);
+  bool send_unicast(const RemoteKey& id, const messages::Message& message);
   Port listening_port() const;
   IP local_ip() const;
   std::size_t peer_count() const;
   void stop();
   void join();
   ~Tcp();
-
   bool connect(std::shared_ptr<messages::Peer> peer);
   friend class neuro::networking::test::Tcp;
 };

@@ -1,5 +1,9 @@
 #include <random>
 
+#include "common/Buffer.hpp"
+#include "common/logger.hpp"
+#include "crypto/EccPub.hpp"
+#include "messages/Message.hpp"
 #include "networking/PeerPool.hpp"
 
 namespace neuro {
@@ -11,13 +15,14 @@ bool PeerPool::insert(const PeerPtr& peer) {
   }
   crypto::EccPub ecc_pub;
   ecc_pub.load(peer->key_pub());
-  auto key = std::hash(ecc_pun.save());
+  const neuro::Buffer buffer = ecc_pub.save();
+  auto key = std::hash<neuro::Buffer>{}(buffer);
   return _peers.insert(std::make_pair(key, peer)).second;
 }
 
 PeerPool::PeerPool(const std::string& path, std::size_t max_size)
-    : _path(path), _gen(_rd), _max_size(max_size) {
-  if (!load(path)) {
+    : _path(path), _max_size(max_size), _gen(_rd()) {
+  if (!load()) {
     throw std::runtime_error("Failed to load peers pool from file.");
   }
 }
@@ -35,12 +40,12 @@ bool PeerPool::load() {
   messages::Peers peers_message;
   {  // scope to make sure file is closed.
     std::ifstream file(_path);
-    if (!t.is_open()) {
+    if (!file.is_open()) {
       return false;
     }
     std::string str((std::istreambuf_iterator<char>(file)),
                     std::istreambuf_iterator<char>());
-    if (!from_json(str, peers_message)) {
+    if (!from_json(str, &peers_message)) {
       return false;
     }
   }
@@ -50,8 +55,9 @@ bool PeerPool::load() {
 
 void PeerPool::set(const messages::Peers& peers) {
   _peers.clear();
-  for (const auto& peer : peers) {
-    insert(std::make_shared(peer));
+  const auto& iterable_peers = peers.peers();
+  for (const auto& peer : iterable_peers) {
+    insert(std::make_shared<messages::Peer>(peer));
   }
   prune();
   save();
@@ -59,19 +65,20 @@ void PeerPool::set(const messages::Peers& peers) {
 
 messages::Peers PeerPool::build_peers_message() const {
   messages::Peers peers_message;
-  for (const auto& peer : _peers) {
-    auto tmp_peer = peers_message->add_peers();
-    tmp_peer->mutable_key_pub()->CopyFrom(peer.key_pub());
-    tmp_peer->set_endpoint(peer.endpoint());
-    tmp_peer->set_port(peer.port());
+  for (const auto& peer_it : _peers) {
+    auto tmp_peer = peers_message.add_peers();
+    tmp_peer->mutable_key_pub()->CopyFrom(peer_it.second->key_pub());
+    tmp_peer->set_endpoint(peer_it.second->endpoint());
+    tmp_peer->set_port(peer_it.second->port());
   }
   return peers_message;
 }
 
 void PeerPool::insert(const messages::Peers& peers) {
   bool inserted = false;
-  for (const auto& peer : peers) {
-    inserted |= insert(std::make_shared(peer));
+  const auto& iterable_peers = peers.peers();
+  for (const auto& peer : iterable_peers) {
+    inserted |= insert(std::make_shared<messages::Peer>(peer));
   }
   if (inserted) {
     prune();
@@ -85,15 +92,15 @@ void PeerPool::save() const {
   to_json(peers_message, &output_str);
   std::ofstream file(_path);
   if (!file.is_open()) {
-    return false;
+    LOG_ERROR << "Failed to save peers list to file.";
+    return;
   }
   file << output_str;
-  return true;
 }
 
 bool PeerPool::erase(const Buffer& key_pub) {
   std::scoped_lock lock(_peers_mutex);
-  return _peers.erase(std::hash(key_pub)) != 0;
+  return _peers.erase(std::hash<Buffer>{}(key_pub)) != 0;
 }
 
 std::size_t PeerPool::size() const {
@@ -101,13 +108,27 @@ std::size_t PeerPool::size() const {
   return _peers.size();
 }
 
-std::optional<PeerPool::PeerPtr> PeerPool::get_random() const {
+std::optional<PeerPool::PeerPtr> PeerPool::get_random_not_of(
+    const std::set<const Buffer*>& forbidden) const {
   std::scoped_lock lock(_peers_mutex);
   if (_peers.empty()) {
     return nullptr;
   }
-  std::uniform_int_distribution<std::size_t> dist(0, size() - 1);
-  return (_peers.begin() + dist(gen))->second;
+  std::set<std::size_t> forbidden_keys;
+  for (const auto& f : forbidden) {
+    assert(f != nullptr);
+    forbidden_keys.insert(std::hash<Buffer>{}(*f));
+  }
+  std::vector<std::size_t> eligible;
+  eligible.reserve(_peers.size());
+  for (const auto& peer : _peers) {
+    if (forbidden_keys.find(peer.first) == forbidden_keys.end()) {
+      eligible.push_back(peer.first);
+    }
+  }
+  std::uniform_int_distribution<std::size_t> dist(0, eligible.size() - 1);
+  auto selected_key = eligible[dist(_gen)];
+  return _peers.at(selected_key);
 }
 
 }  // namespace networking

@@ -1,12 +1,12 @@
 #ifndef NEURO_SRC_NETWORKING_PEERPOOL_HPP
 #define NEURO_SRC_NETWORKING_PEERPOOL_HPP
 
-#include <unordered_map>
 #include <random>
+#include <unordered_map>
 
 #include "common.pb.h"
-#include "messages.pb.h"
 #include "common/Buffer.hpp"
+#include "messages.pb.h"
 
 namespace neuro {
 namespace networking {
@@ -39,7 +39,8 @@ class PeerPool {
   void insert(const messages::Peers& peers);
   bool erase(const Buffer& key_pub);
   std::size_t size() const;
-  std::optional<PeerPtr> get_random() const;
+  std::optional<PeerPtr> get_random_not_of(
+      const std::set<const Buffer*>& forbidden) const;
 };
 
 }  // namespace networking

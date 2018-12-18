@@ -58,6 +58,8 @@ add_library(core
   ./networking/Connection.cpp
   ./networking/Connection.hpp
   ./networking/TransportLayer.cpp
+  ./networking/PeerPool.cpp
+  ./networking/PeerPool.hpp
   ./Bot.cpp
   ./tooling/genblock.hpp
   ./messages/Queue.hpp

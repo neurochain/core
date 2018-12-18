@@ -45,9 +45,25 @@ bool Tcp::ConnectionPool::send(const messages::Message& message) {
   return res;
 }
 
-bool Tcp::ConnectionPool::is_full() const {
+std::optional<PeerPool::PeerPtr> Tcp::ConnectionPool::next_to_connect(
+    PeerPool& known_peers) {
+  std::optional<PeerPool::PeerPtr> ans;
   std::lock_guard<std::mutex> lock_queue(_connections_mutex);
-  return _connections.size() >= _max_size;
+  if (_connections.size() < _max_size) {
+    auto connected_peers_ids = get_connection_ids();
+    auto selected_id = known_peers.get_random_not_of(connected_peers_ids);
+    ans = selected_id;
+  }
+  return ans;
+}
+
+std::set<const Tcp::ConnectionPool::ID*>
+Tcp::ConnectionPool::get_connection_ids() const {
+  std::set<const Tcp::ConnectionPool::ID*> ids;
+  for (const auto& connection_it : _connections) {
+    ids.insert(&connection_it.first);
+  }
+  return ids;
 }
 
 bool Tcp::ConnectionPool::send_unicast(const ID& id,
@@ -234,8 +250,7 @@ bool Tcp::send(const messages::Message& message) {
   return _connection_pool.send(message);
 }
 
-bool Tcp::send_unicast(const RemoteKey& id,
-                       const messages::Message& message) {
+bool Tcp::send_unicast(const RemoteKey& id, const messages::Message& message) {
   if (_stopped) {
     return false;
   }
