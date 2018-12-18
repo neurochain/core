@@ -1,20 +1,27 @@
 # Architecture 
 
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
+**Table of Contents**
 
 - [Architecture](#architecture)
 - [Communication](#communication)
     - [Message](#message)
+        - [Request Reply](#request-reply)
+        - [Broadcasted](#broadcasted)
         - [Format](#format)
         - [Pipeline](#pipeline)
     - [Directory](#directory)
-    - [Handshake](#handshake)
+    - [Message Sequence](#message-sequence)
+        - [Tcp Connection](#tcp-connection)
+        - [Hello/World](#helloworld)
+        - [Update Ledger](#update-ledger)
 - [Crypto](#crypto)
     - [Signature](#signature)
     - [Keys](#keys)
 - [Rest](#rest)
 - [Wallet](#wallet)
 - [Ledger](#ledger)
+    - [Update](#update)
 - [Miners](#miners)
     - [Mining algorithm](#mining-algorithm)
     - [Writting blocks](#writting-blocks)
