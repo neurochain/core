@@ -15,7 +15,7 @@ void coinbase(const crypto::EccPub &key_pub, const messages::NCCAmount &ncc,
               const std::string output_data = "");
 
 messages::TaggedBlock gen_block0(std::vector<crypto::Ecc> keys,
-                                 messages::NCCAmount ncc_block0);
+                                 const messages::NCCAmount &ncc_block0);
 
 void block0(uint32_t bots, const std::string &pathdir,
             const messages::NCCAmount &nccsdf, ledger::LedgerMongodb *ledger);

@@ -231,7 +231,7 @@ class Ledger {
     for (const auto &unspent_transaction : unspent_transactions) {
       total += unspent_transaction.value().value();
     }
-    return messages::ncc_amount(total);
+    return messages::NCCAmount(total);
   }
 
   void add_change(messages::Transaction *transaction,

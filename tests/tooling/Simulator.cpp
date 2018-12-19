@@ -22,8 +22,8 @@ class Simulator : public ::testing::Test {
  public:
   const std::string url = "mongodb://mongo:27017";
   const std::string db_name = "test_simulator";
-  const messages::NCCAmount ncc_block0 = messages::ncc_amount(1000000);
-  const messages::NCCAmount block_reward = messages::ncc_amount(100);
+  const messages::NCCAmount ncc_block0 = messages::NCCAmount(1000000);
+  const messages::NCCAmount block_reward = messages::NCCAmount(100);
   const int nb_keys = 20;
 
  protected:

@@ -70,8 +70,6 @@ class NCCAmount : public _NCCAmount {
   NCCAmount(uint64_t amount) { set_value(amount); }
 };
 
-NCCAmount ncc_amount(uint64_t amount);
-
 }  // namespace messages
 }  // namespace neuro
 
