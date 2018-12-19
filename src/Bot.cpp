@@ -75,6 +75,10 @@ void Bot::handler_get_block(const messages::Header &header,
   messages::Message message;
   auto header_reply = message.mutable_header();
   auto id = messages::fill_header_reply(header, header_reply);
+  auto key_pub = header_reply->mutable_key_pub();
+  key_pub->set_type(messages::KeyType::ECP256K1);
+  const auto tmp = _keys->public_key().save();
+  key_pub->set_raw_data(tmp.data(), tmp.size());
 
   if (get_block.has_hash()) {
     const auto previd = get_block.hash();
@@ -121,6 +125,10 @@ void Bot::handler_block(const messages::Header &header,
 
   messages::Message message;
   auto header_reply = message.mutable_header();
+  auto key_pub = header_reply->mutable_key_pub();
+  key_pub->set_type(messages::KeyType::ECP256K1);
+  const auto tmp = _keys->public_key().save();
+  key_pub->set_raw_data(tmp.data(), tmp.size());
   auto id = messages::fill_header(header_reply);
   message.add_bodies()->mutable_block()->CopyFrom(body.block());
   _networking->send(message);
@@ -150,6 +158,10 @@ bool Bot::update_ledger() {
   messages::Message message;
   auto header = message.mutable_header();
   auto idheader = messages::fill_header(header);
+  auto key_pub = header->mutable_key_pub();
+  key_pub->set_type(messages::KeyType::ECP256K1);
+  const auto tmp = _keys->public_key().save();
+  key_pub->set_raw_data(tmp.data(), tmp.size());
 
   const auto id = last_header.id();
 
@@ -289,6 +301,11 @@ void Bot::update_peerlist() {
   LOG_DEBUG << this << peer_list_str();
   messages::Message msg;
   messages::fill_header(msg.mutable_header());
+  auto header = msg.mutable_header();
+  auto key_pub = header->mutable_key_pub();
+  key_pub->set_type(messages::KeyType::ECP256K1);
+  const auto tmp = _keys->public_key().save();
+  key_pub->set_raw_data(tmp.data(), tmp.size());
   msg.add_bodies()->mutable_get_peers();
 
   _networking->send(msg);
@@ -340,8 +357,11 @@ void Bot::handler_get_peers(const messages::Header &header,
   messages::fill_header_reply(header, header_reply);
   auto key_pub = header_reply->mutable_key_pub();
   key_pub->set_type(messages::KeyType::ECP256K1);
-  const auto remote_key = _keys->public_key().save();
-  key_pub->set_raw_data(remote_key.data(), remote_key.size());
+  const auto pub_key = _keys->public_key().save();
+  key_pub->set_raw_data(pub_key.data(), pub_key.size());
+  crypto::EccPub remote_ecc_pub;
+  remote_ecc_pub.load(header.key_pub());
+  const auto remote_key = remote_ecc_pub.save();
   auto peers_body = msg.add_bodies()->mutable_peers();
   assert(!!_peer_pool);
   auto peers = _peer_pool->peers_message();
@@ -403,11 +423,9 @@ std::ostream &operator<<(std::ostream &os, const neuro::Bot &b) {
 }
 
 Bot::Status Bot::status() const {
-  // std::lock_guard<std::mutex> lock_connections(_mutex_connections);
-  // auto peers_size = _peer_pool.size();
-  // auto status = Bot::Status(_networking.connected_peers(), _max_connections,
-  // peers_size);
-  auto status = Bot::Status(0,_max_connections, 0);
+  std::lock_guard<std::mutex> lock_connections(_mutex_connections);
+  auto peers_size = _peer_pool->size();
+  auto status = Bot::Status(_networking->peer_count(), _max_connections, peers_size);
   return status;
 }
 
@@ -445,6 +463,11 @@ void Bot::publish_transaction(const messages::Transaction &transaction) const {
   // Send the transaction on the network
   messages::Message message;
   messages::fill_header(message.mutable_header());
+  auto header = message.mutable_header();
+  auto key_pub = header->mutable_key_pub();
+  key_pub->set_type(messages::KeyType::ECP256K1);
+  const auto tmp = _keys->public_key().save();
+  key_pub->set_raw_data(tmp.data(), tmp.size());
   auto body = message.add_bodies();
   body->mutable_transaction()->CopyFrom(transaction);
   _networking->send(message);
