@@ -9,8 +9,7 @@
       "max_connections" : 3,
       "tcp" : {
           "port" : 1337,
-          "peers" : [
-          ]
+          "peers" : "bot_block0.peers.json"
       }
   },
   "database": {

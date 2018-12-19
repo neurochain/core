@@ -35,6 +35,12 @@ std::size_t Tcp::ConnectionPool::size() const {
   return _connections.size();
 }
 
+std::size_t Tcp::ConnectionPool::remaining_capacity() const {
+  std::lock_guard<std::mutex> lock_queue(_connections_mutex);
+  assert(_max_size >= _connections.size());
+  return _max_size - _connections.size();
+}
+
 bool Tcp::ConnectionPool::send(const messages::Message& message) {
   std::lock_guard<std::mutex> lock_queue(_connections_mutex);
   bool res = true;
@@ -46,7 +52,7 @@ bool Tcp::ConnectionPool::send(const messages::Message& message) {
 }
 
 std::optional<PeerPool::PeerPtr> Tcp::ConnectionPool::next_to_connect(
-    PeerPool& known_peers) {
+    const PeerPool& known_peers) const {
   std::optional<PeerPool::PeerPtr> ans;
   std::lock_guard<std::mutex> lock_queue(_connections_mutex);
   if (_connections.size() < _max_size) {
@@ -64,6 +70,13 @@ Tcp::ConnectionPool::get_connection_ids() const {
     ids.insert(&connection_it.first);
   }
   return ids;
+}
+
+std::set<PeerPool::PeerPtr> Tcp::ConnectionPool::connected_peers(
+    const PeerPool& known_peers) const {
+  std::lock_guard<std::mutex> lock_queue(_connections_mutex);
+  auto connected_peers_ids = get_connection_ids();
+  return known_peers.get_peers(connected_peers_ids);
 }
 
 bool Tcp::ConnectionPool::send_unicast(const ID& id,
@@ -114,9 +127,9 @@ void Tcp::accept(const boost::system::error_code& error) {
     const auto remote_endpoint =
         _new_socket->remote_endpoint().address().to_string();
 
-    auto peer = std::make_shared<messages::Peer>();
-    peer->set_endpoint(remote_endpoint);
-    peer->set_port(_new_socket->remote_endpoint().port());
+    messages::Peer peer;
+    peer.set_endpoint(remote_endpoint);
+    peer.set_port(_new_socket->remote_endpoint().port());
 
     this->new_inbound_connection(_new_socket, error, peer);
   } else {
@@ -144,14 +157,14 @@ Tcp::Tcp(const Port port, std::shared_ptr<messages::Queue> queue,
   _io_context_thread = std::thread([this]() { this->_io_context->run(); });
 }
 
-bool Tcp::connect(std::shared_ptr<messages::Peer> peer) {
+bool Tcp::connect(const messages::Peer& peer) {
   if (_stopped) {
     return false;
   }
 
   bai::tcp::resolver resolver(*_io_context);
-  bai::tcp::resolver::query query(peer->endpoint(),
-                                  std::to_string(peer->port()));
+  bai::tcp::resolver::query query(peer.endpoint(),
+                                  std::to_string(peer.port()));
   bai::tcp::resolver::iterator endpoint_iterator = resolver.resolve(query);
 
   auto socket = std::make_shared<bai::tcp::socket>(*_io_context);
@@ -188,9 +201,9 @@ std::shared_ptr<messages::Message> Tcp::build_disconnection_message() const {
 void Tcp::new_outbound_connection(
     const std::shared_ptr<bai::tcp::socket>& socket,
     const boost::system::error_code& error,
-    std::shared_ptr<messages::Peer> peer) {
+    const messages::Peer& peer) {
   if (!error) {
-    LOG_WARNING << "Could not create new connection to " << *peer << " due to "
+    LOG_WARNING << "Could not create new connection to " << peer << " due to "
                 << error.message();
     return;
   }
@@ -213,7 +226,7 @@ void Tcp::new_outbound_connection(
 void Tcp::new_inbound_connection(
     const std::shared_ptr<bai::tcp::socket>& socket,
     const boost::system::error_code& error,
-    std::shared_ptr<messages::Peer> peer) {
+    const messages::Peer& peer) {
   if (!error) {
     std::shared_ptr<tcp::InboundConnection> new_connection;
     new_connection = std::make_shared<tcp::InboundConnection>(
@@ -230,7 +243,7 @@ void Tcp::new_inbound_connection(
           }
         });
   } else {
-    LOG_WARNING << "Could not create new connection to " << *peer << " due to "
+    LOG_WARNING << "Could not create new connection to " << peer << " due to "
                 << error.message();
   }
 }
@@ -260,6 +273,11 @@ bool Tcp::send_unicast(const RemoteKey& id, const messages::Message& message) {
   return _connection_pool.send_unicast(id, message);
 }
 
+std::set<PeerPool::PeerPtr> Tcp::connected_peers(
+    const PeerPool& peer_pool) const {
+  return _connection_pool.connected_peers(peer_pool);
+}
+
 std::size_t Tcp::peer_count() const { return _connection_pool.size(); }
 
 bool Tcp::disconnect(const RemoteKey& key) {
@@ -281,6 +299,17 @@ void Tcp::join() {
     _io_context_thread.join();
   }
   LOG_DEBUG << this << " TCP joined";
+}
+
+void Tcp::keep_max_connections(const PeerPool& peer_pool) {
+  std::size_t remaining_capacity = _connection_pool.remaining_capacity();
+  while (remaining_capacity--) {
+    auto next_to_connect = _connection_pool.next_to_connect(peer_pool);
+    if (!!next_to_connect) {
+      assert(!!(*next_to_connect));
+      connect(**next_to_connect);
+    }
+  }
 }
 
 Tcp::~Tcp() {

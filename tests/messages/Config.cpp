@@ -34,10 +34,14 @@ TEST(Conf, load) {
   ASSERT_TRUE(tcp.has_port());
   ASSERT_EQ(tcp.port(), 1339);
 
-  ASSERT_EQ(tcp.peers_size(), 2);
+  ASSERT_EQ(tcp.peers(), "bot2.peers.json");
+  
+  messages::Peers peers;
+  messages::from_json_file(tcp.peers(), &peers);
+
   const std::string endpoint("127.0.0.1");
 
-  for (const auto& peer : tcp.peers()) {
+  for (const auto& peer : peers.peers()) {
     ASSERT_TRUE(peer.has_endpoint());
     ASSERT_EQ(peer.endpoint(), endpoint);
     ASSERT_TRUE(peer.has_port());
@@ -48,10 +52,10 @@ TEST(Conf, load) {
     ASSERT_TRUE(kp.has_raw_data());
   }
 
-  const messages::Peer& peer0(tcp.peers(0));
+  const messages::Peer& peer0(peers.peers(0));
   ASSERT_EQ(peer0.port(), 1337);
 
-  const messages::Peer& peer1(tcp.peers(1));
+  const messages::Peer& peer1(peers.peers(1));
   ASSERT_EQ(peer1.port(), 1338);
 }
 

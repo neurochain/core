@@ -131,5 +131,36 @@ std::optional<PeerPool::PeerPtr> PeerPool::get_random_not_of(
   return _peers.at(selected_key);
 }
 
+std::set<PeerPool::PeerPtr> PeerPool::get_peers(
+    const std::set<const Buffer*>& ids) const {
+  std::set<PeerPtr> ans;
+  std::scoped_lock lock(_peers_mutex);
+  for (const auto buff : ids) {
+    assert(buff != nullptr);
+    auto key = std::hash<neuro::Buffer>{}(*buff);
+    auto peer_it = _peers.find(key);
+    if (peer_it == _peers.end()) {
+      LOG_ERROR << "Peer not found!";
+    } else {
+      ans.insert(peer_it->second);
+    }
+  }
+  return ans;
+}
+
+std::set<PeerPool::PeerPtr> PeerPool::get_peers() const {
+  std::set<PeerPtr> ans;
+  std::scoped_lock lock(_peers_mutex);
+  for (const auto& peer_it : _peers) {
+    ans.insert(peer_it.second);
+  }
+  return ans;
+}
+
+messages::Peers PeerPool::peers_message() const {
+  std::scoped_lock lock(_peers_mutex);
+  return build_peers_message();
+}
+
 }  // namespace networking
 }  // namespace neuro

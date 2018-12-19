@@ -13,6 +13,8 @@
 #include "networking/Networking.hpp"
 #include "networking/tcp/Tcp.hpp"
 #include "rest/Rest.hpp"
+#include "networking/PeerPool.hpp"
+
 namespace neuro {
 
 namespace tests {
@@ -36,6 +38,8 @@ class Bot {
  private:
   std::shared_ptr<messages::Queue> _queue;
   std::shared_ptr<networking::Networking> _networking;
+  std::size_t _max_connections;
+  std::shared_ptr<networking::PeerPool> _peer_pool;
   messages::Subscriber _subscriber;
   std::shared_ptr<boost::asio::io_context> _io_context;
   messages::config::Config _config;
@@ -47,11 +51,6 @@ class Bot {
   std::unordered_set<int32_t> _request_ids;
   std::thread _io_context_thread;
 
-  // for the peers
-  messages::config::Tcp *_tcp_config;
-  std::size_t _max_connections;
-
-  std::shared_ptr<networking::Tcp> _tcp;
   messages::config::Config::SelectionMethod _selection_method;
 
   mutable std::mutex _mutex_connections;
@@ -78,58 +77,13 @@ class Bot {
                          const messages::Body &body);
   void handler_peers(const messages::Header &header,
                      const messages::Body &body);
-  bool next_to_connect(messages::Peer **out_peer);
   bool load_keys(const messages::config::Config &config);
   bool load_networking(messages::config::Config *config);
   void subscribe();
   void regular_update();
   bool update_ledger();
   void update_peerlist();
-
-  std::optional<messages::Peer *> add_peer(const messages::Peer &peer) {
-    std::optional<messages::Peer *> res;
-    messages::KeyPub my_key_pub;
-    auto peers = _tcp_config->mutable_peers();
-    _keys->public_key().save(&my_key_pub);
-
-    if (peer.key_pub() == my_key_pub) {
-      return res;
-    }
-
-    // auto got = std::find(peers->begin(), peers->end(), peer);
-    for (auto &p : *peers) {
-      if (p.key_pub() == peer.key_pub()) {
-        res = &p;
-        return res;
-      }
-    }
-
-    // if (got != peers->end()) {
-    //   res = &(*got);
-    //   return res;
-    // }
-    for (const auto &p: *peers) {
-      LOG_DEBUG << this << " PEER: " << p;
-    }
-    res = _tcp_config->add_peers();
-    (*res)->CopyFrom(peer);
-    for (const auto p : *peers) {
-      LOG_DEBUG << this << " PEER: " << p;
-    }
-    if (peers->size() > 2) {
-      LOG_DEBUG << "peers.size = " << peers->size();
-      LOG_DEBUG << "checkpoint";
-    }
-
-    return res;
-  }
-
-  template <typename T>
-  void add_peers(const T &remote_peers) {
-    for (const auto &peer : remote_peers) {
-      add_peer(peer);
-    }
-  }
+  std::string peer_list_str() const;
 
  public:
   Bot(const messages::config::Config &config);
@@ -141,7 +95,7 @@ class Bot {
 
   virtual ~Bot();  // save_config(_config);
 
-  const std::vector<messages::Peer> connected_peers() const;
+  std::set<networking::PeerPool::PeerPtr> connected_peers() const;
   std::size_t nb_connected_peers() const;
   Bot::Status status() const;
   void keep_max_connections();

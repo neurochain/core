@@ -58,12 +58,20 @@ std::shared_ptr<messages::Message> Connection::Packet::deserialize(
   signature->set_data(header_pattern->signature,
                       sizeof(header_pattern->signature));
 
-  if (!!pub_key &&
-      pub_key->verify(body_tcp, header_pattern->signature,
-                      sizeof(header_pattern->signature)) == false) {
-    LOG_ERROR << "Bad signature, dropping message";
-    message.reset();
-    return message;
+  if (!!pub_key) {
+    crypto::EccPub ecc_pub;
+    ecc_pub.load(header->key_pub());
+    if (ecc_pub.save() != pub_key->save()) {
+      LOG_ERROR << "Unexpected peer public key!";
+      message.reset();
+      return message;
+    }
+    if (pub_key->verify(body_tcp, header_pattern->signature,
+                        sizeof(header_pattern->signature)) == false) {
+      LOG_ERROR << "Bad signature, dropping message";
+      message.reset();
+      return message;
+      }
   }
 
   return message;
@@ -80,14 +88,6 @@ Connection::Connection(const std::shared_ptr<crypto::Ecc> &keys,
       _keys(keys),
       _unpairing_callback(unpairing_callback) {
   assert(_socket != nullptr);
-}
-
-bool Connection::match_remote_key_pub(const messages::KeyPub &key_pub) const {
-  assert(!!_remote_pub_key);
-  crypto::EccPub ecc_pub;
-  ecc_pub.load(reinterpret_cast<const uint8_t *>(key_pub.raw_data().data()),
-               key_pub.raw_data().size());
-  return ecc_pub == *_remote_pub_key;
 }
 
 std::shared_ptr<const tcp::socket> Connection::socket() const {

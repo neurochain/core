@@ -58,27 +58,29 @@ void InboundConnection::read_handshake_message_body(
             LOG_WARNING << "Only one hello body expected.";
             return;
           }
-          crypto::EccPub ecc_pub;
-          ecc_pub.load(body.hello().key_pub());
-          this->_remote_pub_key = ecc_pub.save();
         }
         if (!count_hello) {
           LOG_WARNING << "At least one hello body expected.";
           return;
         }
+        
+        crypto::EccPub ecc_pub;
+        ecc_pub.load(message->header().key_pub());
+        this->_remote_pub_key = ecc_pub.save();
+
         pairing_callback(_this, this->_remote_pub_key->save());
 
         messages::Message world_message;
-        auto world = world_message.add_bodies()->mutable_world();
+        world_message.add_bodies()->mutable_world();
         auto header_reply = world_message.mutable_header();
         messages::fill_header_reply(message->header(), header_reply);
-        Buffer key_pub_buffer;
-        _keys->public_key().save(&key_pub_buffer);
-        auto key_pub = world->mutable_key_pub();
+        auto key_pub = header_reply->mutable_key_pub();
         key_pub->set_type(messages::KeyType::ECP256K1);
-        key_pub->set_hex_data(key_pub_buffer.str());
+        const auto tmp = _keys->public_key().save();
+        key_pub->set_raw_data(tmp.data(), tmp.size());
 
         _this->send(world_message);
+        this->read_header();
       });
 }
 

@@ -35,8 +35,9 @@ class Networking {
    bool send(messages::Message& message);
    bool send_unicast(
        const RemoteKey& id, messages::Message& message);
-   messages::Peers connected_peers() const;
+   std::set<PeerPool::PeerPtr> connected_peers(const PeerPool& peer_poll) const;
    std::size_t peer_count() const;
+   void keep_max_connections(const PeerPool& peer_pool);
    void join();
 };
 

@@ -31,6 +31,15 @@ std::shared_ptr<Tcp> Networking::create_tcp(std::shared_ptr<crypto::Ecc> keys,
   return tcp;
 }
 
+void Networking::keep_max_connections(const PeerPool& peer_pool) {
+  _transport_layer->keep_max_connections(peer_pool);
+}
+
+std::set<PeerPool::PeerPtr> Networking::connected_peers(
+    const PeerPool& peer_pool) const {
+  return _transport_layer->connected_peers(peer_pool);
+}
+
 std::size_t Networking::peer_count() const {
   return _transport_layer->peer_count();
 }

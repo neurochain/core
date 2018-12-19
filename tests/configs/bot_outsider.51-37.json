@@ -9,16 +9,7 @@
 		"max_connections": 3,
 		"tcp": {
 			"port": 1351,
-			"peers": [
-				{
-					"endpoint": "127.0.0.1",
-					"port": 1337,
-					"keyPub": {
-						"type": "ECP256K1",
-						"rawData": "MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABAqh/GaK+zXAydO8h4sDf4apFNmW8SFaIqRqXioYDXy8hC+chk0UR4chWxuSQY3FIttKKlQDwSEVZ6Enazkt1a0="
-					}
-				}
-			]
+			"peers": "bot_outsider.51-37.peers.json"
 		}
 	},
 	"database": {

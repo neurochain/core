@@ -85,33 +85,13 @@ class QueueTest {
     tested_queue->subscribe(&sub_hello);
     tested_queue->subscribe(&sub_world);
     auto message_hello = std::make_shared<messages::Message>();
+    message_hello->mutable_header()->mutable_key_pub();
     messages::Hello *hello = message_hello->add_bodies()->mutable_hello();
     ASSERT_NE(hello, nullptr);
-    auto hello_kpub = hello->mutable_key_pub();
-    ASSERT_NE(hello_kpub, nullptr);
-    hello_kpub->set_type(messages::ECP256K1);
-    hello_kpub->set_raw_data(
-        "MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA//////////////////////"
-        "///////////////v///"
-        "C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAA"
-        "AAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/"
-        "NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP/////"
-        "///////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABOBPdJmNMRu7dZ0O4+b/"
-        "jG5CyuLeI870VKYu0DrtJ8I8VW3wt5NcbqfqIk7OI0+9cE7+xCPtKwF1vAHi730nMJ0=");
     auto message_world = std::make_shared<messages::Message>();
+    message_world->mutable_header()->mutable_key_pub();
     messages::World *world = message_world->add_bodies()->mutable_world();
     ASSERT_NE(world, nullptr);
-    auto world_kpub = world->mutable_key_pub();
-    ASSERT_NE(world_kpub, nullptr);
-    world_kpub->set_type(messages::ECP256K1);
-    world_kpub->set_raw_data(
-        "MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA//////////////////////"
-        "///////////////v///"
-        "C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAA"
-        "AAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/"
-        "NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP/////"
-        "///////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABOBPdJmNMRu7dZ0O4+b/"
-        "jG5CyuLeI870VKYu0DrtJ8I8VW3wt5NcbqfqIk7OI0+9cE7+xCPtKwF1vAHi730nMJ0=");
     ASSERT_TRUE(tested_queue->publish(std::move(message_hello)));
     ASSERT_TRUE(tested_queue->publish(std::move(message_world)));
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -139,31 +119,9 @@ class QueueTest {
     auto message_hello = std::make_shared<messages::Message>();
     messages::Hello *hello = message_hello->add_bodies()->mutable_hello();
     ASSERT_NE(hello, nullptr);
-    auto hello_kpub = hello->mutable_key_pub();
-    ASSERT_NE(hello_kpub, nullptr);
-    hello_kpub->set_type(messages::ECP256K1);
-    hello_kpub->set_raw_data(
-        "MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA//////////////////////"
-        "///////////////v///"
-        "C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAA"
-        "AAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/"
-        "NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP/////"
-        "///////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABOBPdJmNMRu7dZ0O4+b/"
-        "jG5CyuLeI870VKYu0DrtJ8I8VW3wt5NcbqfqIk7OI0+9cE7+xCPtKwF1vAHi730nMJ0=");
     auto message_world = std::make_shared<messages::Message>();
     messages::World *world = message_world->add_bodies()->mutable_world();
     ASSERT_NE(world, nullptr);
-    auto world_kpub = world->mutable_key_pub();
-    ASSERT_NE(world_kpub, nullptr);
-    world_kpub->set_type(messages::ECP256K1);
-    world_kpub->set_raw_data(
-        "MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA//////////////////////"
-        "///////////////v///"
-        "C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAA"
-        "AAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/"
-        "NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP/////"
-        "///////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABOBPdJmNMRu7dZ0O4+b/"
-        "jG5CyuLeI870VKYu0DrtJ8I8VW3wt5NcbqfqIk7OI0+9cE7+xCPtKwF1vAHi730nMJ0=");
     ASSERT_TRUE(tested_queue->publish(std::move(message_hello)));
     ASSERT_TRUE(tested_queue->publish(std::move(message_world)));
     std::this_thread::sleep_for(std::chrono::milliseconds(500));

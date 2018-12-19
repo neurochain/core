@@ -25,7 +25,7 @@ class OutboundConnection : public Connection {
    OutboundConnection(const std::shared_ptr<crypto::Ecc>& keys,
                       const std::shared_ptr<messages::Queue>& queue,
                       const std::shared_ptr<tcp::socket>& socket,
-                      const std::shared_ptr<messages::Peer>& peer,
+                      const messages::Peer& peer,
                       PairingCallback pairing_callback,
                       UnpairingCallback unpairing_callback);
 };

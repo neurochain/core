@@ -9,29 +9,27 @@ OutboundConnection::OutboundConnection(
     const std::shared_ptr<crypto::Ecc>& keys,
     const std::shared_ptr<messages::Queue>& queue,
     const std::shared_ptr<tcp::socket>& socket,
-    const std::shared_ptr<messages::Peer>& peer,
+    const messages::Peer& peer,
     PairingCallback pairing_callback, UnpairingCallback unpairing_callback)
     : Connection(keys, queue, socket, unpairing_callback) {
-  assert(!!peer->has_endpoint());
-  assert(remote_ip().to_string() == peer->endpoint());
-  assert(!!peer->has_key_pub());
-  const auto key_pub = peer->key_pub();
+  assert(!!peer.has_endpoint());
+  assert(remote_ip().to_string() == peer.endpoint());
+  assert(!!peer.has_key_pub());
   _remote_pub_key = crypto::EccPub{};
-  _remote_pub_key->load(
-      reinterpret_cast<const uint8_t*>(key_pub.raw_data().data()),
-      key_pub.raw_data().size());
+  _remote_pub_key->load(peer.key_pub());
   handshake_init(pairing_callback);
 }
 
 messages::Message OutboundConnection::build_hello_message() const {
   messages::Message message;
   messages::fill_header(message.mutable_header());
-  auto hello = message.add_bodies()->mutable_hello();
-  hello->set_listen_port(local_port());
-  auto key_pub = hello->mutable_key_pub();
+  auto header = message.mutable_header();
+  auto key_pub = header->mutable_key_pub();
   key_pub->set_type(messages::KeyType::ECP256K1);
   const auto tmp = _keys->public_key().save();
   key_pub->set_raw_data(tmp.data(), tmp.size());
+  auto hello = message.add_bodies()->mutable_hello();
+  hello->set_listen_port(local_port());
   return message;
 }
 
@@ -55,6 +53,11 @@ void OutboundConnection::read_handshake_message_body(
 
         LOG_DEBUG << "\033[1;32mMessage received: " << *message << "\033[0m";
 
+        if (!message->has_header()) {
+          LOG_ERROR << "Missing header on hello message.";
+          return;
+        }
+
         std::size_t count_world = 0;
         for (const auto& body : message->bodies()) {
           const auto type = get_type(body);
@@ -66,18 +69,20 @@ void OutboundConnection::read_handshake_message_body(
             LOG_WARNING << "Only one world body expected.";
             return;
           }
-          crypto::EccPub ecc_pub;          
-          ecc_pub.load(body.world().key_pub());
-          assert(!!this->_remote_pub_key);
-          if (this->_remote_pub_key->save() != ecc_pub.save()) {
-            LOG_ERROR << "Unexpected signature specified.";
-            return;
-          }
         }
         if (!count_world) {
           LOG_WARNING << "At least one hello body expected.";
           return;
         }
+
+        crypto::EccPub ecc_pub;
+        ecc_pub.load(message->header().key_pub());
+        assert(!!this->_remote_pub_key);
+        if (this->_remote_pub_key->save() != ecc_pub.save()) {
+          LOG_ERROR << "Unexpected signature specified.";
+          return;
+        }
+
         pairing_callback(_this, _remote_pub_key->save());
         this->read_header();
       });

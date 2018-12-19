@@ -1,0 +1,21 @@
+{
+  "peers": [
+    {
+      "endpoint": "127.0.0.1",
+      "port": 1337,
+      "keyPub": {
+        "type": "ECP256K1",
+        "rawData": "MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABE7lNnRXkzIGKEoEDyADOmeTCRXg3HE3HMv2u8r8FBRJh4bFvIyRpmdnuRNpmZjKvQoY7yPLO89+eDLBSn9e0Kk="
+      }
+    }
+  ][
+    {
+      "endpoint": "127.0.0.1",
+      "port": 1337,
+      "keyPub": {
+        "type": "ECP256K1",
+        "rawData": "MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABE7lNnRXkzIGKEoEDyADOmeTCRXg3HE3HMv2u8r8FBRJh4bFvIyRpmdnuRNpmZjKvQoY7yPLO89+eDLBSn9e0Kk="
+      }
+    }
+  ]
+}

@@ -49,7 +49,6 @@ protected:
  std::shared_ptr<Connection> ptr() { return shared_from_this(); }
 
 private:
- bool match_remote_key_pub(const messages::KeyPub& key_pub) const;
  void terminate();
  void read_body(std::size_t body_size);
  messages::Peer build_peer(const IP& ip, Port port,

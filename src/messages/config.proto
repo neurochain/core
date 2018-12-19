@@ -40,7 +40,7 @@ message _Database {
 
 message Tcp {
   required int32 port = 1;
-  repeated Peer peers = 2;
+  required string peers = 2;
 }
 
 message Networking {

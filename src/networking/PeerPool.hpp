@@ -35,12 +35,15 @@ class PeerPool {
   messages::Peers build_peers_message() const;
 
  public:
-  PeerPool(const std::string& path, std::size_t max_size);
+  PeerPool(const std::string& path, std::size_t max_size = 999);
   void insert(const messages::Peers& peers);
   bool erase(const Buffer& key_pub);
   std::size_t size() const;
   std::optional<PeerPtr> get_random_not_of(
       const std::set<const Buffer*>& forbidden) const;
+  std::set<PeerPtr> get_peers(const std::set<const Buffer*>& ids) const;
+  std::set<PeerPtr> get_peers() const;
+  messages::Peers peers_message() const;
 };
 
 }  // namespace networking

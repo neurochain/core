@@ -48,7 +48,27 @@ set(files "integration_propagation0.json"
           "bot1.json"
           "bot2.json"
           "bot_block0.json"
-          "data.0.testnet")
+          "data.0.testnet"
+          "integration_propagation0.peers.json"
+          "integration_propagation1.peers.json"
+          "integration_propagation2.peers.json"
+          "integration_update0.peers.json"
+          "integration_update1.peers.json"
+          "integration_update2.peers.json"
+          "integration_keepmax0.peers.json"
+          "integration_keepmax1.peers.json"
+          "integration_keepmax2.peers.json"
+          "bot_outsider.40-38.39.peers.json"
+          "bot_outsider.41-38.39.peers.json"
+          "bot_outsider.42-38.39.peers.json"
+          "bot_outsider.50-37.peers.json"
+          "bot_outsider.51-37.peers.json"
+          "bot_outsider.52-37.peers.json"
+          "bot0.peers.json"
+          "bot1.peers.json"
+          "bot2.peers.json"
+          "bot_block0.peers.json"
+)
 foreach(file ${files})
   configure_file("configs/${file}" "${CMAKE_CURRENT_BINARY_DIR}/${file}" COPYONLY)
 endforeach()

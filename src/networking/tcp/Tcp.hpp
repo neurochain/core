@@ -48,11 +48,15 @@ class Tcp : public TransportLayer {
     bool insert(const ID& id,
                 const std::shared_ptr<tcp::Connection>& paired_connection);
     std::size_t size() const;
+    std::size_t remaining_capacity() const;
     bool send(const messages::Message& message);
     bool send_unicast(const ID& id, const messages::Message& message);
     bool disconnect(const ID& id);
     bool disconnect_all();
-    std::optional<PeerPool::PeerPtr> next_to_connect(PeerPool& known_peers);
+    std::optional<PeerPool::PeerPtr> next_to_connect(
+        const PeerPool& known_peers) const;
+    std::set<PeerPool::PeerPtr> connected_peers(
+        const PeerPool& known_peers) const;
   };
 
   using KnownRemotes = std::set<messages::Peer>;
@@ -72,14 +76,15 @@ class Tcp : public TransportLayer {
   std::shared_ptr<messages::Message> build_disconnection_message() const;
   void new_outbound_connection(const std::shared_ptr<bai::tcp::socket>& socket,
                                const boost::system::error_code& error,
-                               std::shared_ptr<messages::Peer> peer);
+                               const messages::Peer& peer);
 
   void new_inbound_connection(const std::shared_ptr<bai::tcp::socket>& socket,
                               const boost::system::error_code& error,
-                              std::shared_ptr<messages::Peer> peer);
+                              const messages::Peer& peer);
 
   void start_accept();
   void accept(const boost::system::error_code& error);
+  bool connect(const messages::Peer& peer);
   void terminate(const RemoteKey& id);
   bool disconnect(const RemoteKey& id);
 
@@ -92,11 +97,13 @@ class Tcp : public TransportLayer {
   bool send_unicast(const RemoteKey& id, const messages::Message& message);
   Port listening_port() const;
   IP local_ip() const;
+  std::set<PeerPool::PeerPtr> connected_peers(const PeerPool& peer_pool) const;
   std::size_t peer_count() const;
   void stop();
   void join();
+  void keep_max_connections(const PeerPool& peer_pool);
   ~Tcp();
-  bool connect(std::shared_ptr<messages::Peer> peer);
+
   friend class neuro::networking::test::Tcp;
 };
 

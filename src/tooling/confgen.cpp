@@ -6,6 +6,7 @@
 #include "messages.pb.h"
 #include "messages/Message.hpp"
 #include "messages/config/Config.hpp"
+#include "networking/PeerPool.hpp"
 
 namespace neuro {
 namespace po = boost::program_options;
@@ -57,11 +58,13 @@ int main(int argc, char *argv[]) {
   auto endKey = keys_path.cend();
   auto itEndpoint = endpoints.cbegin();
 
+  networking::PeerPool peer_pool(config.networking().tcp().peers());
+  messages::Peers peers;
   while (itKey != endKey) {
     messages::KeyPub key_pub;
     crypto::EccPub ecc_pub(*itKey);
     ecc_pub.save(&key_pub);
-    auto peer = config.mutable_networking()->mutable_tcp()->add_peers();
+    auto peer = peers.add_peers();
     peer->set_endpoint(*itEndpoint);
     peer->set_port(1337);
     peer->mutable_key_pub()->CopyFrom(key_pub);
@@ -69,6 +72,7 @@ int main(int argc, char *argv[]) {
     ++itKey;
     ++itEndpoint;
   }
+  peer_pool.insert(peers);
   std::string s;
   messages::to_json(config, &s);
 
