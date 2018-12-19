@@ -20,6 +20,7 @@ LedgerMongodb::LedgerMongodb(const std::string &url, const std::string &db_name)
 LedgerMongodb::LedgerMongodb(const messages::config::Database &config)
     : LedgerMongodb(config.url(), config.db_name()) {
   init_block0(config);
+  set_main_branch_tip();
 }
 
 mongocxx::options::find LedgerMongodb::remove_OID() const {

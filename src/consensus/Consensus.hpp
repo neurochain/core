@@ -5,11 +5,30 @@ namespace neuro {
 namespace consensus {
 
 class Consensus {
+ private:
+    std::shared_ptr<ledger::Ledger> _ledger;
+    std::shared_ptr<networking::Networking> _networking; // Do we really need the networking???
+
  public:
   Consensus(std::shared_ptr<ledger::Ledger> ledger,
 	    std::shared_ptr<networking::Networking> networking) {}
 
   void build_block(){}
+
+  bool is_valid(const messages::Transaction &transaction, const messages::TaggedBlock &tip) {
+      // Check that all inputs are unspent
+      for (const auto &input: inputs) {
+          const auto transaction = _ledger->get_trasnaction(input.id());
+          if (!_ledger->is_unspent_output(input.id(), input.output_id(), tip) {
+            return false;
+          }
+      }
+
+      // Check that the output + fee = input
+      // Check the signatures
+      // Check the id
+  }
+
   /**
    * \brief Add transaction to transaction pool
    * \param [in] transaction

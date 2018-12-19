@@ -71,6 +71,8 @@ class Ledger {
  private:
  public:
   Ledger() {}
+  virtual messages::TaggedBlock get_main_branch_tip() const = 0;
+  virtual void set_main_branch_tip() const = 0;
   virtual messages::BlockHeight height() = 0;
   virtual bool get_block_header(const messages::BlockID &id,
                                 messages::BlockHeader *header) = 0;
@@ -122,14 +124,18 @@ class Ledger {
     return transactions;
   }
 
-  bool is_unspent_output(const messages::Transaction &transaction,
-                         const int output_id) {
+  bool is_unspent_output(const messages::Hash &transaction_id,
+                         int output_id) {
+    return is_unspent_output(transaction_id, output_id, get_main_branch_tip());
+  }
+
+  bool is_unspent_output(const messages::Hash &transaction_id, int output_id, const messages::TaggedBlock &tip) {
     Filter filter;
-    filter.input_transaction_id(transaction.id());
+    filter.input_transaction_id(transaction_id);
     filter.output_id(output_id);
 
     bool match = false;
-    for_each(filter, [&](const messages::Transaction) {
+    for_each(filter, tip, [&](const messages::Transaction transaction) {
       match = true;
       return false;
     });
@@ -191,7 +197,7 @@ class Ledger {
     for (auto transaction : transactions) {
       for (int i = 0; i < transaction.outputs_size(); i++) {
         auto output = transaction.outputs(i);
-        if (output.address() == address && is_unspent_output(transaction, i)) {
+        if (output.address() == address && is_unspent_output(transaction.id(), i)) {
           auto &unspent_transaction = unspent_transactions.emplace_back();
           unspent_transaction.mutable_transaction_id()->CopyFrom(
               transaction.id());

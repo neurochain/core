@@ -24,6 +24,8 @@ class LedgerMongodb : public Ledger {
   mutable mongocxx::collection _transactions;
 
   std::mutex _ledger_mutex;
+  
+  messages::TaggedBlock _main_branch_tip;
 
   mongocxx::options::find remove_OID() const;
 
@@ -51,6 +53,10 @@ class LedgerMongodb : public Ledger {
   ~LedgerMongodb() {}
 
   void remove_all();
+
+  messages::TaggedBlock get_main_branch_tip() const;
+
+  void set_main_branch_tip();
 
   messages::BlockHeight height();
 
