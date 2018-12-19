@@ -51,11 +51,11 @@
 
 ![global](../../doc/img/message_format.png "Message format")
 
-Message can be read in two operations:
+A message can be read in two operations:
 * Fixed part containing header size and payload size (each encoded on 32 bits little endian integer).
 * Header and payload which are protobuf (v2) messages.
 
-Message description can be found in message.proto 
+Message definition can be found in messages.proto 
 
 Every message is signed with the "communication keys (cf [keys](Keys)).
 
@@ -101,13 +101,13 @@ The remote answers with:
 With those really few rules, we are able to achieve a connected, scalable and decentralized mesh network. 
 
 Example: 
-* Bob has a max `max_connection` of 3. He will try to connect to 3 bots. 
-* If Alice, William and Oli try to connect to Bob he will accpet. Now Bob is connected to 6 peers.
-* If David tries to connect to Bob, Bob will nicely answer with a World with a peer list, and interrompt connection.
+* Bob has a max `max_connection` of 3. He connects to 3 bots. 
+* If Alice, William and Oli try to connect to Bob, he will accpet them. Now Bob is connected to 6 peers.
+* If David tries to connect to Bob, Bob will nicely answer with a ~world~ message containing a peer list, and interrupt the connection.
 
 ### Update Ledger 
 
-After handshake (hello/worl), a bot needs to update its ledger. It uses the tip given by the world message to recursively ask for a parent block. 
+fter ther handshake (hello/world), a bot needs to update its ledger. It uses the tip given by the world message to recursively ask for a parent block. 
 
 # Crypto 
 
@@ -121,38 +121,38 @@ Two types of keys are used:
 * Communication, each bot auto generates a pair the first time it starts, and stores them on disk (unprotected, and we should do something about it). 
 * Transaction (some call them Wallet) keys. Those that "hold" your NCC.
 
-Security os keys are a let to the user. 
+Security of keys are a let to the user. 
 
 # Rest 
 
 The bot exposes a local REST endpoint (http). 
 
-It allows to request the ledger, and send transaction to the network. 
+It allows to request the ledger, and send transactions to the network. 
 
 # Wallet 
 
 ![wallet](../../doc/img/wallet.png "Wallet")
 
 Known issues: 
-* Either keys or password passed in clear to the wallet bakend.
+* Either keys or password passed in clear to the wallet backend.
 
 # Ledger 
 
-Contains the blockchain. It stored in a mongo local database (each bot has its own).
+Contains the blockchain. It is stored in a mongo local database (each bot has its own).
 Two collections are used, one containing block headers, and other one containing transactions. 
-Blocks have a pointer to previous block (it is a chain after all). To handle forks, blocks are tagged with a path allowing to know if a block is an ancestor of an other in O(1).
+Blocks have a pointer to the previous block (it is a chain after all). To handle forks, blocks are tagged with a path allowing it to know if a block is an ancestor of an other in O(1).
 
-Ledger is used to:
-* Verify if incomming blocks are legit.
-* Create transactions, and compute wallet balance.
+The ledger is used to:
+* Verify if incoming blocks are legit.
+* Create transactions, and compute the wallet balance.
 * Send blocks to other bots when they need to update their own ledger. 
 
 This last point rely on the identity of the serialization (Protobuf <=> Json <=> Bson), since block are reconstructed for db documents. 
 
 ## Update 
 
-When connecting for the first time, or reconnecting after an absence, a bot needs to update its ledger. This is a critical moment for non POW chains as fake are easy to forge. 
-During the handshake, bots exchange the tip of their main branch. From there, the bot can ask its peers for parent block to update itself.
+When connecting for the first time, or reconnecting after an absence, a bot needs to update its ledger. This is a critical moment for non POW chains as fake are easy to forge/mine.
+During the handshake, bots exchange the tip of their main branch. From there, the bot can ask its peers for parents block to update itself.
 
 ## Address 
 
@@ -162,22 +162,22 @@ Format is strongly inspired from (Bitcoin's address)[https://en.bitcoin.it/wiki/
 
 A transaction has:
 * An id (the hash of the transaction).
-* An array of public keys and signature.
+* An array of public keys and signatures.
 * 0 or many inputs. 
-  * An input refer to an unspent output transaction by its hash and output id.
-  * The index of the public and signature.
+  * Input refer to an unspent output transaction by its hash and output id.
+  * Index of the public key and signature.
 * 0 or many outputs.
-  * An address.
-  * An amount.
+  * Address.
+  * Amount.
   * Output id.
   * Optional data.
-* Optional fees (for block miner).
+* Optional fees (for the block miner).
 * Optional data. 
 
-To write a transaction you first to set to empty the signatures and id (and fill the remaining fileds).
-Sign, set the signatures, hash and set the 
+To write a transaction you first have to set to empty the signatures and id (and fill the remaining fileds).
+Sign, set the signatures, hash and set the id.
 
-0 inputs and outputs are for free (no fees) transactions that just write data into the blockchain.
+Transactions without inputs and outputs are for free (no fees) cases (e.g. write data to the blockchain).
 
 ## Block
 
@@ -186,26 +186,26 @@ Contains a header:
 * Timestamp. 
 * Previous block's hash. 
 * Public key of author. 
-* height.
+* Height.
 
 And a list of transactions. Transaction are sorted by their hash.
 
 # PII TL;DR
 
-The PII is an algorithm rating address based on their transactions. 
+The PII is an algorithm rating addresses based on their transactions. 
 
-After a period called assembly, an election is made, mean rating and ranking all the address which has made transaction during this period. 
-The 500 first address will be allowed to write blocks during the "after the next" (not the following, the one after) assembly. We delay the use of the ranking to smooth 
-PII computation and not stole the blockchain.
+After a period called "assembly", an election is made. Addresses are rated and ranked based on transactions made during this period. The assembly last 12000 blocks.
+The 500 first addresses will be allowed to write blocks during the "after the next" (not the following, the one after) assembly. We delay the use of the ranking to smoothen
+PII computation and stall the blockchain.
 
-During an assembly address amongs the 500 are chosen randomly to write 24 blocks in a row.
+During an assembly, addresses amongs the 500 top are chosen randomly to write a block.
 
 The seed for randomness is the sha3-256 of the parity of the hash of every block of the election assembly. 
 
 Example: 
-* During election assembly block hash are: 0xdead, 0xc0de, 0x4242, 0x1337 => hashing 0001 
+* During the election blocks hash are: 0xdead, 0xc0de, 0x4242, 0x1337 => hashing 0001 
 
-Since last miner of the assembly period can "choose" the hash parity by selecting transaction it inserts the block. Last miner can only choose between two seeds. 
+Since the last miner of the assembly period can "choose" the hash parity by selecting transaction it inserts in the block. The last miner can only choose between two seeds. 
 
 # Miners 
 
@@ -217,5 +217,5 @@ Mining algorithm are not written (yet). Developpers can write their own using th
 
 ## Writting blocks
 
-In order to write blocks (and to be rewarded), miners will need to share their keys to the bot. 
+In order to write blocks (and to be rewarded), miners will need to share their keys with the bot. 
  
