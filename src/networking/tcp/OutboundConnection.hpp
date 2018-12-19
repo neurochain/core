@@ -12,22 +12,21 @@ namespace tcp {
 
 using boost::asio::ip::tcp;
 
-class OutboundConnection : public Connection {
-  private:
-   void handshake_init(PairingCallback pairing_callback);
-   void handshake_ack(PairingCallback pairing_callback);
-   messages::Message build_hello_message() const;
-   void read_ack(PairingCallback pairing_callback);
-   void read_handshake_message_body(PairingCallback pairing_callback,
-                                    std::size_t body_size);
+class OutboundConnection : public ConnectionBase<OutboundConnection> {
+ private:
+  void handshake_ack(PairingCallback pairing_callback);
+  messages::Message build_hello_message() const;
+  void read_ack(PairingCallback pairing_callback);
+  void read_handshake_message_body(PairingCallback pairing_callback,
+                                   std::size_t body_size);
 
-  public:
-   OutboundConnection(const std::shared_ptr<crypto::Ecc>& keys,
-                      const std::shared_ptr<messages::Queue>& queue,
-                      const std::shared_ptr<tcp::socket>& socket,
-                      const messages::Peer& peer,
-                      PairingCallback pairing_callback,
-                      UnpairingCallback unpairing_callback);
+ public:
+  OutboundConnection(const std::shared_ptr<crypto::Ecc>& keys,
+                     const std::shared_ptr<messages::Queue>& queue,
+                     const std::shared_ptr<tcp::socket>& socket,
+                     const messages::Peer& peer,
+                     UnpairingCallback unpairing_callback);
+  void handshake_init(PairingCallback pairing_callback);
 };
 
 }  // namespace tcp

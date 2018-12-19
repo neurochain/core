@@ -13,6 +13,7 @@ class Connection {
 
  public:
   Connection(const std::shared_ptr<messages::Queue>& queue);
+  virtual ~Connection() {}
 };
 
 }  // namespace networking

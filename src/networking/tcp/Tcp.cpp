@@ -202,7 +202,7 @@ void Tcp::new_outbound_connection(
     const std::shared_ptr<bai::tcp::socket>& socket,
     const boost::system::error_code& error,
     const messages::Peer& peer) {
-  if (!error) {
+  if (!!error) {
     LOG_WARNING << "Could not create new connection to " << peer << " due to "
                 << error.message();
     return;
@@ -210,15 +210,16 @@ void Tcp::new_outbound_connection(
   std::shared_ptr<tcp::OutboundConnection> new_connection;
   new_connection = std::make_shared<tcp::OutboundConnection>(
       _keys, _queue, socket, peer,
+      [this](const RemoteKey& id) {
+        if (this->_connection_pool.disconnect(id)) {
+          this->_queue->publish(this->build_disconnection_message());
+        }
+      });
+  new_connection->handshake_init(
       [this](const std::shared_ptr<tcp::Connection>& paired_connection,
              const RemoteKey& id) {
         if (this->_connection_pool.insert(id, paired_connection)) {
           this->_queue->publish(this->build_new_connection_message());
-        }
-      },
-      [this](const RemoteKey& id) {
-        if (this->_connection_pool.disconnect(id)) {
-          this->_queue->publish(this->build_disconnection_message());
         }
       });
 }
@@ -231,15 +232,16 @@ void Tcp::new_inbound_connection(
     std::shared_ptr<tcp::InboundConnection> new_connection;
     new_connection = std::make_shared<tcp::InboundConnection>(
         _keys, _queue, socket,
+        [this](const RemoteKey& id) {
+          if (this->_connection_pool.disconnect(id)) {
+            this->_queue->publish(this->build_disconnection_message());
+          }
+        });
+    new_connection->read_hello(
         [this](const std::shared_ptr<tcp::Connection>& paired_connection,
                const RemoteKey& id) {
           if (!this->_connection_pool.insert(id, paired_connection)) {
             this->_queue->publish(this->build_new_connection_message());
-          }
-        },
-        [this](const RemoteKey& id) {
-          if (this->_connection_pool.disconnect(id)) {
-            this->_queue->publish(this->build_disconnection_message());
           }
         });
   } else {

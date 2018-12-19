@@ -8,9 +8,8 @@ namespace networking {
 namespace tcp {
 using boost::asio::ip::tcp;
 
-class InboundConnection : public Connection {
+class InboundConnection : public ConnectionBase<InboundConnection> {
  private:
-  void read_hello(PairingCallback pairing_callback);
   void read_handshake_message_body(
       PairingCallback pairing_callback, std::size_t body_size);
 
@@ -18,8 +17,8 @@ class InboundConnection : public Connection {
   InboundConnection(const std::shared_ptr<crypto::Ecc>& keys,
                     const std::shared_ptr<messages::Queue>& queue,
                     const std::shared_ptr<tcp::socket>& socket,
-                    PairingCallback pairing_callback,
                     UnpairingCallback unpairing_callback);
+  void read_hello(PairingCallback pairing_callback);
 };
 }  // namespace tcp
 }  // namespace networking

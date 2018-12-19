@@ -224,7 +224,7 @@ bool Bot::load_networking(messages::config::Config *config) {
   }
 
   auto tcpconfig = networking_conf->mutable_tcp();
-  _peer_pool = std::make_shared<networking::PeerPool>(tcpconfig->peers());
+  _peer_pool = std::make_shared<networking::PeerPool>(tcpconfig->peers(), _keys->public_key());
 
   auto port = tcpconfig->port();
   _networking->create_tcp(_keys, port, _max_connections);

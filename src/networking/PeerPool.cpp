@@ -9,15 +9,33 @@
 namespace neuro {
 namespace networking {
 
+std::size_t PeerPool::hash(const crypto::EccPub& ecc_pub) {
+  const neuro::Buffer buffer = ecc_pub.save();
+  return std::hash<neuro::Buffer>{}(buffer);
+}
+
 bool PeerPool::insert(const PeerPtr& peer) {
   if (!peer->has_key_pub()) {
     return false;
   }
   crypto::EccPub ecc_pub;
   ecc_pub.load(peer->key_pub());
-  const neuro::Buffer buffer = ecc_pub.save();
-  auto key = std::hash<neuro::Buffer>{}(buffer);
+  auto key = hash(ecc_pub);
+  if (!!_my_key_pub_hash && key == *_my_key_pub_hash) {
+    return false;
+  }
   return _peers.insert(std::make_pair(key, peer)).second;
+}
+
+PeerPool::PeerPool(const std::string& path, const crypto::EccPub& my_ecc_pub,
+                   std::size_t max_size)
+    : _path(path),
+      _my_key_pub_hash(hash(my_ecc_pub)),
+      _max_size(max_size),
+      _gen(_rd()) {
+  if (!load()) {
+    throw std::runtime_error("Failed to load peers pool from file.");
+  }
 }
 
 PeerPool::PeerPool(const std::string& path, std::size_t max_size)

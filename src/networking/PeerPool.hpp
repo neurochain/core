@@ -6,6 +6,7 @@
 
 #include "common.pb.h"
 #include "common/Buffer.hpp"
+#include "crypto/EccPub.hpp"
 #include "messages.pb.h"
 
 namespace neuro {
@@ -21,10 +22,14 @@ class PeerPool {
  private:
   std::string _path;
   PeersPtr _peers;
+  std::optional<std::size_t> _my_key_pub_hash;
   std::size_t _max_size;
   mutable std::random_device _rd;
   mutable std::mt19937 _gen;
   mutable std::mutex _peers_mutex;
+
+ private:
+  static std::size_t hash(const crypto::EccPub& ecc_pub);
 
  private:
   bool insert(const PeerPtr& peer);
@@ -35,6 +40,8 @@ class PeerPool {
   messages::Peers build_peers_message() const;
 
  public:
+  PeerPool(const std::string& path, const crypto::EccPub& my_ecc_pub,
+           std::size_t max_size = 999);
   PeerPool(const std::string& path, std::size_t max_size = 999);
   void insert(const messages::Peers& peers);
   bool erase(const Buffer& key_pub);

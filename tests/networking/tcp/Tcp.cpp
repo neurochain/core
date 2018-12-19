@@ -19,8 +19,9 @@ class Tcp {
     auto keys1 = std::make_shared<crypto::Ecc>();
     Port port{31212};  // Maybe change this to the port to be used by the bot
     networking::Tcp tcp1(port, queue, keys1, 3);
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    ASSERT_EQ(tcp1._connection_pool.size(), 1);
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    ASSERT_EQ(tcp1._connection_pool.size(), 0);
+    tcp1.stop();
   }
 
   void test_connection() {
@@ -34,21 +35,25 @@ class Tcp {
     messages::Peer peer;
     peer.set_endpoint("127.0.0.1");
     peer.set_port(port);
+    auto key_pub = peer.mutable_key_pub();
+    keys1->public_key().save(key_pub);
     tcp2.connect(peer);
-    std::this_thread::sleep_for(std::chrono::seconds(500));
+    std::this_thread::sleep_for(std::chrono::seconds(2));
     ASSERT_EQ(tcp1._connection_pool.size(), 1);
     ASSERT_EQ(tcp2._connection_pool.size(), 1);
+    tcp1.stop();
+    tcp2.stop();
   }
 };
-
-TEST(Tcp, connection_test) {
-  networking::test::Tcp tcp_test;
-  tcp_test.test_connection();
-}
 
 TEST(Tcp, listen) {
   networking::test::Tcp tcp_test;
   tcp_test.test_listen();
+}
+
+TEST(Tcp, connection) {
+  networking::test::Tcp tcp_test;
+  tcp_test.test_connection();
 }
 
 }  // namespace test
