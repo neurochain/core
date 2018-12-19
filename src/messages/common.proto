@@ -10,7 +10,7 @@ message Timestamp {
   required int32 data = 1;
 }
 
-message NCCSDF {
+message _NCCSDF {
   required uint64 value = 1;
 }
 

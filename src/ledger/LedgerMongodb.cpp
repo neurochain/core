@@ -523,7 +523,7 @@ bool LedgerMongodb::for_each(const Filter &filter, Functor functor) const {
   }
 
   auto bson_transactions =
-      _transactions.find(std::move(query << bss::finalize), remove_OID());
+      _transactions.find((query << bss::finalize).view(), remove_OID());
 
   bool applied_functor = false;
   for (const auto &bson_transaction : bson_transactions) {

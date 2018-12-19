@@ -55,6 +55,9 @@ add_library(core
   ./networking/TransportLayer.cpp
   ./Bot.cpp
   ./tooling/blockgen.hpp
+  ./tooling/blockgen.cpp
+  ./tooling/Simulator.hpp
+  ./tooling/Simulator.cpp
   ./messages/Queue.hpp
   ./messages/Queue.cpp
   ./messages/Message.hpp

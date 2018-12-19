@@ -23,7 +23,6 @@ using BranchID = uint32_t;
 using BlockScore = double;
 
 Type get_type(const Body &body);
-NCCSDF ncc_amount(uint64_t amount);
 
 bool from_buffer(const Buffer &buffer, Packet *packet);
 bool from_json(const std::string &json, Packet *packet);
@@ -63,6 +62,15 @@ class Message : public _Message {
   Message(const Path &path) { from_json_file(path.string(), this); }
   virtual ~Message() {}
 };
+
+class NCCSDF : public _NCCSDF {
+ public:
+  NCCSDF() {}
+  NCCSDF(const _NCCSDF &nccsdf) : _NCCSDF(nccsdf) {}
+  NCCSDF(uint64_t amount) { set_value(amount); }
+};
+
+NCCSDF ncc_amount(uint64_t amount);
 
 }  // namespace messages
 }  // namespace neuro

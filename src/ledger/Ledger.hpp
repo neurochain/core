@@ -225,7 +225,7 @@ class Ledger {
     return unspent_transactions;
   }
 
-  messages::NCCSDF available_ncc(const messages::Address &address) {
+  messages::NCCSDF balance(const messages::Address &address) {
     uint64_t total = 0;
     const auto unspent_transactions = list_unspent_transactions(address);
     for (const auto &unspent_transaction : unspent_transactions) {
