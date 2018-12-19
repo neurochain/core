@@ -203,8 +203,10 @@ void Tcp::new_outbound_connection(
     const boost::system::error_code& error,
     const messages::Peer& peer) {
   if (!!error) {
-    LOG_WARNING << "Could not create new connection to " << peer << " due to "
-                << error.message();
+    LOG_WARNING
+        << this << "[" << listening_port()
+        << "] Tcp::new_outbound_connection: Could not create new connection to "
+        << peer << " due to " << error.message();
     return;
   }
   std::shared_ptr<tcp::OutboundConnection> new_connection;
@@ -245,7 +247,8 @@ void Tcp::new_inbound_connection(
           }
         });
   } else {
-    LOG_WARNING << "Could not create new connection to " << peer << " due to "
+    LOG_WARNING << this << "[" << listening_port()
+                << "] Could not create new connection to " << peer << " due to "
                 << error.message();
   }
 }
@@ -254,7 +257,8 @@ void Tcp::terminate(const RemoteKey& id) { _connection_pool.disconnect(id); }
 
 bool Tcp::send(const messages::Message& message) {
   if (_connection_pool.size() == 0) {
-    LOG_ERROR << "Could not send message because there is no connection";
+    LOG_ERROR << "Tcp::new_inbound_connection : Could not send message because "
+                 "there is no connection";
     return false;
   }
 

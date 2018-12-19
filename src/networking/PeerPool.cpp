@@ -128,9 +128,10 @@ std::size_t PeerPool::size() const {
 
 std::optional<PeerPool::PeerPtr> PeerPool::get_random_not_of(
     const std::set<const Buffer*>& forbidden) const {
+  std::optional<PeerPool::PeerPtr> ans;
   std::scoped_lock lock(_peers_mutex);
   if (_peers.empty()) {
-    return nullptr;
+    return ans;
   }
   std::set<std::size_t> forbidden_keys;
   for (const auto& f : forbidden) {
@@ -144,9 +145,12 @@ std::optional<PeerPool::PeerPtr> PeerPool::get_random_not_of(
       eligible.push_back(peer.first);
     }
   }
-  std::uniform_int_distribution<std::size_t> dist(0, eligible.size() - 1);
-  auto selected_key = eligible[dist(_gen)];
-  return _peers.at(selected_key);
+  if (!eligible.empty()) {
+    std::uniform_int_distribution<std::size_t> dist(0, eligible.size() - 1);
+    auto selected_key = eligible[dist(_gen)];
+    ans = _peers.at(selected_key);
+  }
+  return ans;
 }
 
 std::set<PeerPool::PeerPtr> PeerPool::get_peers(
