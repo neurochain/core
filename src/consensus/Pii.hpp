@@ -14,29 +14,30 @@ namespace consensus {
 using Score = Double;
 
   
-class Transactions : public std::vector<std::unique_ptr<messages::Transaction>> {
+class Addresses {
  public:
   using TransactionID = messages::Transaction *;
-  using AddressID = messages::Address *;
 
-  class Address {
+  struct Counters {
+
+  };
+
+  class Transactions {
    private:
     const messages::Address _address;
     Score _previous;
     Score _current;
-    std::unordered_multimap<AddressID, const TransactionID> _in;
-    std::unordered_multimap<AddressID, const TransactionID> _out;
+    std::unordered_multimap<messages::Address, Counters> _in;
+    std::unordered_multimap<messages::Address, Counters> _out;
 
    public:
-    Address(const messages::Address &address);
-    bool add_incoming(const AddressID address_id,
-                      const TransactionID transaction_id);
-    bool add_outgoing(const AddressID address_id,
-                      const TransactionID transaction_id);
+    Transactions(const messages::Address &address);
+    bool add(const messages::Output &output);
+    bool add(const messages::Input &input);
   };
 
  private:
-  std::unordered_set<std::unique_ptr<messages::Address>> _addresss;
+  std::unordered_map<messages::Address, std::unique_ptr<AddressTransactions>> _addresses;
 
  public:
   bool add_block(const messages::Block &block);
