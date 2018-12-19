@@ -49,7 +49,7 @@ message Input {
 
 message Output {
   required Hash address = 1;
-  required _NCCSDF value = 2;
+  required _NCCAmount value = 2;
   optional bytes data = 3;
   optional int32 output_id = 4;
 }
@@ -65,7 +65,7 @@ message Transaction {
   repeated Output outputs = 3;
   repeated Signature signatures = 4;
   repeated KeyPub key_pubs = 5;
-  optional _NCCSDF fees = 6;
+  optional _NCCAmount fees = 6;
 }
 
 message BlockHeader {
@@ -161,5 +161,5 @@ message _Message {
 
 message UnspentTransaction {
   required Hash transaction_id = 1;
-  required _NCCSDF value = 2;
+  required _NCCAmount value = 2;
 }

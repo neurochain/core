@@ -8,8 +8,8 @@ namespace messages {
 
 Type get_type(const Body &body) { return body.body_case(); }
 
-NCCSDF ncc_amount(uint64_t amount) {
-  NCCSDF ncc;
+NCCAmount ncc_amount(uint64_t amount) {
+  NCCAmount ncc;
   ncc.set_value(amount);
   return ncc;
 }

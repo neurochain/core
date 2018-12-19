@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
   uint64_t ncc = vm["ncc"].as<uint64_t>();
 
   LOG_INFO << "Load 1 ...";
-  messages::NCCSDF nccsdf;
+  messages::NCCAmount nccsdf;
   nccsdf.set_value(ncc);
 
   auto db = _config.database();

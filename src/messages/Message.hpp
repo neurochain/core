@@ -63,14 +63,14 @@ class Message : public _Message {
   virtual ~Message() {}
 };
 
-class NCCSDF : public _NCCSDF {
+class NCCAmount : public _NCCAmount {
  public:
-  NCCSDF() {}
-  NCCSDF(const _NCCSDF &nccsdf) : _NCCSDF(nccsdf) {}
-  NCCSDF(uint64_t amount) { set_value(amount); }
+  NCCAmount() {}
+  NCCAmount(const _NCCAmount &nccsdf) : _NCCAmount(nccsdf) {}
+  NCCAmount(uint64_t amount) { set_value(amount); }
 };
 
-NCCSDF ncc_amount(uint64_t amount);
+NCCAmount ncc_amount(uint64_t amount);
 
 }  // namespace messages
 }  // namespace neuro

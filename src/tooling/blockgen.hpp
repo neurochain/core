@@ -10,18 +10,18 @@ namespace neuro {
 namespace tooling {
 namespace blockgen {
 
-void coinbase(const crypto::EccPub &key_pub, const messages::NCCSDF &ncc,
+void coinbase(const crypto::EccPub &key_pub, const messages::NCCAmount &ncc,
               messages::Transaction *transaction,
               const std::string output_data = "");
 
 messages::TaggedBlock gen_block0(std::vector<crypto::Ecc> keys,
-                                 messages::NCCSDF ncc_block0);
+                                 messages::NCCAmount ncc_block0);
 
 void block0(uint32_t bots, const std::string &pathdir,
-            const messages::NCCSDF &nccsdf, ledger::LedgerMongodb *ledger);
+            const messages::NCCAmount &nccsdf, ledger::LedgerMongodb *ledger);
 
 void testnet_blockg(uint32_t bots, const std::string &pathdir,
-                    messages::NCCSDF &nccsdf);
+                    messages::NCCAmount &nccsdf);
 
 bool blockgen_from_block(
     messages::Block *block, const messages::Block &last_block,

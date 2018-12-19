@@ -225,7 +225,7 @@ class Ledger {
     return unspent_transactions;
   }
 
-  messages::NCCSDF balance(const messages::Address &address) {
+  messages::NCCAmount balance(const messages::Address &address) {
     uint64_t total = 0;
     const auto unspent_transactions = list_unspent_transactions(address);
     for (const auto &unspent_transaction : unspent_transactions) {
@@ -283,7 +283,7 @@ class Ledger {
       const std::vector<messages::Address> &unspent_transactions_ids,
       const std::vector<messages::Output> &outputs,
       const crypto::EccPriv &key_priv,
-      const std::optional<const messages::NCCSDF> &fees = {}) const {
+      const std::optional<const messages::NCCAmount> &fees = {}) const {
     const crypto::EccPub key_pub = key_priv.make_public_key();
     const auto address = messages::Address(key_pub);
 
@@ -296,7 +296,7 @@ class Ledger {
       const std::vector<messages::Input> &inputs,
       const std::vector<messages::Output> &outputs,
       const crypto::EccPriv &key_priv,
-      const std::optional<messages::NCCSDF> &fees = {}) const {
+      const std::optional<messages::NCCAmount> &fees = {}) const {
     messages::Transaction transaction;
 
     // Build keys
@@ -329,9 +329,9 @@ class Ledger {
   }
 
   messages::Transaction build_transaction(
-      const messages::Address &address, const messages::NCCSDF &amount,
+      const messages::Address &address, const messages::NCCAmount &amount,
       const crypto::EccPriv &key_priv,
-      const std::optional<messages::NCCSDF> &fees = {}) const {
+      const std::optional<messages::NCCAmount> &fees = {}) const {
     auto bot_address = messages::Address(key_priv.make_public_key());
     std::vector<messages::UnspentTransaction> unspent_transactions =
         list_unspent_transactions(bot_address);

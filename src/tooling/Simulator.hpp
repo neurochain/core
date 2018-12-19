@@ -6,8 +6,8 @@ namespace tooling {
 
 class Simulator {
  private:
-  messages::NCCSDF _ncc_block0;
-  messages::NCCSDF _block_reward;
+  messages::NCCAmount _ncc_block0;
+  messages::NCCAmount _block_reward;
 
  public:
   const float RATIO_TO_SEND = 0.5;
@@ -16,8 +16,8 @@ class Simulator {
   std::vector<messages::Address> addresses;
 
   Simulator(const std::string &db_url, const std::string &db_name,
-            const int nb_keys, const messages::NCCSDF ncc_block0,
-            const messages::NCCSDF block_reward);
+            const int nb_keys, const messages::NCCAmount ncc_block0,
+            const messages::NCCAmount block_reward);
 
   messages::Block new_block(int nb_transactions);
   messages::Transaction new_random_transaction();
