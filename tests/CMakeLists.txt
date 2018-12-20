@@ -98,7 +98,6 @@ target_link_libraries(ut
 
 add_test(ut ut)
 
-
 add_executable(LedgerMongodb
   ledger/LedgerMongodb.cpp
   )
@@ -118,6 +117,24 @@ target_link_libraries(LedgerMongodb
   )
 add_test(LedgerMongodb LedgerMongodb)
 
+add_executable(Simulator
+  tooling/Simulator.cpp
+  )
+target_link_libraries(Simulator
+  GTest::main
+  Boost::program_options
+  Boost::filesystem
+  Boost::system
+  Boost::thread
+  Boost::log
+  cpr::cpr
+  ${LIBMONGOCXX_STATIC_LIBRARIES}
+  core
+  protos
+  libonion::onion
+  libonion::onioncpp
+  )
+add_test(Simulator Simulator)
 
 add_executable(dbreset
     dbreset.cpp

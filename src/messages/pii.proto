@@ -7,6 +7,6 @@ import "messages.proto";
 
 extend Input {
   optional Timestamp ts = 100;
-  optional NCCSDF amount = 101;
+  optional _NCCAmount amount = 101;
 }
 

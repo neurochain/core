@@ -65,7 +65,7 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
              "coins.\"}";
       return OCS_PROCESSED;
     } else {
-      messages::NCCSDF amount;
+      messages::NCCAmount amount;
       amount.set_value(faucet_amount);
       messages::Transaction transaction =
           _ledger->build_transaction(address, amount, _keys->private_key());

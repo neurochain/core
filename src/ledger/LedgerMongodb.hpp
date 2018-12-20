@@ -13,6 +13,9 @@
 
 namespace neuro {
 namespace ledger {
+namespace tests {
+class LedgerMongodb;
+}
 
 class LedgerMongodb : public Ledger {
  private:
@@ -23,8 +26,8 @@ class LedgerMongodb : public Ledger {
   mutable mongocxx::collection _blocks;
   mutable mongocxx::collection _transactions;
 
-  std::mutex _ledger_mutex;
-  
+  mutable std::mutex _ledger_mutex;
+
   messages::TaggedBlock _main_branch_tip;
 
   mongocxx::options::find remove_OID() const;
@@ -37,14 +40,51 @@ class LedgerMongodb : public Ledger {
   bool init_block0(const messages::config::Database &config);
 
   bool is_ancestor(const messages::TaggedBlock &ancestor,
-                   const messages::TaggedBlock &block);
+                   const messages::TaggedBlock &block) const;
 
-  bool is_main_branch(const messages::TaggedTransaction &tagged_transaction);
+  bool is_main_branch(
+      const messages::TaggedTransaction &tagged_transaction) const;
 
-  int get_block_transactions(messages::Block *block);
+  int fill_block_transactions(messages::Block *block) const;
 
   bool unsafe_get_block(const messages::BlockID &id,
-                        messages::TaggedBlock *tagged_block);
+                        messages::TaggedBlock *tagged_block,
+                        bool include_transactions = true) const;
+
+  bool unsafe_get_block(const messages::BlockHeight height,
+                        messages::Block *block,
+                        bool include_transactions = true) const;
+
+  bool unsafe_get_block(const messages::BlockHeight height,
+                        messages::TaggedBlock *tagged_block,
+                        bool include_transaction = true) const;
+
+  bool unsafe_get_blocks_by_previd(
+      const messages::BlockID &previd,
+      std::vector<messages::TaggedBlock> *tagged_blocks,
+      bool include_transactions = true) const;
+
+  messages::BranchID new_branch_id() const;
+
+  bool set_branch_path(const messages::BlockHeader &block_header,
+                       const messages::BranchPath &branch_path);
+
+  bool set_branch_path(const messages::BlockHeader &block_header);
+
+  bool unsafe_insert_block(messages::TaggedBlock *tagged_block);
+
+  messages::BranchPath unsafe_fork_from(
+      const messages::BranchPath &branch_path) const;
+
+  messages::BranchPath unsafe_first_child(
+      const messages::BranchPath &branch_path) const;
+
+  bool update_branch_tag(const messages::Hash &id,
+                         const messages::Branch &branch);
+
+  bool unsafe_get_block_by_previd(const messages::BlockID &previd,
+                                  messages::Block *block,
+                                  bool include_transactions = true) const;
 
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);
@@ -58,52 +98,79 @@ class LedgerMongodb : public Ledger {
 
   void set_main_branch_tip();
 
-  messages::BlockHeight height();
+  messages::BlockHeight height() const;
 
   bool get_block_header(const messages::BlockID &id,
-                        messages::BlockHeader *header);
+                        messages::BlockHeader *header) const;
 
-  bool get_last_block_header(messages::BlockHeader *block_header);
+  bool get_last_block_header(messages::BlockHeader *block_header) const;
 
   bool get_block(const messages::BlockID &id,
-                 messages::TaggedBlock *tagged_block);
+                 messages::TaggedBlock *tagged_block) const;
 
-  bool get_block(const messages::BlockID &id, messages::Block *block);
+  bool get_block(const messages::BlockID &id, messages::Block *block) const;
 
   bool get_block_by_previd(const messages::BlockID &previd,
-                           messages::Block *block);
+                           messages::Block *block,
+                           bool include_transactions = true) const;
 
   bool get_blocks_by_previd(const messages::BlockID &previd,
-                            std::vector<messages::TaggedBlock> *tagged_blocks);
+                            std::vector<messages::TaggedBlock> *tagged_blocks,
+                            bool include_transactions = true) const;
 
-  bool get_block(const messages::BlockHeight height, messages::Block *block);
+  bool get_block(const messages::BlockHeight height, messages::Block *block,
+                 bool include_transactions = true) const;
+
+  bool get_block(const messages::BlockHeight height,
+                 messages::TaggedBlock *tagged_block,
+                 bool include_transaction = true) const;
 
   bool insert_block(messages::TaggedBlock *tagged_block);
+
+  bool insert_block(messages::Block *block);
 
   bool delete_block(const messages::Hash &id);
 
   bool get_transaction(const messages::Hash &id,
-                       messages::Transaction *transaction);
+                       messages::Transaction *transaction) const;
 
   bool get_transaction(const messages::Hash &id,
                        messages::Transaction *transaction,
-                       messages::BlockHeight *blockheight);
+                       messages::BlockHeight *blockheight) const;
 
-  int total_nb_transactions();
+  std::size_t total_nb_transactions() const;
 
-  int total_nb_blocks();
-
-  bool for_each(const Filter &filter, Functor functor);
+  std::size_t total_nb_blocks() const;
 
   bool for_each(const Filter &filter, const messages::Taggedblock &tip, Functor functor);
+
+  bool for_each(const Filter &filter, Functor functor) const;
 
   int new_branch_id();
 
   bool add_transaction(const messages::TaggedTransaction &tagged_transaction);
 
+  bool add_to_transaction_pool(const messages::Transaction &transaction);
+
   bool delete_transaction(const messages::Hash &id);
 
-  int get_transaction_pool(messages::Block *block);
+  std::size_t get_transaction_pool(messages::Block *block);
+
+  bool get_unscored_forks(std::vector<messages::TaggedBlock> *tagged_blocks,
+                          bool include_transactions = true) const;
+
+  bool set_block_score(const messages::Hash &id, messages::BlockScore score);
+
+  bool update_main_branch(messages::TaggedBlock *main_branch_tip);
+
+  messages::BranchPath fork_from(const messages::BranchPath &branch_path) const;
+
+  messages::BranchPath first_child(
+      const messages::BranchPath &branch_path) const;
+
+  void empty_database();
+
+  friend class neuro::ledger::tests::LedgerMongodb;
 };
 
 }  // namespace ledger

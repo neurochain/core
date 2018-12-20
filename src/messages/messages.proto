@@ -49,7 +49,7 @@ message Input {
 
 message Output {
   required Hash address = 1;
-  required NCCSDF value = 2;
+  required _NCCAmount value = 2;
   optional bytes data = 3;
   optional int32 output_id = 4;
 }
@@ -60,12 +60,12 @@ message Signature {
 }
 
 message Transaction {
-  repeated Input inputs = 1;
-  repeated Output outputs = 2;
-  repeated Signature signatures = 3;
-  repeated KeyPub key_pubs = 4;
-  optional NCCSDF fees = 5;
-  optional Hash id = 6;
+  required Hash id = 1;
+  repeated Input inputs = 2;
+  repeated Output outputs = 3;
+  repeated Signature signatures = 4;
+  repeated KeyPub key_pubs = 5;
+  optional _NCCAmount fees = 6;
 }
 
 message BlockHeader {
@@ -87,10 +87,31 @@ enum Branch {
   DETACHED = 2;
 }
 
+// The branch path is a strange beast.
+// It should tell you where a block is in the block tree.
+// The block0 has this branch path: {branch_ids: [0], block_numbers: [0]}.
+// This indicates that the block0 is the block number 0 of the branch 0.
+// The block at height 1 gets {branch_ids: [0], block_numbers: [1]}.
+// It indicates that this block is the block number 1 of the branch 0.
+// As long as you don't have a fork all blocks will stay in the branch 0.
+// But let's say that you then add 2 blocks at height 2
+// The first one you receive will have this branch path
+// {branch_ids: [0], block_numbers: [2]}.
+// And the second one will have {branch_ids: [1, 0], block_numbers: [0, 1]}
+// This indicates that this block is the block number 0 of the branch 1
+// and that it forked from the branch 0 at block number 1.
+// If another block arrives which also has height 1 it gets
+// {branch_ids: [2, 0], block_numbers: [0, 1]}.
+message BranchPath {
+  repeated uint32 branch_ids = 1;
+  repeated uint32 block_numbers = 2;
+}
+
 message TaggedBlock {
   required Block block = 1;
   required Branch branch = 2;
-  repeated uint32 branch_path = 3;
+  optional BranchPath branch_path = 3;
+  optional double score = 4;
 }
 
 message TaggedTransaction {
@@ -140,7 +161,7 @@ message _Message {
 
 message UnspentTransaction {
   required Hash transaction_id = 1;
-  required NCCSDF value = 2;
+  required _NCCAmount value = 2;
 }
 
 message Score {

@@ -19,6 +19,8 @@ using TransactionID = decltype(((Transaction *)nullptr)->id());
 using Packet = google::protobuf::Message;
 
 using Type = Body::BodyCase;
+using BranchID = uint32_t;
+using BlockScore = double;
 
 Type get_type(const Body &body);
 
@@ -30,6 +32,7 @@ bool from_bson(const bsoncxx::document::view &doc, Packet *packet);
 
 std::size_t to_buffer(const Packet &packet, Buffer *buffer);
 void to_json(const Packet &packet, std::string *output);
+std::string to_json(const Packet &packet);
 bsoncxx::document::value to_bson(const Packet &packet);
 std::ostream &operator<<(std::ostream &os, const Packet &packet);
 
@@ -45,7 +48,8 @@ std::ostream &operator<<(
 bool operator==(const Packet &a, const Packet &b);
 bool operator==(const messages::Peer &a, const messages::Peer &b);
 
-void hash_transaction(Transaction *transaction);
+void set_transaction_hash(Transaction *transaction);
+void set_block_hash(Block *block);
 int32_t fill_header(messages::Header *header);
 int32_t fill_header_reply(const messages::Header &header_request,
                           messages::Header *header_reply);
@@ -57,6 +61,13 @@ class Message : public _Message {
 
   Message(const Path &path) { from_json_file(path.string(), this); }
   virtual ~Message() {}
+};
+
+class NCCAmount : public _NCCAmount {
+ public:
+  NCCAmount() {}
+  NCCAmount(const _NCCAmount &nccsdf) : _NCCAmount(nccsdf) {}
+  NCCAmount(uint64_t amount) { set_value(amount); }
 };
 
 }  // namespace messages
