@@ -14,6 +14,7 @@ Simulator::Simulator(const std::string &db_url, const std::string &db_name,
   ledger->empty_database();
   auto tagged_block = tooling::blockgen::gen_block0(keys, _ncc_block0);
   ledger->insert_block(&tagged_block);
+  ledger->set_main_branch_tip();
   for (const auto &key : keys) {
     addresses.push_back(key.public_key());
   }
