@@ -27,23 +27,10 @@ std::vector<typename C::value_type> vectorize(const C& container) {
 class Listener {
  private:
   std::size_t _received_connection{0};
-  std::size_t _received_hello{0};
-  std::size_t _received_world{0};
   std::size_t _received_deconnection{0};
 
  public:
   Listener() {}
-
-  void handler_hello(const messages::Header &header,
-                     const messages::Body &hello) {
-    LOG_DEBUG << __FILE__ << ": It entered the handler_hello !!";
-    ++_received_hello;
-  }
-  void handler_world(const messages::Header &header,
-                     const messages::Body &hello) {
-    LOG_DEBUG << __FILE__ << ": It entered the handler_world !!";
-    ++_received_world;
-  }
   void handler_connection(const messages::Header &header,
                           const messages::Body &body) {
     LOG_DEBUG << __FILE__ << ": It entered the handler_connection !!";
@@ -55,8 +42,6 @@ class Listener {
   }
 
   std::size_t received_connection() const { return _received_connection; };
-  std::size_t received_hello() const { return _received_hello; };
-  std::size_t received_world() const { return _received_world; };
   std::size_t received_deconnection() const { return _received_deconnection; };
 };
 
@@ -84,16 +69,6 @@ TEST(INTEGRATION, simple_interaction) {
   auto bot0 = std::make_shared<Bot>(config0);
   messages::Subscriber subscriber0(bot0->queue());
   subscriber0.subscribe(
-      messages::Type::kHello,
-      [&listener](const messages::Header &header, const messages::Body &body) {
-        listener.handler_hello(header, body);
-      });
-  subscriber0.subscribe(
-      messages::Type::kWorld,
-      [&listener](const messages::Header &header, const messages::Body &body) {
-        listener.handler_world(header, body);
-      });
-  subscriber0.subscribe(
       messages::Type::kConnectionReady,
       [&listener](const messages::Header &header, const messages::Body &body) {
         listener.handler_connection(header, body);
@@ -103,16 +78,6 @@ TEST(INTEGRATION, simple_interaction) {
   messages::config::Config config1(config_path1);
   auto bot1 = std::make_shared<Bot>(config1);
   messages::Subscriber subscriber1(bot1->queue());
-  subscriber1.subscribe(
-      messages::Type::kHello,
-      [&listener](const messages::Header &header, const messages::Body &body) {
-        listener.handler_hello(header, body);
-      });
-  subscriber1.subscribe(
-      messages::Type::kWorld,
-      [&listener](const messages::Header &header, const messages::Body &body) {
-        listener.handler_world(header, body);
-      });
   subscriber1.subscribe(
       messages::Type::kConnectionReady,
       [&listener](const messages::Header &header, const messages::Body &body) {
@@ -124,35 +89,20 @@ TEST(INTEGRATION, simple_interaction) {
   auto bot2 = std::make_shared<Bot>(config2);
   messages::Subscriber subscriber2(bot2->queue());
   subscriber2.subscribe(
-      messages::Type::kHello,
-      [&listener](const messages::Header &header, const messages::Body &body) {
-        listener.handler_hello(header, body);
-      });
-  subscriber2.subscribe(
-      messages::Type::kWorld,
-      [&listener](const messages::Header &header, const messages::Body &body) {
-        listener.handler_world(header, body);
-      });
-  subscriber2.subscribe(
       messages::Type::kConnectionReady,
       [&listener](const messages::Header &header, const messages::Body &body) {
         listener.handler_connection(header, body);
       });
 
-  std::this_thread::sleep_for(500ms);
+  std::this_thread::sleep_for(3s);
 
   LOG_DEBUG << "listener.received_connection() = "
             << listener.received_connection();
-
-  LOG_DEBUG << "listener.received_hello() = " << listener.received_hello();
-
-  LOG_DEBUG << "listener.received_world() = " << listener.received_world();
 
   LOG_DEBUG << "listener.received_deconnection() = "
             << listener.received_deconnection();
 
   ASSERT_GT(listener.received_connection(), 0);
-  ASSERT_GT(listener.received_world(), 0);
   ASSERT_EQ(listener.received_deconnection(), 0);
 
   auto peers_bot0 = vectorize(bot0->connected_peers());
@@ -180,6 +130,9 @@ TEST(INTEGRATION, simple_interaction) {
   ASSERT_TRUE(peers_bot2[0]->port() == 1337 || peers_bot2[0]->port() == 1338);
   ASSERT_TRUE(peers_bot2[1]->port() == 1337 || peers_bot2[1]->port() == 1338);
   ASSERT_NE(peers_bot2[0]->port(), peers_bot2[1]->port());
+  bot2.reset();
+  bot1.reset();
+  bot0.reset();
 }
 
 TEST(INTEGRATION, neighbors_propagation) {
@@ -193,7 +146,7 @@ TEST(INTEGRATION, neighbors_propagation) {
   messages::config::Config config2(config_path2);
   auto bot2 = std::make_shared<Bot>(config2);
 
-  std::this_thread::sleep_for(500ms);
+  std::this_thread::sleep_for(3s);
 
   auto peers_bot0 = vectorize(bot0->connected_peers());
   auto peers_bot1 = vectorize(bot1->connected_peers());

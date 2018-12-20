@@ -83,9 +83,9 @@ class Bot {
   void regular_update();
   bool update_ledger();
   void update_peerlist();
-  std::string peer_list_str() const;
 
  public:
+  std::string peer_list_str() const;
   Bot(const messages::config::Config &config);
   Bot(const std::string &config_path);
   Bot(const Bot &) = delete;

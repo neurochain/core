@@ -18,7 +18,8 @@ OutboundConnection::OutboundConnection(
   _remote_pub_key->load(peer.key_pub());
 }
 
-messages::Message OutboundConnection::build_hello_message() const {
+messages::Message OutboundConnection::build_hello_message(
+    const Port listen_port) const {
   messages::Message message;
   messages::fill_header(message.mutable_header());
   auto header = message.mutable_header();
@@ -27,7 +28,7 @@ messages::Message OutboundConnection::build_hello_message() const {
   const auto tmp = _keys->public_key().save();
   key_pub->set_raw_data(tmp.data(), tmp.size());
   auto hello = message.add_bodies()->mutable_hello();
-  hello->set_listen_port(local_port());
+  hello->set_listen_port(listen_port);
   return message;
 }
 
@@ -42,12 +43,14 @@ void OutboundConnection::read_handshake_message_body(
         if (!!error) {
           LOG_ERROR << "Error reading outbound connection acknowledgment body: "
                     << error;
+          _this->terminate();
           return;
         }
         auto message = Packet::deserialize(_this->_remote_pub_key,
                                            _this->_header, _this->_buffer);
         if (!message) {
           LOG_ERROR << "Failed to deserialize acknowledgment body.";
+          _this->terminate();
           return;
         }
 
@@ -55,6 +58,7 @@ void OutboundConnection::read_handshake_message_body(
 
         if (!message->has_header()) {
           LOG_ERROR << "Missing header on hello message.";
+          _this->terminate();
           return;
         }
 
@@ -63,15 +67,18 @@ void OutboundConnection::read_handshake_message_body(
           const auto type = get_type(body);
           if (type != messages::Type::kWorld) {
             LOG_WARNING << "World message expected.";
+            _this->terminate();
             return;
           }
           if (count_world++) {
             LOG_WARNING << "Only one world body expected.";
+            _this->terminate();
             return;
           }
         }
         if (!count_world) {
           LOG_WARNING << "At least one hello body expected.";
+          _this->terminate();
           return;
         }
 
@@ -80,6 +87,7 @@ void OutboundConnection::read_handshake_message_body(
         assert(!!_this->_remote_pub_key);
         if (_this->_remote_pub_key->save() != ecc_pub.save()) {
           LOG_ERROR << "Unexpected signature specified.";
+          _this->terminate();
           return;
         }
 
@@ -97,6 +105,7 @@ void OutboundConnection::read_ack(PairingCallback pairing_callback) {
           LOG_ERROR
               << "Error reading outbound connection acknowledgment header: "
               << error;
+          _this->terminate();
           return;
         }
         const auto header_pattern =
@@ -106,8 +115,8 @@ void OutboundConnection::read_ack(PairingCallback pairing_callback) {
       });
 }
 
-void OutboundConnection::handshake_init(PairingCallback pairing_callback) {
-  auto hello_message = build_hello_message();
+void OutboundConnection::handshake_init(PairingCallback pairing_callback, const Port listen_port) {
+  auto hello_message = build_hello_message(listen_port);
   send(hello_message);
   read_ack(pairing_callback);
 }

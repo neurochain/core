@@ -222,8 +222,10 @@ void Tcp::new_outbound_connection(
              const RemoteKey& id) {
         if (this->_connection_pool.insert(id, paired_connection)) {
           this->_queue->publish(this->build_new_connection_message());
+        } else {
+          paired_connection->close();
         }
-      });
+      }, _listening_port);
 }
 
 void Tcp::new_inbound_connection(
@@ -242,8 +244,10 @@ void Tcp::new_inbound_connection(
     new_connection->read_hello(
         [this](const std::shared_ptr<tcp::Connection>& paired_connection,
                const RemoteKey& id) {
-          if (!this->_connection_pool.insert(id, paired_connection)) {
+          if (this->_connection_pool.insert(id, paired_connection)) {
             this->_queue->publish(this->build_new_connection_message());
+          } else {
+            paired_connection->close();
           }
         });
   } else {
@@ -309,7 +313,7 @@ void Tcp::join() {
 
 void Tcp::keep_max_connections(const PeerPool& peer_pool) {
   std::size_t remaining_capacity = _connection_pool.remaining_capacity();
-  while (remaining_capacity--) {
+  if (remaining_capacity != 0) {
     auto next_to_connect = _connection_pool.next_to_connect(peer_pool);
     if (!!next_to_connect) {
       assert(!!(*next_to_connect));

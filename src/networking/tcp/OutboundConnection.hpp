@@ -15,7 +15,7 @@ using boost::asio::ip::tcp;
 class OutboundConnection : public ConnectionBase<OutboundConnection> {
  private:
   void handshake_ack(PairingCallback pairing_callback);
-  messages::Message build_hello_message() const;
+  messages::Message build_hello_message(const Port listen_port) const;
   void read_ack(PairingCallback pairing_callback);
   void read_handshake_message_body(PairingCallback pairing_callback,
                                    std::size_t body_size);
@@ -26,7 +26,7 @@ class OutboundConnection : public ConnectionBase<OutboundConnection> {
                      const std::shared_ptr<tcp::socket>& socket,
                      const messages::Peer& peer,
                      UnpairingCallback unpairing_callback);
-  void handshake_init(PairingCallback pairing_callback);
+  void handshake_init(PairingCallback pairing_callback, const Port listen_port);
 };
 
 }  // namespace tcp

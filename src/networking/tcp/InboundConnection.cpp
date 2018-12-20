@@ -15,6 +15,7 @@ void InboundConnection::read_hello(PairingCallback pairing_callback) {
           LOG_ERROR
               << "Error reading outbound connection acknowledgment header: "
               << error;
+          _this->terminate();
           return;
         }
         const auto header_pattern =
@@ -34,6 +35,7 @@ void InboundConnection::read_handshake_message_body(
                                 std::size_t bytes_read) {
         if (!!error) {
           LOG_ERROR << "Error reading outbound connection acknowledgment body: " << error;
+          _this->terminate();
           return;
         }
         assert(!_this->_remote_pub_key);
@@ -41,12 +43,14 @@ void InboundConnection::read_handshake_message_body(
                                            _this->_header, _this->_buffer);
         if (!message) {
           LOG_ERROR << "Failed to deserialize hello message.";
+          _this->terminate();
           return;
         }
         LOG_DEBUG << "\033[1;32mMessage received: " << *message << "\033[0m";
 
         if (!message->has_header()) {
           LOG_ERROR << "Missing header on hello message.";
+          _this->terminate();
           return;
         }
 
@@ -55,15 +59,18 @@ void InboundConnection::read_handshake_message_body(
           const auto type = get_type(body);
           if (type != messages::Type::kHello) {
             LOG_WARNING << "Hello message expected.";
+            _this->terminate();
             return;
           }
           if (count_hello++) {
             LOG_WARNING << "Only one hello body expected.";
+            _this->terminate();
             return;
           }
         }
         if (!count_hello) {
           LOG_WARNING << "At least one hello body expected.";
+          _this->terminate();
           return;
         }
 

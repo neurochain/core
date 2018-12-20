@@ -55,7 +55,6 @@ class ConnectionBase : public Connection,
   };
 
 private:
- void terminate();
  void read_body(std::size_t body_size);
  messages::Peer build_peer(const IP& ip, Port port,
                            const crypto::EccPub& ecc_pub) const;
@@ -73,6 +72,7 @@ protected:
  void read_header();
  virtual void read_handshake_message_body(PairingCallback pairing_callback,
                                           std::size_t body_size) = 0;
+ void terminate();
 
 public:
  std::shared_ptr<const tcp::socket> socket() const;
