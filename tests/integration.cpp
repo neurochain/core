@@ -10,14 +10,14 @@ TEST(foo, bar) {
 }
 
 TEST(bar, foo) {
-  const std::string config_str =
+  const std::string config =
       "{"
       "  \"url\": \"mongodb://mongo:27017\","
       "  \"dbName\": \"test_ledger\","
       "  \"block0Format\": \"PROTO\","
       "  \"block0Path\": \"./data.0.testnet\""
       "}";
-  auto ledger = std::make_shared<::neuro::ledger::LedgerMongodb>(_config);
+  auto ledger = std::make_shared<::neuro::ledger::LedgerMongodb>(config);
 }
 
 }  // namespace tests
