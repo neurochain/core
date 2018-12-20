@@ -133,7 +133,7 @@ It allows to request the ledger, and send transactions to the network.
 
 We provide an Electron application that will handle the signature. Neither the private key nor the password for the wallet file are passed to the bot.
 
-![wallet_sequence](../../doc/img/wallet.png "Wallet: signing transaction")
+![wallet_sequence](../../doc/img/wallet_schema.png "Wallet: signing transaction")
 
 
 
