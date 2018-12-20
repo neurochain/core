@@ -59,7 +59,8 @@
 //   std::size_t received_connection1() const { return _received_connection1; };
 //   std::size_t received_hello() const { return _received_hello; };
 //   std::size_t received_world() const { return _received_world; };
-//   std::size_t received_deconnection() const { return _received_deconnection; };
+//   std::size_t received_deconnection() const { return _received_deconnection;
+//   };
 // };
 
 // class BotTest {
@@ -74,7 +75,8 @@
 //   void add_block() {
 //     messages::Block new_block;
 //     neuro::tooling::genblock::genblock_from_last_db_block(new_block,
-//                                                           _bot._ledger, 1, 0);
+//                                                           _bot._ledger, 1,
+//                                                           0);
 //     _bot._ledger->push_block(new_block);
 //   }
 // };

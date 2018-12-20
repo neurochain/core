@@ -14,8 +14,9 @@ TEST(Conf, load) {
   Path config_path("./bot2.json");
   try {
     auto configuration = messages::config::Config{config_path};
+  } catch (...) {
+    did_throw = true;
   }
-  catch(...) { did_throw = true; }
   ASSERT_NE(did_throw, true);
 
   auto conf = messages::config::Config{config_path};
