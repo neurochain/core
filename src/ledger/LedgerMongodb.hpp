@@ -95,6 +95,8 @@ class LedgerMongodb : public Ledger {
 
   bool for_each(const Filter &filter, Functor functor);
 
+  bool for_each(const Filter &filter, const messages::Taggedblock &tip, Functor functor);
+
   int new_branch_id();
 
   bool add_transaction(const messages::TaggedTransaction &tagged_transaction);

@@ -111,6 +111,15 @@ void LedgerMongodb::remove_all() {
   _transactions.delete_many(bss::document{} << bss::finalize);
 }
 
+
+messages::TaggedBlock get_main_branch_tip() const {
+    return _main_branch_tip;
+}
+
+void set_main_branch_tip() {
+    get_block(height(), &_main_branch_tip, false);
+}
+
 messages::BlockHeight LedgerMongodb::height() {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto query = bss::document{} << "branch" << MAIN_BRANCH_NAME << bss::finalize;
@@ -375,7 +384,8 @@ int LedgerMongodb::total_nb_blocks() {
   return _blocks.count(std::move(query));
 }
 
-bool LedgerMongodb::for_each(const Filter &filter, Functor functor) {
+bool LedgerMongodb::for_each(const Filter &filter, const messages::Taggedblock &tip, Functor functor) {
+
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   if (!filter.output_address() && !filter.input_transaction_id()) {
     LOG_WARNING << "missing filters for for_each query";
@@ -413,6 +423,10 @@ bool LedgerMongodb::for_each(const Filter &filter, Functor functor) {
   }
 
   return applied_functor;
+}
+
+bool LedgerMongodb::for_each(const Filter &filter, Functor functor) {
+    return for_each(filter, _main_branch_tip, functor);
 }
 
 int LedgerMongodb::new_branch_id() {
