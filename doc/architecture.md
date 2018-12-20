@@ -131,10 +131,6 @@ It allows to request the ledger, and send transactions to the network.
 
 # Wallet 
 
-![wallet](../../doc/img/wallet.png "Wallet")
-
-Known issues: 
-* Either keys or password passed in clear to the wallet backend.
 
 # Ledger 
 
