@@ -17,7 +17,11 @@ TEST(bar, foo) {
       "  \"block0Format\": \"PROTO\","
       "  \"block0Path\": \"./data.0.testnet\""
       "}";
-  auto ledger = std::make_shared<::neuro::ledger::LedgerMongodb>(config);
+  try {
+    auto ledger = std::make_shared<::neuro::ledger::LedgerMongodb>(config);
+  }catch(...) {
+    std::cout << "Could not launch mongodb" 
+  }
 }
 
 }  // namespace tests
