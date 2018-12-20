@@ -18,7 +18,7 @@ class LedgerMongodb : public ::testing::Test {
  public:
   const std::string config_str =
       "{"
-      "  \"url\": \"mongodb://mongo:27017\","
+      "  \"url\": \"mongodb://localhost:27017\","
       "  \"dbName\": \"test_ledger\","
       "  \"block0Format\": \"PROTO\","
       "  \"block0Path\": \"./data.0.testnet\""
