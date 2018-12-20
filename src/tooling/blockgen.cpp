@@ -14,7 +14,7 @@ void coinbase(const crypto::EccPub &key_pub, const messages::NCCAmount &ncc,
               const std::string output_data) {
   Buffer key_pub_raw;
   key_pub.save(&key_pub_raw);
-  messages::Hasher address(key_pub_raw);
+  messages::Address address(key_pub_raw);
 
   auto input = transaction->add_inputs();
 
@@ -39,7 +39,7 @@ messages::TaggedBlock gen_block0(std::vector<crypto::Ecc> keys,
   auto block = tagged_block.mutable_block();
   auto header = block->mutable_header();
   keys[0].public_key().save(header->mutable_author());
-  header->mutable_timestamp()->set_data(time(0));
+  header->mutable_timestamp()->set_data(std::time(nullptr));
   auto previons_block_hash = header->mutable_previous_block_hash();
   previons_block_hash->set_data("");
   previons_block_hash->set_type(messages::Hash::Type::Hash_Type_SHA256);
@@ -117,6 +117,7 @@ void testnet_blockg(uint32_t bots, const std::string &pathdir,
   messages::Hasher hash_id(tmpbuffer);
   header->mutable_id()->CopyFrom(hash_id);
 
+  std::cout << "block0 " << blockfaucet << std::endl;
   std::ofstream blockfile0;
   blockfile0.open("data.0.testnet");
   blockfile0 << blockfaucet.SerializeAsString();
@@ -171,7 +172,6 @@ bool blockgen_from_block(messages::Block *block,
     neuro::messages::Input *input = new_trans->add_inputs();
     input->mutable_id()->CopyFrom(sender.id());
     input->set_output_id(num_output);
-    input->mutable_block_id()->CopyFrom(last_block.header().id());
     input->set_key_id(0);
 
     // Output to recevied

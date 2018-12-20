@@ -57,4 +57,13 @@ class Address : public _Address {
 }  // namespace messages
 }  // namespace neuro
 
+namespace std {
+template <>
+struct hash<neuro::messages::Address> {
+  size_t operator()(const neuro::messages::Address &address) const {
+    return hash<string>()(to_json(address));
+  }
+};
+}  // namespace std
+
 #endif /* NEURO_SRC_MESSAGES_ADDRESS_HPP */

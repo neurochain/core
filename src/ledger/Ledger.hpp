@@ -77,7 +77,7 @@ class Ledger {
  public:
   Ledger() {}
   virtual messages::TaggedBlock get_main_branch_tip() const = 0;
-  virtual void set_main_branch_tip() const = 0;
+  virtual void set_main_branch_tip() = 0;
   virtual messages::BlockHeight height() const = 0;
   virtual bool get_block_header(const messages::BlockID &id,
                                 messages::BlockHeader *header) const = 0;
@@ -102,7 +102,8 @@ class Ledger {
                          bool include_transactions = true) const = 0;
   virtual bool insert_block(messages::TaggedBlock *tagged_block) = 0;
   virtual bool delete_block(const messages::Hash &id) = 0;
-  virtual bool for_each(const Filter &filter, const messages::TaggedBlock &tip, Functor functor) const = 0;
+  virtual bool for_each(const Filter &filter, const messages::TaggedBlock &tip,
+                        Functor functor) const = 0;
   virtual bool for_each(const Filter &filter, Functor functor) const = 0;
   virtual bool get_transaction(const messages::Hash &id,
                                messages::Transaction *transaction) const = 0;
@@ -152,7 +153,8 @@ class Ledger {
     return is_unspent_output(transaction_id, output_id, get_main_branch_tip());
   }
 
-  bool is_unspent_output(const messages::Hash &transaction_id, int output_id, const messages::TaggedBlock &tip) const {
+  bool is_unspent_output(const messages::Hash &transaction_id, int output_id,
+                         const messages::TaggedBlock &tip) const {
     Filter filter;
     filter.input_transaction_id(transaction_id);
     filter.output_id(output_id);
@@ -221,7 +223,8 @@ class Ledger {
     for (auto transaction : transactions) {
       for (int i = 0; i < transaction.outputs_size(); i++) {
         auto output = transaction.outputs(i);
-        if (output.address() == address && is_unspent_output(transaction.id(), i)) {
+        if (output.address() == address &&
+            is_unspent_output(transaction.id(), i)) {
           auto &unspent_transaction = unspent_transactions.emplace_back();
           unspent_transaction.mutable_transaction_id()->CopyFrom(
               transaction.id());
@@ -274,7 +277,7 @@ class Ledger {
     // Process the outputs and lookup their output_id to build the inputs
     for (const auto &transaction_id : unspent_transactions_ids) {
       auto transaction_outputs =
-	get_outputs_for_address(transaction_id, address);
+          get_outputs_for_address(transaction_id, address);
 
       for (auto output : transaction_outputs) {
         auto &input = inputs.emplace_back();
@@ -305,7 +308,7 @@ class Ledger {
       const crypto::EccPriv &key_priv,
       const std::optional<messages::NCCAmount> &fees = {}) const {
     messages::Transaction transaction;
-    
+
     // Build keys
     const crypto::EccPub key_pub = key_priv.make_public_key();
     const auto address = messages::Address(key_pub);
@@ -344,7 +347,9 @@ class Ledger {
         list_unspent_transactions(bot_address);
 
     std::vector<messages::Hasher> unspent_transactions_ids;
-    for (auto unspent_transaction : unspent_transactions) {
+    for (const auto &unspent_transaction : unspent_transactions) {
+      auto &unspent_transaction_id = unspent_transactions_ids.emplace_back();
+      unspent_transaction_id.CopyFrom(unspent_transaction.transaction_id());
     }
 
     // Set outputs

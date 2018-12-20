@@ -142,7 +142,8 @@ class LedgerMongodb : public Ledger {
 
   std::size_t total_nb_blocks() const;
 
-  bool for_each(const Filter &filter, const messages::Taggedblock &tip, Functor functor);
+  bool for_each(const Filter &filter, const messages::TaggedBlock &tip,
+                Functor functor) const;
 
   bool for_each(const Filter &filter, Functor functor) const;
 

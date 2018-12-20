@@ -11,9 +11,9 @@ bool Pii::add_transaction(const messages::Transaction &transaction) {
 
 bool Pii::add_block(const messages::Block &block) {
   for (const auto &transaction : block.transactions()) {
-    _transactions.push_back(std::make_unique<messages::Transaction>(transaction));
+    add_transaction(transaction);
     const auto inputs = transaction.inputs();
-    
+
     for (const auto &input : inputs) {
       const auto &key_pub = transaction.key_pubs(input.key_id());
       messages::Transaction prev_transaction;
@@ -23,7 +23,7 @@ bool Pii::add_block(const messages::Block &block) {
       }
     }
 
-    //const auto outputs = transactions.outputs();
+    // const auto outputs = transactions.outputs();
     // for (const auto &output : outputs) {
     // }
   }

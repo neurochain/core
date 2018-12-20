@@ -1,26 +1,23 @@
 #ifndef NEURO_SRC_CONSENSUS_PII_HPP
 #define NEURO_SRC_CONSENSUS_PII_HPP
 
-#include "common/types.hpp"
 #include "common.pb.h"
+#include "common/types.hpp"
 #include "config.pb.h"
+#include "ledger/Ledger.hpp"
 #include "messages.pb.h"
 #include "messages/Address.hpp"
-#include "ledger/Ledger.hpp"
 #include "networking/Networking.hpp"
 
 namespace neuro {
 namespace consensus {
 using Score = Double;
 
-  
 class Addresses {
  public:
   using TransactionID = messages::Transaction *;
 
-  struct Counters {
-
-  };
+  struct Counters {};
 
   class Transactions {
    private:
@@ -37,7 +34,8 @@ class Addresses {
   };
 
  private:
-  std::unordered_map<messages::Address, std::unique_ptr<AddressTransactions>> _addresses;
+  std::unordered_map<messages::Address, std::unique_ptr<Transactions>>
+      _addresses;
 
  public:
   bool add_block(const messages::Block &block);
@@ -45,15 +43,15 @@ class Addresses {
 
 class Pii {
  public:
-
  private:
-  Transactions _transactions;
+  Addresses _addresses;
   std::shared_ptr<ledger::Ledger> _ledger;
-  
+
  public:
-  Pii(const messages::config::Pii &config, std::shared_ptr<ledger::Ledger> ledger,
-      std::shared_ptr<networking::Networking> networking):
-      _ledger(ledger) {}
+  Pii(const messages::config::Pii &config,
+      std::shared_ptr<ledger::Ledger> ledger,
+      std::shared_ptr<networking::Networking> networking)
+      : _ledger(ledger) {}
 
   bool add_block(const messages::Block &block);
   // change bool with state [refused, forked, detached, main] when it's merged

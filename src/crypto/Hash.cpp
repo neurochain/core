@@ -19,9 +19,10 @@ Buffer hash_sha3_256(const Buffer &data) {
 }
 
 Buffer hash_sha3_256(const messages::Packet &packet) {
-  
+  Buffer buffer;
+  messages::to_buffer(packet, &buffer);
+  return hash_sha3_256(buffer);
 }
 
-  
 }  // namespace crypto
 }  // namespace neuro

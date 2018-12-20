@@ -114,12 +114,12 @@ void LedgerMongodb::remove_all() {
   _transactions.delete_many(bss::document{} << bss::finalize);
 }
 
-messages::TaggedBlock get_main_branch_tip() const {
-    return _main_branch_tip;
+messages::TaggedBlock LedgerMongodb::get_main_branch_tip() const {
+  return _main_branch_tip;
 }
 
-void set_main_branch_tip() {
-    get_block(height(), &_main_branch_tip, false);
+void LedgerMongodb::set_main_branch_tip() {
+  get_block(height(), &_main_branch_tip, false);
 }
 
 messages::BlockHeight LedgerMongodb::height() const {
@@ -508,7 +508,9 @@ std::size_t LedgerMongodb::total_nb_blocks() const {
   return _blocks.count(std::move(query));
 }
 
-bool LedgerMongodb::for_each(const Filter &filter, const messages::Taggedblock &tip, Functor functor) const {
+bool LedgerMongodb::for_each(const Filter &filter,
+                             const messages::TaggedBlock &tip,
+                             Functor functor) const {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   if (!filter.output_address() && !filter.input_transaction_id()) {
     LOG_WARNING << "missing filters for for_each query";
@@ -549,7 +551,7 @@ bool LedgerMongodb::for_each(const Filter &filter, const messages::Taggedblock &
 }
 
 bool LedgerMongodb::for_each(const Filter &filter, Functor functor) const {
-    return for_each(filter, _main_branch_tip, functor);
+  return for_each(filter, _main_branch_tip, functor);
 }
 
 messages::BranchID LedgerMongodb::new_branch_id() const {

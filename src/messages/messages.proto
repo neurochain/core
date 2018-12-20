@@ -43,12 +43,12 @@ message Input {
   required Hash id = 1;
   required int32 output_id = 2;
   required int32 key_id = 3;
-  required int32 signature_id = 4;
+  optional int32 signature_id = 4;
   extensions 100 to 120;
 }
 
 message Output {
-  required Hash address = 1;
+  required _Address address = 1;
   required _NCCAmount value = 2;
   optional bytes data = 3;
   optional int32 output_id = 4;
