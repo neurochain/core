@@ -20,7 +20,7 @@ TEST(bar, foo) {
   try {
     auto ledger = std::make_shared<::neuro::ledger::LedgerMongodb>(config);
   }catch(...) {
-    std::cout << "Could not launch mongodb" 
+    std::cout << "Could not launch mongodb" << std::endl;
   }
 }
 
