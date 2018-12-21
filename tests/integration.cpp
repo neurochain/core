@@ -919,7 +919,7 @@ TEST(INTEGRATION, connection_opportunity_update) {
   ASSERT_NE(peers_bot3[0]->port(), peers_bot3[2]->port());
 
   // Create additional node that cannot connect
-  Path config_path4("bot_outsider.50-38.39.json");
+  Path config_path4("bot_outsider.50-37.json");
   messages::config::Config config4(config_path4);
   auto bot4 = std::make_shared<Bot>(config4);
 
