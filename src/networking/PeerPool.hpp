@@ -21,6 +21,7 @@ class PeerPool {
 
  private:
   std::string _path;
+  bool _auto_save;
   PeersPtr _peers;
   std::optional<std::size_t> _my_key_pub_hash;
   std::size_t _max_size;
@@ -30,6 +31,7 @@ class PeerPool {
 
  private:
   static std::size_t hash(const crypto::EccPub& ecc_pub);
+  static messages::KeyPub to_key_pub(const Buffer& buffer);
 
  private:
   bool insert(const PeerPtr& peer);
@@ -40,9 +42,13 @@ class PeerPool {
   messages::Peers build_peers_message() const;
 
  public:
+  PeerPool() = delete;
+  PeerPool(PeerPool&&) = delete;
+  PeerPool(const PeerPool&) = delete;
   PeerPool(const std::string& path, const crypto::EccPub& my_ecc_pub,
-           std::size_t max_size = 999);
-  PeerPool(const std::string& path, std::size_t max_size = 999);
+           std::size_t max_size = 999, bool auto_save = false);
+  PeerPool(const std::string& path, std::size_t max_size = 999,
+           bool auto_save = false);
   void insert(const messages::Peers& peers);
   bool erase(const Buffer& key_pub);
   std::size_t size() const;

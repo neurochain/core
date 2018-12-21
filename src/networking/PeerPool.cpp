@@ -9,6 +9,13 @@
 namespace neuro {
 namespace networking {
 
+messages::KeyPub PeerPool::to_key_pub(const Buffer& buffer) {
+  messages::KeyPub kp;
+  kp.set_type(messages::KeyType::ECP256K1);
+  kp.set_raw_data(buffer.data(), buffer.size());
+  return kp;
+}
+
 std::size_t PeerPool::hash(const crypto::EccPub& ecc_pub) {
   const neuro::Buffer buffer = ecc_pub.save();
   return std::hash<neuro::Buffer>{}(buffer);
@@ -28,8 +35,9 @@ bool PeerPool::insert(const PeerPtr& peer) {
 }
 
 PeerPool::PeerPool(const std::string& path, const crypto::EccPub& my_ecc_pub,
-                   std::size_t max_size)
+                   std::size_t max_size, bool auto_save)
     : _path(path),
+      _auto_save(auto_save),
       _my_key_pub_hash(hash(my_ecc_pub)),
       _max_size(max_size),
       _gen(_rd()) {
@@ -38,8 +46,9 @@ PeerPool::PeerPool(const std::string& path, const crypto::EccPub& my_ecc_pub,
   }
 }
 
-PeerPool::PeerPool(const std::string& path, std::size_t max_size)
-    : _path(path), _max_size(max_size), _gen(_rd()) {
+PeerPool::PeerPool(const std::string& path, std::size_t max_size,
+                   bool auto_save)
+    : _path(path), _auto_save(auto_save), _max_size(max_size), _gen(_rd()) {
   if (!load()) {
     throw std::runtime_error("Failed to load peers pool from file.");
   }
@@ -78,7 +87,9 @@ void PeerPool::set(const messages::Peers& peers) {
     insert(std::make_shared<messages::Peer>(peer));
   }
   prune();
+  if (_auto_save) {
   save();
+}
 }
 
 messages::Peers PeerPool::build_peers_message() const {
@@ -92,16 +103,31 @@ messages::Peers PeerPool::build_peers_message() const {
   return peers_message;
 }
 
+void PeerPool::save() const {
+  messages::Peers peers_message = build_peers_message();
+  std::string output_str;
+  to_json(peers_message, &output_str);
+  std::ofstream file(_path);
+  if (!file.is_open()) {
+    LOG_ERROR << "Failed to save peers list to file.";
+    return;
+  }
+  file << output_str;
+}
+
 void PeerPool::insert(const messages::Peers& peers) {
   bool inserted = false;
   const auto& iterable_peers = peers.peers();
+  std::scoped_lock lock(_peers_mutex);
   for (const auto& peer : iterable_peers) {
     inserted |= insert(std::make_shared<messages::Peer>(peer));
   }
   if (inserted) {
     prune();
+    if (_auto_save) {
     save();
   }
+}
 }
 
 void PeerPool::save() const {
