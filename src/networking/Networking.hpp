@@ -31,13 +31,14 @@ class Networking {
 
    std::shared_ptr<Tcp> create_tcp(std::shared_ptr<crypto::Ecc> keys,
                                    const Port port,
+                                   const std::shared_ptr<PeerPool>& peer_pool,
                                    const std::size_t max_connections);
    bool send(messages::Message& message);
    bool send_unicast(
        const RemoteKey& id, messages::Message& message);
-   std::set<PeerPool::PeerPtr> connected_peers(const PeerPool& peer_poll) const;
+   std::set<PeerPool::PeerPtr> connected_peers() const;
    std::size_t peer_count() const;
-   void keep_max_connections(const PeerPool& peer_pool);
+   void keep_max_connections();
    void join();
 };
 

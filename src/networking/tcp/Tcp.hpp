@@ -59,8 +59,6 @@ class Tcp : public TransportLayer {
         const PeerPool& known_peers) const;
   };
 
-  using KnownRemotes = std::set<messages::Peer>;
-
   std::atomic<bool> _stopped;
   std::shared_ptr<boost::asio::io_context> _io_context;
   bai::tcp::resolver _resolver;
@@ -68,7 +66,7 @@ class Tcp : public TransportLayer {
   bai::tcp::acceptor _acceptor;
   IP _local_ip{};
   ConnectionPool _connection_pool;
-  KnownRemotes _know_remotes;
+  std::shared_ptr<PeerPool> _peer_pool;
   std::shared_ptr<bai::tcp::socket> _new_socket;
   std::thread _io_context_thread;
 
@@ -92,16 +90,16 @@ class Tcp : public TransportLayer {
   Tcp(Tcp&&) = delete;
   Tcp(const Tcp&) = delete;
   Tcp(Port port, std::shared_ptr<messages::Queue> queue,
-      std::shared_ptr<crypto::Ecc> keys, std::size_t max_size);
+      std::shared_ptr<crypto::Ecc> keys, const std::shared_ptr<PeerPool>& peer_pool, std::size_t max_size);
   bool send(const messages::Message& message);
   bool send_unicast(const RemoteKey& id, const messages::Message& message);
   Port listening_port() const;
   IP local_ip() const;
-  std::set<PeerPool::PeerPtr> connected_peers(const PeerPool& peer_pool) const;
+  std::set<PeerPool::PeerPtr> connected_peers() const;
   std::size_t peer_count() const;
   void stop();
   void join();
-  void keep_max_connections(const PeerPool& peer_pool);
+  void keep_max_connections();
   ~Tcp();
 
   friend class neuro::networking::test::Tcp;

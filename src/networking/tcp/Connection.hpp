@@ -23,7 +23,7 @@ using boost::asio::ip::tcp;
 class Connection : public networking::Connection {
  public:
   using PairingCallback = std::function<void(
-      const std::shared_ptr<Connection> &paired_connection, const Buffer &id)>;
+      const std::shared_ptr<Connection> &paired_connection, const Buffer &id, const Port remote_listening_port)>;
   using UnpairingCallback = std::function<void(const Buffer &id)>;
 
  public:
@@ -31,6 +31,7 @@ class Connection : public networking::Connection {
   : networking::Connection(queue) {}
   virtual bool send(const messages::Message &message) = 0;
   virtual void close() = 0;
+  virtual IP remote_ip() const = 0;
 };
 
 template <class Derived>
@@ -68,7 +69,7 @@ protected:
                 const std::shared_ptr<messages::Queue> &queue,
                 const std::shared_ptr<tcp::socket> &socket,
                 UnpairingCallback unpairing_callback);
- void start(PairingCallback pairing_callback);
+ void start(PairingCallback pairing_callback, const Port remote_listening_port);
  void read_header();
  virtual void read_handshake_message_body(PairingCallback pairing_callback,
                                           std::size_t body_size) = 0;
@@ -269,10 +270,10 @@ bool ConnectionBase<D>::send(const std::shared_ptr<Buffer> &header_tcp,
 }
 
 template <class D>
-void ConnectionBase<D>::start(PairingCallback pairing_callback) {
+void ConnectionBase<D>::start(PairingCallback pairing_callback, const Port remote_listening_port) {
   assert(!!_remote_pub_key);
   auto buffer = _remote_pub_key->save();
-  pairing_callback(ConnectionBase<D>::shared_from_this(), buffer);
+  pairing_callback(ConnectionBase<D>::shared_from_this(), buffer, remote_listening_port);
   read_header();
 }
 

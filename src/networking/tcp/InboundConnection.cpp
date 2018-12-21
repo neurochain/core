@@ -54,6 +54,7 @@ void InboundConnection::read_handshake_message_body(
           return;
         }
 
+        auto remote_listening_port{0};
         std::size_t count_hello = 0;
         for (const auto& body : message->bodies()) {
           const auto type = get_type(body);
@@ -67,6 +68,7 @@ void InboundConnection::read_handshake_message_body(
             _this->terminate();
             return;
           }
+          remote_listening_port = body.hello().listen_port();
         }
         if (!count_hello) {
           LOG_WARNING << "At least one hello body expected.";
@@ -88,7 +90,8 @@ void InboundConnection::read_handshake_message_body(
         key_pub->set_raw_data(tmp.data(), tmp.size());
 
         _this->send(world_message);
-        _this->start(pairing_callback);
+
+        _this->start(pairing_callback, remote_listening_port);
       });
 }
 

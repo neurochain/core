@@ -24,20 +24,20 @@ bool Networking::send_unicast(const RemoteKey& key, messages::Message& message) 
 
 std::shared_ptr<Tcp> Networking::create_tcp(std::shared_ptr<crypto::Ecc> keys,
                                             const Port port,
+                                            const std::shared_ptr<PeerPool>& peer_pool,
                                             const std::size_t max_connections) {
   std::shared_ptr<Tcp> tcp =
-      std::make_shared<Tcp>(port, _queue, keys, max_connections);
+      std::make_shared<Tcp>(port, _queue, keys, peer_pool, max_connections);
   _transport_layer = tcp;
   return tcp;
 }
 
-void Networking::keep_max_connections(const PeerPool& peer_pool) {
-  _transport_layer->keep_max_connections(peer_pool);
+void Networking::keep_max_connections() {
+  _transport_layer->keep_max_connections();
 }
 
-std::set<PeerPool::PeerPtr> Networking::connected_peers(
-    const PeerPool& peer_pool) const {
-  return _transport_layer->connected_peers(peer_pool);
+std::set<PeerPool::PeerPtr> Networking::connected_peers() const {
+  return _transport_layer->connected_peers();
 }
 
 std::size_t Networking::peer_count() const {

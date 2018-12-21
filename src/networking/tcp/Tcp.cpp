@@ -136,11 +136,13 @@ void Tcp::accept(const boost::system::error_code& error) {
     LOG_WARNING << "Rejected connection.";
   }
   _new_socket.reset();
+  if (!_stopped) {
   start_accept();
+}
 }
 
 Tcp::Tcp(const Port port, std::shared_ptr<messages::Queue> queue,
-         std::shared_ptr<crypto::Ecc> keys, std::size_t max_size)
+         std::shared_ptr<crypto::Ecc> keys, const std::shared_ptr<PeerPool>& peer_pool, std::size_t max_size)
     : TransportLayer(queue, keys),
       _stopped(false),
       _io_context(std::make_shared<boost::asio::io_context>()),
@@ -148,7 +150,8 @@ Tcp::Tcp(const Port port, std::shared_ptr<messages::Queue> queue,
       _listening_port(port),
       _acceptor(*_io_context.get(),
                 bai::tcp::endpoint(bai::tcp::v4(), _listening_port)),
-      _connection_pool(max_size, _io_context) {
+      _connection_pool(max_size, _io_context),
+      _peer_pool(peer_pool) {
   while (!_acceptor.is_open()) {
     std::this_thread::yield();
     LOG_DEBUG << "Waiting for acceptor to be open";
@@ -219,7 +222,7 @@ void Tcp::new_outbound_connection(
       });
   new_connection->handshake_init(
       [this](const std::shared_ptr<tcp::Connection>& paired_connection,
-             const RemoteKey& id) {
+             const RemoteKey& id, const Port) {
         if (this->_connection_pool.insert(id, paired_connection)) {
           this->_queue->publish(this->build_new_connection_message());
         } else {
@@ -243,7 +246,9 @@ void Tcp::new_inbound_connection(
         });
     new_connection->read_hello(
         [this](const std::shared_ptr<tcp::Connection>& paired_connection,
-               const RemoteKey& id) {
+               const RemoteKey& id, const Port remote_listening_port) {
+          _peer_pool->insert(paired_connection->remote_ip(),
+                            remote_listening_port, id);
           if (this->_connection_pool.insert(id, paired_connection)) {
             this->_queue->publish(this->build_new_connection_message());
           } else {
@@ -283,9 +288,8 @@ bool Tcp::send_unicast(const RemoteKey& id, const messages::Message& message) {
   return _connection_pool.send_unicast(id, message);
 }
 
-std::set<PeerPool::PeerPtr> Tcp::connected_peers(
-    const PeerPool& peer_pool) const {
-  return _connection_pool.connected_peers(peer_pool);
+std::set<PeerPool::PeerPtr> Tcp::connected_peers() const {
+  return _connection_pool.connected_peers(*_peer_pool);
 }
 
 std::size_t Tcp::peer_count() const { return _connection_pool.size(); }
@@ -311,10 +315,13 @@ void Tcp::join() {
   LOG_DEBUG << this << " TCP joined";
 }
 
-void Tcp::keep_max_connections(const PeerPool& peer_pool) {
+void Tcp::keep_max_connections() {
+  if (_stopped) {
+    return;
+  }
   std::size_t remaining_capacity = _connection_pool.remaining_capacity();
   if (remaining_capacity != 0) {
-    auto next_to_connect = _connection_pool.next_to_connect(peer_pool);
+    auto next_to_connect = _connection_pool.next_to_connect(*_peer_pool);
     if (!!next_to_connect) {
       assert(!!(*next_to_connect));
       connect(**next_to_connect);

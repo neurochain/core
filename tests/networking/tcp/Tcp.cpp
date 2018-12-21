@@ -18,7 +18,8 @@ class Tcp {
     ASSERT_NE(queue, nullptr);
     auto keys1 = std::make_shared<crypto::Ecc>();
     Port port{31212};  // Maybe change this to the port to be used by the bot
-    networking::Tcp tcp1(port, queue, keys1, 3);
+    auto peer_pool = std::make_shared<PeerPool>("peers1.json");
+    networking::Tcp tcp1(port, queue, keys1, peer_pool, 3);
     std::this_thread::sleep_for(std::chrono::seconds(2));
     ASSERT_EQ(tcp1._connection_pool.size(), 0);
     tcp1.stop();
@@ -30,8 +31,10 @@ class Tcp {
     auto keys1 = std::make_shared<crypto::Ecc>(),
          keys2 = std::make_shared<crypto::Ecc>();
     Port port{31212};  // Maybe change this to the port to be used by the bot
-    networking::Tcp tcp1(port, queue, keys1, 3);
-    networking::Tcp tcp2(port + 1, queue, keys2, 3);
+    auto peer_pool1 = std::make_shared<PeerPool>("peers1.json");
+    auto peer_pool2 = std::make_shared<PeerPool>("peers2.json");
+    networking::Tcp tcp1(port, queue, keys1, peer_pool1, 3);
+    networking::Tcp tcp2(port + 1, queue, keys2, peer_pool2, 3);
     messages::Peer peer;
     peer.set_endpoint("127.0.0.1");
     peer.set_port(port);

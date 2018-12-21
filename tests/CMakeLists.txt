@@ -68,6 +68,8 @@ set(files "integration_propagation0.json"
           "bot1.peers.json"
           "bot2.peers.json"
           "bot_block0.peers.json"
+          "peers1.json"
+          "peers2.json"
 )
 foreach(file ${files})
   configure_file("configs/${file}" "${CMAKE_CURRENT_BINARY_DIR}/${file}" COPYONLY)

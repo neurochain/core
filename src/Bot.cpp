@@ -239,7 +239,7 @@ bool Bot::load_networking(messages::config::Config *config) {
   _peer_pool = std::make_shared<networking::PeerPool>(tcpconfig->peers(), _keys->public_key());
 
   auto port = tcpconfig->port();
-  _networking->create_tcp(_keys, port, _max_connections);
+  _networking->create_tcp(_keys, port, _peer_pool, _max_connections);
   return true;
 }
 
@@ -312,10 +312,7 @@ void Bot::update_peerlist() {
 }
 
 std::set<networking::PeerPool::PeerPtr> Bot::connected_peers() const {
-  if (!_peer_pool) {
-    return {};
-  }
-  return _networking->connected_peers(*_peer_pool);
+  return _networking->connected_peers();
 }
 
 std::size_t Bot::nb_connected_peers() const {
@@ -441,8 +438,7 @@ void Bot::keep_max_connections() {
   LOG_INFO << "Number of peers with status connected: " << current_peer_count
            << std::endl
            << *this;
-  assert(!!_peer_pool);
-  _networking->keep_max_connections(*_peer_pool);
+  _networking->keep_max_connections();
 }
 
 std::shared_ptr<networking::Networking> Bot::networking() {
@@ -474,6 +470,14 @@ void Bot::publish_transaction(const messages::Transaction &transaction) const {
 }
 
 void Bot::join() { _networking->join(); }
+
+messages::KeyPub Bot::get_key_pub() const {
+  messages::KeyPub key_pub;
+  key_pub.set_type(messages::KeyType::ECP256K1);
+  const auto tmp = _keys->public_key().save();
+  key_pub.set_raw_data(tmp.data(), tmp.size());
+  return key_pub;
+  }
 
 Bot::~Bot() {
   _update_timer.cancel();

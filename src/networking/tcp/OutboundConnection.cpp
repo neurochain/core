@@ -91,7 +91,8 @@ void OutboundConnection::read_handshake_message_body(
           return;
         }
 
-        _this->start(pairing_callback);
+        auto remote_listening_port = _this->remote_port();
+        _this->start(pairing_callback, remote_listening_port);
       });
 }
 

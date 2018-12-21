@@ -105,6 +105,7 @@ class Bot {
                  messages::Subscriber::Callback callback);
 
   void publish_transaction(const messages::Transaction &transaction) const;
+  messages::KeyPub get_key_pub() const;
 
   friend class neuro::tests::BotTest;
 };
