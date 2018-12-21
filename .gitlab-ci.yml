@@ -125,7 +125,7 @@ pages:
   script:
     - mkdir build && cd build && doxygen ../doc/Doxyfile
     - mv ../doc/img ../public 
-    - mv html ../public
+    - mv html/* ../public
 
   only:
     - feaeture/109/documentation
