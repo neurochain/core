@@ -19,7 +19,7 @@ services:
   - mongo:3.6-stretch
 
 build_docker:ubuntu_18_10:
-   stage: build_docker
+   stage: docker_build
    only:
     - geature/127/update-docker-image-used-in-ci
    script:
@@ -27,7 +27,7 @@ build_docker:ubuntu_18_10:
      - docker build -f Dockerfile.ubuntu-release --tag registry.gitlab.com/neurochaintech/core/ubuntu/release:18.10  . && docker push registry.gitlab.com/neurochaintech/core/ubuntu/release:18.10
 
 build_docker:ubuntu_18_10:
-   stage: build_docker
+   stage: docker_build
    only:
     - geature/127/update-docker-image-used-in-ci
    script:
