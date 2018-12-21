@@ -1011,11 +1011,11 @@ TEST(INTEGRATION, connection_opportunity_update) {
   ASSERT_EQ(peers_bot0[1]->endpoint(), "127.0.0.1");
   ASSERT_EQ(peers_bot0[2]->endpoint(), "127.0.0.1");
   ASSERT_TRUE(peers_bot0[0]->port() == 1338 || peers_bot0[0]->port() == 1339 ||
-              peers_bot0[0]->port() == 1351);
+              peers_bot0[0]->port() == 1350);
   ASSERT_TRUE(peers_bot0[1]->port() == 1338 || peers_bot0[1]->port() == 1339 ||
-              peers_bot0[1]->port() == 1351);
+              peers_bot0[1]->port() == 1350);
   ASSERT_TRUE(peers_bot0[2]->port() == 1338 || peers_bot0[2]->port() == 1339 ||
-              peers_bot0[2]->port() == 1351);
+              peers_bot0[2]->port() == 1350);
   ASSERT_NE(peers_bot0[0]->port(), peers_bot0[1]->port());
   ASSERT_NE(peers_bot0[1]->port(), peers_bot0[2]->port());
   ASSERT_NE(peers_bot0[0]->port(), peers_bot0[2]->port());
@@ -1024,11 +1024,11 @@ TEST(INTEGRATION, connection_opportunity_update) {
   ASSERT_EQ(peers_bot1[1]->endpoint(), "127.0.0.1");
   ASSERT_EQ(peers_bot1[2]->endpoint(), "127.0.0.1");
   ASSERT_TRUE(peers_bot1[0]->port() == 1337 || peers_bot1[0]->port() == 1339 ||
-              peers_bot1[0]->port() == 1351);
+              peers_bot1[0]->port() == 1350);
   ASSERT_TRUE(peers_bot1[1]->port() == 1337 || peers_bot1[1]->port() == 1339 ||
-              peers_bot1[1]->port() == 1351);
+              peers_bot1[1]->port() == 1350);
   ASSERT_TRUE(peers_bot1[2]->port() == 1337 || peers_bot1[2]->port() == 1339 ||
-              peers_bot1[2]->port() == 1351);
+              peers_bot1[2]->port() == 1350);
   ASSERT_NE(peers_bot1[0]->port(), peers_bot1[1]->port());
   ASSERT_NE(peers_bot1[1]->port(), peers_bot1[2]->port());
   ASSERT_NE(peers_bot1[0]->port(), peers_bot1[2]->port());
@@ -1037,11 +1037,11 @@ TEST(INTEGRATION, connection_opportunity_update) {
   ASSERT_EQ(peers_bot2[1]->endpoint(), "127.0.0.1");
   ASSERT_EQ(peers_bot2[2]->endpoint(), "127.0.0.1");
   ASSERT_TRUE(peers_bot2[0]->port() == 1337 || peers_bot2[0]->port() == 1338 ||
-              peers_bot2[0]->port() == 1351);
+              peers_bot2[0]->port() == 1350);
   ASSERT_TRUE(peers_bot2[1]->port() == 1337 || peers_bot2[1]->port() == 1338 ||
-              peers_bot2[1]->port() == 1351);
+              peers_bot2[1]->port() == 1350);
   ASSERT_TRUE(peers_bot2[2]->port() == 1337 || peers_bot2[2]->port() == 1338 ||
-              peers_bot2[2]->port() == 1351);
+              peers_bot2[2]->port() == 1350);
   ASSERT_NE(peers_bot2[0]->port(), peers_bot2[1]->port());
   ASSERT_NE(peers_bot2[1]->port(), peers_bot2[2]->port());
   ASSERT_NE(peers_bot2[0]->port(), peers_bot2[2]->port());
