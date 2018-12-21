@@ -7,7 +7,7 @@
     },
     "networking": {
         "max_connections": 3,
-        "peers_update_time": 15,
+        "peers_update_time": 1,
         "tcp": {
             "port": 1339,
             "peers": "integration_update2.peers.json"
