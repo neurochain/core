@@ -18,7 +18,7 @@ services:
   - docker:dind
   - mongo:3.6-stretch
 
-build_docker:ubuntu_18_10:
+build_docker:ubuntu_18_10_release:
    stage: docker_build
    only:
     - geature/127/update-docker-image-used-in-ci
