@@ -27,7 +27,7 @@ build_docker:ubuntu_18_10_release:
      - cd utils/dockers/
      - docker build -f Dockerfile.ubuntu-release --tag registry.gitlab.com/neurochaintech/core/ubuntu/release:18.10  . && docker push registry.gitlab.com/neurochaintech/core/ubuntu/release:18.10
 
-build_docker:ubuntu_18_10_release:
+build_docker:ubuntu_18_10:
    stage: docker_build
    image: docker
    only:
