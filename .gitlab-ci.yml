@@ -124,8 +124,8 @@ pages:
     - apk add ttf-freefont graphviz
   script:
     - mkdir build && cd build && doxygen ../doc/Doxyfile
+    - mv html ../public
     - mv ../doc/img ../public 
-    - mv html/* ../public
 
   only:
     - feaeture/109/documentation

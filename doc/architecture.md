@@ -49,7 +49,7 @@
 
 ### Format
 
-![global](../../doc/img/message_format.png "Message format")
+![global](img/message_format.png "Message format")
 
 A message can be read in two operations:
 * Fixed part containing header size and payload size (each encoded on 32 bits little endian integer).
@@ -61,7 +61,7 @@ Every message is signed with the "communication keys (cf [keys](Keys)).
 
 ### Pipeline
 
-![global](../../doc/img/message_pipeline.png "Message pipeline")
+![global](img/message_pipeline.png "Message pipeline")
 
 ## Directory
 
@@ -133,7 +133,7 @@ It allows to request the ledger, and send transactions to the network.
 
 We provide an Electron application that will handle the signature. Neither the private key nor the password for the wallet file are passed to the bot.
 
-![wallet_sequence](../../doc/img/wallet_schema.png "Wallet: signing transaction")
+![wallet_sequence](img/wallet_schema.png "Wallet: signing transaction")
 
 
 
