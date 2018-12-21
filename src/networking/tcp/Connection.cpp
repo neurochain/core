@@ -12,9 +12,9 @@ namespace tcp {
 
 Connection::Connection(const ID id,
                        const networking::TransportLayer::ID transport_layer_id,
-                       const std::shared_ptr<messages::Queue>& queue,
-                       const std::shared_ptr<tcp::socket>& socket,
-                       const std::shared_ptr<messages::Peer>& remote_peer)
+                       const std::shared_ptr<messages::Queue> &queue,
+                       const std::shared_ptr<tcp::socket> &socket,
+                       const std::shared_ptr<messages::Peer> &remote_peer)
     : ::neuro::networking::Connection::Connection(id, transport_layer_id,
                                                   queue),
       _header(sizeof(HeaderPattern), 0),
