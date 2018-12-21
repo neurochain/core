@@ -50,6 +50,8 @@ class PeerPool {
   PeerPool(const std::string& path, std::size_t max_size = 999,
            bool auto_save = false);
   void insert(const messages::Peers& peers);
+  void insert(const IP peer_ip, const Port remote_listening_port,
+              const Buffer& remote_key_pub_buffer);
   bool erase(const Buffer& key_pub);
   std::size_t size() const;
   std::optional<PeerPtr> get_random_not_of(

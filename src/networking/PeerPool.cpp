@@ -130,16 +130,13 @@ void PeerPool::insert(const messages::Peers& peers) {
 }
 }
 
-void PeerPool::save() const {
-  messages::Peers peers_message = build_peers_message();
-  std::string output_str;
-  to_json(peers_message, &output_str);
-  std::ofstream file(_path);
-  if (!file.is_open()) {
-    LOG_ERROR << "Failed to save peers list to file.";
-    return;
-  }
-  file << output_str;
+void PeerPool::insert(const IP peer_ip, const Port remote_listening_port,
+                      const Buffer& remote_key_pub_buffer) {
+  auto peer = std::make_shared<messages::Peer>();
+  peer->mutable_key_pub()->CopyFrom(to_key_pub(remote_key_pub_buffer));
+  peer->set_endpoint(peer_ip.to_string());
+  peer->set_port(remote_listening_port);
+  insert(peer);
 }
 
 bool PeerPool::erase(const Buffer& key_pub) {
