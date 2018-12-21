@@ -1326,6 +1326,9 @@ TEST(INTEGRATION, terminate_on_bad_version) {
     msg.add_bodies()->mutable_get_peers();
     auto header = msg.mutable_header();
     messages::fill_header(header);
+    auto key_pub = header->mutable_key_pub();
+    key_pub->CopyFrom(bot0->get_key_pub());
+
     header->set_version(neuro::MessageVersion + 100);
     bot0->networking()->send(msg);
   }
