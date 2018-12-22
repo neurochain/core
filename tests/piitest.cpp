@@ -5,7 +5,7 @@
 #include "src/ledger/LedgerMongodb.hpp"
 #include "src/messages/Message.hpp"
 #include "src/networking/Networking.hpp"
-#include "src/tooling/genblock.hpp"
+#include "src/tooling/blockgen.hpp"
 
 namespace neuro {
 namespace test {
@@ -58,13 +58,13 @@ TEST(PiiTest, Pii_rand) {
   author.set_type(messages::KeyType::ECP256K1);
   author.set_raw_data(key_pub_raw.data(), key_pub_raw.size());
 
-  neuro::tooling::genblock::genblock_from_last_db_block(
+  neuro::tooling::blockgen::blockgen_from_last_db_block(
       block11, _ledger, 0, 5,
       std::make_optional<neuro::messages::KeyPub>(author));
 
   neuro::messages::Block block12;
 
-  neuro::tooling::genblock::genblock_from_last_db_block(
+  neuro::tooling::blockgen::blockgen_from_last_db_block(
       block12, _ledger, 0, 5,
       std::make_optional<neuro::messages::KeyPub>(author));
 
@@ -86,7 +86,7 @@ TEST(PiiTest, Pii_next_owner) {
   author.set_type(messages::KeyType::ECP256K1);
   author.set_raw_data(key_pub_raw.data(), key_pub_raw.size());
 
-  neuro::tooling::genblock::genblock_from_last_db_block(
+  neuro::tooling::blockgen::blockgen_from_last_db_block(
       block11, _ledger, 0, 10,
       std::make_optional<neuro::messages::KeyPub>(author));
 
@@ -122,7 +122,7 @@ TEST(PiiTest, Pii_first_fork) {
   author.set_type(messages::KeyType::ECP256K1);
   author.set_raw_data(key_pub_raw.data(), key_pub_raw.size());
 
-  neuro::tooling::genblock::genblock_from_last_db_block(
+  neuro::tooling::blockgen::blockgen_from_last_db_block(
       block11, _ledger, 0, 10,
       std::make_optional<neuro::messages::KeyPub>(author), 9);
 

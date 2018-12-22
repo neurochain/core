@@ -8,6 +8,7 @@
 #include "messages/Hasher.hpp"
 #include "messages/Message.hpp"
 #include "messages/config/Config.hpp"
+#include "tooling/blockgen.hpp"
 
 #include <fstream>
 #include <iostream>
@@ -15,133 +16,12 @@
 namespace po = boost::program_options;
 
 namespace neuro {
+namespace tooling {
+namespace blockgen {
 
 inline bool exists_file(const std::string &name) {
   struct stat buffer;
   return (stat(name.c_str(), &buffer) == 0);
-}
-
-void coinbase(const crypto::EccPub &key_pub, const messages::NCCSDF &ncc,
-              messages::Transaction &transaction, std::string datavalue) {
-  // messages::Transaction transaction;
-  Buffer key_pub_raw;
-  key_pub.save(&key_pub_raw);
-  messages::Hasher address(key_pub_raw);
-
-  auto input = transaction.add_inputs();
-
-  auto input_id = input->mutable_id();
-  input_id->set_type(messages::Hash::SHA256);
-  input_id->set_data("");
-  input->set_output_id(0);
-  input->set_key_id(0);
-
-  auto output = transaction.add_outputs();
-  output->mutable_address()->CopyFrom(address);
-  output->mutable_value()->CopyFrom(ncc);
-  // std::string h("trax killed me");
-  output->set_data(datavalue);
-  transaction.mutable_fees()->set_value(0);
-
-  messages::set_transaction_hash(&transaction);
-}
-
-void block0(uint32_t bots, const std::string &pathdir, messages::NCCSDF &nccsdf,
-            ledger::LedgerMongodb &ledger) {
-  LOG_INFO << "In Block 0";
-  messages::Block b;
-  messages::BlockHeader *header = b.mutable_header();
-
-  crypto::Ecc ecc;
-  Buffer key_pub_raw;
-  ecc.mutable_public_key()->save(&key_pub_raw);
-
-  messages::KeyPub *author = header->mutable_author();
-  author->set_type(messages::KeyType::ECP256K1);
-  author->set_raw_data(key_pub_raw.data(), key_pub_raw.size());
-
-  header->mutable_timestamp()->set_data(time(0));
-
-  auto previons_block_hash = header->mutable_previous_block_hash();
-  previons_block_hash->set_data("");  ///!< load 0
-  previons_block_hash->set_type(messages::Hash::Type::Hash_Type_SHA256);
-
-  header->set_height(0);
-
-  ///!< bots generateur
-  for (uint32_t i = 0; i < bots; ++i) {
-    // gen i keys
-    crypto::Ecc ecc;
-    ecc.save({pathdir + "/key_" + std::to_string(i) + ".priv"},
-             {pathdir + "/key_" + std::to_string(i) + ".pub"});
-    messages::Transaction *transaction = b.add_transactions();
-    coinbase(ecc.public_key(), nccsdf, *transaction, "");
-  }
-
-  // const auto tmp = crypto::hash_sha3_256( b.SerializeAsString() );
-  neuro::Buffer tmpbuffer(b.SerializeAsString());
-  messages::Hasher hash_id(tmpbuffer);
-  header->mutable_id()->CopyFrom(hash_id);
-
-  messages::TaggedBlock tagged_block0;
-  tagged_block0.set_branch(messages::Branch::MAIN);
-  tagged_block0.add_branch_path(0);
-  tagged_block0.mutable_block()->CopyFrom(b);
-  ledger.insert_block(&tagged_block0);
-
-  std::ofstream blockfile0;
-  blockfile0.open("block.0.bp");
-  blockfile0 << b.SerializeAsString();
-  blockfile0.close();
-}
-
-void testnet_blockg(uint32_t bots, const std::string &pathdir,
-                    messages::NCCSDF &nccsdf) {
-  messages::Block blockfaucet;
-
-  crypto::Ecc ecc;
-  ecc.save({pathdir + "/key_faucet.priv"}, {pathdir + "/key_faucet.pub"});
-
-  Buffer key_pub_raw = ecc.mutable_public_key()->save();
-
-  crypto::Ecc ecc_save;
-  ecc_save.save({pathdir + "/key_faucet_save.priv"},
-                {pathdir + "/key_faucet_save.pub"});
-
-  Buffer key_pub_raw_save = ecc_save.mutable_public_key()->save();
-
-  messages::BlockHeader *header = blockfaucet.mutable_header();
-
-  messages::KeyPub *author = header->mutable_author();
-  author->set_type(messages::KeyType::ECP256K1);
-  author->set_raw_data(key_pub_raw.data(), key_pub_raw.size());
-
-  auto previons_block_hash = header->mutable_previous_block_hash();
-  previons_block_hash->set_data("");  ///!< load 0
-  previons_block_hash->set_type(messages::Hash::Type::Hash_Type_SHA256);
-
-  header->mutable_timestamp()->set_data(std::time(nullptr) +
-                                        3600);  // 1539640800);
-  header->set_height(0);
-
-  messages::Transaction *transaction = blockfaucet.add_transactions();
-  coinbase(ecc.public_key(), nccsdf, *transaction, "trax killed me");
-
-  messages::Transaction *transaction2 = blockfaucet.add_transactions();
-  coinbase(ecc_save.public_key(), nccsdf, *transaction2, "what olivier ?");
-
-  neuro::Buffer t23("riados");
-  messages::Hasher hash_id_tmp(t23);
-  header->mutable_id()->CopyFrom(hash_id_tmp);
-
-  neuro::Buffer tmpbuffer(blockfaucet.SerializeAsString());
-  messages::Hasher hash_id(tmpbuffer);
-  header->mutable_id()->CopyFrom(hash_id);
-
-  std::ofstream blockfile0;
-  blockfile0.open("data.0.testnet");
-  blockfile0 << blockfaucet.SerializeAsString();
-  blockfile0.close();
 }
 
 int main(int argc, char *argv[]) {
@@ -204,7 +84,7 @@ int main(int argc, char *argv[]) {
   uint64_t ncc = vm["ncc"].as<uint64_t>();
 
   LOG_INFO << "Load 1 ...";
-  messages::NCCSDF nccsdf;
+  messages::NCCAmount nccsdf;
   nccsdf.set_value(ncc);
 
   auto db = _config.database();
@@ -214,6 +94,10 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
+}  // namespace blockgen
+}  // namespace tooling
 }  // namespace neuro
 
-int main(int argc, char *argv[]) { return neuro::main(argc, argv); }
+int main(int argc, char *argv[]) {
+  return neuro::tooling::blockgen::main(argc, argv);
+}

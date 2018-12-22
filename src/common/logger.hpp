@@ -27,6 +27,7 @@
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/stacktrace.hpp>
 #include <fstream>
 #include <ostream>
 

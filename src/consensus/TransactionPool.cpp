@@ -68,7 +68,7 @@ bool TransactionPool::build_block(messages::Block *block,
 
   messages::Transaction *coinsbase_transaction = block->add_transactions();
 
-  messages::NCCSDF ncc;
+  messages::NCCAmount ncc;
   ncc.set_value(reward);
 
   coinbase(coinsbase_transaction, addr, ncc);
@@ -88,7 +88,7 @@ bool TransactionPool::build_block(messages::Block *block,
 
 void TransactionPool::coinbase(messages::Transaction *transaction,
                                const messages::Hasher &addr,
-                               const messages::NCCSDF &ncc) {
+                               const messages::NCCAmount &ncc) {
   auto input = transaction->add_inputs();
 
   auto input_id = input->mutable_id();
