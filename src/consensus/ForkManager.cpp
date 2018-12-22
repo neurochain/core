@@ -7,7 +7,9 @@ namespace consensus {
 
 ForkManager::ForkManager(std::shared_ptr<ledger::Ledger> ledger,
                          TransactionPool &transaction_pool)
-    : _ledger(ledger), _transaction_pool(transaction_pool) {
+    : _ledger(ledger)
+//_transaction_pool(transaction_pool)
+{
   // ctor
 }
 

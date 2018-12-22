@@ -33,7 +33,7 @@ class ForkManager {
 
  private:
   std::shared_ptr<ledger::Ledger> _ledger;
-  TransactionPool &_transaction_pool;
+  // TransactionPool &_transaction_pool;
 
  public:
   ForkManager(std::shared_ptr<ledger::Ledger> ledger,

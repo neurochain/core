@@ -273,7 +273,7 @@ class Ledger {
         auto &input = inputs.emplace_back();
         input.mutable_id()->CopyFrom(transaction_id);
         input.set_output_id(output.output_id());
-        input.set_key_id(0);
+        input.set_signature_id(0);
       }
     }
     return inputs;

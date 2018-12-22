@@ -22,7 +22,7 @@ void coinbase(const crypto::EccPub &key_pub, const messages::NCCAmount &ncc,
   input_id->set_type(messages::Hash::SHA256);
   input_id->set_data("");
   input->set_output_id(0);
-  input->set_key_id(0);
+  input->set_signature_id(0);
 
   auto output = transaction->add_outputs();
   output->mutable_address()->CopyFrom(address);
@@ -172,7 +172,7 @@ bool blockgen_from_block(messages::Block *block,
     input->mutable_id()->CopyFrom(sender.id());
     input->set_output_id(num_output);
     input->mutable_block_id()->CopyFrom(last_block.header().id());
-    input->set_key_id(0);
+    input->set_signature_id(0);
 
     // Output to recevied
     // Output to sender with min 1 ncc

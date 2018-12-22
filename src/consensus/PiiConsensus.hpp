@@ -34,9 +34,9 @@ class PiiConsensus : public Pii, public Consensus {
   TransactionPool _transaction_pool;
 
   ForkManager _ForkManager;
-  bool _valide_block;
-  uint32_t _last_heigth_block;
-  uint64_t _nonce_assembly = -1;
+  // bool _valide_block;
+  // uint32_t _last_heigth_block;
+  // uint64_t _nonce_assembly = -1;
 
   void random_from_hashs();
   uint32_t ramdon_at(int index, uint64_t nonce) const;
