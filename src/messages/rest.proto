@@ -22,7 +22,7 @@ message TransactionToPublish {
   repeated bytes transactions_ids = 1;
   repeated Output outputs = 2;
   required bytes key_priv = 3;
-  optional NCCSDF fees = 4;
+  optional _NCCAmount fees = 4;
 }
 
 message GeneratedKeys {

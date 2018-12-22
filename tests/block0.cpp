@@ -4,7 +4,7 @@
 #include "messages/config/Config.hpp"
 #include "src/ledger/LedgerMongodb.hpp"
 #include "src/messages/Message.hpp"
-#include "src/tooling/genblock.hpp"
+#include "src/tooling/blockgen.hpp"
 
 namespace neuro {
 namespace test {

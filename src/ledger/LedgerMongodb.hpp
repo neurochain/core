@@ -140,6 +140,8 @@ class LedgerMongodb : public Ledger {
 
   bool add_transaction(const messages::TaggedTransaction &tagged_transaction);
 
+  bool add_to_transaction_pool(const messages::Transaction &transaction);
+
   bool delete_transaction(const messages::Hash &id);
 
   std::size_t get_transaction_pool(messages::Block *block);
@@ -155,6 +157,8 @@ class LedgerMongodb : public Ledger {
 
   messages::BranchPath first_child(
       const messages::BranchPath &branch_path) const;
+
+  void empty_database();
 
   friend class neuro::ledger::tests::LedgerMongodb;
 };

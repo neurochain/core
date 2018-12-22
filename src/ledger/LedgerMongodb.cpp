@@ -456,8 +456,9 @@ bool LedgerMongodb::get_transaction(const messages::Hash &id,
     messages::TaggedTransaction tagged_transaction;
     messages::from_bson(bson_transaction, &tagged_transaction);
     messages::TaggedBlock tagged_block;
-    if (unsafe_get_block(tagged_transaction.block_id(), &tagged_block) &&
-        tagged_block.branch() == messages::Branch::MAIN) {
+    if (!tagged_transaction.has_block_id() ||
+        (unsafe_get_block(tagged_transaction.block_id(), &tagged_block) &&
+         tagged_block.branch() == messages::Branch::MAIN)) {
       *transaction = tagged_transaction.transaction();
       *blockheight = tagged_block.block().header().height();
       return true;
@@ -521,15 +522,15 @@ bool LedgerMongodb::for_each(const Filter &filter, Functor functor) const {
     query << "transaction.inputs.outputId" << *filter.output_id();
   }
 
-  LOG_DEBUG << "for_each query transaction " << bsoncxx::to_json(query);
   auto bson_transactions =
-      _blocks.find(std::move(query << bss::finalize), remove_OID());
+      _transactions.find((query << bss::finalize).view(), remove_OID());
 
   bool applied_functor = false;
   for (const auto &bson_transaction : bson_transactions) {
     messages::TaggedTransaction tagged_transaction;
     from_bson(bson_transaction, &tagged_transaction);
-    if (is_main_branch(tagged_transaction)) {
+    if (!tagged_transaction.has_block_id() ||
+        is_main_branch(tagged_transaction)) {
       functor(tagged_transaction.transaction());
       applied_functor = true;
     }
@@ -563,6 +564,13 @@ bool LedgerMongodb::add_transaction(
   }
   LOG_INFO << "Failed to insert transaction " << tagged_transaction;
   return false;
+}
+
+bool LedgerMongodb::add_to_transaction_pool(
+    const messages::Transaction &transaction) {
+  messages::TaggedTransaction tagged_transaction;
+  tagged_transaction.mutable_transaction()->CopyFrom(transaction);
+  return add_transaction(tagged_transaction);
 }
 
 bool LedgerMongodb::delete_transaction(const messages::Hash &id) {
@@ -718,7 +726,7 @@ bool LedgerMongodb::get_unscored_forks(
                                << bsoncxx::types::b_null{} << bss::finalize;
   auto result = _blocks.find(std::move(query), remove_OID());
   for (const auto &bson_block : result) {
-    auto tagged_block = tagged_blocks->emplace_back();
+    auto &tagged_block = tagged_blocks->emplace_back();
     from_bson(bson_block, &tagged_block);
     if (include_transactions) {
       fill_block_transactions(tagged_block.mutable_block());
@@ -809,6 +817,8 @@ bool LedgerMongodb::update_main_branch(messages::TaggedBlock *main_branch_tip) {
 
   return true;
 }
+
+void LedgerMongodb::empty_database() { _db.drop(); }
 
 }  // namespace ledger
 }  // namespace neuro

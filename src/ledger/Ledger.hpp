@@ -108,6 +108,8 @@ class Ledger {
                                messages::BlockHeight *blockheight) const = 0;
   virtual bool add_transaction(
       const messages::TaggedTransaction &tagged_transaction) = 0;
+  virtual bool add_to_transaction_pool(
+      const messages::Transaction &transaction) = 0;
   virtual bool delete_transaction(const messages::Hash &id) = 0;
   virtual std::size_t get_transaction_pool(messages::Block *block) = 0;
 
@@ -122,6 +124,8 @@ class Ledger {
 
   virtual messages::BranchPath first_child(
       const messages::BranchPath &branch_path) const = 0;
+
+  virtual void empty_database() = 0;
 
   // helpers
 
@@ -221,6 +225,15 @@ class Ledger {
     return unspent_transactions;
   }
 
+  messages::NCCAmount balance(const messages::Address &address) {
+    uint64_t total = 0;
+    const auto unspent_transactions = list_unspent_transactions(address);
+    for (const auto &unspent_transaction : unspent_transactions) {
+      total += unspent_transaction.value().value();
+    }
+    return messages::NCCAmount(total);
+  }
+
   void add_change(messages::Transaction *transaction,
                   const messages::Address &change_address) const {
     uint64_t inputs_ncc = 0;
@@ -270,7 +283,7 @@ class Ledger {
       const std::vector<messages::Address> &unspent_transactions_ids,
       const std::vector<messages::Output> &outputs,
       const crypto::EccPriv &key_priv,
-      const std::optional<const messages::NCCSDF> &fees = {}) const {
+      const std::optional<const messages::NCCAmount> &fees = {}) const {
     const crypto::EccPub key_pub = key_priv.make_public_key();
     const auto address = messages::Address(key_pub);
 
@@ -283,7 +296,7 @@ class Ledger {
       const std::vector<messages::Input> &inputs,
       const std::vector<messages::Output> &outputs,
       const crypto::EccPriv &key_priv,
-      const std::optional<messages::NCCSDF> &fees = {}) const {
+      const std::optional<messages::NCCAmount> &fees = {}) const {
     messages::Transaction transaction;
 
     // Build keys
@@ -316,9 +329,9 @@ class Ledger {
   }
 
   messages::Transaction build_transaction(
-      const messages::Address &address, const messages::NCCSDF &amount,
+      const messages::Address &address, const messages::NCCAmount &amount,
       const crypto::EccPriv &key_priv,
-      const std::optional<messages::NCCSDF> &fees = {}) const {
+      const std::optional<messages::NCCAmount> &fees = {}) const {
     auto bot_address = messages::Address(key_priv.make_public_key());
     std::vector<messages::UnspentTransaction> unspent_transactions =
         list_unspent_transactions(bot_address);

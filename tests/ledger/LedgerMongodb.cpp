@@ -8,7 +8,7 @@
 #include "common/types.hpp"
 #include "messages/config/Config.hpp"
 #include "messages/config/Database.hpp"
-#include "tooling/genblock.hpp"
+#include "tooling/blockgen.hpp"
 
 namespace neuro {
 namespace ledger {
@@ -29,7 +29,7 @@ class LedgerMongodb : public ::testing::Test {
   std::shared_ptr<::neuro::ledger::LedgerMongodb> ledger;
 
   LedgerMongodb() : _config(config_str) {
-    tooling::genblock::create_empty_db(_config);
+    tooling::blockgen::create_empty_db(_config);
     ledger = std::make_shared<::neuro::ledger::LedgerMongodb>(_config);
   }
 
@@ -106,12 +106,12 @@ TEST_F(LedgerMongodb, load_block_0) {
 }
 
 TEST_F(LedgerMongodb, load_block_1_to_9) {
-  tooling::genblock::append_blocks(9, ledger);
+  tooling::blockgen::append_blocks(9, ledger);
   ASSERT_EQ(9, ledger->height());
 }
 
 TEST_F(LedgerMongodb, header) {
-  tooling::genblock::append_blocks(1, ledger);
+  tooling::blockgen::append_blocks(1, ledger);
   messages::Block block;
   messages::BlockHeader header;
   messages::BlockHeader last_header;
@@ -124,14 +124,14 @@ TEST_F(LedgerMongodb, header) {
 }
 
 TEST_F(LedgerMongodb, remove_all) {
-  tooling::genblock::append_blocks(9, ledger);
+  tooling::blockgen::append_blocks(9, ledger);
   ledger->remove_all();
   ASSERT_EQ(0, ledger->height());
 }
 
 TEST_F(LedgerMongodb, get_block) {
   messages::Block block0, block0bis, block1, block7;
-  tooling::genblock::append_blocks(9, ledger);
+  tooling::blockgen::append_blocks(9, ledger);
   ASSERT_EQ(10, ledger->total_nb_blocks());
 
   ledger->get_block(0, &block0);
@@ -185,7 +185,7 @@ TEST_F(LedgerMongodb, transactions) {
 
 TEST_F(LedgerMongodb, insert_tagged_block) {
   messages::Block block, fake_block;
-  tooling::genblock::append_blocks(2, ledger);
+  tooling::blockgen::append_blocks(2, ledger);
   ASSERT_TRUE(ledger->get_block(1, &block));
   ASSERT_TRUE(ledger->delete_block(block.header().id()));
   ASSERT_FALSE(ledger->delete_block(block.header().id()));
@@ -205,8 +205,8 @@ TEST_F(LedgerMongodb, insert_block) {
   messages::Block block0, block1, block2;
   messages::TaggedBlock tagged_block;
   ASSERT_TRUE(ledger->get_block(ledger->height(), &block0));
-  tooling::genblock::genblock_from_block(&block1, block0, 1);
-  tooling::genblock::genblock_from_block(&block2, block1, 2);
+  tooling::blockgen::blockgen_from_block(&block1, block0, 1);
+  tooling::blockgen::blockgen_from_block(&block2, block1, 2);
   ASSERT_TRUE(ledger->insert_block(&block1));
   ASSERT_TRUE(ledger->insert_block(&block2));
   ASSERT_TRUE(ledger->get_block(block1.header().id(), &tagged_block));
@@ -228,8 +228,8 @@ TEST_F(LedgerMongodb, insert_block_attach) {
   messages::Block block0, block1, block2;
   messages::TaggedBlock tagged_block;
   ASSERT_TRUE(ledger->get_block(ledger->height(), &block0));
-  tooling::genblock::genblock_from_block(&block1, block0, 1);
-  tooling::genblock::genblock_from_block(&block2, block1, 2);
+  tooling::blockgen::blockgen_from_block(&block1, block0, 1);
+  tooling::blockgen::blockgen_from_block(&block2, block1, 2);
   ASSERT_TRUE(ledger->insert_block(&block2));
   ASSERT_TRUE(ledger->get_block(block2.header().id(), &tagged_block));
   ASSERT_EQ(tagged_block.branch(), messages::Branch::DETACHED);
@@ -254,12 +254,12 @@ TEST_F(LedgerMongodb, insert_block_attach) {
 TEST_F(LedgerMongodb, branch_path) {
   messages::Block block0, block1, block2, fork1, fork2;
   ASSERT_TRUE(ledger->get_block(0, &block0));
-  tooling::genblock::genblock_from_block(&block1, block0, 1);
-  tooling::genblock::genblock_from_block(&block2, block1, 2);
+  tooling::blockgen::blockgen_from_block(&block1, block0, 1);
+  tooling::blockgen::blockgen_from_block(&block2, block1, 2);
 
   // Use a different height so that the fork has a different id
-  tooling::genblock::genblock_from_block(&fork1, block0, 2);
-  tooling::genblock::genblock_from_block(&fork2, fork1, 3);
+  tooling::blockgen::blockgen_from_block(&fork1, block0, 2);
+  tooling::blockgen::blockgen_from_block(&fork2, fork1, 3);
 
   // Insert the main branch
   ASSERT_TRUE(ledger->insert_block(&block1));
@@ -300,12 +300,12 @@ TEST_F(LedgerMongodb, set_block_score) {
 TEST_F(LedgerMongodb, get_unscored_forks) {
   messages::Block block0, block1, block2, fork1, fork2;
   ASSERT_TRUE(ledger->get_block(0, &block0));
-  tooling::genblock::genblock_from_block(&block1, block0, 1);
-  tooling::genblock::genblock_from_block(&block2, block1, 2);
+  tooling::blockgen::blockgen_from_block(&block1, block0, 1);
+  tooling::blockgen::blockgen_from_block(&block2, block1, 2);
 
   // Use a different height so that the fork has a different id
-  tooling::genblock::genblock_from_block(&fork1, block0, 2);
-  tooling::genblock::genblock_from_block(&fork2, fork1, 3);
+  tooling::blockgen::blockgen_from_block(&fork1, block0, 2);
+  tooling::blockgen::blockgen_from_block(&fork2, fork1, 3);
 
   // Insert the block2 which should be detached
   ASSERT_TRUE(ledger->insert_block(&block2));
@@ -341,13 +341,13 @@ TEST_F(LedgerMongodb, get_unscored_forks) {
 TEST_F(LedgerMongodb, update_main_branch) {
   messages::Block block0, block1, block2, fork1, fork2, fork3;
   ASSERT_TRUE(ledger->get_block(0, &block0));
-  tooling::genblock::genblock_from_block(&block1, block0, 1);
-  tooling::genblock::genblock_from_block(&block2, block1, 2);
+  tooling::blockgen::blockgen_from_block(&block1, block0, 1);
+  tooling::blockgen::blockgen_from_block(&block2, block1, 2);
 
   // Use a different height so that the fork has a different id
-  tooling::genblock::genblock_from_block(&fork1, block0, 2);
-  tooling::genblock::genblock_from_block(&fork2, fork1, 3);
-  tooling::genblock::genblock_from_block(&fork3, fork2, 4);
+  tooling::blockgen::blockgen_from_block(&fork1, block0, 2);
+  tooling::blockgen::blockgen_from_block(&fork2, fork1, 3);
+  tooling::blockgen::blockgen_from_block(&fork3, fork2, 4);
 
   // Insert the main branch
   ASSERT_TRUE(ledger->insert_block(&block1));
