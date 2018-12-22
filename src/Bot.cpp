@@ -269,8 +269,7 @@ bool Bot::init() {
     return false;
   }
 
-  _consensus = std::make_shared<consensus::Consensus>(_ledger,
-						      _networking);
+  _consensus = std::make_shared<consensus::Consensus>(_ledger);
   _consensus->add_wallet_key_pair(_keys);
   _io_context_thread = std::thread([this]() { _io_context->run(); });
 
@@ -330,7 +329,7 @@ void Bot::update_connection_graph() {
   }
   std::string uri = _config.connection_graph_uri();
   messages::ConnectionsGraph graph;
-  const auto  own_address = messages::Address{_keys->public_key()};
+  const auto own_address = messages::Address{_keys->public_key()};
   graph.mutable_own_address()->CopyFrom(own_address);
   messages::Peers peers;
   for (const auto &peer : _tcp_config->peers()) {

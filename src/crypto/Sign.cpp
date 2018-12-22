@@ -40,7 +40,12 @@ bool verify(const messages::Transaction &transaction) {
   Buffer bin;
   auto transaction_raw = transaction;
   transaction_raw.clear_signatures();
-  transaction_raw.clear_id();
+
+  // Fill the id which is a required field. This makes the transaction
+  // serializable.
+  transaction_raw.mutable_id()->set_type(messages::Hash::SHA256);
+  transaction_raw.mutable_id()->set_data("");
+
   messages::to_buffer(transaction_raw, &bin);
 
   for (const auto &input : transaction.inputs()) {

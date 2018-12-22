@@ -87,9 +87,15 @@ bool operator==(const Packet &a, const Packet &b) {
   return res;
 }
 
+bool operator!=(const Packet &a, const Packet &b) { return !(a == b); }
+
 bool operator==(const messages::Peer &a, const messages::Peer &b) {
   LOG_TRACE << a.endpoint() << " " << b.endpoint();
   return a.endpoint() == b.endpoint() && a.port() == b.port();
+}
+
+bool operator!=(const messages::Peer &a, const messages::Peer &b) {
+  return !(a == b);
 }
 
 void set_transaction_hash(Transaction *transaction) {

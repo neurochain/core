@@ -49,7 +49,7 @@ messages::Block Simulator::new_block(int nb_transactions) {
   header->set_height(last_block.header().height() + 1);
 
   // Block reward
-  auto transaction = block.add_transactions();
+  auto transaction = block.add_coinbases();
   blockgen::coinbase(keys[miner_index].public_key(), _block_reward,
                      transaction);
 
@@ -57,6 +57,7 @@ messages::Block Simulator::new_block(int nb_transactions) {
     auto transaction = random_transaction();
     messages::TaggedTransaction tagged_transaction;
     tagged_transaction.mutable_transaction()->CopyFrom(transaction);
+    tagged_transaction.set_is_coinbase(false);
     ledger->add_transaction(tagged_transaction);
     block.add_transactions()->CopyFrom(transaction);
   }
@@ -74,6 +75,7 @@ void Simulator::run(int nb_blocks, int transactions_per_block) {
     tagged_block.mutable_branch_path()->add_block_numbers(0);
     tagged_block.mutable_block()->CopyFrom(new_block(transactions_per_block));
     ledger->insert_block(&tagged_block);
+    ledger->set_main_branch_tip();
   }
 }
 

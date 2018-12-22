@@ -52,7 +52,6 @@ mongocxx::options::find LedgerMongodb::projection(
 }
 
 bool LedgerMongodb::init_block0(const messages::config::Database &config) {
-  std::lock_guard<std::mutex> lock(_ledger_mutex);
   messages::Block block0;
   if (unsafe_get_block(0, &block0)) {
     return true;
@@ -118,12 +117,12 @@ messages::TaggedBlock LedgerMongodb::get_main_branch_tip() const {
   return _main_branch_tip;
 }
 
-void LedgerMongodb::set_main_branch_tip() {
-  get_block(height(), &_main_branch_tip, false);
+bool LedgerMongodb::set_main_branch_tip() {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  return unsafe_get_block(unsafe_height(), &_main_branch_tip, false);
 }
 
-messages::BlockHeight LedgerMongodb::height() const {
-  std::lock_guard<std::mutex> lock(_ledger_mutex);
+messages::BlockHeight LedgerMongodb::unsafe_height() const {
   auto query = bss::document{} << "branch" << MAIN_BRANCH_NAME << bss::finalize;
 
   auto options = projection("block.header.height");
@@ -135,6 +134,11 @@ messages::BlockHeight LedgerMongodb::height() const {
   }
 
   return result->view()["block"]["header"]["height"].get_int32().value;
+}
+
+messages::BlockHeight LedgerMongodb::height() const {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  return unsafe_height();
 }
 
 bool LedgerMongodb::is_ancestor(const messages::TaggedBlock &ancestor,
@@ -221,15 +225,21 @@ int LedgerMongodb::fill_block_transactions(messages::Block *block) const {
   assert(block->transactions().size() == 0);
   auto query = bss::document{} << "blockId" << to_bson(block->header().id())
                                << bss::finalize;
-  auto options = projection("transaction");
+  auto options = remove_OID();
   options.sort(bss::document{} << "transaction.id" << 1 << bss::finalize);
   auto cursor = _transactions.find(std::move(query), options);
 
   int num_transactions = 0;
   for (const auto &bson_transaction : cursor) {
     num_transactions++;
-    auto transaction = block->add_transactions();
-    from_bson(bson_transaction["transaction"].get_document(), transaction);
+    messages::TaggedTransaction tagged_transaction;
+    from_bson(bson_transaction["transaction"].get_document(),
+              &tagged_transaction);
+
+    auto transaction = tagged_transaction.is_coinbase()
+                           ? block->add_coinbases()
+                           : block->add_transactions();
+    transaction->CopyFrom(tagged_transaction.transaction());
   }
 
   return num_transactions;
@@ -244,21 +254,26 @@ bool LedgerMongodb::unsafe_get_block(const messages::BlockID &id,
   if (!result) {
     return false;
   }
+
   messages::from_bson(result->view(), tagged_block);
+
   if (include_transactions) {
     fill_block_transactions(tagged_block->mutable_block());
   }
+
   return true;
 }
 
 bool LedgerMongodb::get_block(const messages::BlockID &id,
-                              messages::TaggedBlock *tagged_block) const {
+                              messages::TaggedBlock *tagged_block,
+                              bool include_transactions) const {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
-  return unsafe_get_block(id, tagged_block);
+  return unsafe_get_block(id, tagged_block, include_transactions);
 }
 
 bool LedgerMongodb::get_block(const messages::BlockID &id,
-                              messages::Block *block) const {
+                              messages::Block *block,
+                              bool include_transactions) const {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto query = bss::document{} << "block.header.id" << to_bson(id)
                                << bss::finalize;
@@ -399,8 +414,10 @@ bool LedgerMongodb::unsafe_insert_block(messages::TaggedBlock *tagged_block) {
   auto bson_header = messages::to_bson(header);
 
   std::vector<bsoncxx::document::value> bson_transactions;
+
   for (const auto &transaction : tagged_block->block().transactions()) {
     messages::TaggedTransaction tagged_transaction;
+    tagged_transaction.set_is_coinbase(false);
     *tagged_transaction.mutable_transaction() = transaction;
     *tagged_transaction.mutable_block_id() = header.id();
     bson_transactions.push_back(messages::to_bson(tagged_transaction));
@@ -411,6 +428,15 @@ bool LedgerMongodb::unsafe_insert_block(messages::TaggedBlock *tagged_block) {
       _transactions.delete_one(std::move(query));
     }
   }
+
+  for (const auto &transaction : tagged_block->block().coinbases()) {
+    messages::TaggedTransaction tagged_transaction;
+    tagged_transaction.set_is_coinbase(true);
+    *tagged_transaction.mutable_transaction() = transaction;
+    *tagged_transaction.mutable_block_id() = header.id();
+    bson_transactions.push_back(messages::to_bson(tagged_transaction));
+  }
+
   tagged_block->mutable_block()->clear_transactions();
   auto bson_block = messages::to_bson(*tagged_block);
   auto result = _blocks.insert_one(std::move(bson_block));
@@ -444,6 +470,23 @@ bool LedgerMongodb::delete_block(const messages::Hash &id) {
   return did_delete;
 }
 
+bool LedgerMongodb::get_transaction(
+    const messages::Hash &id, messages::TaggedTransaction *tagged_transaction,
+    const messages::TaggedBlock &tip, bool include_transaction_pool) const {
+  Filter filter;
+  filter.transaction_id(id);
+  auto found_transaction = false;
+  for_each(filter, tip, include_transaction_pool,
+           [&](const messages::TaggedTransaction &match) {
+             if (!found_transaction) {
+               tagged_transaction->CopyFrom(match);
+               found_transaction = true;
+             }
+             return false;
+           });
+  return found_transaction;
+}
+
 bool LedgerMongodb::get_transaction(const messages::Hash &id,
                                     messages::Transaction *transaction) const {
   messages::BlockHeight block_height;
@@ -453,6 +496,8 @@ bool LedgerMongodb::get_transaction(const messages::Hash &id,
 bool LedgerMongodb::get_transaction(const messages::Hash &id,
                                     messages::Transaction *transaction,
                                     messages::BlockHeight *blockheight) const {
+  // TODO this will return a bad height if the transaction is in 2 blocks
+  // but is the height really needed???
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto query_transaction = bss::document{} << "transaction.id"
                                            << messages::to_bson(id)
@@ -510,9 +555,11 @@ std::size_t LedgerMongodb::total_nb_blocks() const {
 
 bool LedgerMongodb::for_each(const Filter &filter,
                              const messages::TaggedBlock &tip,
+                             bool include_transaction_pool,
                              Functor functor) const {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
-  if (!filter.output_address() && !filter.input_transaction_id()) {
+  if (!filter.output_address() && !filter.input_transaction_id() &&
+      !filter.transaction_id() && !filter.output_id()) {
     LOG_WARNING << "missing filters for for_each query";
     return false;
   }
@@ -533,6 +580,10 @@ bool LedgerMongodb::for_each(const Filter &filter,
     query << "transaction.inputs.outputId" << *filter.output_id();
   }
 
+  if (filter.transaction_id()) {
+    query << "transaction.id" << messages::to_bson(*filter.transaction_id());
+  }
+
   auto bson_transactions =
       _transactions.find((query << bss::finalize).view(), remove_OID());
 
@@ -540,9 +591,17 @@ bool LedgerMongodb::for_each(const Filter &filter,
   for (const auto &bson_transaction : bson_transactions) {
     messages::TaggedTransaction tagged_transaction;
     from_bson(bson_transaction, &tagged_transaction);
-    if (!tagged_transaction.has_block_id() ||
-        is_main_branch(tagged_transaction)) {
-      functor(tagged_transaction.transaction());
+    if (!tagged_transaction.has_block_id()) {
+      if (include_transaction_pool) {
+        functor(tagged_transaction);
+        applied_functor = true;
+      }
+      continue;
+    }
+    messages::TaggedBlock tagged_block;
+    unsafe_get_block(tagged_transaction.block_id(), &tagged_block, false);
+    if (is_ancestor(tagged_block, tip)) {
+      functor(tagged_transaction);
       applied_functor = true;
     }
   }
@@ -551,7 +610,7 @@ bool LedgerMongodb::for_each(const Filter &filter,
 }
 
 bool LedgerMongodb::for_each(const Filter &filter, Functor functor) const {
-  return for_each(filter, _main_branch_tip, functor);
+  return for_each(filter, _main_branch_tip, true, functor);
 }
 
 messages::BranchID LedgerMongodb::new_branch_id() const {

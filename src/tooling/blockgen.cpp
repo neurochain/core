@@ -16,14 +16,6 @@ void coinbase(const crypto::EccPub &key_pub, const messages::NCCAmount &ncc,
   key_pub.save(&key_pub_raw);
   messages::Address address(key_pub_raw);
 
-  auto input = transaction->add_inputs();
-
-  auto input_id = input->mutable_id();
-  input_id->set_type(messages::Hash::SHA256);
-  input_id->set_data("");
-  input->set_output_id(0);
-  input->set_key_id(0);
-
   auto output = transaction->add_outputs();
   output->mutable_address()->CopyFrom(address);
   output->mutable_value()->CopyFrom(ncc);

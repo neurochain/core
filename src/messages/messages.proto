@@ -79,6 +79,7 @@ message BlockHeader {
 message Block {
   required BlockHeader header = 1;
   repeated Transaction transactions = 20;
+  repeated Transaction coinbases = 30;
 }
 
 enum Branch {
@@ -116,7 +117,8 @@ message TaggedBlock {
 
 message TaggedTransaction {
   required Transaction transaction = 1;
-  optional Hash block_id = 2;
+  required bool is_coinbase = 2;
+  optional Hash block_id = 3;
 }
 
 message ConnectionClosed {

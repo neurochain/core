@@ -86,6 +86,8 @@ class LedgerMongodb : public Ledger {
                                   messages::Block *block,
                                   bool include_transactions = true) const;
 
+  messages::BlockHeight unsafe_height() const;
+
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);
   LedgerMongodb(const messages::config::Database &config);
@@ -96,7 +98,7 @@ class LedgerMongodb : public Ledger {
 
   messages::TaggedBlock get_main_branch_tip() const;
 
-  void set_main_branch_tip();
+  bool set_main_branch_tip();
 
   messages::BlockHeight height() const;
 
@@ -106,9 +108,11 @@ class LedgerMongodb : public Ledger {
   bool get_last_block_header(messages::BlockHeader *block_header) const;
 
   bool get_block(const messages::BlockID &id,
-                 messages::TaggedBlock *tagged_block) const;
+                 messages::TaggedBlock *tagged_block,
+                 bool include_transactions = true) const;
 
-  bool get_block(const messages::BlockID &id, messages::Block *block) const;
+  bool get_block(const messages::BlockID &id, messages::Block *block,
+                 bool include_transactions = true) const;
 
   bool get_block_by_previd(const messages::BlockID &previd,
                            messages::Block *block,
@@ -138,12 +142,17 @@ class LedgerMongodb : public Ledger {
                        messages::Transaction *transaction,
                        messages::BlockHeight *blockheight) const;
 
+  bool get_transaction(const messages::Hash &id,
+                       messages::TaggedTransaction *tagged_transaction,
+                       const messages::TaggedBlock &tip,
+                       bool include_transaction_pool) const;
+
   std::size_t total_nb_transactions() const;
 
   std::size_t total_nb_blocks() const;
 
   bool for_each(const Filter &filter, const messages::TaggedBlock &tip,
-                Functor functor) const;
+                bool include_transaction_pool, Functor functor) const;
 
   bool for_each(const Filter &filter, Functor functor) const;
 

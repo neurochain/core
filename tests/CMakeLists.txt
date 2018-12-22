@@ -136,6 +136,25 @@ target_link_libraries(Simulator
   )
 add_test(Simulator Simulator)
 
+add_executable(Consensus
+  consensus/Consensus.cpp
+  )
+target_link_libraries(Consensus
+  GTest::main
+  Boost::program_options
+  Boost::filesystem
+  Boost::system
+  Boost::thread
+  Boost::log
+  cpr::cpr
+  ${LIBMONGOCXX_STATIC_LIBRARIES}
+  core
+  protos
+  libonion::onion
+  libonion::onioncpp
+  )
+add_test(Consensus Consensus)
+
 add_executable(dbreset
     dbreset.cpp
 )

@@ -15,8 +15,7 @@ namespace ledger {
 
 class Ledger {
  public:
-  using Functor = std::function<bool(const messages::Transaction &)>;
-  using Functor_block = std::function<void(messages::Block &)>;
+  using Functor = std::function<bool(const messages::TaggedTransaction &)>;
 
   struct MainBranchTip {
     messages::TaggedBlock main_branch_tip;
@@ -25,33 +24,27 @@ class Ledger {
 
   class Filter {
    private:
-    std::optional<messages::BlockHeight> _lower_height;
-    std::optional<messages::BlockHeight> _upper_height;
     std::optional<messages::Address> _output_address;
     std::optional<messages::Hash> _block_id;
-
+    std::optional<messages::Hash> _input_transaction_id;
     std::optional<messages::Hash> _transaction_id;
     std::optional<int32_t> _output_id;
 
    public:
-    void lower_height(const messages::BlockHeight &height) {
-      _lower_height = std::make_optional<messages::BlockHeight>(height);
-    }
-    std::optional<const messages::BlockHeight> lower_height() const {
-      return _lower_height;
-    }
-
-    void upper_height(const messages::BlockHeight height) {
-      _upper_height = std::make_optional<decltype(height)>(height);
-    }
-    std::optional<const messages::BlockHeight> upper_height() const {
-      return _upper_height;
-    }
-
     void input_transaction_id(const messages::Hash &transaction_id) {
+      _input_transaction_id =
+          std::make_optional<messages::Hash>(transaction_id);
+    }
+
+    std::optional<const messages::Hash> input_transaction_id() const {
+      return _input_transaction_id;
+    }
+
+    void transaction_id(const messages::Hash &transaction_id) {
       _transaction_id = std::make_optional<messages::Hash>(transaction_id);
     }
-    std::optional<const messages::Hash> input_transaction_id() const {
+
+    std::optional<const messages::Hash> transaction_id() const {
       return _transaction_id;
     }
 
@@ -77,16 +70,17 @@ class Ledger {
  public:
   Ledger() {}
   virtual messages::TaggedBlock get_main_branch_tip() const = 0;
-  virtual void set_main_branch_tip() = 0;
+  virtual bool set_main_branch_tip() = 0;
   virtual messages::BlockHeight height() const = 0;
   virtual bool get_block_header(const messages::BlockID &id,
                                 messages::BlockHeader *header) const = 0;
   virtual bool get_last_block_header(
       messages::BlockHeader *block_header) const = 0;
+  virtual bool get_block(const messages::BlockID &id, messages::Block *block,
+                         bool include_transactions = true) const = 0;
   virtual bool get_block(const messages::BlockID &id,
-                         messages::Block *block) const = 0;
-  virtual bool get_block(const messages::BlockID &id,
-                         messages::TaggedBlock *tagged_block) const = 0;
+                         messages::TaggedBlock *tagged_block,
+                         bool include_transactions = true) const = 0;
   virtual bool get_block_by_previd(const messages::BlockID &previd,
                                    messages::Block *block,
                                    bool include_transactions = true) const = 0;
@@ -103,6 +97,7 @@ class Ledger {
   virtual bool insert_block(messages::TaggedBlock *tagged_block) = 0;
   virtual bool delete_block(const messages::Hash &id) = 0;
   virtual bool for_each(const Filter &filter, const messages::TaggedBlock &tip,
+                        bool include_transaction_pool,
                         Functor functor) const = 0;
   virtual bool for_each(const Filter &filter, Functor functor) const = 0;
   virtual bool get_transaction(const messages::Hash &id,
@@ -110,6 +105,10 @@ class Ledger {
   virtual bool get_transaction(const messages::Hash &id,
                                messages::Transaction *transaction,
                                messages::BlockHeight *blockheight) const = 0;
+  virtual bool get_transaction(const messages::Hash &id,
+                               messages::TaggedTransaction *tagged_transaction,
+                               const messages::TaggedBlock &tip,
+                               bool include_transaction_pool) const = 0;
   virtual bool add_transaction(
       const messages::TaggedTransaction &tagged_transaction) = 0;
   virtual bool add_to_transaction_pool(
@@ -139,31 +138,37 @@ class Ledger {
     filter.output_address(address);
     messages::Transactions transactions;
 
-    for_each(filter,
-             [&transactions](const messages::Transaction &transaction) -> bool {
-               transactions.add_transactions()->CopyFrom(transaction);
-               return true;
-             });
+    for_each(
+        filter,
+        [&transactions](
+            const messages::TaggedTransaction &tagged_transaction) -> bool {
+          transactions.add_transactions()->CopyFrom(
+              tagged_transaction.transaction());
+          return true;
+        });
 
     return transactions;
   }
 
   bool is_unspent_output(const messages::Hash &transaction_id,
                          int output_id) const {
-    return is_unspent_output(transaction_id, output_id, get_main_branch_tip());
+    return is_unspent_output(transaction_id, output_id, get_main_branch_tip(),
+                             true);
   }
 
   bool is_unspent_output(const messages::Hash &transaction_id, int output_id,
-                         const messages::TaggedBlock &tip) const {
+                         const messages::TaggedBlock &tip,
+                         bool include_transaction_pool) const {
     Filter filter;
     filter.input_transaction_id(transaction_id);
     filter.output_id(output_id);
 
     bool match = false;
-    for_each(filter, tip, [&](const messages::Transaction transaction) {
-      match = true;
-      return false;
-    });
+    for_each(filter, tip, include_transaction_pool,
+             [&](const messages::TaggedTransaction &) {
+               match = true;
+               return false;
+             });
     return !match;
   }
 
@@ -188,7 +193,7 @@ class Ledger {
     filter.output_address(address);
 
     bool match = false;
-    for_each(filter, [&](const messages::Transaction _) {
+    for_each(filter, [&](const messages::TaggedTransaction &) {
       match = true;
       return false;
     });

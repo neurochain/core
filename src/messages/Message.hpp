@@ -46,7 +46,9 @@ std::ostream &operator<<(
 }
 
 bool operator==(const Packet &a, const Packet &b);
+bool operator!=(const Packet &a, const Packet &b);
 bool operator==(const messages::Peer &a, const messages::Peer &b);
+bool operator!=(const messages::Peer &a, const messages::Peer &b);
 
 void set_transaction_hash(Transaction *transaction);
 void set_block_hash(Block *block);
