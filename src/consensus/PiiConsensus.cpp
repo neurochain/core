@@ -14,7 +14,7 @@ PiiConsensus::PiiConsensus(std::shared_ptr<boost::asio::io_context> io,
       _network(network),
       _transaction_pool(_ledger),
       _ForkManager(ledger, _transaction_pool),
-      _valide_block(true),
+      // _valide_block(true),
       _timer_of_block_time(*io) {
   // load all block from
 }

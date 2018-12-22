@@ -95,7 +95,7 @@ void TransactionPool::coinbase(messages::Transaction *transaction,
   input_id->set_type(messages::Hash::SHA256);
   input_id->set_data("");
   input->set_output_id(0);
-  input->set_key_id(0);
+  input->set_signature_id(0);
 
   auto output = transaction->add_outputs();
   output->mutable_address()->CopyFrom(addr);

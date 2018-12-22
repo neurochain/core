@@ -4,6 +4,9 @@ package neuro.messages;
 
 import "common.proto";
 
+
+// Handshake
+// =========
 message Hello {
   required KeyPub key_pub = 1;
   optional int32 listen_port = 2;
@@ -15,6 +18,9 @@ message World {
   repeated Peer peers = 3;
 }
 
+// Update 
+// ======
+
 message GetPeers {
 }
 
@@ -22,6 +28,9 @@ message Peers {
   repeated Peer peers = 1;
 }
 
+
+// Ask for block hash
+// ------------------
 message GetRoots {
   optional Hash last_known_root = 1;
   optional int32 count = 2; // ask for count last roots 
@@ -42,9 +51,8 @@ message GetBlock {
 message Input {
   required Hash id = 1;
   required int32 output_id = 2;
-  required int32 key_id = 3;
+  required int32 signature_id = 3;
   optional Hash block_id = 4;
-  optional int32 signature_id = 5;
 }
 
 message Output {
@@ -64,8 +72,7 @@ message Transaction {
   repeated Input inputs = 2;
   repeated Output outputs = 3;
   repeated Signature signatures = 4;
-  repeated KeyPub key_pubs = 5;
-  optional _NCCAmount fees = 6;
+  optional _NCCAmount fees = 5;
 }
 
 message BlockHeader {

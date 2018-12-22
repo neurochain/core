@@ -727,8 +727,8 @@ void Bot::keep_max_connections() {
       // this->update_peerlist();
     }
   } else {
-    LOG_INFO << this << " Already connected to " << current_peer_count
-             << "/" << _max_connections;
+    LOG_INFO << this << " Already connected to " << current_peer_count << "/"
+             << _max_connections;
   }
 }
 
