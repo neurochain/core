@@ -30,9 +30,10 @@ class Networking {
   std::shared_ptr<Tcp> create_tcp(std::shared_ptr<messages::Queue> queue,
                                   std::shared_ptr<crypto::Ecc> keys,
                                   const Port port);
-  bool send(std::shared_ptr<messages::Message> message, ProtocolType type);
+  bool send(std::shared_ptr<messages::Message> message,
+	    ProtocolType type = networking::ProtocolType::PROTOBUF2);
   bool send_unicast(std::shared_ptr<messages::Message> message,
-                    ProtocolType type);
+                    ProtocolType type = networking::ProtocolType::PROTOBUF2);
   messages::Peers connected_peers() const;
   std::size_t peer_count() const;
   void join();

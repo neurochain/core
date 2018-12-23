@@ -666,10 +666,11 @@ bool Bot::next_to_connect(messages::Peer **peer) {
 
       // Check every pos until we find one that is good to use
       for (const auto &idx : pos) {
-        auto tmp_peer = peers->Mutable(idx);
+        auto tmp_peer = _tcp_config->peers(idx);
+	LOG_DEBUG << this << " wtf " << tmp_peer;
         // auto &tmp_peer = peers[idx];
-        if (tmp_peer->status() == messages::Peer::REACHABLE) {
-          *peer = tmp_peer;
+        if (tmp_peer.status() != messages::Peer::CONNECTED) {
+          *peer = &tmp_peer;
           return true;
         }
       }
@@ -679,17 +680,17 @@ bool Bot::next_to_connect(messages::Peer **peer) {
       LOG_ERROR << this
                 << " Uknown method for selecting next peer to connect to ";
   }
+  LOG_DEBUG << this << " could not find remote";
   return false;
 }
 
 void Bot::keep_max_connections() {
-  LOG_TRACE;
-  LOG_INFO << "Entered keep_max_connections";
+  LOG_INFO << this << " Entered keep_max_connections";
   auto peers = connected_peers();
   for (const auto &peer : peers) {
-    LOG_INFO << "Connected peer " << peer;
+    LOG_INFO << this << " Connected peer " << peer;
   }
-  LOG_INFO << "Number of peers with status connected: " << peers.size()
+  LOG_INFO << this << " Number of peers with status connected: " << peers.size()
            << std::endl
            << *this;
 
@@ -715,7 +716,7 @@ void Bot::keep_max_connections() {
   }
 
   if (current_peer_count < _max_connections) {
-    messages::Peer *peer;
+    messages::Peer peer;
     if (this->next_to_connect(&peer)) {
       LOG_DEBUG << this << " Asking to connect to " << *peer;
       peer->set_status(messages::Peer::CONNECTING);
