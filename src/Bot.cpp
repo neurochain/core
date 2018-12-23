@@ -667,7 +667,7 @@ bool Bot::next_to_connect(messages::Peer **peer) {
       // Check every pos until we find one that is good to use
       for (const auto &idx : pos) {
         auto tmp_peer = _tcp_config->peers(idx);
-	LOG_DEBUG << this << " wtf " << tmp_peer;
+        LOG_DEBUG << this << " wtf " << tmp_peer;
         // auto &tmp_peer = peers[idx];
         if (tmp_peer.status() != messages::Peer::CONNECTED) {
           *peer = &tmp_peer;

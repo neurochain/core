@@ -19,7 +19,7 @@ namespace tests {
 using namespace std::chrono_literals;
 
 template <class C>
-std::vector<typename C::value_type> vectorize(const C& container) {
+std::vector<typename C::value_type> vectorize(const C &container) {
   std::vector<typename C::value_type> ans(container.begin(), container.end());
   return ans;
 }
@@ -56,8 +56,8 @@ class BotTest {
 
   void add_block() {
     messages::TaggedBlock new_block;
-    neuro::tooling::blockgen::blockgen_from_last_db_block(new_block.mutable_block(),
-                                                          _bot._ledger, 1, 0);
+    neuro::tooling::blockgen::blockgen_from_last_db_block(
+        new_block.mutable_block(), _bot._ledger, 1, 0);
     _bot._ledger->insert_block(&new_block);
   }
 };
@@ -394,8 +394,8 @@ TEST(INTEGRATION, fullfill_network) {
 }
 
 TEST(INTEGRATION, connection_opportunity) {
-  // Check a node excluded from a connected graph can connect after a node of the
-  // compleete graph is destroyed.
+  // Check a node excluded from a connected graph can connect after a node of
+  // the compleete graph is destroyed.
   Path config_path0("bot0.json");
   messages::config::Config config0(config_path0);
   auto bot0 = std::make_shared<Bot>(config0);
@@ -1322,12 +1322,12 @@ TEST(INTEGRATION, terminate_on_bad_version) {
     ASSERT_TRUE(peers_bot0[0].endpoint() == "127.0.0.1" &&
                 peers_bot0[0].port() == 1338);
 
-    auto msg = std::make_shared<messages::Message> ();
+    auto msg = std::make_shared<messages::Message>();
     msg->add_bodies()->mutable_get_peers();
     auto header = msg->mutable_header();
     messages::fill_header(header);
-    //auto key_pub = header->mutable_key_pub();
-    //key_pub->CopyFrom(bot0->get_key_pub());
+    // auto key_pub = header->mutable_key_pub();
+    // key_pub->CopyFrom(bot0->get_key_pub());
 
     header->set_version(neuro::MessageVersion + 100);
     bot0->networking()->send(msg);
@@ -1405,4 +1405,3 @@ TEST(INTEGRATION, block_exchange) {
 }  // namespace tests
 
 }  // namespace neuro
-

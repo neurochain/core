@@ -31,7 +31,7 @@ class Networking {
                                   std::shared_ptr<crypto::Ecc> keys,
                                   const Port port);
   bool send(std::shared_ptr<messages::Message> message,
-	    ProtocolType type = networking::ProtocolType::PROTOBUF2);
+            ProtocolType type = networking::ProtocolType::PROTOBUF2);
   bool send_unicast(std::shared_ptr<messages::Message> message,
                     ProtocolType type = networking::ProtocolType::PROTOBUF2);
   messages::Peers connected_peers() const;
