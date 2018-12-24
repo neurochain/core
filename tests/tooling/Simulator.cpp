@@ -39,7 +39,7 @@ TEST_F(Simulator, block0) {
   messages::Block block;
   ASSERT_TRUE(ledger->get_block(0, &block));
   ASSERT_EQ(ledger->height(), 0);
-  ASSERT_EQ(block.transactions_size(), nb_keys);
+  ASSERT_EQ(block.coinbases_size(), nb_keys);
   ASSERT_EQ(ledger->total_nb_transactions(), nb_keys);
 }
 
@@ -48,10 +48,43 @@ TEST_F(Simulator, send_ncc) {
   auto recipient_public_key = simulator.addresses[1];
   auto transaction0 =
       simulator.send_ncc(sender_private_key, recipient_public_key, 0.5);
+  ASSERT_EQ(transaction0.inputs_size(), 1);
+  ASSERT_EQ(transaction0.outputs_size(), 2);
+  ASSERT_EQ(transaction0.outputs(0).value().value(), ncc_block0.value() * 0.5);
+  ASSERT_EQ(transaction0.outputs(1).value().value(), ncc_block0.value() * 0.5);
   ledger->add_to_transaction_pool(transaction0);
+
   auto transaction1 =
       simulator.send_ncc(sender_private_key, recipient_public_key, 0.5);
   ASSERT_EQ(transaction1.inputs(0).id(), transaction0.id());
+  ASSERT_EQ(transaction1.inputs_size(), 1);
+  ASSERT_EQ(transaction1.outputs_size(), 2);
+  ASSERT_EQ(transaction1.outputs(0).value().value(), ncc_block0.value() * 0.25);
+  ASSERT_EQ(transaction1.outputs(1).value().value(), ncc_block0.value() * 0.25);
+  ledger->add_to_transaction_pool(transaction1);
+
+  sender_private_key = simulator.keys[1].private_key();
+  recipient_public_key = simulator.addresses[1];
+  auto transaction2 =
+      simulator.send_ncc(sender_private_key, recipient_public_key, 0.5);
+  ASSERT_EQ(transaction2.inputs_size(), 3);
+  ASSERT_EQ(transaction2.outputs_size(), 2);
+  ASSERT_EQ(transaction2.outputs(0).value().value(),
+            ncc_block0.value() * 0.875);
+  ASSERT_EQ(transaction2.outputs(1).value().value(),
+            ncc_block0.value() * 0.875);
+  ledger->add_to_transaction_pool(transaction2);
+
+  sender_private_key = simulator.keys[1].private_key();
+  recipient_public_key = simulator.addresses[3];
+  auto transaction3 =
+      simulator.send_ncc(sender_private_key, recipient_public_key, 0.5);
+  ASSERT_EQ(transaction3.inputs_size(), 2);
+  ASSERT_EQ(transaction3.outputs_size(), 2);
+  ASSERT_EQ(transaction3.outputs(0).value().value(),
+            ncc_block0.value() * 0.875);
+  ASSERT_EQ(transaction3.outputs(1).value().value(),
+            ncc_block0.value() * 0.875);
 }
 
 TEST_F(Simulator, random_transaction) {
@@ -66,8 +99,8 @@ TEST_F(Simulator, run) {
     messages::Block block;
     ASSERT_TRUE(ledger->get_block(i, &block));
 
-    // 7 transaction + coinbase
-    ASSERT_EQ(block.transactions_size(), 8);
+    ASSERT_EQ(block.transactions_size(), 7);
+    ASSERT_EQ(block.coinbases_size(), 1);
   }
 }
 

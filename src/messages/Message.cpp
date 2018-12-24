@@ -17,6 +17,10 @@ bool from_json(const std::string &json, Packet *packet) {
   auto r = google::protobuf::util::JsonStringToMessage(json, packet, options);
   if (!r.ok()) {
     LOG_ERROR << "Could not parse json " << r;
+    std::stringstream error;
+    error << "Could not parse json " << r;
+    std::cout << boost::stacktrace::stacktrace() << std::endl;
+    throw error.str();
   }
   return r.ok();
 }

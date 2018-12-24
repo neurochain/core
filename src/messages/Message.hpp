@@ -75,4 +75,15 @@ class NCCAmount : public _NCCAmount {
 }  // namespace messages
 }  // namespace neuro
 
+// TODO why doesn't this work with Packet instead of Input!?!
+namespace std {
+template <>
+struct hash<neuro::messages::Input> {
+  size_t operator()(const neuro::messages::Input &input) const {
+    return hash<string>()(neuro::messages::to_json(input));
+  }
+};
+
+}  // namespace std
+
 #endif /* NEURO_SRC_MESSAGES_MESSAGE_HPP */

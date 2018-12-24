@@ -226,15 +226,21 @@ class Ledger {
 
     auto transactions = list_transactions(address).transactions();
     for (auto transaction : transactions) {
+      bool has_unspent_output = false;
+      int64_t amount = 0;
       for (int i = 0; i < transaction.outputs_size(); i++) {
         auto output = transaction.outputs(i);
         if (output.address() == address &&
             is_unspent_output(transaction.id(), i)) {
+          has_unspent_output = true;
+          amount += output.value().value();
+        }
+      }
+      if (has_unspent_output) {
           auto &unspent_transaction = unspent_transactions.emplace_back();
           unspent_transaction.mutable_transaction_id()->CopyFrom(
               transaction.id());
-          unspent_transaction.mutable_value()->CopyFrom(output.value());
-        }
+          unspent_transaction.mutable_value()->set_value(amount);
       }
     }
     return unspent_transactions;

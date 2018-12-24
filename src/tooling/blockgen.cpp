@@ -20,7 +20,6 @@ void coinbase(const crypto::EccPub &key_pub, const messages::NCCAmount &ncc,
   output->mutable_address()->CopyFrom(address);
   output->mutable_value()->CopyFrom(ncc);
   output->set_data(output_data);
-  transaction->mutable_fees()->set_value(0);
 
   messages::set_transaction_hash(transaction);
 }
@@ -37,7 +36,7 @@ messages::TaggedBlock gen_block0(std::vector<crypto::Ecc> keys,
   previons_block_hash->set_type(messages::Hash::Type::Hash_Type_SHA256);
   header->set_height(0);
   for (const auto &key : keys) {
-    auto transaction = block->add_transactions();
+    auto transaction = block->add_coinbases();
     blockgen::coinbase(key.public_key(), ncc_block0, transaction);
   }
   tagged_block.set_branch(messages::Branch::MAIN);
@@ -95,10 +94,10 @@ void testnet_blockg(uint32_t bots, const std::string &pathdir,
                                         3600);  // 1539640800);
   header->set_height(0);
 
-  messages::Transaction *transaction = blockfaucet.add_transactions();
+  messages::Transaction *transaction = blockfaucet.add_coinbases();
   coinbase(ecc.public_key(), nccsdf, transaction, "trax killed me");
 
-  messages::Transaction *transaction2 = blockfaucet.add_transactions();
+  messages::Transaction *transaction2 = blockfaucet.add_coinbases();
   coinbase(ecc_save.public_key(), nccsdf, transaction2, "what olivier ?");
 
   neuro::Buffer t23("riados");
@@ -173,7 +172,6 @@ bool blockgen_from_block(messages::Block *block,
         recevied.outputs(num_output).address());
     output_revevied->mutable_value()->set_value(total_ncc);
 
-    new_trans->mutable_fees()->set_value(0);
     messages::set_transaction_hash(new_trans);
   }
 

@@ -233,8 +233,7 @@ int LedgerMongodb::fill_block_transactions(messages::Block *block) const {
   for (const auto &bson_transaction : cursor) {
     num_transactions++;
     messages::TaggedTransaction tagged_transaction;
-    from_bson(bson_transaction["transaction"].get_document(),
-              &tagged_transaction);
+    from_bson(bson_transaction, &tagged_transaction);
 
     auto transaction = tagged_transaction.is_coinbase()
                            ? block->add_coinbases()
@@ -418,8 +417,8 @@ bool LedgerMongodb::unsafe_insert_block(messages::TaggedBlock *tagged_block) {
   for (const auto &transaction : tagged_block->block().transactions()) {
     messages::TaggedTransaction tagged_transaction;
     tagged_transaction.set_is_coinbase(false);
-    *tagged_transaction.mutable_transaction() = transaction;
-    *tagged_transaction.mutable_block_id() = header.id();
+    tagged_transaction.mutable_transaction()->CopyFrom(transaction);
+    tagged_transaction.mutable_block_id()->CopyFrom(header.id());
     bson_transactions.push_back(messages::to_bson(tagged_transaction));
     if (tagged_block->branch() == messages::Branch::MAIN) {
       auto query = bss::document{}
@@ -432,12 +431,13 @@ bool LedgerMongodb::unsafe_insert_block(messages::TaggedBlock *tagged_block) {
   for (const auto &transaction : tagged_block->block().coinbases()) {
     messages::TaggedTransaction tagged_transaction;
     tagged_transaction.set_is_coinbase(true);
-    *tagged_transaction.mutable_transaction() = transaction;
-    *tagged_transaction.mutable_block_id() = header.id();
+    tagged_transaction.mutable_transaction()->CopyFrom(transaction);
+    tagged_transaction.mutable_block_id()->CopyFrom(header.id());
     bson_transactions.push_back(messages::to_bson(tagged_transaction));
   }
 
   tagged_block->mutable_block()->clear_transactions();
+  tagged_block->mutable_block()->clear_coinbases();
   auto bson_block = messages::to_bson(*tagged_block);
   auto result = _blocks.insert_one(std::move(bson_block));
   if (!result) {
@@ -571,17 +571,20 @@ bool LedgerMongodb::for_each(const Filter &filter,
     query << "transaction.outputs.address" << bson;
   }
 
-  if (filter.input_transaction_id()) {
-    query << "transaction.inputs.id"
-          << messages::to_bson(*filter.input_transaction_id());
-  }
-
-  if (filter.output_id()) {
-    query << "transaction.inputs.outputId" << *filter.output_id();
-  }
-
   if (filter.transaction_id()) {
     query << "transaction.id" << messages::to_bson(*filter.transaction_id());
+  }
+
+  if (filter.input_transaction_id() && filter.output_id()) {
+    query << "transaction.inputs" << bss::open_document << "$elemMatch"
+          << bss::open_document << "id"
+          << messages::to_bson(*filter.input_transaction_id()) << "outputId"
+          << *filter.output_id() << bss::close_document << bss::close_document;
+  } else if (filter.input_transaction_id()) {
+    query << "transaction.inputs.id"
+          << messages::to_bson(*filter.input_transaction_id());
+  } else if (filter.output_id()) {
+    query << "transaction.inputs.outputId" << *filter.output_id();
   }
 
   auto bson_transactions =
@@ -643,6 +646,7 @@ bool LedgerMongodb::add_transaction(
 bool LedgerMongodb::add_to_transaction_pool(
     const messages::Transaction &transaction) {
   messages::TaggedTransaction tagged_transaction;
+  tagged_transaction.set_is_coinbase(false);
   tagged_transaction.mutable_transaction()->CopyFrom(transaction);
   return add_transaction(tagged_transaction);
 }

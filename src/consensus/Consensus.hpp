@@ -1,7 +1,9 @@
 #ifndef NEURO_SRC_CONSENSUS_CONSENSUS_HPP
 #define NEURO_SRC_CONSENSUS_CONSENSUS_HPP
 
+#include <unordered_set>
 #include "ledger/Ledger.hpp"
+#include "messages/Message.hpp"
 #include "networking/Networking.hpp"
 
 namespace neuro {
@@ -9,6 +11,8 @@ namespace consensus {
 namespace tests {
 class Consensus;
 }
+
+const messages::NCCAmount BLOCK_REWARD{100};
 
 class Consensus {
  private:
@@ -90,9 +94,6 @@ class Consensus {
       total_spent += tagged_transaction.transaction().fees().value();
     }
 
-    LOG_INFO << "spent " << total_spent << " received " << total_received
-             << std::endl;
-    LOG_INFO << tagged_transaction;
     return total_spent == total_received;
   }
 
@@ -107,16 +108,76 @@ class Consensus {
     return transaction.id() == tagged_transaction.transaction().id();
   }
 
+  bool check_double_inputs(
+      const messages::TaggedTransaction &tagged_transaction) const {
+    std::unordered_set<messages::Input> inputs;
+    messages::Input clean_input;
+    clean_input.set_key_id(0);
+    for (const auto &input : tagged_transaction.transaction().inputs()) {
+      // We only want to compare the id and the output_id
+      clean_input.mutable_id()->CopyFrom(input.id());
+      clean_input.set_output_id(input.output_id());
+      if (inputs.count(clean_input) > 0) {
+        return false;
+      }
+      inputs.insert(clean_input);
+    }
+    return true;
+  }
+
+  bool check_coinbase(
+      const messages::TaggedTransaction &tagged_transaction) const {
+    messages::TaggedBlock tagged_block;
+    if (!tagged_transaction.has_block_id() ||
+        !_ledger->get_block(tagged_transaction.block_id(), &tagged_block,
+                            false)) {
+      return false;
+    }
+
+    // Check total spent
+    if (tagged_block.block().header().height() != 0) {
+      uint64_t to_spend = expected_block_reward(tagged_block).value();
+      uint64_t total_spent = 0;
+      for (const auto &output : tagged_transaction.transaction().outputs()) {
+        total_spent += output.value().value();
+      }
+      if (to_spend != total_spent) {
+        return false;
+      }
+    }
+
+    // Let's be strict here, a coinbase should not have any input or fee
+    return tagged_transaction.transaction().inputs_size() == 0 &&
+           !tagged_transaction.transaction().has_fees();
+  }
+
+  messages::NCCAmount expected_block_reward(
+      const messages::TaggedBlock tagged_block) const {
+    // TODO use some sort of formula here
+    return BLOCK_REWARD;
+  }
+
  public:
   Consensus(std::shared_ptr<ledger::Ledger> ledger) : _ledger(ledger) {}
 
-  void build_block() {}
-
   bool is_valid(const messages::TaggedTransaction &tagged_transaction) const {
-    // Warning: this method only work for normal transactions and not coinbases
-    return (
-        check_id(tagged_transaction) && check_signatures(tagged_transaction) &&
-        check_inputs(tagged_transaction) && check_outputs(tagged_transaction));
+    if (tagged_transaction.is_coinbase()) {
+      return check_id(tagged_transaction) && check_coinbase(tagged_transaction);
+    } else {
+      return check_id(tagged_transaction) &&
+             check_signatures(tagged_transaction) &&
+             check_inputs(tagged_transaction) &&
+             check_double_inputs(tagged_transaction) &&
+             check_outputs(tagged_transaction);
+    }
+  }
+
+  bool is_valid(const messages::TaggedBlock &tagged_block) const {
+    // TODO
+    // Ideally another block0 should be invalid
+    // Maybe a simple way to do that is making the real block0 invalid...
+    // Which is simple: a rule could state that a block has only one coinbase
+    return false;
   }
 
   /**
