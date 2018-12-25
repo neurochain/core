@@ -158,8 +158,8 @@ TEST_F(LedgerMongodb, transactions) {
 
   ASSERT_EQ(2, ledger->total_nb_transactions());
   ASSERT_EQ(0, block0.transactions().size());
-  ASSERT_EQ(0, block0.coinbases().size());
-  const auto transaction0 = block0.transactions(0);
+  ASSERT_EQ(2, block0.coinbases().size());
+  const auto transaction0 = block0.coinbases(0);
 
   messages::Transaction transaction0bis;
   ASSERT_TRUE(ledger->get_transaction(transaction0.id(), &transaction0bis));
@@ -174,6 +174,7 @@ TEST_F(LedgerMongodb, transactions) {
   // Add a transaction to the transaction pool
   messages::TaggedTransaction tagged_transaction;
   tagged_transaction.mutable_transaction()->CopyFrom(transaction0);
+  tagged_transaction.set_is_coinbase(true);
   ledger->add_transaction(tagged_transaction);
   messages::Block block;
   ledger->get_transaction_pool(&block);
