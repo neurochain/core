@@ -1,7 +1,7 @@
 stages:
+  - doxygen
   - build
   - prod_image
-  - doxygen
 
 variables:
   DOCKER_PROD_IMAGE: $CI_REGISTRY_IMAGE
@@ -123,13 +123,12 @@ pages:
     - apk add doxygen
     - apk add ttf-freefont graphviz
   script:
-    - cd build && doxygen ../doc/Doxyfile
+    - mkdir build && cd build && doxygen ../doc/Doxyfile
     - mv html ../public
-    - mv ../coverage.html ../public
-  dependencies:
-    - build_job:ubuntu_18_04
+    - mv ../doc/img ../public 
+
   only:
-    - feature/ledger
+    - feaeture/109/documentation
   artifacts:
     paths:
       - public

@@ -237,10 +237,10 @@ class Ledger {
         }
       }
       if (has_unspent_output) {
-          auto &unspent_transaction = unspent_transactions.emplace_back();
-          unspent_transaction.mutable_transaction_id()->CopyFrom(
-              transaction.id());
-          unspent_transaction.mutable_value()->set_value(amount);
+        auto &unspent_transaction = unspent_transactions.emplace_back();
+        unspent_transaction.mutable_transaction_id()->CopyFrom(
+            transaction.id());
+        unspent_transaction.mutable_value()->set_value(amount);
       }
     }
     return unspent_transactions;
@@ -294,7 +294,7 @@ class Ledger {
         auto &input = inputs.emplace_back();
         input.mutable_id()->CopyFrom(transaction_id);
         input.set_output_id(output.output_id());
-        input.set_key_id(0);
+        input.set_signature_id(0);
       }
     }
     return inputs;

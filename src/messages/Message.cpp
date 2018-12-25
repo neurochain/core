@@ -1,5 +1,4 @@
 #include "messages/Message.hpp"
-#include <boost/stacktrace.hpp>
 #include "common/logger.hpp"
 #include "messages/Hasher.hpp"
 

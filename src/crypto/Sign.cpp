@@ -17,7 +17,7 @@ bool sign(const std::vector<const crypto::Ecc *> keys,
   messages::to_buffer(*transaction, &transaction_serialized);
 
   for (const auto &input : *transaction->mutable_inputs()) {
-    const auto key = keys[input.key_id()];
+    const auto key = keys[input.signature_id()];
     const auto sig = key->private_key().sign(transaction_serialized);
     auto signature = transaction->add_signatures();
 

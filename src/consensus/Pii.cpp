@@ -15,7 +15,8 @@ bool Pii::add_block(const messages::Block &block) {
     const auto inputs = transaction.inputs();
 
     for (const auto &input : inputs) {
-      const auto &key_pub = transaction.key_pubs(input.key_id());
+      const auto &key_pub =
+          transaction.signatures(input.signature_id()).key_pub();
       messages::Transaction prev_transaction;
       if (!_ledger->get_transaction(input.id(), &prev_transaction)) {
         LOG_ERROR << "Could not find previous transaction " << input.id();

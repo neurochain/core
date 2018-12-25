@@ -15,7 +15,6 @@ void coinbase(const crypto::EccPub &key_pub, const messages::NCCAmount &ncc,
   Buffer key_pub_raw;
   key_pub.save(&key_pub_raw);
   messages::Address address(key_pub_raw);
-
   auto output = transaction->add_outputs();
   output->mutable_address()->CopyFrom(address);
   output->mutable_value()->CopyFrom(ncc);
@@ -163,7 +162,7 @@ bool blockgen_from_block(messages::Block *block,
     neuro::messages::Input *input = new_trans->add_inputs();
     input->mutable_id()->CopyFrom(sender.id());
     input->set_output_id(num_output);
-    input->set_key_id(0);
+    input->set_signature_id(i);
 
     // Output to recevied
     // Output to sender with min 1 ncc

@@ -112,7 +112,7 @@ class Consensus {
       const messages::TaggedTransaction &tagged_transaction) const {
     std::unordered_set<messages::Input> inputs;
     messages::Input clean_input;
-    clean_input.set_key_id(0);
+    clean_input.set_signature_id(0);
     for (const auto &input : tagged_transaction.transaction().inputs()) {
       // We only want to compare the id and the output_id
       clean_input.mutable_id()->CopyFrom(input.id());
