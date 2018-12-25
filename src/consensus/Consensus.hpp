@@ -13,6 +13,7 @@ class Consensus;
 }
 
 const messages::NCCAmount BLOCK_REWARD{100};
+const size_t MAX_BLOCK_SIZE{128000};
 
 class Consensus {
  private:
@@ -157,6 +158,93 @@ class Consensus {
     return BLOCK_REWARD;
   }
 
+  bool check_block_id(messages::Block *block) const {
+    LOG_INFO << *block << std::endl;
+    auto block_id = block->header().id();
+    LOG_INFO << "orig block id " << block_id << std::endl;
+    messages::set_block_hash(block);
+    LOG_INFO << *block << std::endl;
+
+    bool result = block->header().id() == block_id;
+    if (!result) {
+      // Try rehashing...
+      auto new_block_id = block->header().id();
+      messages::set_block_hash(block);
+      assert(new_block_id == block->header().id());
+
+      // Restore the original block_id
+      block->mutable_header()->mutable_id()->CopyFrom(block_id);
+    }
+
+    return result;
+  }
+
+  bool check_block_transactions(const messages::Block &block) const {
+    if (block.coinbases_size() != 1) {
+      return false;
+    }
+
+    for (const auto transaction : block.coinbases()) {
+      messages::TaggedTransaction tagged_transaction;
+      tagged_transaction.set_is_coinbase(true);
+      tagged_transaction.mutable_block_id()->CopyFrom(block.header().id());
+      tagged_transaction.mutable_transaction()->CopyFrom(transaction);
+      if (!is_valid(tagged_transaction)) {
+        return false;
+      }
+    }
+
+    for (const auto transaction : block.transactions()) {
+      messages::TaggedTransaction tagged_transaction;
+      tagged_transaction.set_is_coinbase(false);
+      tagged_transaction.mutable_block_id()->CopyFrom(block.header().id());
+      tagged_transaction.mutable_transaction()->CopyFrom(transaction);
+      if (!is_valid(tagged_transaction)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  bool check_block_size(const messages::Block &block) const {
+    Buffer buffer;
+    messages::to_buffer(block, &buffer);
+    return buffer.size() < MAX_BLOCK_SIZE;
+  }
+
+  bool check_transactions_order(const messages::Block &block) const {
+    std::vector<std::string> transaction_ids;
+    for (const auto &transaction : block.transactions()) {
+      transaction_ids.push_back(messages::to_json(transaction.id()));
+      LOG_INFO << "transaction " << transaction.id() << std::endl;
+    }
+
+    std::vector<std::string> orig_transaction_ids{transaction_ids};
+    std::sort(transaction_ids.begin(), transaction_ids.end());
+
+    for (const auto &transaction : transaction_ids) {
+      LOG_INFO << "sorted transaction " << transaction << std::endl;
+    }
+
+    return orig_transaction_ids == transaction_ids;
+  }
+
+  bool check_block_height(const messages::Block &block) const {
+    messages::Block previous;
+    if (!_ledger->get_block(block.header().previous_block_hash(), &previous,
+                            false)) {
+      return false;
+    }
+
+    return block.header().height() == previous.header().height() + 1;
+  }
+
+  bool check_block_author(const messages::Block &block) const {
+    // TODO
+    return true;
+  }
+
  public:
   Consensus(std::shared_ptr<ledger::Ledger> ledger) : _ledger(ledger) {}
 
@@ -172,12 +260,11 @@ class Consensus {
     }
   }
 
-  bool is_valid(const messages::TaggedBlock &tagged_block) const {
-    // TODO
-    // Ideally another block0 should be invalid
-    // Maybe a simple way to do that is making the real block0 invalid...
-    // Which is simple: a rule could state that a block has only one coinbase
-    return false;
+  bool is_valid(messages::Block *block) const {
+    // This method should be only be called after the block has been inserted
+    return check_block_transactions(*block) && check_block_size(*block) &&
+           check_block_id(block) && check_transactions_order(*block) &&
+           check_block_author(*block) && check_block_height(*block);
   }
 
   /**

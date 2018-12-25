@@ -27,7 +27,7 @@ class Consensus : public testing::Test {
         consensus(consensus::Consensus(ledger)) {}
 
  public:
-  void test_is_valid() {
+  void test_is_valid_transaction() {
     // Create 3 blocks with 5 transactions each
     simulator.run(3, 5);
     const auto tip = ledger->get_main_branch_tip();
@@ -59,11 +59,34 @@ class Consensus : public testing::Test {
       }
     }
   }
+
+  void test_is_valid_block() {
+    // Create 3 blocks with 5 transactions each
+    simulator.run(3, 5);
+    messages::TaggedBlock tagged_block;
+    for (int i = 0; i <= 3; i++) {
+      ASSERT_TRUE(ledger->get_block(i, &tagged_block));
+      auto block = tagged_block.mutable_block();
+      ASSERT_TRUE(consensus.check_transactions_order(*block));
+      ASSERT_TRUE(consensus.check_block_id(block));
+      ASSERT_TRUE(consensus.check_block_size(*block));
+      if (i == 0) {
+        ASSERT_FALSE(consensus.is_valid(block));
+      } else {
+        ASSERT_TRUE(consensus.check_block_transactions(*block));
+        ASSERT_TRUE(consensus.check_block_author(*block));
+        ASSERT_TRUE(consensus.check_block_height(*block));
+        ASSERT_TRUE(consensus.is_valid(block));
+      }
+    }
+  }
 };
 
-TEST_F(Consensus, is_valid) { test_is_valid(); }
+TEST_F(Consensus, is_valid_transaction) { test_is_valid_transaction(); }
 
 // TODO separate tests for each transaction check
+
+TEST_F(Consensus, is_valid_block) { test_is_valid_block(); }
 
 }  // namespace tests
 }  // namespace consensus

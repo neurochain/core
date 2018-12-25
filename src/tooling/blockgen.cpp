@@ -42,6 +42,7 @@ messages::TaggedBlock gen_block0(std::vector<crypto::Ecc> keys,
   tagged_block.mutable_branch_path()->add_branch_ids(0);
   tagged_block.mutable_branch_path()->add_block_numbers(0);
   messages::set_block_hash(tagged_block.mutable_block());
+  LOG_INFO << "BLOCK0 " << tagged_block.block() << std::endl;
   return tagged_block;
 }
 

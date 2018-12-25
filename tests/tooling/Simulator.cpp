@@ -98,6 +98,9 @@ TEST_F(Simulator, run) {
   for (int i = 1; i <= 10; i++) {
     messages::Block block;
     ASSERT_TRUE(ledger->get_block(i, &block));
+    auto block_id = block.header().id();
+    messages::set_block_hash(&block);
+    ASSERT_EQ(block.header().id(), block_id);
 
     ASSERT_EQ(block.transactions_size(), 7);
     ASSERT_EQ(block.coinbases_size(), 1);
