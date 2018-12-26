@@ -159,11 +159,8 @@ class Consensus {
   }
 
   bool check_block_id(messages::Block *block) const {
-    LOG_INFO << *block << std::endl;
     auto block_id = block->header().id();
-    LOG_INFO << "orig block id " << block_id << std::endl;
     messages::set_block_hash(block);
-    LOG_INFO << *block << std::endl;
 
     bool result = block->header().id() == block_id;
     if (!result) {
@@ -217,15 +214,10 @@ class Consensus {
     std::vector<std::string> transaction_ids;
     for (const auto &transaction : block.transactions()) {
       transaction_ids.push_back(messages::to_json(transaction.id()));
-      LOG_INFO << "transaction " << transaction.id() << std::endl;
     }
 
     std::vector<std::string> orig_transaction_ids{transaction_ids};
     std::sort(transaction_ids.begin(), transaction_ids.end());
-
-    for (const auto &transaction : transaction_ids) {
-      LOG_INFO << "sorted transaction " << transaction << std::endl;
-    }
 
     return orig_transaction_ids == transaction_ids;
   }

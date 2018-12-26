@@ -62,6 +62,7 @@ messages::Block Simulator::new_block(int nb_transactions) {
     block.add_transactions()->CopyFrom(transaction);
   }
 
+  messages::sort_transactions(&block);
   messages::set_block_hash(&block);
 
   return block;
@@ -75,11 +76,8 @@ void Simulator::run(int nb_blocks, int transactions_per_block) {
     tagged_block.mutable_branch_path()->add_block_numbers(0);
     tagged_block.mutable_block()->CopyFrom(new_block(transactions_per_block));
     auto block_id = tagged_block.block().header().id();
-    LOG_INFO << "BLOCK ID " << block_id << std::endl;
     messages::set_block_hash(tagged_block.mutable_block());
     assert(block_id == tagged_block.block().header().id());
-
-    LOG_INFO << "NEW BLOCK " << tagged_block.block() << std::endl;
     ledger->insert_block(&tagged_block);
     ledger->set_main_branch_tip();
   }

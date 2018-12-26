@@ -29,8 +29,8 @@ class Addresses {
 
    public:
     Transactions(const messages::Address &address);
-    bool add(const messages::Output &output);
-    bool add(const messages::Input &input);
+    bool add_incoming(const messages::Transaction &transaction);
+    bool add_outgoing(const messages::Transaction &transaction);
   };
 
  private:
@@ -38,7 +38,8 @@ class Addresses {
       _addresses;
 
  public:
-  bool add_block(const messages::Block &block);
+  bool add_transaction(const messages::Transaction &transaction,
+                       const messages::TaggedBlock &tagged_block);
 };
 
 class Pii {
@@ -53,10 +54,8 @@ class Pii {
       std::shared_ptr<networking::Networking> networking)
       : _ledger(ledger) {}
 
-  bool add_block(const messages::Block &block);
+  bool add_block(const messages::TaggedBlock &tagged_block);
   // change bool with state [refused, forked, detached, main] when it's merged
-
-  bool add_transaction(const messages::Transaction &transaction);
 };
 
 }  // namespace consensus

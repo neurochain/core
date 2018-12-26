@@ -50,6 +50,7 @@ bool operator!=(const Packet &a, const Packet &b);
 bool operator==(const messages::Peer &a, const messages::Peer &b);
 bool operator!=(const messages::Peer &a, const messages::Peer &b);
 
+void sort_transactions(Block *block);
 void set_transaction_hash(Transaction *transaction);
 void set_block_hash(Block *block);
 int32_t fill_header(messages::Header *header);

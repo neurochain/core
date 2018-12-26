@@ -3,31 +3,34 @@
 namespace neuro {
 namespace consensus {
 
-bool Pii::add_transaction(const messages::Transaction &transaction) {
-  // bool is_unspent_output(const messages::Transaction &transaction,
-  //                        const int output_id) {
-  return false;
+bool Pii::add_block(const messages::TaggedBlock &tagged_block) {
+  for (const auto &transaction : tagged_block.block().transactions()) {
+    if (!_addresses.add_transaction(transaction, tagged_block)) {
+      return false;
+    }
+  }
+  for (const auto &transaction : tagged_block.block().coinbases()) {
+    if (!_addresses.add_transaction(transaction, tagged_block)) {
+      return false;
+    }
+  }
+  return true;
 }
 
-bool Pii::add_block(const messages::Block &block) {
-  for (const auto &transaction : block.transactions()) {
-    add_transaction(transaction);
-    const auto inputs = transaction.inputs();
-
-    for (const auto &input : inputs) {
-      const auto &key_pub =
-          transaction.signatures(input.signature_id()).key_pub();
-      messages::Transaction prev_transaction;
-      if (!_ledger->get_transaction(input.id(), &prev_transaction)) {
-        LOG_ERROR << "Could not find previous transaction " << input.id();
-        return false;
-      }
-    }
-
-    // const auto outputs = transactions.outputs();
-    // for (const auto &output : outputs) {
-    // }
+bool Addresses::add_transaction(const messages::Transaction &transaction,
+                                const messages::TaggedBlock &tagged_block) {
+  for (const auto &output : transaction.outputs()) {
+    const messages::Address address{output.address()};
+    // if (_addresses.count(address) == 0) {
+    //_addresses.insert({address, address});
+    //}
+    // std::unique_ptr<Transactions> transactions = _addresses.find(address);
+    // transactions.add_incoming(transaction);
   }
+  for (const auto &input : transaction.inputs()) {
+    // TODO This is problematic I need the ledger here which is not available
+  }
+  return true;
 }
 
 }  // namespace consensus

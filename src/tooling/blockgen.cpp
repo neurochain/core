@@ -41,8 +41,8 @@ messages::TaggedBlock gen_block0(std::vector<crypto::Ecc> keys,
   tagged_block.set_branch(messages::Branch::MAIN);
   tagged_block.mutable_branch_path()->add_branch_ids(0);
   tagged_block.mutable_branch_path()->add_block_numbers(0);
+  messages::sort_transactions(tagged_block.mutable_block());
   messages::set_block_hash(tagged_block.mutable_block());
-  LOG_INFO << "BLOCK0 " << tagged_block.block() << std::endl;
   return tagged_block;
 }
 
@@ -175,6 +175,7 @@ bool blockgen_from_block(messages::Block *block,
     messages::set_transaction_hash(new_trans);
   }
 
+  messages::sort_transactions(block);
   messages::set_block_hash(block);
   return true;
 }

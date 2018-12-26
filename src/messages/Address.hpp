@@ -30,6 +30,8 @@ class Address : public _Address {
     init(key_pub);
   }
 
+  Address(const messages::_Address &address) : _Address(address) {}
+
   bool verify() const {
     if (!has_data()) {
       return false;

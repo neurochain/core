@@ -101,6 +101,23 @@ bool operator!=(const messages::Peer &a, const messages::Peer &b) {
   return !(a == b);
 }
 
+void sort_transactions(Block *block) {
+  // We use to_json to sort because the order need to be the same as in mongodb.
+  // If we sorted by the raw content of the data field it would give a different
+  // order.
+  std::sort(
+      block->mutable_transactions()->begin(),
+      block->mutable_transactions()->end(),
+      [](const Transaction &transaction0, const Transaction &transaction1) {
+        return to_json(transaction0.id()) < to_json(transaction1.id());
+      });
+  std::sort(
+      block->mutable_coinbases()->begin(), block->mutable_coinbases()->end(),
+      [](const Transaction &transaction0, const Transaction &transaction1) {
+        return to_json(transaction0.id()) < to_json(transaction1.id());
+      });
+}
+
 void set_transaction_hash(Transaction *transaction) {
   // Fill the id which is a required field. This makes the transaction
   // serializable.
