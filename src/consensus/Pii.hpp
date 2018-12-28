@@ -12,12 +12,16 @@
 namespace neuro {
 namespace consensus {
 using Score = Double;
+using Enthalpy = Double;
 
 class Addresses {
  public:
   using TransactionID = messages::Transaction *;
 
-  struct Counters {};
+  struct Counters {
+    size_t nb_transactions;
+    Enthalpy enthalpy;
+  };
 
   class Transactions {
    private:
@@ -29,8 +33,8 @@ class Addresses {
 
    public:
     Transactions(const messages::Address &address);
-    bool add_incoming(const messages::Transaction &transaction);
-    bool add_outgoing(const messages::Transaction &transaction);
+    bool add_incoming(const messages::Address &address, Enthalpy enthalpy);
+    bool add_outgoing(const messages::Address &address, Enthalpy enthalpy);
   };
 
  private:
@@ -38,8 +42,9 @@ class Addresses {
       _addresses;
 
  public:
-  bool add_transaction(const messages::Transaction &transaction,
-                       const messages::TaggedBlock &tagged_block);
+  bool add_incoming_transaction(const messages::Address &sender,
+                                const messages::Address &recipient,
+                                Enthalpy enthalpy);
 };
 
 class Pii {
