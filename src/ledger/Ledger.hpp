@@ -130,6 +130,14 @@ class Ledger {
 
   virtual void empty_database() = 0;
 
+  virtual bool get_pii(const messages::Address &address,
+                       const messages::Hash &assembly_id,
+                       Double *score) const = 0;
+
+  virtual bool save_pii(const messages::Address &address,
+                        const messages::Hash &assembly_id,
+                        const Double &score) = 0;
+
   // helpers
 
   messages::Transactions list_transactions(

@@ -3,34 +3,154 @@
 namespace neuro {
 namespace consensus {
 
-bool Pii::add_block(const messages::TaggedBlock &tagged_block) {
-  for (const auto &transaction : tagged_block.block().transactions()) {
-    if (!_addresses.add_transaction(transaction, tagged_block)) {
+Double Pii::enthalpy_n() const { return 1; }
+
+Double Pii::enthalpy_c() const { return 1; }
+
+Double Pii::enthalpy_lambda() const { return 0.5; }
+
+bool Pii::get_enthalpy(const messages::Transaction &transaction,
+                       const messages::TaggedBlock &tagged_block,
+                       const messages::Hash &previous_assembly_id,
+                       const messages::Address &sender,
+                       const messages::Address &recipient,
+                       Double *enthalpy) const {
+  Double amount = 0;
+  for (const auto &input : transaction.inputs()) {
+    messages::TaggedTransaction tagged_transaction;
+    messages::Block block;
+    bool include_transaction_pool = false;
+    if (!_ledger->get_transaction(input.id(), &tagged_transaction, tagged_block,
+                                  include_transaction_pool) ||
+        !_ledger->get_block(tagged_transaction.block_id(), &block)) {
       return false;
     }
+    for (const auto &output : tagged_transaction.transaction().outputs()) {
+      if (output.address() == sender) {
+        amount +=
+            output.value().value() *
+            (tagged_block.block().header().height() - block.header().height());
+      }
+    }
   }
-  for (const auto &transaction : tagged_block.block().coinbases()) {
-    if (!_addresses.add_transaction(transaction, tagged_block)) {
+
+  // TODO reference to a pdf in english that contains the formula
+  Double previous_pii;
+  _ledger->get_pii(sender, previous_assembly_id, &previous_pii);
+  *enthalpy = std::pow(
+      std::log(fmax(1, previous_pii * enthalpy_lambda() * enthalpy_c() *
+                           amount / ASSEMBLY_BLOCKS_COUNT)),
+      enthalpy_n());
+  return true;
+}
+
+bool Pii::get_recipients(const messages::Transaction &transaction,
+                         std::vector<messages::Address> *recipients) const {
+  for (const auto &output : transaction.outputs()) {
+    recipients->push_back(output.address());
+  }
+  return true;
+}
+
+bool Pii::get_senders(const messages::Transaction &transaction,
+                      const messages::TaggedBlock &tagged_block,
+                      std::vector<messages::Address> *senders) const {
+  for (const auto &input : transaction.inputs()) {
+    messages::TaggedTransaction tagged_transaction;
+    bool include_transaction_pool = false;
+    if (!_ledger->get_transaction(input.id(), &tagged_transaction, tagged_block,
+                                  include_transaction_pool)) {
+      return false;
+    }
+    if (tagged_transaction.transaction().outputs_size() <= input.output_id()) {
+      return false;
+    }
+    senders->push_back(
+        tagged_transaction.transaction().outputs(input.output_id()).address());
+  }
+  return true;
+}
+
+bool Pii::add_transaction(const messages::Transaction &transaction,
+                          const messages::TaggedBlock &tagged_block,
+                          const messages::Hash &previous_assembly_id) {
+  std::vector<messages::Address> senders;
+  std::vector<messages::Address> recipients;
+  if (!get_senders(transaction, tagged_block, &senders) ||
+      !get_recipients(transaction, &recipients)) {
+    return false;
+  }
+  for (const auto &sender : senders) {
+    for (const auto &recipient : recipients) {
+      Double enthalpy;
+      if (!get_enthalpy(transaction, tagged_block, previous_assembly_id, sender,
+                        recipient, &enthalpy)) {
+        return false;
+      }
+      _addresses.add_enthalpy(sender, recipient, enthalpy);
+    }
+  }
+  return true;
+}
+
+bool Pii::add_block(const messages::TaggedBlock &tagged_block,
+                    const messages::Hash &previous_assembly_id) {
+  // Warning: this method only works for blocks that are already inserted in the
+  // ledger Notice that for now coinbases don't give any entropy
+  for (const auto &transaction : tagged_block.block().transactions()) {
+    if (!add_transaction(transaction, tagged_block, previous_assembly_id)) {
       return false;
     }
   }
   return true;
 }
 
-bool Addresses::add_transaction(const messages::Transaction &transaction,
-                                const messages::TaggedBlock &tagged_block) {
-  for (const auto &output : transaction.outputs()) {
-    const messages::Address address{output.address()};
-    // if (_addresses.count(address) == 0) {
-    //_addresses.insert({address, address});
-    //}
-    // std::unique_ptr<Transactions> transactions = _addresses.find(address);
-    // transactions.add_incoming(transaction);
+void Addresses::add_enthalpy(const messages::Address &sender,
+                             const messages::Address &recipient,
+                             Double enthalpy) {
+  if (_addresses.count(recipient) == 0) {
+    _addresses.emplace(recipient);
   }
-  for (const auto &input : transaction.inputs()) {
-    // TODO This is problematic I need the ledger here which is not available
+  Transactions *recipient_transactions = &_addresses.at(recipient);
+  if (recipient_transactions->_in.count(sender) == 0) {
+    recipient_transactions->_in.emplace(sender);
   }
-  return true;
+  Counters *incoming = &recipient_transactions->_in.at(sender);
+  incoming->nb_transactions += 1;
+  incoming->enthalpy += enthalpy;
+
+  if (_addresses.count(sender) == 0) {
+    _addresses.emplace(sender);
+  }
+  Transactions *sender_transactions = &_addresses.at(sender);
+  if (sender_transactions->_in.count(recipient) == 0) {
+    sender_transactions->_in.emplace(recipient);
+  }
+  Counters *outgoing = &sender_transactions->_out.at(recipient);
+  outgoing->nb_transactions += 1;
+  outgoing->enthalpy += enthalpy;
+}
+
+Double Addresses::get_entropy(const messages::Address &address) const {
+  Double entropy = 0;
+  uint32_t total_nb_transactions = 0;
+  auto transactions = &_addresses.at(address);
+  for (const auto &[_, counters] : transactions->_in) {
+    total_nb_transactions += counters.nb_transactions;
+  }
+  for (const auto &[_, counters] : transactions->_in) {
+    Double p = counters.nb_transactions / total_nb_transactions;
+    entropy -= counters.enthalpy * p * log2(p);
+  }
+  total_nb_transactions = 0;
+  for (const auto &[_, counters] : transactions->_out) {
+    total_nb_transactions += counters.nb_transactions;
+  }
+  for (const auto &[_, counters] : transactions->_out) {
+    Double p = counters.nb_transactions / total_nb_transactions;
+    entropy -= counters.enthalpy * p * log2(p);
+  }
+  return fmax(1, entropy);
 }
 
 }  // namespace consensus

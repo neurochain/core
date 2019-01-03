@@ -6,7 +6,17 @@ import "common.proto";
 import "messages.proto";
 
 extend Input {
-  optional Timestamp ts = 100;
+  optional uint32 height = 100;
   optional _NCCAmount amount = 101;
 }
 
+message PII {
+  required _Address address = 1;
+  required Hash assembly_id = 2;
+  required double score = 3;
+}
+
+message Assembly {
+  required Hash assembly_id = 1; // This id is the hash of the last block of the assembly
+  required Hash previous_assembly_id = 2;
+}

@@ -9,6 +9,7 @@
 #include "crypto/EccPriv.hpp"
 #include "ledger/mongo.hpp"
 #include "messages.pb.h"
+#include "pii.pb.h"
 
 namespace neuro {
 namespace messages {

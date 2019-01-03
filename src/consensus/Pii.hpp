@@ -11,40 +11,31 @@
 
 namespace neuro {
 namespace consensus {
-using Score = Double;
-using Enthalpy = Double;
 
 class Addresses {
  public:
-  using TransactionID = messages::Transaction *;
-
   struct Counters {
     size_t nb_transactions;
-    Enthalpy enthalpy;
+    Double enthalpy;
+    Counters() : nb_transactions(0), enthalpy(0) {}
   };
 
   class Transactions {
-   private:
-    const messages::Address _address;
-    Score _previous;
-    Score _current;
-    std::unordered_multimap<messages::Address, Counters> _in;
-    std::unordered_multimap<messages::Address, Counters> _out;
-
    public:
+    const messages::Address address;
+    std::unordered_map<messages::Address, Counters> _in;
+    std::unordered_map<messages::Address, Counters> _out;
     Transactions(const messages::Address &address);
-    bool add_incoming(const messages::Address &address, Enthalpy enthalpy);
-    bool add_outgoing(const messages::Address &address, Enthalpy enthalpy);
   };
 
  private:
-  std::unordered_map<messages::Address, std::unique_ptr<Transactions>>
-      _addresses;
+  std::unordered_map<messages::Address, Transactions> _addresses;
 
  public:
-  bool add_incoming_transaction(const messages::Address &sender,
-                                const messages::Address &recipient,
-                                Enthalpy enthalpy);
+  void add_enthalpy(const messages::Address &sender,
+                    const messages::Address &recipient, Double enthalpy);
+
+  Double get_entropy(const messages::Address &address) const;
 };
 
 class Pii {
@@ -53,14 +44,38 @@ class Pii {
   Addresses _addresses;
   std::shared_ptr<ledger::Ledger> _ledger;
 
+  bool get_enthalpy(const messages::Transaction &transaction,
+                    const messages::TaggedBlock &tagged_block,
+                    const messages::Hash &previous_assembly_id,
+                    const messages::Address &sender,
+                    const messages::Address &recipient, Double *enthalpy) const;
+
+  bool get_recipients(const messages::Transaction &transaction,
+                      std::vector<messages::Address> *recipients) const;
+
+  bool get_senders(const messages::Transaction &transaction,
+                   const messages::TaggedBlock &tagged_block,
+                   std::vector<messages::Address> *senders) const;
+
+  bool add_transaction(const messages::Transaction &transaction,
+                       const messages::TaggedBlock &tagged_block,
+                       const messages::Hash &previous_assembly_id);
+
+  bool get_score(const messages::Address &address,
+                 const messages::Hash &assembly_id, Double *score) const;
+
+  Double enthalpy_n() const;
+  Double enthalpy_c() const;
+  Double enthalpy_lambda() const;
+
  public:
   Pii(const messages::config::Pii &config,
       std::shared_ptr<ledger::Ledger> ledger,
       std::shared_ptr<networking::Networking> networking)
       : _ledger(ledger) {}
 
-  bool add_block(const messages::TaggedBlock &tagged_block);
-  // change bool with state [refused, forked, detached, main] when it's merged
+  bool add_block(const messages::TaggedBlock &tagged_block,
+                 const messages::Hash &previous_assembly_id);
 };
 
 }  // namespace consensus

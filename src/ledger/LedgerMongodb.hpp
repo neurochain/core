@@ -5,6 +5,7 @@
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
+#include "common/types.hpp"
 #include "config.pb.h"
 #include "ledger/Ledger.hpp"
 #include "ledger/mongo.hpp"
@@ -25,6 +26,7 @@ class LedgerMongodb : public Ledger {
   mutable mongocxx::database _db;
   mutable mongocxx::collection _blocks;
   mutable mongocxx::collection _transactions;
+  mutable mongocxx::collection _pii;
 
   mutable std::mutex _ledger_mutex;
 
@@ -177,6 +179,12 @@ class LedgerMongodb : public Ledger {
 
   messages::BranchPath first_child(
       const messages::BranchPath &branch_path) const;
+
+  bool get_pii(const messages::Address &address,
+               const messages::Hash &assembly_id, Double *score) const;
+
+  bool save_pii(const messages::Address &address,
+                const messages::Hash &assembly_id, const Double &score);
 
   void empty_database();
 

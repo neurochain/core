@@ -25,11 +25,6 @@ enum class ProtocolType { PROTOBUF2, JSON, BSON };
 }  // namespace networking
 
 namespace consensus {
-// we might change double implementation later
-using Double = double;
-}  // namespace consensus
-
-namespace consensus {
 using Address = std::string;
 }  // namespace consensus
 
@@ -54,6 +49,10 @@ const int32_t ASSEMBLY_BLOCKS_COUNT = 2000;
 const int32_t MESSAGE_TTL = 60;
 const int32_t MAX_MESSAGE_SIZE = 256 * 1024;
 // using Peers = google::protobuf::RepeatedPtrField<neuro::messages::Peer>;
+
+// This is used both in the ledger and the consensus
+// we might change double implementation later
+using Double = double;
 
 namespace crypto {
 namespace keys {

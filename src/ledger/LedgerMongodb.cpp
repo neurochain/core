@@ -17,7 +17,8 @@ LedgerMongodb::LedgerMongodb(const std::string &url, const std::string &db_name)
       _client(_uri),
       _db(_client[db_name]),
       _blocks(_db.collection("blocks")),
-      _transactions(_db.collection("transactions")) {}
+      _transactions(_db.collection("transactions")),
+      _pii(_db.collection("pii")) {}
 
 LedgerMongodb::LedgerMongodb(const messages::config::Database &config)
     : LedgerMongodb(config.url(), config.db_name()) {
@@ -104,6 +105,9 @@ bool LedgerMongodb::init_block0(const messages::config::Database &config) {
   _transactions.create_index(bss::document{}
                              << "transaction.outputs.address.data" << 1
                              << bss::finalize);
+  _pii.create_index(bss::document{} << "address" << 1 << "assembly_id" << 1
+                                    << bss::finalize);
+
   return true;
 }
 
@@ -895,6 +899,38 @@ bool LedgerMongodb::update_main_branch(messages::TaggedBlock *main_branch_tip) {
 
   return true;
 }
+
+bool LedgerMongodb::get_pii(const messages::Address &address,
+                            const messages::Hash &assembly_id,
+                            Double *pii) const {
+  auto query = bss::document{} << "address" << to_bson(address) << "assembly_id"
+                               << to_bson(assembly_id) << bss::finalize;
+
+  const auto result = _blocks.find_one(std::move(query), remove_OID());
+  if (!result) {
+    return false;
+  }
+
+  *pii = result->view()["score"].get_double();
+  return true;
+}
+
+bool LedgerMongodb::save_pii(const messages::Address &address,
+                             const messages::Hash &assembly_id,
+                             const Double &score) {
+  messages::PII pii;
+  pii.mutable_address()->CopyFrom(address);
+  pii.mutable_assembly_id()->CopyFrom(assembly_id);
+  pii.set_score(score);
+  auto bson_pii = messages::to_bson(pii);
+  auto result = _blocks.insert_one(std::move(bson_pii));
+  if (!result) {
+    return false;
+  }
+  return true;
+}
+
+void empty_database();
 
 void LedgerMongodb::empty_database() { _db.drop(); }
 
