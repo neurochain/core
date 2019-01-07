@@ -21,8 +21,8 @@ TEST(Conf, load) {
 
   auto conf = messages::config::Config{config_path};
 
-  boost::filesystem::path pub_path(conf.key_pub_path());
-  boost::filesystem::path priv_path(conf.key_priv_path());
+  boost::filesystem::path pub_path(conf.networking().key_pub_path());
+  boost::filesystem::path priv_path(conf.networking().key_priv_path());
   ASSERT_EQ(pub_path.filename(), "key2.pub");
   ASSERT_EQ(priv_path.filename(), "key2.priv");
 

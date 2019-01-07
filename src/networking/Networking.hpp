@@ -17,23 +17,21 @@ namespace networking {
 
 class Networking {
  private:
-  std::vector<std::shared_ptr<TransportLayer>> _transport_layers;
+  std::unique_ptr<TransportLayer> _transport_layer;
 
   std::random_device _rd;
-  std::shared_ptr<messages::Queue> _queue;
+  messages::Queue* _queue;
   std::uniform_int_distribution<int> _dist;
 
  public:
-  Networking(std::shared_ptr<messages::Queue> _queue);
+  Networking(messages::Queue * _queue);
   ~Networking();
 
-  std::shared_ptr<Tcp> create_tcp(std::shared_ptr<messages::Queue> queue,
+  std::shared_ptr<Tcp> create_tcp(messages::Queue * queue,
                                   std::shared_ptr<crypto::Ecc> keys,
                                   const Port port);
-  bool send(std::shared_ptr<messages::Message> message,
-            ProtocolType type = networking::ProtocolType::PROTOBUF2);
-  bool send_unicast(std::shared_ptr<messages::Message> message,
-                    ProtocolType type = networking::ProtocolType::PROTOBUF2);
+  TransportLayer::SendResult send(std::shared_ptr<messages::Message> message);
+  bool send_unicast(std::shared_ptr<messages::Message> message);
   messages::Peers connected_peers() const;
   std::size_t peer_count() const;
   void join();

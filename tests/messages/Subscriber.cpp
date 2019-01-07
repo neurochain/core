@@ -28,15 +28,15 @@ std::shared_ptr<messages::Message> getWorldMessage() {
 }  // namespace
 
 TEST(Subscriber, handler) {
-  auto queue = std::make_shared<messages::Queue>();
-  messages::Subscriber tested_sub(queue);
+  auto queue = messages::Queue{};
+  messages::Subscriber tested_sub(&queue);
   auto message = getWorldMessage();
   tested_sub.handler(message);
 }
 
 TEST(Subscriber, is_new_body) {
-  auto queue = std::make_shared<messages::Queue>();
-  messages::Subscriber tested_sub(queue);
+  auto queue = messages::Queue{};
+  messages::Subscriber tested_sub(&queue);
   auto message = getWorldMessage();
   for (const auto &body : message->bodies()) {
     ASSERT_TRUE(tested_sub.is_new_body(std::time_t(nullptr), body));

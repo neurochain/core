@@ -5,6 +5,7 @@
 
 #include "common/logger.hpp"
 #include "common/types.hpp"
+#include "messages/Peers.hpp"
 
 namespace neuro {
 namespace messages {
@@ -16,25 +17,26 @@ class Ecc;
 }  // namespace crypto
 
 namespace networking {
-class Networking;
 
 class TransportLayer {
  public:
   using ID = int16_t;
+  enum class SendResult {
+    FAILED, ONE_OR_MORE_SENT, ALL_GOOD
+  };
 
  protected:
-  std::shared_ptr<messages::Queue> _queue;
-  std::shared_ptr<crypto::Ecc> _keys;
   ID _id;
+  messages::Queue* _queue;
+  messages::Peers *_peers;
+  std::shared_ptr<crypto::Ecc> _keys;
 
  public:
-  TransportLayer(const ID id, std::shared_ptr<messages::Queue> queue,
-                 std::shared_ptr<crypto::Ecc> keys);
+  TransportLayer(const ID id, messages::Queue* queue,
+		 messages::Peers *peers, std::shared_ptr<crypto::Ecc> keys);
 
-  virtual bool send(const std::shared_ptr<messages::Message> message,
-                    ProtocolType type) = 0;
-  virtual bool send_unicast(const std::shared_ptr<messages::Message> message,
-                            ProtocolType type) = 0;
+  virtual SendResult send(const std::shared_ptr<messages::Message> message) = 0;
+  virtual bool send_unicast(const std::shared_ptr<messages::Message> message) = 0;
   virtual std::size_t peer_count() const = 0;
 
   ID id() const;

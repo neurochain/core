@@ -11,19 +11,16 @@ namespace networking {
 namespace tcp {
 
 Connection::Connection(const ID id,
-                       const networking::TransportLayer::ID transport_layer_id,
-                       const std::shared_ptr<messages::Queue> &queue,
+                       messages::Queue *queue,
                        const std::shared_ptr<tcp::socket> &socket,
                        const std::shared_ptr<messages::Peer> &remote_peer)
-    : ::neuro::networking::Connection::Connection(id, transport_layer_id,
-                                                  queue),
+  : ::neuro::networking::Connection::Connection(id, queue),
       _header(sizeof(HeaderPattern), 0),
       _buffer(128, 0),
       _socket(socket),
       _remote_peer(remote_peer) {
   assert(_socket != nullptr);
   assert(_remote_peer != nullptr);
-  _listen_port = _remote_peer->port();
 }
 
 std::shared_ptr<const tcp::socket> Connection::socket() const {
@@ -52,7 +49,7 @@ void Connection::read_body(std::size_t body_size) {
   _buffer.resize(body_size);
   boost::asio::async_read(
       *_socket, boost::asio::buffer(_buffer.data(), _buffer.size()),
-      [_this = ptr()](const boost::system::error_code &error,
+      [_this = ptr(), this](const boost::system::error_code &error,
                       std::size_t bytes_read) {
         if (error) {
           LOG_ERROR << _this << " " << __LINE__ << " Killing connection "
@@ -67,7 +64,7 @@ void Connection::read_body(std::size_t body_size) {
 
         auto header = message->mutable_header();
 
-        header->mutable_peer()->CopyFrom(*_this->_remote_peer);
+        header->set_connection_id(_id);
         auto signature = header->mutable_signature();
         signature->set_type(messages::Hash::SHA256);
         signature->set_data(header_pattern->signature,
@@ -129,9 +126,10 @@ bool Connection::send(std::shared_ptr<Buffer> &message) {
       [_this = ptr(), message](const boost::system::error_code &error,
                                std::size_t bytes_transferred) {
         if (error) {
-          LOG_ERROR << "Could not send message";
-          LOG_ERROR << _this << " " << __LINE__ << " Killing connection "
-                    << error;
+          LOG_ERROR << "Could not send message"
+	  << _this << " " << __LINE__ << " Killing connection "
+	  << error;
+
           _this->close();
           return false;
         }
@@ -146,10 +144,11 @@ void Connection::terminate() {
   close();
   auto message = std::make_shared<messages::Message>();
   auto header = message->mutable_header();
-  auto peer = header->mutable_peer();
-  peer->CopyFrom(*_remote_peer);
+  header->set_connection_id(_id);
   auto body = message->add_bodies();
   body->mutable_connection_closed();
+  _remote_peer->set_status(messages::Peer::DISCONNECTED);
+  
   _queue->publish(message);
 }
 
@@ -162,8 +161,6 @@ const Port Connection::remote_port() const {
   const auto endpoint = _socket->remote_endpoint();
   return static_cast<Port>(endpoint.port());
 }
-
-const Port Connection::listen_port() const { return _listen_port; }
 
 std::shared_ptr<const messages::Peer> Connection::remote_peer() const {
   return _remote_peer;

@@ -17,9 +17,9 @@ namespace neuro {
 using namespace std::chrono_literals;
 
 Bot::Bot(const messages::config::Config &config)
-    : _queue(std::make_shared<messages::Queue>()),
-      _networking(std::make_shared<networking::Networking>(_queue)),
-      _subscriber(_queue),
+    : _queue(),
+      _networking(&_queue),
+      _subscriber(&_queue),
       _io_context(std::make_shared<boost::asio::io_context>()),
       _config(config),
       _update_timer(*_io_context) {
@@ -30,17 +30,19 @@ Bot::Bot(const messages::config::Config &config)
 
 Bot::Bot(const std::string &config_path)
     : Bot::Bot(messages::config::Config(config_path)) {}
-bool Bot::load_keys(const messages::config::Config &config) {
+
+  bool Bot::load_keys(const messages::config::Networking &config) {
   bool keys_save{false};
   bool keys_create{false};
+
   std::string keypath_priv;
   std::string keypath_pub;
 
   if (config.has_key_priv_path() && config.has_key_pub_path()) {
     keypath_priv = config.key_priv_path();
-    keypath_pub = config.key_pub_path();
+    keypath_pub =  config.key_pub_path();
   }
-
+  
   if (keypath_pub.empty() && keypath_priv.empty()) {
     keys_create = true;
   } else if (!boost::filesystem::exists(keypath_pub) ||
@@ -100,7 +102,7 @@ void Bot::handler_get_block(const messages::Header &header,
   }
 
   _request_ids.insert(id);
-  _networking->send_unicast(message, networking::ProtocolType::PROTOBUF2);
+  _networking.send_unicast(message);
 }
 
 void Bot::handler_block(const messages::Header &header,
@@ -121,7 +123,7 @@ void Bot::handler_block(const messages::Header &header,
   auto header_reply = message->mutable_header();
   auto id = messages::fill_header(header_reply);
   message->add_bodies()->mutable_block()->CopyFrom(body.block());
-  _networking->send(message, networking::ProtocolType::PROTOBUF2);
+  _networking.send(message);
 
   _request_ids.insert(id);
 }
@@ -156,7 +158,7 @@ bool Bot::update_ledger() {
   auto get_block = message->add_bodies()->mutable_get_block();
   get_block->mutable_hash()->CopyFrom(id);
   get_block->set_count(1);
-  _networking->send(message, networking::ProtocolType::PROTOBUF2);
+  _networking.send(message);
 
   _request_ids.insert(idheader);
   return false;
@@ -221,9 +223,10 @@ void Bot::subscribe() {
 bool Bot::load_networking(messages::config::Config *config) {
   auto networking_conf = config->mutable_networking();
   _selection_method = config->selection_method();
-  _keep_status = config->keep_status();
   _max_connections = networking_conf->max_connections();
 
+  load_keys(*networking_conf);
+  
   if (networking_conf->has_peers_update_time()) {
     _update_time = networking_conf->peers_update_time();
   }
@@ -235,13 +238,8 @@ bool Bot::load_networking(messages::config::Config *config) {
 
   auto tcpconfig = networking_conf->mutable_tcp();
 
-  for (auto &peer : *tcpconfig->mutable_peers()) {
-    peer.set_status(messages::Peer::REACHABLE);
-    LOG_DEBUG << this << " Peer: " << peer;
-  }
-
   auto port = tcpconfig->port();
-  _tcp = _networking->create_tcp(_queue, _keys, port);
+  _tcp = _networking.create_tcp(&_queue, _keys, port);
   if (tcpconfig->peers().empty()) {
     LOG_WARNING << this << " There is no information about peers";
   }
@@ -256,7 +254,6 @@ bool Bot::init() {
 
   _tcp_config = _config.mutable_networking()->mutable_tcp();
 
-  load_keys(_config);
   if (!_config.has_database()) {
     LOG_ERROR << "Missing db configuration";
     return false;
@@ -305,26 +302,11 @@ void Bot::regular_update() {
 }
 
 void Bot::update_peerlist() {
-  LOG_DEBUG << this << " FROM UPDATE PEERLIST";
-  for (auto &peer : *_tcp_config->mutable_peers()) {
-    LOG_TRACE << this << " PEER STATUS " << peer.endpoint() << ":"
-              << peer.port() << peer.Status_Name(peer.status()) << std::endl;
-  }
   auto msg = std::make_shared<messages::Message>();
   messages::fill_header(msg->mutable_header());
   msg->add_bodies()->mutable_get_peers();
 
-  _networking->send(msg, networking::ProtocolType::PROTOBUF2);
-}
-
-const std::vector<messages::Peer> Bot::connected_peers() const {
-  std::vector<messages::Peer> res;
-  for (const auto &peer : _tcp_config->peers()) {
-    if (peer.status() == messages::Peer::CONNECTED) {
-      res.push_back(peer);
-    }
-  }
-  return res;
+  _networking.send(msg);
 }
 
 void Bot::update_connection_graph() {
@@ -367,10 +349,9 @@ void Bot::handler_get_peers(const messages::Header &header,
     tmp_peer->mutable_key_pub()->CopyFrom(peer_conn.key_pub());
     tmp_peer->set_endpoint(peer_conn.endpoint());
     tmp_peer->set_port(peer_conn.port());
-    tmp_peer->set_status(messages::Peer::REACHABLE);
   }
 
-  _networking->send_unicast(msg, networking::ProtocolType::PROTOBUF2);
+  _networking.send_unicast(msg);
 }
 
 void Bot::handler_peers(const messages::Header &header,
@@ -382,19 +363,11 @@ void Bot::handler_peers(const messages::Header &header,
 void Bot::handler_connection(const messages::Header &header,
                              const messages::Body &body) {
   LOG_DEBUG << this << " It entered in handler_connection in bot " << body;
-  if (!header.has_peer()) {
-    // TODO: ask to close the connection
-    LOG_ERROR << this
-              << " The header does not have a peer. Ignoring connection";
-    return;
-  }
 
-  auto peer = header.peer();
   auto connection_ready = body.connection_ready();
 
   if (connection_ready.from_remote()) {
     // Nothing to do; just wait for the hello message from remote peer
-    LOG_DEBUG << this << " Got a connection from " << peer;
     // add the peer from the header to my list of peers
     //_tcp_config->add_peers()->CopyFrom(peer);
     // add_peer(peer);
@@ -402,18 +375,10 @@ void Bot::handler_connection(const messages::Header &header,
     return;
   }
 
-  auto peers = _tcp_config->mutable_peers();
-  auto it = std::find(peers->begin(), peers->end(), peer);
-  if (it != peers->end()) {
-    it->set_connection_id(peer.connection_id());
-  }
-
-  LOG_DEBUG << this << " Got a connection to " << peer;
   // send hello msg
   auto message = std::make_shared<messages::Message>();
   messages::fill_header(message->mutable_header());
 
-  message->mutable_header()->mutable_peer()->CopyFrom(peer);
   auto hello = message->add_bodies()->mutable_hello();
   hello->set_listen_port(_tcp->listening_port());
 
@@ -422,32 +387,19 @@ void Bot::handler_connection(const messages::Header &header,
   const auto tmp = _keys->public_key().save();
   key_pub->set_raw_data(tmp.data(), tmp.size());
 
-  _networking->send_unicast(message, networking::ProtocolType::PROTOBUF2);
+  _networking.send_unicast(message);
   LOG_DEBUG << this << __LINE__
-            << " _networking->peer_count(): " << _networking->peer_count();
+            << " _networking.peer_count(): " << _networking.peer_count();
 }
 
 void Bot::handler_deconnection(const messages::Header &header,
                                const messages::Body &body) {
-  auto remote_peer = header.peer();
-  LOG_DEBUG << this << " Got a connection_closed message "
-            << remote_peer.status();
-  // find the peer in our list of peers and update its status
-  // std::lock_guard<std::mutex> lock_connections(_mutex_connections);
-  auto peers = _tcp_config->mutable_peers();
-  _tcp->terminate(remote_peer.connection_id());
-
-  auto it = std::find(peers->begin(), peers->end(), remote_peer);
-  if (it == peers->end()) {
-    LOG_WARNING << "Unknown peer disconnected";
-    this->keep_max_connections();
-
-    return;
+  if(header.has_connection_id()) {
+    _tcp->terminate(header.has_connection_id());
   }
 
   LOG_DEBUG << this << " " << __LINE__
-            << " _networking->peer_count(): " << _networking->peer_count();
-  it->set_status(messages::Peer::REACHABLE);
+            << " _networking.peer_count(): " << _networking.peer_count();
 
   this->keep_max_connections();
 }
@@ -455,56 +407,13 @@ void Bot::handler_deconnection(const messages::Header &header,
 void Bot::handler_world(const messages::Header &header,
                         const messages::Body &body) {
   auto world = body.world();
-  LOG_DEBUG << this << " Got a WORLD message";
-  if (!header.has_peer()) {
-    LOG_ERROR << this << " Got an empty peer. Going out of the world handler";
-    return;
-  }
-  auto peers = _tcp_config->mutable_peers();
   add_peers(world.peers());
-
-  auto peer_header = header.peer();
-
-  // we should have it in our unconnected list because we told him "hello"
-  auto peer_it = std::find(peers->begin(), peers->end(), peer_header);
-
-  messages::Peer *remote_peer;
-  if (peer_it == peers->end()) {
-    auto remote_peer_opt = add_peer(peer_header);
-    if (remote_peer_opt) {
-      remote_peer = *remote_peer_opt;
-    } else {
-      LOG_ERROR << this << " Received a message from ourself ";
-      return;
-    }
-    // remote_peer = _tcp_config->add_peers();
-    // remote_peer->CopyFrom(peer_header);
-    LOG_ERROR
-        << "We should already have the peer if you receive a message from him";
-  } else {
-    remote_peer = &(*peer_it);
-  }
-
-  LOG_DEBUG << this << " The WORLD message is from " << *remote_peer;
 
   if (!world.accepted()) {
     LOG_DEBUG << this << " Not accepted, disconnecting ...";
-    remote_peer->set_status(messages::Peer::FULL);
-    // Should I call terminate from the connection
-    _tcp->terminate(remote_peer->connection_id());
-  } else {
-    bool accepted = (_networking->peer_count() < _max_connections);
-
-    if (!accepted) {
-      LOG_DEBUG << this
-                << " Closing a connection because remote is already full";
-      remote_peer->set_status(messages::Peer::REACHABLE);
-      _tcp->terminate(remote_peer->connection_id());
-    } else {
-      remote_peer->set_status(messages::Peer::CONNECTED);
-    }
+    _tcp->terminate(header.connection_id());
   }
-
+  
   this->keep_max_connections();
 }
 
@@ -523,47 +432,17 @@ void Bot::handler_hello(const messages::Header &header,
   // == Create world message for replying ==
   auto message = std::make_shared<messages::Message>();
   auto world = message->add_bodies()->mutable_world();
-  bool accepted = _networking->peer_count() < (2 * _max_connections);
+  bool accepted = _networking.peer_count() < (2 * _max_connections);
 
-  auto peers = _tcp_config->mutable_peers();
-  auto peer_header = header.peer();
-  peer_header.mutable_key_pub()->CopyFrom(hello.key_pub());
 
-  // find the peer in my list of peer matching connection_id
-  auto peer_it = std::find_if(
-      peers->begin(), peers->end(), [&peer_header](const auto &it) {
-        if (it.has_connection_id()) {
-          return it.connection_id() == peer_header.connection_id();
-        }
-        return false;
-      });
-  bool found = peer_it != peers->end();
-  LOG_DEBUG << this << " in handler_hello found: " << found;
-  messages::Peer *remote_peer = nullptr;
-
-  for (const auto &peer_conn : *peers) {
-    if (!peer_conn.has_key_pub()) {
-      continue;
-    }
-    auto tmp_peer = world->add_peers();
-    tmp_peer->mutable_key_pub()->CopyFrom(peer_conn.key_pub());
-    tmp_peer->set_endpoint(peer_conn.endpoint());
-    tmp_peer->set_port(peer_conn.port());
-    tmp_peer->set_status(messages::Peer::REACHABLE);
-  }
-
-  if (!found) {
-    LOG_WARNING << this << " Peer was not created in handler_connection";
-    auto remote_peer_opt = add_peer(peer_header);
-    if (!remote_peer_opt) {
-      LOG_ERROR << this << " Received a message from ourself ";
-    } else {
-      remote_peer = *remote_peer_opt;
-    }
+  Peer *remote_peer;
+  if(hello.has_listen_port() && hello.has_endpoint()) {
+    remote_peer = _peers.insert(hello.key_pub());
   } else {
-    remote_peer = &(*peer_it);
+    remote_peer = _peers.insert(hello.key_pub(), endpoint, port);
+    
   }
-
+  auto remote_peer = _peers.insert(hello.key_pub(), endpoint, port);
   remote_peer->set_status(messages::Peer::CONNECTED);
 
   // update port by listen_port
@@ -594,7 +473,7 @@ void Bot::handler_hello(const messages::Header &header,
   key_pub->set_type(messages::KeyType::ECP256K1);
   key_pub->set_hex_data(key_pub_buffer.str());
 
-  if (!_networking->send_unicast(message,
+  if (!_networking.send_unicast(message,
                                  networking::ProtocolType::PROTOBUF2)) {
     LOG_ERROR << this << " Failed to send world message.";
   }
@@ -623,7 +502,7 @@ Bot::Status Bot::status() const {
   // std::lock_guard<std::mutex> lock_connections(_mutex_connections);
   auto peers_size = _tcp_config->peers().size();
   auto status =
-      Bot::Status(_networking->peer_count(), _max_connections, peers_size);
+      Bot::Status(_networking.peer_count(), _max_connections, peers_size);
   return status;
 }
 
@@ -684,60 +563,31 @@ bool Bot::next_to_connect(messages::Peer **peer) {
   return false;
 }
 
+
+  
 void Bot::keep_max_connections() {
-  LOG_INFO << this << " Entered keep_max_connections";
-  auto peers = connected_peers();
-  for (const auto &peer : peers) {
-    LOG_INFO << this << " Connected peer " << peer;
-  }
-  LOG_INFO << this << " Number of peers with status connected: " << peers.size()
-           << std::endl
-           << *this;
-
-  std::size_t peers_size = 0;
-  peers_size = _tcp_config->peers().size();
-
-  if (peers_size == 0) {
-    LOG_INFO << this << " No peers";
+  if (const auto peer_count = peers->used_peers(); peer_count >= _max_connections) {
+    LOG_INFO << this << " Already connected to " << peer_count
+	     << " / " << _max_connections;
     return;
   }
-  LOG_DEBUG << this << " peer count " << peers_size;
-
-  auto current_peer_count = _networking->peer_count();
-  if (current_peer_count >= _max_connections) {
-    LOG_INFO << this << " Already connected to " << current_peer_count << "/"
-             << _max_connections;
+  
+  auto peer = peers->find_random(messages::Peer::DISCONNECTED) ;
+  if (!peer) {
+    LOG_WARNING << "Could not find peer to connect to";
     return;
   }
 
-  if (current_peer_count == peers_size) {
-    LOG_WARNING << this << " No available peer to check";
-    return;
-  }
-
-  if (current_peer_count < _max_connections) {
-    messages::Peer peer;
-    if (this->next_to_connect(&peer)) {
-      LOG_DEBUG << this << " Asking to connect to " << *peer;
-      peer->set_status(messages::Peer::CONNECTING);
-      auto tmp_peer = std::make_shared<messages::Peer>();
-      tmp_peer->CopyFrom(*peer);
-      _tcp->connect(tmp_peer);
-    } else {
-      LOG_DEBUG << this << " No more REACHABLE peers - asking for peers";
-      // this->update_peerlist();
-    }
-  } else {
-    LOG_INFO << this << " Already connected to " << current_peer_count << "/"
-             << _max_connections;
-  }
+  LOG_DEBUG << this << " Asking to connect to " << *peer;
+  peers->set_status(peer, messages::Peer::CONNECTING);
+  _tcp->connect(*peer);
 }
 
-std::shared_ptr<networking::Networking> Bot::networking() {
+networking::Networking* Bot::networking() {
   return _networking;
 }
 
-std::shared_ptr<messages::Queue> Bot::queue() { return _queue; }
+messages::Queue * Bot::queue() { return &_queue; }
 
 void Bot::subscribe(const messages::Type type,
                     messages::Subscriber::Callback callback) {
@@ -753,10 +603,10 @@ void Bot::publish_transaction(const messages::Transaction &transaction) const {
   messages::fill_header(message->mutable_header());
   auto body = message->add_bodies();
   body->mutable_transaction()->CopyFrom(transaction);
-  _networking->send(message, networking::ProtocolType::PROTOBUF2);
+  _networking.send(message);
 }
 
-void Bot::join() { _networking->join(); }
+void Bot::join() { _networking.join(); }
 
 Bot::~Bot() {
   _update_timer.cancel();

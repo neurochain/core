@@ -28,19 +28,18 @@ class Connection : public networking::Connection,
   std::shared_ptr<messages::Peer> _remote_peer;
   Port _listen_port;
 
-  void terminate();
   void read_header();
   void read_body(std::size_t body_size);
   std::shared_ptr<Connection> ptr() { return shared_from_this(); }
 
  public:
   Connection(const ID id,
-             const networking::TransportLayer::ID transport_layer_id,
-             const std::shared_ptr<messages::Queue>& queue,
+             messages::Queue  * queue,
              const std::shared_ptr<tcp::socket>& socket,
              const std::shared_ptr<messages::Peer>& remote_peer);
 
   std::shared_ptr<const tcp::socket> socket() const;
+  void terminate();
 
   void read();
 
@@ -48,7 +47,6 @@ class Connection : public networking::Connection,
   std::shared_ptr<const messages::Peer> remote_peer() const;
   const IP remote_ip() const;
   const Port remote_port() const;
-  const Port listen_port() const;
   void close();
   ~Connection();
 };

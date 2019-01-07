@@ -13,14 +13,12 @@ class Connection {
 
  protected:
   ID _id;
-  TransportLayer::ID _transport_layer_id;
-  std::shared_ptr<messages::Queue> _queue;
+  messages::Queue * _queue;
 
  public:
-  Connection(const ID id, const TransportLayer::ID transport_layer_id,
-             const std::shared_ptr<messages::Queue>& queue);
+  Connection(const ID id, 
+             messages::Queue * queue);
   ID id() const;
-  TransportLayer::ID transport_layer_id() const;
 };
 
 }  // namespace networking

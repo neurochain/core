@@ -10,6 +10,7 @@ import "common.proto";
 message Hello {
   required KeyPub key_pub = 1;
   optional int32 listen_port = 2;
+  optional string endpoint = 3;
 }
 
 message World {
@@ -24,10 +25,9 @@ message World {
 message GetPeers {
 }
 
-message Peers {
+message _Peers {
   repeated Peer peers = 1;
 }
-
 
 // Ask for block hash
 // ------------------
@@ -127,6 +127,7 @@ message TaggedTransaction {
 }
 
 message ConnectionClosed {
+  required Peer peer = 1;
 }
 
 message ConnectionReady {
@@ -140,7 +141,7 @@ message Body {
     Hello hello = 1;
     World world = 2;
     GetPeers get_peers = 3;
-    Peers peers = 4;
+    _Peers peers = 4;
     GetRoots get_roots = 5;
     Roots roots = 6;
     Transaction transaction = 7;
@@ -156,9 +157,11 @@ message Header {
   required int32 version = 1;
   required Timestamp ts = 2;
   optional Hash signature = 3;
-  optional int32 id = 11;
+
+  // req/rep pattern 
+  optional int32 connection_id = 10;
+  optional int32 id = 11; 
   optional int32 request_id = 12;
-  optional Peer peer = 13;
 }
 
 message _Message {

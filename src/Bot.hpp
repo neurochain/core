@@ -21,21 +21,10 @@ class BotTest;
 
 class Bot {
  public:
-  struct Status {
-    std::size_t connected_peers;
-    std::size_t max_connections;
-    std::size_t peers_in_pool;
-
-    Status(const std::size_t connected, const std::size_t max,
-           const std::size_t peers)
-        : connected_peers(connected),
-          max_connections(max),
-          peers_in_pool(peers) {}
-  };
 
  private:
-  std::shared_ptr<messages::Queue> _queue;
-  std::shared_ptr<networking::Networking> _networking;
+  messages::Queue _queue;
+  networking::Networking _networking;
   messages::Subscriber _subscriber;
   std::shared_ptr<boost::asio::io_context> _io_context;
   messages::config::Config _config;
@@ -44,6 +33,7 @@ class Bot {
   std::shared_ptr<ledger::Ledger> _ledger;
   std::shared_ptr<rest::Rest> _rest;
   std::shared_ptr<consensus::Consensus> _consensus;
+  std::shared_ptr<messages::Peers> _peers;
   std::unordered_set<int32_t> _request_ids;
   std::thread _io_context_thread;
 
@@ -52,7 +42,6 @@ class Bot {
   std::size_t _max_connections;
 
   std::shared_ptr<networking::Tcp> _tcp;
-  messages::Peer::Status _keep_status;
   messages::config::Config::SelectionMethod _selection_method;
 
   mutable std::mutex _mutex_connections;
@@ -84,7 +73,7 @@ class Bot {
   void handler_peers(const messages::Header &header,
                      const messages::Body &body);
   bool next_to_connect(messages::Peer **out_peer);
-  bool load_keys(const messages::config::Config &config);
+  bool load_keys(const messages::config::Networking &config);
   bool load_networking(messages::config::Config *config);
   void subscribe();
   void regular_update();
@@ -92,35 +81,36 @@ class Bot {
   void update_peerlist();
 
   std::optional<messages::Peer *> add_peer(const messages::Peer &peer) {
-    std::optional<messages::Peer *> res;
-    messages::KeyPub my_key_pub;
-    auto peers = _tcp_config->mutable_peers();
-    _keys->public_key().save(&my_key_pub);
+    // std::optional<messages::Peer *> res;
+    // messages::KeyPub my_key_pub;
+    // auto peers = _tcp_config->mutable_peers();
+    // _keys->public_key().save(&my_key_pub);
 
-    if (peer.key_pub() == my_key_pub) {
-      return res;
-    }
-
-    // auto got = std::find(peers->begin(), peers->end(), peer);
-    for (auto &p : *peers) {
-      if (p.key_pub() == peer.key_pub()) {
-        if (!p.has_connection_id()) {
-          p.set_connection_id(peer.connection_id());
-        }
-        res = &p;
-        return res;
-      }
-    }
-
-    // if (got != peers->end()) {
-    //   res = &(*got);
+    // if (peer.key_pub() == my_key_pub) {
     //   return res;
     // }
 
-    res = _tcp_config->add_peers();
-    (*res)->CopyFrom(peer);
+    // // auto got = std::find(peers->begin(), peers->end(), peer);
+    // for (auto &p : *peers) {
+    //   if (p.key_pub() == peer.key_pub()) {
+    //     if (!p.has_connection_id()) {
+    //       p.set_connection_id(peer.connection_id());
+    //     }
+    //     res = &p;
+    //     return res;
+    //   }
+    // }
 
-    return res;
+    // // if (got != peers->end()) {
+    // //   res = &(*got);
+    // //   return res;
+    // // }
+
+    // res = _tcp_config->add_peers();
+    // (*res)->CopyFrom(peer);
+
+    // return res;
+    return {}; 
   }
 
   template <typename T>
@@ -141,10 +131,9 @@ class Bot {
   virtual ~Bot();  // save_config(_config);
 
   const std::vector<messages::Peer> connected_peers() const;
-  Bot::Status status() const;
   void keep_max_connections();
   std::shared_ptr<networking::Networking> networking();
-  std::shared_ptr<messages::Queue> queue();
+  messages::Queue* queue();
   void subscribe(const messages::Type type,
                  messages::Subscriber::Callback callback);
 

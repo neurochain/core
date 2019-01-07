@@ -6,12 +6,15 @@
 #include <cassert>
 #include <cstdint>
 #include <vector>
+#include <chrono>
 
 #include "common/Buffer.hpp"
 
 #include "common.pb.h"
 
 namespace neuro {
+
+using namespace std::chrono_literals;
 
 namespace networking {
 class Peer;
@@ -40,6 +43,9 @@ using std::uint32_t;
 using std::uint64_t;
 using std::uint8_t;
 
+using Duration = std::chrono::duration<std::milli>;
+
+using Endpoint = std::string;
 using Port = uint16_t;
 using Ports = std::vector<Port>;
 const int32_t MessageVersion = 1;
