@@ -95,7 +95,9 @@ class Ledger {
                          messages::TaggedBlock *tagged_block,
                          bool include_transactions = true) const = 0;
   virtual bool insert_block(messages::TaggedBlock *tagged_block) = 0;
+  virtual bool insert_block(messages::Block *block) = 0;
   virtual bool delete_block(const messages::Hash &id) = 0;
+  virtual bool delete_block_and_children(const messages::Hash &id) = 0;
   virtual bool for_each(const Filter &filter, const messages::TaggedBlock &tip,
                         bool include_transaction_pool,
                         Functor functor) const = 0;
@@ -129,6 +131,12 @@ class Ledger {
       const messages::BranchPath &branch_path) const = 0;
 
   virtual void empty_database() = 0;
+
+  virtual bool get_unverified_blocks(
+      std::vector<messages::TaggedBlock> *tagged_blocks) const = 0;
+
+  virtual bool set_block_verified(const messages::Hash &id,
+                                  messages::BlockScore score) = 0;
 
   virtual bool get_pii(const messages::Address &address,
                        const messages::Hash &assembly_id,

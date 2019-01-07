@@ -92,6 +92,7 @@ message Block {
 enum Branch {
   MAIN = 0;
   FORK = 1;
+  UNVERIFIED = 3;
   DETACHED = 2;
 }
 
@@ -120,6 +121,7 @@ message TaggedBlock {
   required Branch branch = 2;
   optional BranchPath branch_path = 3;
   optional double score = 4;
+  optional Hash previous_assembly_id = 5;
 }
 
 message TaggedTransaction {

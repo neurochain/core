@@ -137,6 +137,8 @@ class LedgerMongodb : public Ledger {
 
   bool delete_block(const messages::Hash &id);
 
+  bool delete_block_and_children(const messages::Hash &id);
+
   bool get_transaction(const messages::Hash &id,
                        messages::Transaction *transaction) const;
 
@@ -168,10 +170,10 @@ class LedgerMongodb : public Ledger {
 
   std::size_t get_transaction_pool(messages::Block *block);
 
-  bool get_unscored_forks(std::vector<messages::TaggedBlock> *tagged_blocks,
-                          bool include_transactions = true) const;
+  bool get_unverified_blocks(
+      std::vector<messages::TaggedBlock> *tagged_blocks) const;
 
-  bool set_block_score(const messages::Hash &id, messages::BlockScore score);
+  bool set_block_verified(const messages::Hash &id, messages::BlockScore score);
 
   bool update_main_branch(messages::TaggedBlock *main_branch_tip);
 

@@ -108,25 +108,17 @@ bool Pii::add_block(const messages::TaggedBlock &tagged_block,
 void Addresses::add_enthalpy(const messages::Address &sender,
                              const messages::Address &recipient,
                              Double enthalpy) {
-  if (_addresses.count(recipient) == 0) {
-    _addresses.emplace(recipient);
-  }
-  Transactions *recipient_transactions = &_addresses.at(recipient);
-  if (recipient_transactions->_in.count(sender) == 0) {
-    recipient_transactions->_in.emplace(sender);
-  }
-  Counters *incoming = &recipient_transactions->_in.at(sender);
+  Transactions *recipient_transactions =
+      &_addresses.try_emplace(recipient).first->second;
+  Counters *incoming =
+      &recipient_transactions->_in.try_emplace(sender).first->second;
   incoming->nb_transactions += 1;
   incoming->enthalpy += enthalpy;
 
-  if (_addresses.count(sender) == 0) {
-    _addresses.emplace(sender);
-  }
-  Transactions *sender_transactions = &_addresses.at(sender);
-  if (sender_transactions->_in.count(recipient) == 0) {
-    sender_transactions->_in.emplace(recipient);
-  }
-  Counters *outgoing = &sender_transactions->_out.at(recipient);
+  Transactions *sender_transactions =
+      &_addresses.try_emplace(sender).first->second;
+  Counters *outgoing =
+      &sender_transactions->_out.try_emplace(recipient).first->second;
   outgoing->nb_transactions += 1;
   outgoing->enthalpy += enthalpy;
 }

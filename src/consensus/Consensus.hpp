@@ -229,11 +229,40 @@ class Consensus {
       return false;
     }
 
-    return block.header().height() == previous.header().height() + 1;
+    return block.header().height() > previous.header().height();
   }
 
   bool check_block_author(const messages::Block &block) const {
     // TODO
+    return true;
+  }
+
+  Double get_block_score(const messages::TaggedBlock &tagged_block) {
+    messages::TaggedBlock previous;
+    if (!_ledger->get_block(tagged_block.block().header().previous_block_hash(),
+                            &previous) ||
+        !previous.has_score()) {
+      return 0;
+    }
+    return previous.score() + 1;
+  }
+
+  bool verify_blocks() {
+    std::vector<messages::TaggedBlock> tagged_blocks;
+    _ledger->get_unverified_blocks(&tagged_blocks);
+    for (auto &tagged_block : tagged_blocks) {
+      if (is_valid(tagged_block.mutable_block())) {
+        _ledger->set_block_verified(tagged_block.block().header().id(),
+                                    get_block_score(tagged_block));
+      } else {
+        if (!_ledger->delete_block_and_children(
+                tagged_block.block().header().id())) {
+          return false;
+        }
+        // The list of unverified blocks should have changed
+        return verify_blocks();
+      }
+    }
     return true;
   }
 
@@ -271,7 +300,13 @@ class Consensus {
    * \brief Add block and compute Pii
    * \param [in] block block to add
    */
-  bool add_block(const messages::Block &block) { return false; }
+  bool add_block(messages::Block *block) {
+    _ledger->insert_block(block);
+    if (!verify_blocks()) {
+      return false;
+    }
+    return true;
+  }
 
   // /**
   //  * \brief Get the next addr to build block

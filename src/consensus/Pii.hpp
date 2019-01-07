@@ -20,12 +20,9 @@ class Addresses {
     Counters() : nb_transactions(0), enthalpy(0) {}
   };
 
-  class Transactions {
-   public:
-    const messages::Address address;
+  struct Transactions {
     std::unordered_map<messages::Address, Counters> _in;
     std::unordered_map<messages::Address, Counters> _out;
-    Transactions(const messages::Address &address);
   };
 
  private:
