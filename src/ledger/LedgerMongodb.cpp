@@ -10,7 +10,7 @@ const std::string MAIN_BRANCH_NAME =
 const std::string FORK_BRANCH_NAME =
     messages::Branch_Name(messages::Branch::FORK);
 const std::string UNVERIFIED_BRANCH_NAME =
-    messages::Branch_Name(messages::Branch::FORK);
+    messages::Branch_Name(messages::Branch::UNVERIFIED);
 
 mongocxx::instance LedgerMongodb::_instance{};
 
