@@ -19,4 +19,5 @@ message PII {
 message Assembly {
   required Hash assembly_id = 1; // This id is the hash of the last block of the assembly
   required Hash previous_assembly_id = 2;
+  required bool finished_computation = 3;
 }

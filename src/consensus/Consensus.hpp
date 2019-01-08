@@ -2,6 +2,7 @@
 #define NEURO_SRC_CONSENSUS_CONSENSUS_HPP
 
 #include <unordered_set>
+#include "common/types.hpp"
 #include "ledger/Ledger.hpp"
 #include "messages/Message.hpp"
 #include "networking/Networking.hpp"
@@ -266,6 +267,15 @@ class Consensus {
     return true;
   }
 
+  bool is_new_assembly(const messages::TaggedBlock &tagged_block,
+                       const messages::TaggedBlock &previous) const {
+    int32_t block_assembly =
+        tagged_block.block().header().height() / ASSEMBLY_BLOCKS_COUNT;
+    int32_t previous_assembly =
+        tagged_block.block().header().height() / ASSEMBLY_BLOCKS_COUNT;
+    return block_assembly != previous_assembly;
+  }
+
  public:
   Consensus(std::shared_ptr<ledger::Ledger> ledger) : _ledger(ledger) {}
 
@@ -301,9 +311,26 @@ class Consensus {
    * \param [in] block block to add
    */
   bool add_block(messages::Block *block) {
-    _ledger->insert_block(block);
+    if (!_ledger->insert_block(block)) {
+      return false;
+    }
     if (!verify_blocks()) {
       return false;
+    }
+    messages::TaggedBlock tagged_block, previous;
+    if (!_ledger->get_block(block->header().id(), &tagged_block, false) ||
+        !_ledger->get_block(block->header().previous_block_hash(), &previous,
+                            false) ||
+        tagged_block.branch() == messages::Branch::DETACHED) {
+      // The block is detached
+      return true;
+    }
+    assert(tagged_block.branch() == messages::Branch::MAIN ||
+           tagged_block.branch() == messages::Branch::FORK);
+    assert(previous.branch() == messages::Branch::MAIN ||
+           previous.branch() == messages::Branch::FORK);
+    if (is_new_assembly(tagged_block, previous)) {
+      _ledger->add_new_assembly(previous);
     }
     return true;
   }

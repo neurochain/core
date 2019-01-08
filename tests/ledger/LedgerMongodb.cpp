@@ -290,16 +290,17 @@ TEST_F(LedgerMongodb, branch_path) {
   ASSERT_EQ(tagged_block.branch_path(), branch_path);
 }
 
-TEST_F(LedgerMongodb, set_block_score) {
-  messages::Block block0;
+TEST_F(LedgerMongodb, set_block_verified) {
   messages::TaggedBlock tagged_block;
+  messages::Block block0;
+  ASSERT_TRUE(ledger->get_block(0, &block0));
   ASSERT_TRUE(ledger->get_block(ledger->height(), &block0));
-  ASSERT_TRUE(ledger->set_block_score(block0.header().id(), 17));
+  ASSERT_TRUE(ledger->Ledger::set_block_verified(block0.header().id(), 17));
   ASSERT_TRUE(ledger->get_block(block0.header().id(), &tagged_block));
   ASSERT_EQ(tagged_block.score(), 17);
 }
 
-TEST_F(LedgerMongodb, get_unscored_forks) {
+TEST_F(LedgerMongodb, get_unverified_blocks) {
   messages::Block block0, block1, block2, fork1, fork2;
   ASSERT_TRUE(ledger->get_block(0, &block0));
   tooling::blockgen::blockgen_from_block(&block1, block0, 1);
@@ -315,7 +316,7 @@ TEST_F(LedgerMongodb, get_unscored_forks) {
   ASSERT_TRUE(ledger->get_block(block2.header().id(), &tagged_block));
   ASSERT_EQ(tagged_block.branch(), messages::Branch::DETACHED);
   std::vector<messages::TaggedBlock> unscored_forks;
-  ASSERT_TRUE(ledger->get_unscored_forks(&unscored_forks));
+  ASSERT_TRUE(ledger->get_unverified_blocks(&unscored_forks));
   ASSERT_EQ(unscored_forks.size(), 0);
 
   // Insert the block1 which should attach the block2
@@ -326,17 +327,17 @@ TEST_F(LedgerMongodb, get_unscored_forks) {
   ASSERT_TRUE(ledger->get_block(block2.header().id(), &tagged_block));
   ASSERT_EQ(tagged_block.branch(), messages::Branch::FORK);
   unscored_forks.clear();
-  ASSERT_TRUE(ledger->get_unscored_forks(&unscored_forks));
+  ASSERT_TRUE(ledger->get_unverified_blocks(&unscored_forks));
   ASSERT_EQ(unscored_forks.size(), 2);
 
-  ASSERT_TRUE(ledger->set_block_score(block1.header().id(), 1.17));
+  ASSERT_TRUE(ledger->set_block_verified(block1.header().id(), 1.17));
   unscored_forks.clear();
-  ASSERT_TRUE(ledger->get_unscored_forks(&unscored_forks));
+  ASSERT_TRUE(ledger->get_unverified_blocks(&unscored_forks));
   ASSERT_EQ(unscored_forks.size(), 1);
 
-  ASSERT_TRUE(ledger->set_block_score(block2.header().id(), 2.17));
+  ASSERT_TRUE(ledger->set_block_verified(block2.header().id(), 2.17));
   unscored_forks.clear();
-  ASSERT_TRUE(ledger->get_unscored_forks(&unscored_forks));
+  ASSERT_TRUE(ledger->get_unverified_blocks(&unscored_forks));
   ASSERT_EQ(unscored_forks.size(), 0);
 }
 
@@ -359,11 +360,11 @@ TEST_F(LedgerMongodb, update_main_branch) {
   ASSERT_TRUE(ledger->insert_block(&fork1));
   ASSERT_TRUE(ledger->insert_block(&fork2));
 
-  ASSERT_TRUE(ledger->set_block_score(block0.header().id(), 1));
-  ASSERT_TRUE(ledger->set_block_score(block1.header().id(), 2));
-  ASSERT_TRUE(ledger->set_block_score(block2.header().id(), 3));
-  ASSERT_TRUE(ledger->set_block_score(fork1.header().id(), 2));
-  ASSERT_TRUE(ledger->set_block_score(fork2.header().id(), 2.5));
+  ASSERT_TRUE(ledger->set_block_verified(block0.header().id(), 1));
+  ASSERT_TRUE(ledger->set_block_verified(block1.header().id(), 2));
+  ASSERT_TRUE(ledger->set_block_verified(block2.header().id(), 3));
+  ASSERT_TRUE(ledger->set_block_verified(fork1.header().id(), 2));
+  ASSERT_TRUE(ledger->set_block_verified(fork2.header().id(), 2.5));
 
   messages::TaggedBlock tip, tagged_block;
   ASSERT_TRUE(ledger->update_main_branch(&tip));
@@ -380,7 +381,7 @@ TEST_F(LedgerMongodb, update_main_branch) {
 
   // Switch MAIN branch
   ASSERT_TRUE(ledger->insert_block(&fork3));
-  ASSERT_TRUE(ledger->set_block_score(fork3.header().id(), 3.5));
+  ASSERT_TRUE(ledger->set_block_verified(fork3.header().id(), 3.5));
   tip.Clear();
   ASSERT_TRUE(ledger->update_main_branch(&tip));
   ASSERT_EQ(tip.block().header().id(), fork3.header().id());

@@ -27,6 +27,7 @@ class LedgerMongodb : public Ledger {
   mutable mongocxx::collection _blocks;
   mutable mongocxx::collection _transactions;
   mutable mongocxx::collection _pii;
+  mutable mongocxx::collection _assembly;
 
   mutable std::mutex _ledger_mutex;
 
@@ -189,6 +190,11 @@ class LedgerMongodb : public Ledger {
                 const messages::Hash &assembly_id, const Double &score);
 
   void empty_database();
+
+  bool get_assembly(const messages::Hash &assembly_id,
+                    messages::Assembly *assembly) const;
+
+  bool add_new_assembly(const messages::TaggedBlock &tagged_block);
 
   friend class neuro::ledger::tests::LedgerMongodb;
 };

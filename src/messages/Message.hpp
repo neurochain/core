@@ -6,10 +6,10 @@
 #include <fstream>
 #include <string>
 #include "common/types.hpp"
+#include "consensus.pb.h"
 #include "crypto/EccPriv.hpp"
 #include "ledger/mongo.hpp"
 #include "messages.pb.h"
-#include "pii.pb.h"
 
 namespace neuro {
 namespace messages {

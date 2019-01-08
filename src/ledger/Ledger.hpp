@@ -146,6 +146,11 @@ class Ledger {
                         const messages::Hash &assembly_id,
                         const Double &score) = 0;
 
+  virtual bool get_assembly(const messages::Hash &assembly_id,
+                            messages::Assembly *assembly) const = 0;
+
+  virtual bool add_new_assembly(const messages::TaggedBlock &tagged_block) = 0;
+
   // helpers
 
   messages::Transactions list_transactions(

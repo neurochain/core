@@ -105,7 +105,9 @@ void Bot::handler_get_block(const messages::Header &header,
 void Bot::handler_block(const messages::Header &header,
                         const messages::Body &body) {
   LOG_TRACE;
-  _consensus->add_block(body.block());
+  messages::Block block;
+  block.CopyFrom(body.block());
+  _consensus->add_block(&block);
   update_ledger();
 
   if (header.has_request_id()) {
@@ -139,7 +141,7 @@ bool Bot::update_ledger() {
   }
 
   // TODO #consensus change by height by time function
-  if ((std::time(nullptr) - last_header.timestamp().data()) < BLOCK_PERIODE) {
+  if ((std::time(nullptr) - last_header.timestamp().data()) < BLOCK_PERIOD) {
     return true;
   }
 

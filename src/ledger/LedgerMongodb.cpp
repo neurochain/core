@@ -944,9 +944,42 @@ bool LedgerMongodb::save_pii(const messages::Address &address,
   return true;
 }
 
-void empty_database();
-
 void LedgerMongodb::empty_database() { _db.drop(); }
+
+bool LedgerMongodb::get_assembly(const messages::Hash &assembly_id,
+                                 messages::Assembly *assembly) const {
+  auto query = bss::document{} << "assembly_id"
+                               << messages::to_bson(assembly_id)
+                               << bss::finalize;
+  const auto result = _blocks.find_one(std::move(query), remove_OID());
+  if (!result) {
+    return false;
+  }
+  messages::from_bson(result->view(), assembly);
+  return true;
+}
+
+bool LedgerMongodb::add_new_assembly(
+    const messages::TaggedBlock &tagged_block) {
+  if (tagged_block.branch() != messages::Branch::MAIN &&
+      tagged_block.branch() != messages::Branch::FORK) {
+    return false;
+  }
+  messages::Assembly assembly;
+  if (!get_assembly(tagged_block.block().header().id(), &assembly)) {
+    // The assembly already exist
+    return false;
+  }
+  assembly.mutable_assembly_id()->CopyFrom(tagged_block.block().header().id());
+  assembly.mutable_previous_assembly_id()->CopyFrom(
+      tagged_block.previous_assembly_id());
+  auto bson_assembly = messages::to_bson(assembly);
+  auto result = _blocks.insert_one(std::move(bson_assembly));
+  if (!result) {
+    return false;
+  }
+  return true;
+}
 
 }  // namespace ledger
 }  // namespace neuro

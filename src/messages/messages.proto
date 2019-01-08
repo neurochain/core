@@ -174,15 +174,3 @@ message UnspentTransaction {
   required Hash transaction_id = 1;
   required _NCCAmount value = 2;
 }
-
-message Score {
-  required Hash address = 1;
-  optional float score_float = 2;
-}
-
-message Election {
-  required int32 id = 1;
-  required Hash block_id_begin = 2;
-  required Hash block_id_end = 3;
-  repeated Score scores = 4;
-}
