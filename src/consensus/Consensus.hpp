@@ -19,6 +19,8 @@ const size_t MAX_BLOCK_SIZE{128000};
 class Consensus {
  private:
   std::shared_ptr<ledger::Ledger> _ledger;
+  std::unordered_set<messages::Hash> _current_computations;
+  std::mutex _current_computations_mutex;
 
   bool check_inputs(
       const messages::TaggedTransaction &tagged_transaction) const {
@@ -277,7 +279,8 @@ class Consensus {
   }
 
  public:
-  Consensus(std::shared_ptr<ledger::Ledger> ledger) : _ledger(ledger) {}
+  Consensus(std::shared_ptr<ledger::Ledger> ledger)
+      : _ledger(ledger), _current_computations() {}
 
   bool is_valid(const messages::TaggedTransaction &tagged_transaction) const {
     if (tagged_transaction.is_coinbase()) {
@@ -330,7 +333,15 @@ class Consensus {
     assert(previous.branch() == messages::Branch::MAIN ||
            previous.branch() == messages::Branch::FORK);
     if (is_new_assembly(tagged_block, previous)) {
-      _ledger->add_new_assembly(previous);
+      _ledger->add_assembly(previous);
+      _ledger->set_previous_assembly_id(block->header().id(),
+                                        previous.block().header().id());
+
+    } else if (previous.has_previous_assembly_id()) {
+      _ledger->set_previous_assembly_id(block->header().id(),
+                                        previous.previous_assembly_id());
+    } else {
+      assert(previous.block().header().height() < ASSEMBLY_BLOCKS_COUNT);
     }
     return true;
   }
@@ -349,6 +360,24 @@ class Consensus {
   // bool check_owner(const messages::BlockHeader &block_header) const{}
 
   void add_wallet_key_pair(const std::shared_ptr<crypto::Ecc> wallet) {}
+
+  void start_computations() {
+    std::vector<messages::Assembly> assemblies;
+    _ledger->get_assemblies_to_compute(&assemblies);
+    for (const auto &assembly : assemblies) {
+      if (_current_computations.count(assembly.assembly_id()) == 0) {
+        if (add_current_computation(assembly.assembly_id())) {
+          std::thread([&]() { compute_assembly_pii(assembly); });
+        }
+      }
+    }
+  }
+
+  bool add_current_computation(const messages::Hash &assembly_id) {
+    return true;
+  }
+
+  bool compute_assembly_pii(const messages::Assembly &assembly) { return true; }
 
   friend class neuro::consensus::tests::Consensus;
 };

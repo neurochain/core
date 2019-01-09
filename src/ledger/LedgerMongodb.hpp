@@ -27,7 +27,7 @@ class LedgerMongodb : public Ledger {
   mutable mongocxx::collection _blocks;
   mutable mongocxx::collection _transactions;
   mutable mongocxx::collection _pii;
-  mutable mongocxx::collection _assembly;
+  mutable mongocxx::collection _assemblies;
 
   mutable std::mutex _ledger_mutex;
 
@@ -194,7 +194,21 @@ class LedgerMongodb : public Ledger {
   bool get_assembly(const messages::Hash &assembly_id,
                     messages::Assembly *assembly) const;
 
-  bool add_new_assembly(const messages::TaggedBlock &tagged_block);
+  bool add_assembly(const messages::TaggedBlock &tagged_block);
+
+  bool get_pii(const messages::Address &address,
+               const messages::Hash &assembly_id, messages::PII *pii) const;
+
+  bool set_pii(const messages::PII &pii);
+
+  bool set_previous_assembly_id(const messages::Hash &block_id,
+                                const messages::Hash &previous_assembly_id);
+
+  bool get_next_assembly(const messages::Hash &assembly_id,
+                         messages::Assembly *assembly) const;
+
+  bool get_assemblies_to_compute(
+      std::vector<messages::Assembly> *assemblies) const;
 
   friend class neuro::ledger::tests::LedgerMongodb;
 };

@@ -149,7 +149,23 @@ class Ledger {
   virtual bool get_assembly(const messages::Hash &assembly_id,
                             messages::Assembly *assembly) const = 0;
 
-  virtual bool add_new_assembly(const messages::TaggedBlock &tagged_block) = 0;
+  virtual bool add_assembly(const messages::TaggedBlock &tagged_block) = 0;
+
+  virtual bool get_pii(const messages::Address &address,
+                       const messages::Hash &assembly_id,
+                       messages::PII *pii) const = 0;
+
+  virtual bool set_pii(const messages::PII &pii) = 0;
+
+  virtual bool set_previous_assembly_id(
+      const messages::Hash &block_id,
+      const messages::Hash &previous_assembly_id) = 0;
+
+  virtual bool get_next_assembly(const messages::Hash &assembly_id,
+                                 messages::Assembly *assembly) const = 0;
+
+  virtual bool get_assemblies_to_compute(
+      std::vector<messages::Assembly> *assemblies) const = 0;
 
   // helpers
 

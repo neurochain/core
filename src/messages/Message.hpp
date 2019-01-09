@@ -86,6 +86,13 @@ struct hash<neuro::messages::Input> {
   }
 };
 
+template <>
+struct hash<neuro::messages::Hash> {
+  size_t operator()(const neuro::messages::Hash &hash_) const {
+    return hash<string>()(neuro::messages::to_json(hash_));
+  }
+};
+
 }  // namespace std
 
 #endif /* NEURO_SRC_MESSAGES_MESSAGE_HPP */
