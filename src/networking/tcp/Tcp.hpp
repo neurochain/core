@@ -21,12 +21,12 @@ class Tcp;
 }  // namespace test
 
 class Tcp : public TransportLayer {
-public:
+ public:
   using ID = tcp::Connection::ID;
-  
-private:
+
+ private:
   using ConnectionById =
-    std::unordered_map<ID, std::unique_ptr<tcp::Connection>>;
+      std::unordered_map<ID, std::shared_ptr<tcp::Connection>>;
 
   ID _current_id{0};
   std::atomic<bool> _stopped;
@@ -36,32 +36,31 @@ private:
   bai::tcp::acceptor _acceptor;
   std::shared_ptr<bai::tcp::socket> _new_socket;
   std::thread _io_context_thread;
-
+  messages::Peers *_peers;
   ConnectionById _connections;
   mutable std::mutex _connections_mutex;
 
-
   void new_connection(std::shared_ptr<bai::tcp::socket> socket,
                       const boost::system::error_code &error,
-                      std::shared_ptr<messages::Peer> peer,
+                      messages::Peer * peer,
                       const bool from_remote);
 
-  bool serialize(std::shared_ptr<messages::Message> message,
-                 Buffer *header_tcp,
-                 Buffer *body_tcp);
+  bool serialize(std::shared_ptr<messages::Message> message, Buffer *header_tcp,
+                 Buffer *body_tcp) const;
 
   void start_accept();
   void accept(const boost::system::error_code &error);
 
  public:
+  Tcp() = delete;
   Tcp(Tcp &&) = delete;
   Tcp(const Tcp &) = delete;
 
-  Tcp(const Port port, ID id, messages::Queue* queue,
-      messages::Peers *peers, std::shared_ptr<crypto::Ecc> keys);
-  bool connect(std::shared_ptr<messages::Peer> peer);
-  SendResult send(std::shared_ptr<messages::Message> message);
-  bool send_unicast(std::shared_ptr<messages::Message> message);
+  Tcp(const Port port, messages::Queue *queue, messages::Peers *peers,
+      std::shared_ptr<crypto::Ecc> keys);
+  bool connect(messages::Peer * peer);
+  SendResult send(std::shared_ptr<messages::Message> message) const;
+  bool send_unicast(std::shared_ptr<messages::Message> message) const;
   Port listening_port() const;
   IP local_ip() const;
   bool terminate(const Connection::ID id);

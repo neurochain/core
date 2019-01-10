@@ -5,7 +5,7 @@
 namespace neuro {
 namespace networking {
 
-Connection::Connection(const ID id, messages::Queue * queue)
+Connection::Connection(const ID id, messages::Queue* queue)
     : _id(id), _queue(queue) {
   assert(_queue != nullptr);
 }

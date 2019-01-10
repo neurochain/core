@@ -6,6 +6,7 @@
 #include "common/logger.hpp"
 #include "common/types.hpp"
 #include "messages/Peers.hpp"
+#include "networking/Connection.hpp"
 
 namespace neuro {
 namespace messages {
@@ -20,26 +21,25 @@ namespace networking {
 
 class TransportLayer {
  public:
-  using ID = int16_t;
-  enum class SendResult {
-    FAILED, ONE_OR_MORE_SENT, ALL_GOOD
-  };
+  enum class SendResult { FAILED, ONE_OR_MORE_SENT, ALL_GOOD };
 
  protected:
-  ID _id;
   messages::Queue* _queue;
-  messages::Peers *_peers;
+  messages::Peers* _peers;
   std::shared_ptr<crypto::Ecc> _keys;
 
  public:
-  TransportLayer(const ID id, messages::Queue* queue,
-		 messages::Peers *peers, std::shared_ptr<crypto::Ecc> keys);
+  TransportLayer(messages::Queue* queue, messages::Peers* peers,
+                 std::shared_ptr<crypto::Ecc> keys);
 
-  virtual SendResult send(const std::shared_ptr<messages::Message> message) = 0;
-  virtual bool send_unicast(const std::shared_ptr<messages::Message> message) = 0;
+  virtual SendResult send(const std::shared_ptr<messages::Message> message) const = 0;
+  virtual bool send_unicast(
+      const std::shared_ptr<messages::Message> message) const = 0;
   virtual std::size_t peer_count() const = 0;
-
-  ID id() const;
+  virtual bool terminate(const Connection::ID id) = 0;
+  virtual Port listening_port() const = 0;
+  virtual bool connect(messages::Peer * peer) = 0;
+  
   virtual ~TransportLayer(){};
   virtual void join() = 0;
 };

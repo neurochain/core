@@ -98,21 +98,21 @@ using namespace std::chrono_literals;
 
 // Tcp::ConnectionPool::~ConnectionPool() { disconnect_all(); }
 
-// void Tcp::start_accept() {
-//   if (!_stopped) {
-//     _new_socket = std::make_shared<bai::tcp::socket>(*_io_context);
-//     _acceptor.async_accept(
-//         *_new_socket.get(),
-//         boost::bind(&Tcp::accept, this, boost::asio::placeholders::error));
-//   }
-// }
+void Tcp::start_accept() {
+  if (!_stopped) {
+    _new_socket = std::make_shared<bai::tcp::socket>(_io_context);
+    _acceptor.async_accept(
+        *_new_socket.get(),
+        boost::bind(&Tcp::accept, this, boost::asio::placeholders::error));
+  }
+}
 
 void Tcp::accept(const boost::system::error_code &error) {
   if (error) {
     const auto remote_endpoint =
         _new_socket->remote_endpoint().address().to_string();
 
-    auto peer = std::make_shared<messages::Peer>();
+    auto peer = _peers->add_peers();
     peer->set_endpoint(remote_endpoint);
     peer->set_port(_new_socket->remote_endpoint().port());
 
@@ -120,20 +120,20 @@ void Tcp::accept(const boost::system::error_code &error) {
   } else {
     LOG_WARNING << "Rejected connection";
   }
-  _new_socket.reset(); // TODO why?
+  _new_socket.reset();  // TODO why?
   start_accept();
 }
 
-Tcp::Tcp(const Port port, ID id, messages::Queue* queue,
-	 messages::Peers * peers,
+Tcp::Tcp(const Port port, messages::Queue *queue, messages::Peers *peers,
          std::shared_ptr<crypto::Ecc> keys)
-  : TransportLayer(id, queue, peers, keys),
+    : TransportLayer(queue, peers, keys),
       _stopped(false),
       _listening_port(port),
       _io_context(),
       _resolver(_io_context),
       _acceptor(_io_context,
-                bai::tcp::endpoint(bai::tcp::v4(), _listening_port)) {
+                bai::tcp::endpoint(bai::tcp::v4(), _listening_port)),
+      _peers(peers) {
   while (!_acceptor.is_open()) {
     std::this_thread::yield();
     LOG_DEBUG << "Waiting for acceptor to be open";
@@ -142,7 +142,7 @@ Tcp::Tcp(const Port port, ID id, messages::Queue* queue,
   _io_context_thread = std::thread([this]() { this->_io_context.run(); });
 }
 
-  bool Tcp::connect(std::shared_ptr<messages::Peer> peer) {
+bool Tcp::connect(messages::Peer * peer) {
   if (_stopped) {
     return false;
   }
@@ -165,7 +165,7 @@ Port Tcp::listening_port() const { return _listening_port; }
 
 void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
                          const boost::system::error_code &error,
-                         std::shared_ptr<messages::Peer> peer,
+                         messages::Peer* peer,
                          const bool from_remote) {
   auto message = std::make_shared<messages::Message>();
   auto msg_header = message->mutable_header();
@@ -173,10 +173,11 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
 
   if (!error) {
     _current_id++;
-    
+
     msg_header->set_connection_id(_current_id);
-    auto connection = std::make_unique<tcp::Connection>(_current_id, _queue, socket, peer);
-    _connections.insert (std::make_pair(_current_id, std::move(connection)));
+    auto connection =
+        std::make_shared<tcp::Connection>(_current_id, _queue, socket, peer);
+    _connections.insert(std::make_pair(_current_id, std::move(connection)));
 
     auto connection_ready = msg_body->mutable_connection_ready();
 
@@ -189,14 +190,14 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
                 << error.message();
 
     auto connection_closed = msg_body->mutable_connection_closed();
-    connection_closed->mutable_peer()->CopyFrom(*peer.get());
+    connection_closed->mutable_peer()->CopyFrom(*peer);
     _queue->publish(message);
   }
 }
 
 std::optional<Port> Tcp::connection_port(const Connection::ID id) const {
   auto got = _connections.find(id);
-  if(got == _connections.end()) {
+  if (got == _connections.end()) {
     return std::nullopt;
   }
 
@@ -205,7 +206,7 @@ std::optional<Port> Tcp::connection_port(const Connection::ID id) const {
 
 bool Tcp::terminate(const Connection::ID id) {
   auto got = _connections.find(id);
-  if(got == _connections.end()) {
+  if (got == _connections.end()) {
     return false;
   }
   got->second->terminate();
@@ -213,8 +214,8 @@ bool Tcp::terminate(const Connection::ID id) {
   return true;
 }
 
-bool Tcp::serialize(std::shared_ptr<messages::Message> message, Buffer *header_tcp,
-                    Buffer *body_tcp) {
+bool Tcp::serialize(std::shared_ptr<messages::Message> message,
+                    Buffer *header_tcp, Buffer *body_tcp) const {
   // TODO: use 1 output buffer
   LOG_DEBUG << this << " Before reinterpret and signing";
   auto header_pattern =
@@ -233,7 +234,8 @@ bool Tcp::serialize(std::shared_ptr<messages::Message> message, Buffer *header_t
   return true;
 }
 
-TransportLayer::SendResult Tcp::send(std::shared_ptr<messages::Message> message) {
+TransportLayer::SendResult Tcp::send(
+    std::shared_ptr<messages::Message> message) const {
   if (_connections.size() == 0) {
     LOG_ERROR << "Could not send message because there is no connection";
     return SendResult::FAILED;
@@ -257,11 +259,13 @@ TransportLayer::SendResult Tcp::send(std::shared_ptr<messages::Message> message)
     bool res_send = true;
     res_send &= connection->send(header_tcp);
     res_send &= connection->send(body_tcp);
-    if(res_send) { res_count++; }
+    if (res_send) {
+      res_count++;
+    }
   }
 
   SendResult res;
-  if(res_count == 0) {
+  if (res_count == 0) {
     res = SendResult::FAILED;
   } else if (res_count == _connections.size()) {
     res = SendResult::FAILED;
@@ -272,13 +276,13 @@ TransportLayer::SendResult Tcp::send(std::shared_ptr<messages::Message> message)
   return res;
 }
 
-bool Tcp::send_unicast(std::shared_ptr<messages::Message> message) {
+bool Tcp::send_unicast(std::shared_ptr<messages::Message> message) const {
   if (_stopped || !message->header().has_connection_id()) {
     return false;
   }
 
   auto got = _connections.find(message->header().connection_id());
-  if(got == _connections.end()) {
+  if (got == _connections.end()) {
     return false;
   }
 

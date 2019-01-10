@@ -17,7 +17,7 @@ class Subscriber {
 
  private:
   mutable std::mutex _mutex_handler;
-  Queue* _queue;
+  Queue *_queue;
   std::vector<std::vector<Callback>> _callbacks_by_type;
   std::unordered_set<Buffer> _seen_messages_hash;
   std::map<std::time_t, Buffer> _message_hash_by_ts;

@@ -21,28 +21,24 @@ class BotTest;
 
 class Bot {
  public:
-
  private:
   messages::Queue _queue;
+  messages::config::Config _config;
   networking::Networking _networking;
   messages::Subscriber _subscriber;
   std::shared_ptr<boost::asio::io_context> _io_context;
-  messages::config::Config _config;
   boost::asio::steady_timer _update_timer;
   std::shared_ptr<crypto::Ecc> _keys;
   std::shared_ptr<ledger::Ledger> _ledger;
   std::shared_ptr<rest::Rest> _rest;
   std::shared_ptr<consensus::Consensus> _consensus;
-  std::shared_ptr<messages::Peers> _peers;
+  messages::Peers _peers;
   std::unordered_set<int32_t> _request_ids;
   std::thread _io_context_thread;
 
   // for the peers
   messages::config::Tcp *_tcp_config;
   std::size_t _max_connections;
-
-  std::shared_ptr<networking::Tcp> _tcp;
-  messages::config::Config::SelectionMethod _selection_method;
 
   mutable std::mutex _mutex_connections;
   mutable std::mutex _mutex_quitting;
@@ -73,7 +69,6 @@ class Bot {
   void handler_peers(const messages::Header &header,
                      const messages::Body &body);
   bool next_to_connect(messages::Peer **out_peer);
-  bool load_keys(const messages::config::Networking &config);
   bool load_networking(messages::config::Config *config);
   void subscribe();
   void regular_update();
@@ -110,7 +105,7 @@ class Bot {
     // (*res)->CopyFrom(peer);
 
     // return res;
-    return {}; 
+    return {};
   }
 
   template <typename T>
@@ -130,10 +125,11 @@ class Bot {
 
   virtual ~Bot();  // save_config(_config);
 
-  const std::vector<messages::Peer> connected_peers() const;
+  const messages::Peers &peers() const;
   void keep_max_connections();
-  std::shared_ptr<networking::Networking> networking();
-  messages::Queue* queue();
+  std::vector<messages::Peer>connected_peers() const;  
+  networking::Networking *networking();
+  messages::Queue *queue();
   void subscribe(const messages::Type type,
                  messages::Subscriber::Callback callback);
 

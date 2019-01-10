@@ -41,11 +41,11 @@ message Hash {
 
 message Peer {
   enum Status {
-    CONNECTED = 0;
-    CONNECTING = 1;
-    DISCONNECTED = 2;
-    UNREACHABLE = 3;
-    FULL = 4;
+    CONNECTED = 1;
+    CONNECTING = 2;
+    DISCONNECTED = 4;
+    UNREACHABLE = 8;
+    FULL = 16;
   }
 
   optional string endpoint = 1;

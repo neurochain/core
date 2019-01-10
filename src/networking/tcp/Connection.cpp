@@ -10,11 +10,10 @@ namespace neuro {
 namespace networking {
 namespace tcp {
 
-Connection::Connection(const ID id,
-                       messages::Queue *queue,
+Connection::Connection(const ID id, messages::Queue *queue,
                        const std::shared_ptr<tcp::socket> &socket,
-                       const std::shared_ptr<messages::Peer> &remote_peer)
-  : ::neuro::networking::Connection::Connection(id, queue),
+                       messages::Peer * remote_peer)
+    : ::neuro::networking::Connection::Connection(id, queue),
       _header(sizeof(HeaderPattern), 0),
       _buffer(128, 0),
       _socket(socket),
@@ -50,7 +49,7 @@ void Connection::read_body(std::size_t body_size) {
   boost::asio::async_read(
       *_socket, boost::asio::buffer(_buffer.data(), _buffer.size()),
       [_this = ptr(), this](const boost::system::error_code &error,
-                      std::size_t bytes_read) {
+                            std::size_t bytes_read) {
         if (error) {
           LOG_ERROR << _this << " " << __LINE__ << " Killing connection "
                     << error;
@@ -126,9 +125,8 @@ bool Connection::send(std::shared_ptr<Buffer> &message) {
       [_this = ptr(), message](const boost::system::error_code &error,
                                std::size_t bytes_transferred) {
         if (error) {
-          LOG_ERROR << "Could not send message"
-	  << _this << " " << __LINE__ << " Killing connection "
-	  << error;
+          LOG_ERROR << "Could not send message" << _this << " " << __LINE__
+                    << " Killing connection " << error;
 
           _this->close();
           return false;
@@ -148,7 +146,7 @@ void Connection::terminate() {
   auto body = message->add_bodies();
   body->mutable_connection_closed();
   _remote_peer->set_status(messages::Peer::DISCONNECTED);
-  
+
   _queue->publish(message);
 }
 
@@ -162,7 +160,7 @@ const Port Connection::remote_port() const {
   return static_cast<Port>(endpoint.port());
 }
 
-std::shared_ptr<const messages::Peer> Connection::remote_peer() const {
+const messages::Peer* Connection::remote_peer() const {
   return _remote_peer;
 }
 Connection::~Connection() {

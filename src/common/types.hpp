@@ -4,9 +4,10 @@
 #include <boost/asio.hpp>
 #include <boost/filesystem/path.hpp>
 #include <cassert>
+#include <chrono>
 #include <cstdint>
 #include <vector>
-#include <chrono>
+#include <random>
 
 #include "common/Buffer.hpp"
 
@@ -14,6 +15,8 @@
 
 namespace neuro {
 
+static std::random_device _rd; // TODO make global
+  
 using namespace std::chrono_literals;
 
 namespace networking {
@@ -43,7 +46,7 @@ using std::uint32_t;
 using std::uint64_t;
 using std::uint8_t;
 
-using Duration = std::chrono::duration<std::milli>;
+using Duration = std::chrono::duration<int> ;
 
 using Endpoint = std::string;
 using Port = uint16_t;

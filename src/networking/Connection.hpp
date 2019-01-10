@@ -2,7 +2,7 @@
 #define NEURO_SRC_NETWORKING_CONNECTION_HPP
 
 #include "common/types.hpp"
-#include "networking/TransportLayer.hpp"
+#include "messages/Queue.hpp"
 
 namespace neuro {
 namespace networking {
@@ -13,11 +13,10 @@ class Connection {
 
  protected:
   ID _id;
-  messages::Queue * _queue;
+  messages::Queue* _queue;
 
  public:
-  Connection(const ID id, 
-             messages::Queue * queue);
+  Connection(const ID id, messages::Queue* queue);
   ID id() const;
 };
 
