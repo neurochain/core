@@ -10,7 +10,7 @@ extend Input {
   optional _NCCAmount amount = 101;
 }
 
-message PII {
+message Pii {
   required _Address address = 1;
   required Hash assembly_id = 2;
   required double score = 3;

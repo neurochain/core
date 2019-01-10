@@ -12,17 +12,18 @@ class Consensus : public testing::Test {
   const std::string db_url = "mongodb://mongo:27017";
   const std::string db_name = "test_consensus";
   const messages::NCCAmount ncc_block0 = messages::NCCAmount(100000);
-  const messages::NCCAmount block_reward = consensus::BLOCK_REWARD;
   const int nb_keys = 2;
 
  protected:
+  consensus::Config consensus_config;
   tooling::Simulator simulator;
   std::shared_ptr<neuro::ledger::LedgerMongodb> ledger;
   consensus::Consensus consensus;
 
   Consensus()
-      : simulator(tooling::Simulator(db_url, db_name, nb_keys, ncc_block0,
-                                     block_reward)),
+      : consensus_config(),
+        simulator(tooling::Simulator(db_url, db_name, nb_keys, ncc_block0,
+                                     consensus_config.block_reward)),
         ledger(simulator.ledger),
         consensus(consensus::Consensus(ledger)) {}
 

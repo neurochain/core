@@ -1,13 +1,10 @@
 #ifndef NEURO_SRC_CONSENSUS_PII_HPP
 #define NEURO_SRC_CONSENSUS_PII_HPP
 
-#include "common.pb.h"
-#include "common/types.hpp"
-#include "config.pb.h"
+#include "consensus/Config.hpp"
 #include "ledger/Ledger.hpp"
 #include "messages.pb.h"
 #include "messages/Address.hpp"
-#include "networking/Networking.hpp"
 
 namespace neuro {
 namespace consensus {
@@ -33,17 +30,17 @@ class Addresses {
                     const messages::Address &recipient, Double enthalpy);
 
   Double get_entropy(const messages::Address &address) const;
+
+  friend class Pii;
 };
 
 class Pii {
- public:
  private:
   Addresses _addresses;
   std::shared_ptr<ledger::Ledger> _ledger;
 
   bool get_enthalpy(const messages::Transaction &transaction,
                     const messages::TaggedBlock &tagged_block,
-                    const messages::Hash &previous_assembly_id,
                     const messages::Address &sender,
                     const messages::Address &recipient, Double *enthalpy) const;
 
@@ -55,24 +52,20 @@ class Pii {
                    std::vector<messages::Address> *senders) const;
 
   bool add_transaction(const messages::Transaction &transaction,
-                       const messages::TaggedBlock &tagged_block,
-                       const messages::Hash &previous_assembly_id);
-
-  bool get_score(const messages::Address &address,
-                 const messages::Hash &assembly_id, Double *score) const;
+                       const messages::TaggedBlock &tagged_block);
 
   Double enthalpy_n() const;
   Double enthalpy_c() const;
   Double enthalpy_lambda() const;
 
  public:
-  Pii(const messages::config::Pii &config,
-      std::shared_ptr<ledger::Ledger> ledger,
-      std::shared_ptr<networking::Networking> networking)
-      : _ledger(ledger) {}
+  Config config;
+  Pii(std::shared_ptr<ledger::Ledger> ledger, const consensus::Config &config)
+      : _ledger(ledger), config(config) {}
 
-  bool add_block(const messages::TaggedBlock &tagged_block,
-                 const messages::Hash &previous_assembly_id);
+  bool add_block(const messages::TaggedBlock &tagged_block);
+
+  std::vector<messages::Pii> get_addresses_pii();
 };
 
 }  // namespace consensus

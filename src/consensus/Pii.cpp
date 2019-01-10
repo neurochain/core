@@ -11,7 +11,6 @@ Double Pii::enthalpy_lambda() const { return 0.5; }
 
 bool Pii::get_enthalpy(const messages::Transaction &transaction,
                        const messages::TaggedBlock &tagged_block,
-                       const messages::Hash &previous_assembly_id,
                        const messages::Address &sender,
                        const messages::Address &recipient,
                        Double *enthalpy) const {
@@ -36,10 +35,10 @@ bool Pii::get_enthalpy(const messages::Transaction &transaction,
 
   // TODO reference to a pdf in english that contains the formula
   Double previous_pii;
-  _ledger->get_pii(sender, previous_assembly_id, &previous_pii);
+  _ledger->get_pii(sender, tagged_block.previous_assembly_id(), &previous_pii);
   *enthalpy = std::pow(
       std::log(fmax(1, previous_pii * enthalpy_lambda() * enthalpy_c() *
-                           amount / ASSEMBLY_BLOCKS_COUNT)),
+                           amount / config.blocks_per_assembly)),
       enthalpy_n());
   return true;
 }
@@ -72,8 +71,7 @@ bool Pii::get_senders(const messages::Transaction &transaction,
 }
 
 bool Pii::add_transaction(const messages::Transaction &transaction,
-                          const messages::TaggedBlock &tagged_block,
-                          const messages::Hash &previous_assembly_id) {
+                          const messages::TaggedBlock &tagged_block) {
   std::vector<messages::Address> senders;
   std::vector<messages::Address> recipients;
   if (!get_senders(transaction, tagged_block, &senders) ||
@@ -83,8 +81,8 @@ bool Pii::add_transaction(const messages::Transaction &transaction,
   for (const auto &sender : senders) {
     for (const auto &recipient : recipients) {
       Double enthalpy;
-      if (!get_enthalpy(transaction, tagged_block, previous_assembly_id, sender,
-                        recipient, &enthalpy)) {
+      if (!get_enthalpy(transaction, tagged_block, sender, recipient,
+                        &enthalpy)) {
         return false;
       }
       _addresses.add_enthalpy(sender, recipient, enthalpy);
@@ -93,12 +91,11 @@ bool Pii::add_transaction(const messages::Transaction &transaction,
   return true;
 }
 
-bool Pii::add_block(const messages::TaggedBlock &tagged_block,
-                    const messages::Hash &previous_assembly_id) {
+bool Pii::add_block(const messages::TaggedBlock &tagged_block) {
   // Warning: this method only works for blocks that are already inserted in the
   // ledger Notice that for now coinbases don't give any entropy
   for (const auto &transaction : tagged_block.block().transactions()) {
-    if (!add_transaction(transaction, tagged_block, previous_assembly_id)) {
+    if (!add_transaction(transaction, tagged_block)) {
       return false;
     }
   }
@@ -143,6 +140,20 @@ Double Addresses::get_entropy(const messages::Address &address) const {
     entropy -= counters.enthalpy * p * log2(p);
   }
   return fmax(1, entropy);
+}
+
+std::vector<messages::Pii> Pii::get_addresses_pii() {
+  std::vector<messages::Pii> piis;
+  for (const auto &[address, _] : _addresses._addresses) {
+    auto &pii = piis.emplace_back();
+    pii.set_score(_addresses.get_entropy(address));
+    pii.mutable_address()->CopyFrom(address);
+  }
+  std::sort(piis.begin(), piis.end(),
+            [](const messages::Pii &a, const messages::Pii &b) {
+              return a.score() > b.score();  // Sort in reverse order
+            });
+  return piis;
 }
 
 }  // namespace consensus

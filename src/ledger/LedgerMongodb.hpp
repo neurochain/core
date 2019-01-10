@@ -197,9 +197,9 @@ class LedgerMongodb : public Ledger {
   bool add_assembly(const messages::TaggedBlock &tagged_block);
 
   bool get_pii(const messages::Address &address,
-               const messages::Hash &assembly_id, messages::PII *pii) const;
+               const messages::Hash &assembly_id, messages::Pii *pii) const;
 
-  bool set_pii(const messages::PII &pii);
+  bool set_pii(const messages::Pii &pii);
 
   bool set_previous_assembly_id(const messages::Hash &block_id,
                                 const messages::Hash &previous_assembly_id);

@@ -928,7 +928,7 @@ bool LedgerMongodb::get_pii(const messages::Address &address,
 bool LedgerMongodb::save_pii(const messages::Address &address,
                              const messages::Hash &assembly_id,
                              const Double &score) {
-  messages::PII pii;
+  messages::Pii pii;
   pii.mutable_address()->CopyFrom(address);
   pii.mutable_assembly_id()->CopyFrom(assembly_id);
   pii.set_score(score);
@@ -987,7 +987,7 @@ bool LedgerMongodb::add_assembly(const messages::TaggedBlock &tagged_block) {
 
 bool LedgerMongodb::get_pii(const messages::Address &address,
                             const messages::Hash &assembly_id,
-                            messages::PII *pii) const {
+                            messages::Pii *pii) const {
   auto query = bss::document{} << "address" << to_bson(address) << "assembly_id"
                                << to_bson(assembly_id) << bss::finalize;
   auto result = _pii.find_one(std::move(query), remove_OID());
@@ -998,7 +998,7 @@ bool LedgerMongodb::get_pii(const messages::Address &address,
   return true;
 }
 
-bool LedgerMongodb::set_pii(const messages::PII &pii) {
+bool LedgerMongodb::set_pii(const messages::Pii &pii) {
   auto bson_pii = to_bson(pii);
   auto result = _pii.insert_one(std::move(bson_pii));
   return (bool)result;

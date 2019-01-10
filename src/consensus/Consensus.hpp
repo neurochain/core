@@ -2,19 +2,14 @@
 #define NEURO_SRC_CONSENSUS_CONSENSUS_HPP
 
 #include <unordered_set>
-#include "common/types.hpp"
+#include "consensus/Pii.hpp"
 #include "ledger/Ledger.hpp"
-#include "messages/Message.hpp"
-#include "networking/Networking.hpp"
 
 namespace neuro {
 namespace consensus {
 namespace tests {
 class Consensus;
 }
-
-const messages::NCCAmount BLOCK_REWARD{100};
-const size_t MAX_BLOCK_SIZE{128000};
 
 class Consensus {
  private:
@@ -158,7 +153,7 @@ class Consensus {
   messages::NCCAmount expected_block_reward(
       const messages::TaggedBlock tagged_block) const {
     // TODO use some sort of formula here
-    return BLOCK_REWARD;
+    return config.block_reward;
   }
 
   bool check_block_id(messages::Block *block) const {
@@ -210,7 +205,7 @@ class Consensus {
   bool check_block_size(const messages::Block &block) const {
     Buffer buffer;
     messages::to_buffer(block, &buffer);
-    return buffer.size() < MAX_BLOCK_SIZE;
+    return buffer.size() < config.max_block_size;
   }
 
   bool check_transactions_order(const messages::Block &block) const {
@@ -272,15 +267,17 @@ class Consensus {
   bool is_new_assembly(const messages::TaggedBlock &tagged_block,
                        const messages::TaggedBlock &previous) const {
     int32_t block_assembly =
-        tagged_block.block().header().height() / ASSEMBLY_BLOCKS_COUNT;
+        tagged_block.block().header().height() / config.blocks_per_assembly;
     int32_t previous_assembly =
-        tagged_block.block().header().height() / ASSEMBLY_BLOCKS_COUNT;
+        tagged_block.block().header().height() / config.blocks_per_assembly;
     return block_assembly != previous_assembly;
   }
 
  public:
-  Consensus(std::shared_ptr<ledger::Ledger> ledger)
-      : _ledger(ledger), _current_computations() {}
+  const Config config;
+  Consensus(std::shared_ptr<ledger::Ledger> ledger) : _ledger(ledger) {}
+  Consensus(std::shared_ptr<ledger::Ledger> ledger, const Config &config)
+      : _ledger(ledger), config(config) {}
 
   bool is_valid(const messages::TaggedTransaction &tagged_transaction) const {
     if (tagged_transaction.is_coinbase()) {
@@ -341,7 +338,7 @@ class Consensus {
       _ledger->set_previous_assembly_id(block->header().id(),
                                         previous.previous_assembly_id());
     } else {
-      assert(previous.block().header().height() < ASSEMBLY_BLOCKS_COUNT);
+      assert(previous.block().header().height() < config.blocks_per_assembly);
     }
     return true;
   }
@@ -374,10 +371,54 @@ class Consensus {
   }
 
   bool add_current_computation(const messages::Hash &assembly_id) {
+    std::lock_guard<std::mutex> lock(_current_computations_mutex);
+    if (_current_computations.count(assembly_id) != 0) {
+      // The computation was already added
+      return false;
+    }
+    _current_computations.insert(assembly_id);
     return true;
   }
 
-  bool compute_assembly_pii(const messages::Assembly &assembly) { return true; }
+  bool remove_current_computation(const messages::Hash &assembly_id) {
+    std::lock_guard<std::mutex> lock(_current_computations_mutex);
+    if (_current_computations.count(assembly_id) == 0) {
+      // The computation was already removed
+      return false;
+    }
+    _current_computations.erase(assembly_id);
+    return true;
+  }
+
+  void compute_assembly_pii(const messages::Assembly &assembly) {
+    auto pii = Pii(_ledger, config);
+    messages::TaggedBlock tagged_block;
+    if (!_ledger->get_block(assembly.assembly_id(), &tagged_block)) {
+      LOG_WARNING << "During Pii computation missing block "
+                  << assembly.assembly_id();
+      return;
+    }
+
+    while (tagged_block.block().header().id() !=
+           assembly.previous_assembly_id()) {
+      pii.add_block(tagged_block);
+      if (!_ledger->get_block(
+              tagged_block.block().header().previous_block_hash(),
+              &tagged_block)) {
+        LOG_WARNING << "During Pii computation missing block "
+                    << tagged_block.block().header().previous_block_hash();
+        return;
+      }
+    }
+
+    auto piis = pii.get_addresses_pii();
+    for (auto &pii : piis) {
+      pii.mutable_assembly_id()->CopyFrom(assembly.assembly_id());
+      _ledger->set_pii(pii);
+    }
+
+    remove_current_computation(assembly.assembly_id());
+  }
 
   friend class neuro::consensus::tests::Consensus;
 };
