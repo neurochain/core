@@ -174,7 +174,9 @@ class LedgerMongodb : public Ledger {
   bool get_unverified_blocks(
       std::vector<messages::TaggedBlock> *tagged_blocks) const;
 
-  bool set_block_verified(const messages::Hash &id, messages::BlockScore score);
+  bool set_block_verified(const messages::Hash &id,
+                          const messages::BlockScore &score,
+                          const messages::Hash previous_assembly_id);
 
   bool update_main_branch(messages::TaggedBlock *main_branch_tip);
 

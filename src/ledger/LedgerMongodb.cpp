@@ -823,7 +823,7 @@ bool LedgerMongodb::get_unverified_blocks(
   auto query = bss::document{} << "branch" << UNVERIFIED_BRANCH_NAME
                                << bss::finalize;
   auto options = remove_OID();
-  options.sort(bss::document{} << "header.height" << 1 << bss::finalize);
+  options.sort(bss::document{} << "block.header.height" << 1 << bss::finalize);
   auto result = _blocks.find(std::move(query), options);
   for (const auto &bson_block : result) {
     auto &tagged_block = tagged_blocks->emplace_back();
@@ -833,14 +833,18 @@ bool LedgerMongodb::get_unverified_blocks(
   return true;
 }
 
-bool LedgerMongodb::set_block_verified(const messages::Hash &id,
-                                       messages::BlockScore score) {
+bool LedgerMongodb::set_block_verified(
+    const messages::Hash &id, const messages::BlockScore &score,
+    const messages::Hash previous_assembly_id) {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
+  messages::TaggedBlock previous;
   auto filter = bss::document{} << "block.header.id" << to_bson(id)
                                 << bss::finalize;
-  auto update = bss::document{} << "$set" << bss::open_document << "score"
-                                << score << "branch" << FORK_BRANCH_NAME
-                                << bss::close_document << bss::finalize;
+  auto update = bss::document{}
+                << "$set" << bss::open_document << "score" << score << "branch"
+                << FORK_BRANCH_NAME << "previous_assembly_id"
+                << to_bson(previous_assembly_id) << bss::close_document
+                << bss::finalize;
   auto update_result = _blocks.update_one(std::move(filter), std::move(update));
   return update_result && update_result->modified_count() > 0;
 }
@@ -977,8 +981,16 @@ bool LedgerMongodb::add_assembly(const messages::TaggedBlock &tagged_block) {
     return false;
   }
   assembly.mutable_assembly_id()->CopyFrom(tagged_block.block().header().id());
-  assembly.mutable_previous_assembly_id()->CopyFrom(
-      tagged_block.previous_assembly_id());
+  if (tagged_block.has_previous_assembly_id()) {
+    if (tagged_block.block().header().height() == 0) {
+      assembly.mutable_previous_assembly_id()->CopyFrom(
+          tagged_block.previous_assembly_id());
+    } else {
+      throw(
+          "Something is wrong here only the block0 should not have a "
+          "previous_assembly_id");
+    }
+  }
   assembly.set_finished_computation(false);
   auto bson_assembly = to_bson(assembly);
   auto result = _assemblies.insert_one(std::move(bson_assembly));

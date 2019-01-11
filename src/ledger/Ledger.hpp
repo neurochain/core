@@ -135,8 +135,9 @@ class Ledger {
   virtual bool get_unverified_blocks(
       std::vector<messages::TaggedBlock> *tagged_blocks) const = 0;
 
-  virtual bool set_block_verified(const messages::Hash &id,
-                                  messages::BlockScore score) = 0;
+  virtual bool set_block_verified(
+      const messages::Hash &id, const messages::BlockScore &score,
+      const messages::Hash previous_assembly_id) = 0;
 
   virtual bool get_pii(const messages::Address &address,
                        const messages::Hash &assembly_id,

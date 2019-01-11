@@ -250,8 +250,26 @@ class Consensus {
     _ledger->get_unverified_blocks(&tagged_blocks);
     for (auto &tagged_block : tagged_blocks) {
       if (is_valid(tagged_block.mutable_block())) {
-        _ledger->set_block_verified(tagged_block.block().header().id(),
-                                    get_block_score(tagged_block));
+        messages::TaggedBlock previous;
+        if (!_ledger->get_block(
+                tagged_block.block().header().previous_block_hash(), &previous,
+                false)) {
+          // Something is wrong here
+          return false;
+        }
+        assert(previous.branch() == messages::Branch::MAIN ||
+               previous.branch() == messages::Branch::FORK);
+        if (is_new_assembly(tagged_block, previous)) {
+          _ledger->add_assembly(previous);
+          const auto previous_assembly_id = previous.block().header().id();
+          _ledger->set_block_verified(tagged_block.block().header().id(),
+                                      get_block_score(tagged_block),
+                                      previous.block().header().id());
+        } else if (previous.has_previous_assembly_id()) {
+          _ledger->set_block_verified(tagged_block.block().header().id(),
+                                      get_block_score(tagged_block),
+                                      previous.previous_assembly_id());
+        }
       } else {
         if (!_ledger->delete_block_and_children(
                 tagged_block.block().header().id())) {
@@ -266,6 +284,16 @@ class Consensus {
 
   bool is_new_assembly(const messages::TaggedBlock &tagged_block,
                        const messages::TaggedBlock &previous) const {
+    if (!tagged_block.has_previous_assembly_id()) {
+      if (tagged_block.block().header().height() == 0) {
+        // Create an assembly that contain only the block0
+        return true;
+      } else {
+        throw(
+            "Something is wrong here only the block0 should not have a "
+            "previous_assembly_id");
+      }
+    }
     int32_t block_assembly =
         tagged_block.block().header().height() / config.blocks_per_assembly;
     int32_t previous_assembly =
@@ -311,36 +339,7 @@ class Consensus {
    * \param [in] block block to add
    */
   bool add_block(messages::Block *block) {
-    if (!_ledger->insert_block(block)) {
-      return false;
-    }
-    if (!verify_blocks()) {
-      return false;
-    }
-    messages::TaggedBlock tagged_block, previous;
-    if (!_ledger->get_block(block->header().id(), &tagged_block, false) ||
-        !_ledger->get_block(block->header().previous_block_hash(), &previous,
-                            false) ||
-        tagged_block.branch() == messages::Branch::DETACHED) {
-      // The block is detached
-      return true;
-    }
-    assert(tagged_block.branch() == messages::Branch::MAIN ||
-           tagged_block.branch() == messages::Branch::FORK);
-    assert(previous.branch() == messages::Branch::MAIN ||
-           previous.branch() == messages::Branch::FORK);
-    if (is_new_assembly(tagged_block, previous)) {
-      _ledger->add_assembly(previous);
-      _ledger->set_previous_assembly_id(block->header().id(),
-                                        previous.block().header().id());
-
-    } else if (previous.has_previous_assembly_id()) {
-      _ledger->set_previous_assembly_id(block->header().id(),
-                                        previous.previous_assembly_id());
-    } else {
-      assert(previous.block().header().height() < config.blocks_per_assembly);
-    }
-    return true;
+    return _ledger->insert_block(block) && verify_blocks();
   }
 
   // /**
