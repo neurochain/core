@@ -22,7 +22,7 @@ Ecc::Ecc()
 Ecc::Ecc(const std::string &filepath_private,
          const std::string &filepath_public)
     : _prng(std::make_shared<CryptoPP::AutoSeededRandomPool>()) {
-  if (!load_keys(filepath_public, filepath_private)) {
+  if (!load_keys(filepath_private, filepath_public)) {
     throw std::runtime_error("Could not create or load keys");
   }
 }

@@ -9,7 +9,7 @@ namespace test {
 
 TEST(Ecc, save_load_file) {
   crypto::Ecc keys0;
-  keys0.save("test_keys.priv", "test_keys.pub");
+  ASSERT_TRUE(keys0.save("test_keys.priv", "test_keys.pub"));
 
   crypto::Ecc keys1("test_keys.priv", "test_keys.pub");
 
