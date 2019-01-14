@@ -1,9 +1,9 @@
-#file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/crypto/test_sign.priv
-#  DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-#
-#file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/crypto/test_sign.pub
-#  DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-#
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/configs/test_sign.priv
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/configs/test_sign.pub
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
 #file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/config/bot.json
 #  DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 #
@@ -32,9 +32,6 @@ file(GLOB files "configs/key_integration*.*")
 foreach(file ${files})
   configure_file(${file} "${CMAKE_CURRENT_BINARY_DIR}/${file}" COPYONLY)
 endforeach()
-
-configure_file("configs/test_sign.priv" "${CMAKE_CURRENT_BINARY_DIR}/test_sign.priv" COPYONLY)
-configure_file("configs/test_sign.pub" "${CMAKE_CURRENT_BINARY_DIR}/test_sign.pub" COPYONLY)
 
 configure_file("configs/key_faucet.priv" "${CMAKE_CURRENT_BINARY_DIR}/key_faucet.priv" COPYONLY)
 configure_file("configs/key_faucet.pub" "${CMAKE_CURRENT_BINARY_DIR}/key_faucet.pub" COPYONLY)
