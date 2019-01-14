@@ -12,7 +12,6 @@
 #include "messages/config/Config.hpp"
 #include "networking/Networking.hpp"
 #include "networking/tcp/Tcp.hpp"
-#include "rest/Rest.hpp"
 namespace neuro {
 
 namespace tests {
@@ -22,15 +21,14 @@ class BotTest;
 class Bot {
  public:
  private:
-  messages::Queue _queue;
   messages::config::Config _config;
-  networking::Networking _networking;
-  messages::Subscriber _subscriber;
   std::shared_ptr<boost::asio::io_context> _io_context;
+  messages::Queue _queue;
+  messages::Subscriber _subscriber;
+  crypto::Ecc _keys;
+  networking::Networking _networking;
   boost::asio::steady_timer _update_timer;
-  std::shared_ptr<crypto::Ecc> _keys;
   std::shared_ptr<ledger::Ledger> _ledger;
-  std::shared_ptr<rest::Rest> _rest;
   std::shared_ptr<consensus::Consensus> _consensus;
   messages::Peers _peers;
   std::unordered_set<int32_t> _request_ids;
@@ -53,7 +51,7 @@ class Bot {
                      const messages::Body &body);
   void handler_world(const messages::Header &header,
                      const messages::Body &body);
-  void update_connection_graph();
+  // void update_connection_graph();
   void handler_connection(const messages::Header &header,
                           const messages::Body &body);
   void handler_deconnection(const messages::Header &header,
@@ -69,7 +67,7 @@ class Bot {
   void handler_peers(const messages::Header &header,
                      const messages::Body &body);
   bool next_to_connect(messages::Peer **out_peer);
-  bool load_networking(messages::config::Config *config);
+  bool configure_networking(messages::config::Config *config);
   void subscribe();
   void regular_update();
   bool update_ledger();
@@ -127,7 +125,7 @@ class Bot {
 
   const messages::Peers &peers() const;
   void keep_max_connections();
-  std::vector<messages::Peer>connected_peers() const;  
+  std::vector<messages::Peer> connected_peers() const;
   networking::Networking *networking();
   messages::Queue *queue();
   void subscribe(const messages::Type type,

@@ -46,9 +46,9 @@ message Tcp {
 message Networking {
   optional int32 max_connections = 1;
   required Tcp tcp = 2;
-  optional int32 peers_update_time = 3;
-  optional string key_pub_path = 4;
-  optional string key_priv_path = 5;
+  required int32 peers_update_time = 3 [default = 2];
+  required string key_pub_path = 4;
+  required string key_priv_path = 5;
 }
 
 message _Config {

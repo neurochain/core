@@ -13,13 +13,11 @@ namespace neuro {
 namespace messages {
 
 class Peers : public _Peers {
-private:
+ private:
   int _used_status;
-  
-public:
-  Peers() {
-    _used_status = (Peer::CONNECTING | Peer::CONNECTED);
-  }
+
+ public:
+  Peers() { _used_status = (Peer::CONNECTING | Peer::CONNECTED); }
   Peers(const std::string &path) { from_json_file(path, this); }
 
   bool load(const std::string &path) { return false; }
@@ -96,24 +94,22 @@ public:
     return peer;
   }
 
+  std::vector<Peer> peers_by_status(const Peer::Status status) const {
+    std::vector<Peer> res;
+    std::copy_if(
+        peers().begin(), peers().end(), std::back_inserter(res),
+        [status](const Peer &peer) { return (peer.status() | status); });
 
-  std::vector<Peer>peers_by_status(const Peer::Status status) const {
-    std::vector<Peer>res;
-    std::copy_if(peers().begin(), peers().end(),
-		 std::back_inserter(res),
-		 [status](const Peer &peer) { return (peer.status() | status); });
-
-      return res;
+    return res;
   }
 
-  std::vector<Peer>used_peers() const {
+  std::vector<Peer> used_peers() const {
     return peers_by_status(Peer::Status(_used_status));
   }
 
-  std::vector<Peer>connected_peers() const {
+  std::vector<Peer> connected_peers() const {
     return peers_by_status(Peer::CONNECTED);
   }
-
 };
 
 }  // namespace messages

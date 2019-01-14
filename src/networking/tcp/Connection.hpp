@@ -25,7 +25,7 @@ class Connection : public networking::Connection,
   Buffer _header;
   Buffer _buffer;
   std::shared_ptr<tcp::socket> _socket;
-  messages::Peer *_remote_peer;
+  messages::Peer* _remote_peer;
   Port _listen_port;
 
   void read_header();
@@ -35,7 +35,7 @@ class Connection : public networking::Connection,
  public:
   Connection(const ID id, messages::Queue* queue,
              const std::shared_ptr<tcp::socket>& socket,
-	     messages::Peer * remote_peer);
+             messages::Peer* remote_peer);
 
   std::shared_ptr<const tcp::socket> socket() const;
   void terminate();

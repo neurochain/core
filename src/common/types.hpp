@@ -6,8 +6,8 @@
 #include <cassert>
 #include <chrono>
 #include <cstdint>
-#include <vector>
 #include <random>
+#include <vector>
 
 #include "common/Buffer.hpp"
 
@@ -15,8 +15,8 @@
 
 namespace neuro {
 
-static std::random_device _rd; // TODO make global
-  
+static std::random_device _rd;  // TODO make global
+
 using namespace std::chrono_literals;
 
 namespace networking {
@@ -46,7 +46,7 @@ using std::uint32_t;
 using std::uint64_t;
 using std::uint8_t;
 
-using Duration = std::chrono::duration<int> ;
+using Duration = std::chrono::duration<int>;
 
 using Endpoint = std::string;
 using Port = uint16_t;

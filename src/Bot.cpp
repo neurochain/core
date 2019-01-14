@@ -15,11 +15,14 @@ namespace neuro {
 using namespace std::chrono_literals;
 
 Bot::Bot(const messages::config::Config &config)
-    : _queue(),
-      _config(config),
-      _networking(&_queue, &_peers, _config.mutable_networking()),
-      _subscriber(&_queue),
+    : _config(config),
       _io_context(std::make_shared<boost::asio::io_context>()),
+      _queue(),
+      _subscriber(&_queue),
+      _keys(_config.networking().key_priv_path(),
+            _config.networking().key_pub_path()),
+      _networking(&_queue, &_peers, _config.mutable_networking()),
+      _ledger(std::make_shared<ledger::LedgerMongodb>(_config.database())),
       _update_timer(*_io_context) {
   if (!init()) {
     throw std::runtime_error("Could not create bot from configuration file");
@@ -68,7 +71,7 @@ void Bot::handler_get_block(const messages::Header &header,
 
 void Bot::handler_block(const messages::Header &header,
                         const messages::Body &body) {
-  //bool reply_message = header.has_request_id();
+  // bool reply_message = header.has_request_id();
   update_ledger();
 
   if (header.has_request_id()) {
@@ -179,24 +182,11 @@ void Bot::subscribe() {
       });
 }
 
-bool Bot::load_networking(messages::config::Config *config) {
-  auto networking_conf = config->mutable_networking();
-  _max_connections = networking_conf->max_connections();
+bool Bot::configure_networking(messages::config::Config *config) {
+  const auto &networking_conf = config->networking();
+  _max_connections = networking_conf.max_connections();
 
-  if (networking_conf->has_peers_update_time()) {
-    _update_time = networking_conf->peers_update_time();
-  }
-
-  if (!networking_conf->has_tcp()) {
-    LOG_ERROR << "Missing tcp configuration";
-    return false;
-  }
-
-  auto tcpconfig = networking_conf->mutable_tcp();
-
-  if (tcpconfig->peers().empty()) {
-    LOG_WARNING << this << " There is no information about peers";
-  }
+  _update_time = networking_conf.peers_update_time();
 
   return true;
 }
@@ -214,23 +204,9 @@ bool Bot::init() {
   }
   subscribe();
 
-  const auto db_config = _config.database();
-  _ledger = std::make_shared<ledger::LedgerMongodb>(db_config);
-
-  if (!_config.has_networking() || !load_networking(&_config)) {
-    LOG_ERROR << "Could not load networking";
-    return false;
-  }
+  configure_networking(&_config);
 
   _io_context_thread = std::thread([this]() { _io_context->run(); });
-
-  if (!_config.has_rest()) {
-    LOG_INFO << "Missing rest configuration, not loading module";
-  } else {
-    const auto rest_config = _config.rest();
-    _rest = std::make_shared<rest::Rest>(this, _ledger, _keys,
-                                         rest_config);
-  }
 
   this->keep_max_connections();
   update_ledger();
@@ -260,30 +236,30 @@ void Bot::update_peerlist() {
   _networking.send(msg);
 }
 
-void Bot::update_connection_graph() {
-  if (!_config.has_connection_graph_uri()) {
-    return;
-  }
-  std::string uri = _config.connection_graph_uri();
-  messages::ConnectionsGraph graph;
-  messages::Address own_address = messages::Hasher(_keys->public_key());
-  graph.mutable_own_address()->CopyFrom(own_address);
-  messages::Peers peers;
-  for (const auto &peer : _tcp_config->peers()) {
-    if (!peer.has_key_pub()) {
-      LOG_ERROR << "Missing key on peer " << peer;
-      continue;
-    }
-    crypto::EccPub ecc_pub;
-    ecc_pub.load(peer.key_pub());
-    graph.add_peers_addresses()->CopyFrom(messages::Hasher(ecc_pub));
-  }
+// void Bot::update_connection_graph() {
+//   if (!_config.has_connection_graph_uri()) {
+//     return;
+//   }
+//   std::string uri = _config.connection_graph_uri();
+//   messages::ConnectionsGraph graph;
+//   messages::Address own_address = messages::Hasher(keys.public_key());
+//   graph.mutable_own_address()->CopyFrom(own_address);
+//   messages::Peers peers;
+//   for (const auto &peer : _tcp_config->peers()) {
+//     if (!peer.has_key_pub()) {
+//       LOG_ERROR << "Missing key on peer " << peer;
+//       continue;
+//     }
+//     crypto::EccPub ecc_pub;
+//     ecc_pub.load(peer.key_pub());
+//     graph.add_peers_addresses()->CopyFrom(messages::Hasher(ecc_pub));
+//   }
 
-  std::string json;
-  messages::to_json(graph, &json);
-  cpr::Post(cpr::Url{uri}, cpr::Body{json},
-            cpr::Header{{"Content-Type", "text/plain"}});
-}
+//   std::string json;
+//   messages::to_json(graph, &json);
+//   cpr::Post(cpr::Url{uri}, cpr::Body{json},
+//             cpr::Header{{"Content-Type", "text/plain"}});
+// }
 
 void Bot::handler_get_peers(const messages::Header &header,
                             const messages::Body &body) {
@@ -335,7 +311,7 @@ void Bot::handler_connection(const messages::Header &header,
 
   auto key_pub = hello->mutable_key_pub();
   key_pub->set_type(messages::KeyType::ECP256K1);
-  const auto tmp = _keys->public_key().save();
+  const auto tmp = _keys.public_key().save();
   key_pub->set_raw_data(tmp.data(), tmp.size());
 
   _networking.send_unicast(message);
@@ -387,15 +363,15 @@ void Bot::handler_hello(const messages::Header &header,
 
   messages::Peer *remote_peer;
   if (hello.has_listen_port() && hello.has_endpoint()) {
-    remote_peer = _peers.insert(hello.key_pub(),
-				std::make_optional(hello.endpoint()),
-				std::make_optional(hello.listen_port()));
+    remote_peer =
+        _peers.insert(hello.key_pub(), std::make_optional(hello.endpoint()),
+                      std::make_optional(hello.listen_port()));
   } else {
     remote_peer = _peers.insert(hello.key_pub(), {}, {});
   }
-  
+
   remote_peer->set_status(messages::Peer::CONNECTED);
-  if(hello.has_listen_port()) {
+  if (hello.has_listen_port()) {
     remote_peer->set_port(hello.listen_port());
   }
 
@@ -411,7 +387,7 @@ void Bot::handler_hello(const messages::Header &header,
   world->set_accepted(accepted);
 
   Buffer key_pub_buffer;
-  _keys->public_key().save(&key_pub_buffer);
+  _keys.public_key().save(&key_pub_buffer);
   auto key_pub = world->mutable_key_pub();
   key_pub->set_type(messages::KeyType::ECP256K1);
   key_pub->set_hex_data(key_pub_buffer.str());
@@ -433,13 +409,12 @@ std::ostream &operator<<(
 }
 
 std::ostream &operator<<(std::ostream &os, const neuro::Bot &bot) {
-
   // This is *NOT* json
   os << "Bot(" << &bot << ") { connected: ";
   auto used_peers = bot.peers().used_peers();
   std::copy(used_peers.begin(), used_peers.end(),
-	    std::ostream_iterator<messages::Peer>(os, " "));
-    
+            std::ostream_iterator<messages::Peer>(os, " "));
+
   os << " }";
   return os;
 }
@@ -452,11 +427,10 @@ std::ostream &operator<<(std::ostream &os, const neuro::Bot &bot) {
 //   return status;
 // }
 
-std::vector<messages::Peer>Bot::connected_peers() const {
+std::vector<messages::Peer> Bot::connected_peers() const {
   return _peers.connected_peers();
 }
 
-  
 bool Bot::next_to_connect(messages::Peer **peer) {
   // it is locked from the caller
   auto peers = _tcp_config->mutable_peers();
@@ -508,7 +482,7 @@ void Bot::keep_max_connections() {
 networking::Networking *Bot::networking() { return &_networking; }
 
 messages::Queue *Bot::queue() { return &_queue; }
-  const messages::Peers &Bot::peers() const { return _peers; }
+const messages::Peers &Bot::peers() const { return _peers; }
 void Bot::subscribe(const messages::Type type,
                     messages::Subscriber::Callback callback) {
   _subscriber.subscribe(type, callback);

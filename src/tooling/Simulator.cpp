@@ -18,7 +18,6 @@ Simulator::Simulator(const std::string &db_url, const std::string &db_name,
     addresses.push_back(key.public_key());
   }
 }
-
 messages::Transaction Simulator::send_ncc(const crypto::EccPriv &from_key_priv,
                                           const messages::Address &to_address,
                                           float ncc_ratio) {

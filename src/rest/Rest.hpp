@@ -41,8 +41,7 @@ class Rest {
 
  public:
   Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
-       std::shared_ptr<crypto::Ecc> keys,
-       const messages::config::Rest &config);
+       std::shared_ptr<crypto::Ecc> keys, const messages::config::Rest &config);
 
   void join();
   void stop();

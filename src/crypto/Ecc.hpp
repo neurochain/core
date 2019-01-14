@@ -18,11 +18,16 @@ class Ecc {
  public:
  private:
   std::shared_ptr<CryptoPP::AutoSeededRandomPool> _prng;
-  EccPriv _key_private;
-  EccPub _key_public;
+  std::unique_ptr<EccPriv> _key_private;
+  std::unique_ptr<EccPub> _key_public;
+
+  bool load_keys(const std::string &keypath_priv,
+                 const std::string &keypath_pub);
 
  public:
   Ecc();
+  Ecc(Ecc &&ecc) {}
+  Ecc(const Ecc &) = delete;
   Ecc(const std::string &filepath_private, const std::string &filepath_public);
 
   Ecc(const EccPriv &ecc_priv, const EccPub &ecc_pub);

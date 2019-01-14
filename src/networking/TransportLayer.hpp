@@ -26,20 +26,21 @@ class TransportLayer {
  protected:
   messages::Queue* _queue;
   messages::Peers* _peers;
-  std::shared_ptr<crypto::Ecc> _keys;
+  crypto::Ecc* _keys;
 
  public:
   TransportLayer(messages::Queue* queue, messages::Peers* peers,
-                 std::shared_ptr<crypto::Ecc> keys);
+                 crypto::Ecc* keys);
 
-  virtual SendResult send(const std::shared_ptr<messages::Message> message) const = 0;
+  virtual SendResult send(
+      const std::shared_ptr<messages::Message> message) const = 0;
   virtual bool send_unicast(
       const std::shared_ptr<messages::Message> message) const = 0;
   virtual std::size_t peer_count() const = 0;
   virtual bool terminate(const Connection::ID id) = 0;
   virtual Port listening_port() const = 0;
-  virtual bool connect(messages::Peer * peer) = 0;
-  
+  virtual bool connect(messages::Peer* peer) = 0;
+
   virtual ~TransportLayer(){};
   virtual void join() = 0;
 };

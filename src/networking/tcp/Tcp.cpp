@@ -125,7 +125,7 @@ void Tcp::accept(const boost::system::error_code &error) {
 }
 
 Tcp::Tcp(const Port port, messages::Queue *queue, messages::Peers *peers,
-         std::shared_ptr<crypto::Ecc> keys)
+         crypto::Ecc *keys)
     : TransportLayer(queue, peers, keys),
       _stopped(false),
       _listening_port(port),
@@ -142,7 +142,7 @@ Tcp::Tcp(const Port port, messages::Queue *queue, messages::Peers *peers,
   _io_context_thread = std::thread([this]() { this->_io_context.run(); });
 }
 
-bool Tcp::connect(messages::Peer * peer) {
+bool Tcp::connect(messages::Peer *peer) {
   if (_stopped) {
     return false;
   }
@@ -165,8 +165,7 @@ Port Tcp::listening_port() const { return _listening_port; }
 
 void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
                          const boost::system::error_code &error,
-                         messages::Peer* peer,
-                         const bool from_remote) {
+                         messages::Peer *peer, const bool from_remote) {
   auto message = std::make_shared<messages::Message>();
   auto msg_header = message->mutable_header();
   auto msg_body = message->add_bodies();

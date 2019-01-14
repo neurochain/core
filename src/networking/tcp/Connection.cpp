@@ -12,7 +12,7 @@ namespace tcp {
 
 Connection::Connection(const ID id, messages::Queue *queue,
                        const std::shared_ptr<tcp::socket> &socket,
-                       messages::Peer * remote_peer)
+                       messages::Peer *remote_peer)
     : ::neuro::networking::Connection::Connection(id, queue),
       _header(sizeof(HeaderPattern), 0),
       _buffer(128, 0),
@@ -160,9 +160,7 @@ const Port Connection::remote_port() const {
   return static_cast<Port>(endpoint.port());
 }
 
-const messages::Peer* Connection::remote_peer() const {
-  return _remote_peer;
-}
+const messages::Peer *Connection::remote_peer() const { return _remote_peer; }
 Connection::~Connection() {
   terminate();
   LOG_DEBUG << this << " Connection killed";

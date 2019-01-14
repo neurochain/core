@@ -33,7 +33,7 @@ void coinbase(const crypto::EccPub &key_pub, const messages::NCCAmount &ncc,
   messages::set_transaction_hash(transaction);
 }
 
-messages::TaggedBlock gen_block0(std::vector<crypto::Ecc> keys,
+messages::TaggedBlock gen_block0(const std::vector<crypto::Ecc> &keys,
                                  const messages::NCCAmount &ncc_block0) {
   messages::TaggedBlock tagged_block;
   auto block = tagged_block.mutable_block();

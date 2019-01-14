@@ -6,8 +6,8 @@
 #include <vector>
 
 #include "common/types.hpp"
-#include "messages.pb.h"
 #include "config.pb.h"
+#include "messages.pb.h"
 #include "messages/Queue.hpp"
 #include "messages/Subscriber.hpp"
 #include "networking/tcp/Connection.hpp"
@@ -19,20 +19,18 @@ namespace networking {
 class Networking {
  private:
   std::unique_ptr<TransportLayer> _transport_layer;
-  std::shared_ptr<crypto::Ecc> _keys;
+  crypto::Ecc *_keys;
 
   mutable std::uniform_int_distribution<int> _dist;
-  messages::Queue* _queue;
+  messages::Queue *_queue;
 
-  bool load_keys(const messages::config::Networking &config);
-  
-public:
-  Networking(messages::Queue* _queue,
-	     messages::Peers *peers,
-	     messages::config::Networking *config);
+ public:
+  Networking(messages::Queue *_queue, messages::Peers *peers,
+             messages::config::Networking *config);
   ~Networking();
 
-  TransportLayer::SendResult send(std::shared_ptr<messages::Message> message) const;
+  TransportLayer::SendResult send(
+      std::shared_ptr<messages::Message> message) const;
   bool send_unicast(std::shared_ptr<messages::Message> message) const;
   messages::Peers connected_peers() const;
   std::size_t peer_count() const;
@@ -40,8 +38,7 @@ public:
 
   bool terminate(const Connection::ID id);
   Port listening_port() const;
-  bool connect(messages::Peer * peer);
-  
+  bool connect(messages::Peer *peer);
 };
 
 }  // namespace networking
