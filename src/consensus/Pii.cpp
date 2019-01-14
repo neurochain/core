@@ -149,6 +149,10 @@ std::vector<messages::Pii> Pii::get_addresses_pii() {
     pii.set_score(_addresses.get_entropy(address));
     pii.mutable_address()->CopyFrom(address);
   }
+  std::sort(piis.begin(), piis.end(),
+            [](const messages::Pii &a, const messages::Pii &b) {
+              return a.score() > b.score();  // Sorted in reverse order
+            });
   return piis;
 }
 

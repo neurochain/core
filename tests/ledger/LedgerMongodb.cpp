@@ -410,6 +410,26 @@ TEST_F(LedgerMongodb, update_main_branch) { test_update_main_branch(); }
 
 TEST_F(LedgerMongodb, is_ancestor) { test_is_ancestor(); }
 
+TEST_F(LedgerMongodb, empty_database) {
+  ASSERT_EQ(ledger->total_nb_blocks(), 1);
+  ledger->empty_database();
+  ASSERT_EQ(ledger->total_nb_blocks(), 0);
+}
+
+TEST_F(LedgerMongodb, assembly) {
+  messages::TaggedBlock tagged_block;
+  ASSERT_TRUE(ledger->get_block(0, &tagged_block));
+  messages::Assembly assembly;
+  ASSERT_FALSE(
+      ledger->get_assembly(tagged_block.block().header().id(), &assembly));
+  ASSERT_TRUE(ledger->add_assembly(tagged_block));
+  ASSERT_TRUE(
+      ledger->get_assembly(tagged_block.block().header().id(), &assembly));
+  ASSERT_EQ(assembly.assembly_id(), tagged_block.block().header().id());
+  ASSERT_FALSE(assembly.has_previous_assembly_id());
+  ASSERT_FALSE(assembly.finished_computation());
+}
+
 }  // namespace tests
 }  // namespace ledger
 }  // namespace neuro

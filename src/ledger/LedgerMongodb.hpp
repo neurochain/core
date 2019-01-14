@@ -85,11 +85,14 @@ class LedgerMongodb : public Ledger {
   bool update_branch_tag(const messages::Hash &id,
                          const messages::Branch &branch);
 
-  bool unsafe_get_block_by_previd(const messages::BlockID &previd,
+  bool unsafe_get_block_by_previd(const messages::Hash &previd,
                                   messages::Block *block,
                                   bool include_transactions = true) const;
 
   messages::BlockHeight unsafe_height() const;
+
+  bool unsafe_get_assembly(const messages::Hash &assembly_id,
+                           messages::Assembly *assembly) const;
 
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);
@@ -211,6 +214,12 @@ class LedgerMongodb : public Ledger {
 
   bool get_assemblies_to_compute(
       std::vector<messages::Assembly> *assemblies) const;
+
+  bool get_block_writer(const messages::Hash &assembly_id, int32_t address_rank,
+                        messages::Address *address) const;
+
+  bool set_nb_addresses(const messages::Hash &assembly_id,
+                        int32_t nb_addresses);
 
   friend class neuro::ledger::tests::LedgerMongodb;
 };

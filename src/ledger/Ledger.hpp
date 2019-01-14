@@ -168,6 +168,16 @@ class Ledger {
   virtual bool get_assemblies_to_compute(
       std::vector<messages::Assembly> *assemblies) const = 0;
 
+  virtual bool unsafe_get_assembly(const messages::Hash &assembly_id,
+                                   messages::Assembly *assembly) const = 0;
+
+  virtual bool get_block_writer(const messages::Hash &assembly_id,
+                                int32_t address_rank,
+                                messages::Address *address) const = 0;
+
+  virtual bool set_nb_addresses(const messages::Hash &assembly_id,
+                                int32_t nb_addresses) = 0;
+
   // helpers
 
   messages::Transactions list_transactions(

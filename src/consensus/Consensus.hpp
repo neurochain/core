@@ -1,6 +1,7 @@
 #ifndef NEURO_SRC_CONSENSUS_CONSENSUS_HPP
 #define NEURO_SRC_CONSENSUS_CONSENSUS_HPP
 
+#include <random>
 #include <unordered_set>
 #include "consensus/Pii.hpp"
 #include "ledger/Ledger.hpp"
@@ -12,6 +13,9 @@ class Consensus;
 }
 
 class Consensus {
+ public:
+  const Config config;
+
  private:
   std::shared_ptr<ledger::Ledger> _ledger;
   std::unordered_set<messages::Hash> _current_computations;
@@ -302,10 +306,9 @@ class Consensus {
   }
 
  public:
-  const Config config;
   Consensus(std::shared_ptr<ledger::Ledger> ledger) : _ledger(ledger) {}
   Consensus(std::shared_ptr<ledger::Ledger> ledger, const Config &config)
-      : _ledger(ledger), config(config) {}
+      : config(config), _ledger(ledger) {}
 
   bool is_valid(const messages::TaggedTransaction &tagged_transaction) const {
     if (tagged_transaction.is_coinbase()) {
@@ -411,12 +414,29 @@ class Consensus {
     }
 
     auto piis = pii.get_addresses_pii();
-    for (auto &pii : piis) {
+    for (int i = 0; i < piis.size(); i++) {
+      auto pii = piis[i];
       pii.mutable_assembly_id()->CopyFrom(assembly.assembly_id());
+      pii.set_rank(i);
       _ledger->set_pii(pii);
     }
+    _ledger->set_nb_addresses(assembly.assembly_id(), piis.size());
 
     remove_current_computation(assembly.assembly_id());
+  }
+
+  bool get_block_writer(const messages::Assembly &assembly,
+                        const messages::BlockHeight &height,
+                        messages::Address *address) const {
+    if (!assembly.has_seed() || !assembly.has_nb_addresses()) {
+      return false;
+    }
+    std::mt19937 rng;
+    rng.seed(assembly.seed());
+    auto dist = std::uniform_int_distribution<std::mt19937::result_type>(
+        0, std::min(assembly.nb_addresses(), config.members_per_assembly));
+    return _ledger->get_block_writer(assembly.assembly_id(), dist(rng),
+                                     address);
   }
 
   friend class neuro::consensus::tests::Consensus;

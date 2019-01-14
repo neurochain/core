@@ -110,6 +110,8 @@ bool LedgerMongodb::init_block0(const messages::config::Database &config) {
                              << bss::finalize);
   _pii.create_index(bss::document{} << "address" << 1 << "assembly_id" << 1
                                     << bss::finalize);
+  _pii.create_index(bss::document{} << "rank" << 1 << "assembly_id" << 1
+                                    << bss::finalize);
   _assemblies.create_index(bss::document{} << "assembly_id" << 1
                                            << bss::finalize);
   _assemblies.create_index(bss::document{} << "previous_assembly_id" << 1
@@ -917,7 +919,8 @@ bool LedgerMongodb::update_main_branch(messages::TaggedBlock *main_branch_tip) {
 bool LedgerMongodb::get_pii(const messages::Address &address,
                             const messages::Hash &assembly_id,
                             Double *pii) const {
-  auto query = bss::document{} << "address" << to_bson(address) << "assembly_id"
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  auto query = bss::document{} << "address" << to_bson(address) << "assemblyId"
                                << to_bson(assembly_id) << bss::finalize;
 
   const auto result = _blocks.find_one(std::move(query), remove_OID());
@@ -932,6 +935,7 @@ bool LedgerMongodb::get_pii(const messages::Address &address,
 bool LedgerMongodb::save_pii(const messages::Address &address,
                              const messages::Hash &assembly_id,
                              const Double &score) {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
   messages::Pii pii;
   pii.mutable_address()->CopyFrom(address);
   pii.mutable_assembly_id()->CopyFrom(assembly_id);
@@ -944,11 +948,14 @@ bool LedgerMongodb::save_pii(const messages::Address &address,
   return true;
 }
 
-void LedgerMongodb::empty_database() { _db.drop(); }
+void LedgerMongodb::empty_database() {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  _db.drop();
+}
 
-bool LedgerMongodb::get_assembly(const messages::Hash &assembly_id,
-                                 messages::Assembly *assembly) const {
-  auto query = bss::document{} << "assembly_id" << to_bson(assembly_id)
+bool LedgerMongodb::unsafe_get_assembly(const messages::Hash &assembly_id,
+                                        messages::Assembly *assembly) const {
+  auto query = bss::document{} << "assemblyId" << to_bson(assembly_id)
                                << bss::finalize;
   const auto result = _assemblies.find_one(std::move(query), remove_OID());
   if (!result) {
@@ -958,9 +965,16 @@ bool LedgerMongodb::get_assembly(const messages::Hash &assembly_id,
   return true;
 }
 
+bool LedgerMongodb::get_assembly(const messages::Hash &assembly_id,
+                                 messages::Assembly *assembly) const {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  return unsafe_get_assembly(assembly_id, assembly);
+}
+
 bool LedgerMongodb::get_next_assembly(const messages::Hash &assembly_id,
                                       messages::Assembly *assembly) const {
-  auto query = bss::document{} << "previous_assembly_id" << to_bson(assembly_id)
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  auto query = bss::document{} << "previousAssemblyId" << to_bson(assembly_id)
                                << bss::finalize;
   const auto result = _assemblies.find_one(std::move(query), remove_OID());
   if (!result) {
@@ -971,25 +985,26 @@ bool LedgerMongodb::get_next_assembly(const messages::Hash &assembly_id,
 }
 
 bool LedgerMongodb::add_assembly(const messages::TaggedBlock &tagged_block) {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
   if (tagged_block.branch() != messages::Branch::MAIN &&
       tagged_block.branch() != messages::Branch::FORK) {
     return false;
   }
   messages::Assembly assembly;
-  if (!get_assembly(tagged_block.block().header().id(), &assembly)) {
+  if (unsafe_get_assembly(tagged_block.block().header().id(), &assembly)) {
     // The assembly already exist
     return false;
   }
   assembly.mutable_assembly_id()->CopyFrom(tagged_block.block().header().id());
-  if (tagged_block.has_previous_assembly_id()) {
-    if (tagged_block.block().header().height() == 0) {
-      assembly.mutable_previous_assembly_id()->CopyFrom(
-          tagged_block.previous_assembly_id());
-    } else {
+  if (!tagged_block.has_previous_assembly_id()) {
+    if (tagged_block.block().header().height() != 0) {
       throw(
           "Something is wrong here only the block0 should not have a "
           "previous_assembly_id");
     }
+  } else {
+    assembly.mutable_previous_assembly_id()->CopyFrom(
+        tagged_block.previous_assembly_id());
   }
   assembly.set_finished_computation(false);
   auto bson_assembly = to_bson(assembly);
@@ -1000,7 +1015,8 @@ bool LedgerMongodb::add_assembly(const messages::TaggedBlock &tagged_block) {
 bool LedgerMongodb::get_pii(const messages::Address &address,
                             const messages::Hash &assembly_id,
                             messages::Pii *pii) const {
-  auto query = bss::document{} << "address" << to_bson(address) << "assembly_id"
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  auto query = bss::document{} << "address" << to_bson(address) << "assemblyId"
                                << to_bson(assembly_id) << bss::finalize;
   auto result = _pii.find_one(std::move(query), remove_OID());
   if (!result) {
@@ -1011,6 +1027,7 @@ bool LedgerMongodb::get_pii(const messages::Address &address,
 }
 
 bool LedgerMongodb::set_pii(const messages::Pii &pii) {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto bson_pii = to_bson(pii);
   auto result = _pii.insert_one(std::move(bson_pii));
   return (bool)result;
@@ -1019,10 +1036,11 @@ bool LedgerMongodb::set_pii(const messages::Pii &pii) {
 bool LedgerMongodb::set_previous_assembly_id(
     const messages::Hash &block_id,
     const messages::Hash &previous_assembly_id) {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto filter = bss::document{} << "block.header.id" << to_bson(block_id)
                                 << bss::finalize;
   auto update = bss::document{}
-                << "$set" << bss::open_document << "previous_assembly_id"
+                << "$set" << bss::open_document << "previousAssemblyId"
                 << to_bson(previous_assembly_id) << bss::close_document
                 << bss::finalize;
   auto update_result = _blocks.update_one(std::move(filter), std::move(update));
@@ -1031,6 +1049,7 @@ bool LedgerMongodb::set_previous_assembly_id(
 
 bool LedgerMongodb::get_assemblies_to_compute(
     std::vector<messages::Assembly> *assemblies) const {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto query = bss::document{} << "finished_computation" << false
                                << bss::finalize;
   auto bson_assemblies = _assemblies.find(std::move(query), remove_OID());
@@ -1045,6 +1064,33 @@ bool LedgerMongodb::get_assemblies_to_compute(
   }
 
   return true;
+}
+
+bool LedgerMongodb::get_block_writer(const messages::Hash &assembly_id,
+                                     int32_t address_rank,
+                                     messages::Address *address) const {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  auto query = bss::document{} << "assemblyId" << to_bson(assembly_id) << "rank"
+                               << address_rank << bss::finalize;
+  auto result = _pii.find_one(std::move(query), projection("address"));
+  if (!result) {
+    return false;
+  };
+  from_bson(result->view()["address"].get_document(), address);
+  return true;
+}
+
+bool LedgerMongodb::set_nb_addresses(const messages::Hash &assembly_id,
+                                     int32_t nb_addresses) {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  auto filter = bss::document{} << "assemblyId" << to_bson(assembly_id)
+                                << bss::finalize;
+  auto update = bss::document{} << "$set" << bss::open_document << "nbAddresses"
+                                << nb_addresses << bss::close_document
+                                << bss::finalize;
+  auto update_result =
+      _assemblies.update_one(std::move(filter), std::move(update));
+  return update_result && update_result->modified_count() > 0;
 }
 
 }  // namespace ledger
