@@ -1,11 +1,11 @@
 {
-    "key_pub_path": "key1.pub",
-    "key_priv_path": "key1.priv",
     "logs": {
 	"severity": "debug",
 	"to_stdout": true
     },
     "networking": {
+    "key_pub_path": "key1.pub",
+    "key_priv_path": "key1.priv",
 	"max_connections": 3,
 	"tcp": {
 	    "port": 1338,

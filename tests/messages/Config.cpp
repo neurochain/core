@@ -17,7 +17,7 @@ TEST(Conf, load) {
   } catch (...) {
     did_throw = true;
   }
-  ASSERT_NE(did_throw, true);
+  ASSERT_FALSE(did_throw);
 
   auto conf = messages::config::Config{config_path};
 
