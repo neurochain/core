@@ -49,7 +49,7 @@ message Peer {
   }
 
   optional string endpoint = 1;
-  required KeyPub key_pub = 2;
+  optional KeyPub key_pub = 2;
   optional int32 port = 3;
   optional Status status = 4;
   optional Timestamp last_update = 5;

@@ -24,9 +24,10 @@ class Tcp {
     messages::Peer peer;
     peer.set_endpoint("127.0.0.1");
     peer.set_port(port);
-
+    keys2->public_key().save(peer.mutable_key_pub());
     networking::Tcp tcp1(port, &queue, &peers, keys1.get());
     networking::Tcp tcp2(port + 1, &queue, &peers, keys2.get());
+    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     tcp2.connect(&peer);
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     ASSERT_EQ(tcp1._connections.size(), 1);

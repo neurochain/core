@@ -15,7 +15,8 @@ bool from_json(const std::string &json, Packet *packet) {
   google::protobuf::util::JsonParseOptions options;
   auto r = google::protobuf::util::JsonStringToMessage(json, packet, options);
   if (!r.ok()) {
-    LOG_ERROR << "Could not parse json " << r;
+    LOG_ERROR << "Could not parse json " << boost::stacktrace::stacktrace()
+              << std::endl;
   }
   return r.ok();
 }
@@ -53,7 +54,8 @@ void to_json(const Packet &packet, std::string *output) {
   try {
     google::protobuf::util::MessageToJsonString(packet, output);
   } catch (...) {
-    std::cout << boost::stacktrace::stacktrace() << std::endl;
+    LOG_ERROR << "Could not to_json packet " << boost::stacktrace::stacktrace()
+              << std::endl;
     throw;
   }
 }
