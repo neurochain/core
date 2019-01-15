@@ -32,6 +32,8 @@ class Address : public _Address {
 
   Address(const messages::_Address &address) : _Address(address) {}
 
+  Address() : _Address() {}
+
   bool verify() const {
     if (!has_data()) {
       return false;

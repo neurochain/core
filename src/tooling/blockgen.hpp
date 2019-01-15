@@ -1,3 +1,6 @@
+#ifndef NEURO_SRC_BLOCKGEN_HPP
+#define NEURO_SRC_BLOCKGEN_HPP
+
 #include <boost/program_options.hpp>
 #include <optional>
 #include "crypto/Ecc.hpp"
@@ -43,3 +46,5 @@ void create_empty_db(const messages::config::Database &config);
 }  // namespace blockgen
 }  // namespace tooling
 }  // namespace neuro
+
+#endif

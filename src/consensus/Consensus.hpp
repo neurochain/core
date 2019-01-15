@@ -5,6 +5,7 @@
 #include <unordered_set>
 #include "consensus/Pii.hpp"
 #include "ledger/Ledger.hpp"
+#include "tooling/blockgen.hpp"
 
 namespace neuro {
 namespace consensus {
@@ -139,7 +140,8 @@ class Consensus {
 
     // Check total spent
     if (tagged_block.block().header().height() != 0) {
-      uint64_t to_spend = expected_block_reward(tagged_block).value();
+      uint64_t to_spend =
+          block_reward(tagged_block.block().header().height()).value();
       uint64_t total_spent = 0;
       for (const auto &output : tagged_transaction.transaction().outputs()) {
         total_spent += output.value().value();
@@ -154,8 +156,7 @@ class Consensus {
            !tagged_transaction.transaction().has_fees();
   }
 
-  messages::NCCAmount expected_block_reward(
-      const messages::TaggedBlock tagged_block) const {
+  messages::NCCAmount block_reward(const messages::BlockHeight height) const {
     // TODO use some sort of formula here
     return config.block_reward;
   }
@@ -437,6 +438,62 @@ class Consensus {
         0, std::min(assembly.nb_addresses(), config.members_per_assembly));
     return _ledger->get_block_writer(assembly.assembly_id(), dist(rng),
                                      address);
+  }
+
+  messages::BlockHeight get_current_height() {
+    messages::Block block0;
+    _ledger->get_block(0, &block0);
+    return (std::time(nullptr) - block0.header().timestamp().data()) /
+           config.block_period;
+  }
+
+  bool heights_to_write(const messages::Address &address,
+                        std::vector<messages::BlockHeight> *heights) {
+    messages::TaggedBlock tagged_block;
+    _ledger->get_block(_ledger->height(), &tagged_block);
+    messages::Assembly previous_assembly, previous_previous_assembly;
+    if (!_ledger->get_assembly(tagged_block.previous_assembly_id(),
+                               &previous_assembly) ||
+        !_ledger->get_assembly(previous_assembly.previous_assembly_id(),
+                               &previous_previous_assembly)) {
+      return false;
+    }
+
+    // starting from the current height
+    // how do I get the correct assembly for the given height ????
+    // TODO TODO TODO
+    // auto height = get_current_height();
+
+    return true;
+  }
+
+  bool write_block(const crypto::Ecc &keys, const messages::BlockHeight &height,
+                   messages::Block *block) {
+    messages::BlockHeader last_block_header;
+    if (!_ledger->get_last_block_header(&last_block_header)) {
+      return false;
+    }
+    auto header = block->mutable_header();
+    keys.public_key().save(header->mutable_author());
+    header->set_height(height);
+    header->mutable_previous_block_hash()->CopyFrom(last_block_header.id());
+    header->mutable_timestamp()->set_data(std::time(nullptr));
+
+    // Block reward
+    auto transaction = block->add_coinbases();
+    tooling::blockgen::coinbase(keys.public_key(), block_reward(height),
+                                transaction);
+
+    // Transactions
+    if (!_ledger->get_transaction_pool(block)) {
+      return false;
+    }
+
+    messages::sort_transactions(block);
+    messages::set_block_hash(block);
+
+    // TODO sign blocks
+    return true;
   }
 
   friend class neuro::consensus::tests::Consensus;

@@ -428,6 +428,32 @@ TEST_F(LedgerMongodb, assembly) {
   ASSERT_EQ(assembly.assembly_id(), tagged_block.block().header().id());
   ASSERT_FALSE(assembly.has_previous_assembly_id());
   ASSERT_FALSE(assembly.finished_computation());
+  ASSERT_FALSE(assembly.has_nb_addresses());
+  ASSERT_TRUE(ledger->set_nb_addresses(assembly.assembly_id(), 17));
+  ASSERT_TRUE(
+      ledger->get_assembly(tagged_block.block().header().id(), &assembly));
+  ASSERT_EQ(assembly.nb_addresses(), 17);
+}
+
+TEST_F(LedgerMongodb, pii) {
+  messages::TaggedBlock tagged_block;
+  ASSERT_TRUE(ledger->get_block(0, &tagged_block));
+  ASSERT_TRUE(ledger->add_assembly(tagged_block));
+  auto assembly_id = tagged_block.block().header().id();
+  std::vector<crypto::Ecc> keys{5};
+  for (int i = 0; i < 5; i++) {
+    messages::Pii pii;
+    pii.mutable_address()->CopyFrom(messages::Address(keys[i].public_key()));
+    pii.mutable_assembly_id()->CopyFrom(assembly_id);
+    pii.set_score(10 - i);
+    pii.set_rank(i);
+    ASSERT_TRUE(ledger->set_pii(pii));
+  }
+  for (int i = 0; i < 3; i++) {
+    messages::Address address;
+    ledger->get_block_writer(assembly_id, i, &address);
+    ASSERT_EQ(address, messages::Address(keys[i].public_key()));
+  }
 }
 
 }  // namespace tests
