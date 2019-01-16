@@ -19,13 +19,13 @@ namespace networking {
 class Networking {
  private:
   std::unique_ptr<TransportLayer> _transport_layer;
+  messages::Queue *_queue;
   crypto::Ecc *_keys;
 
   mutable std::uniform_int_distribution<int> _dist;
-  messages::Queue *_queue;
 
  public:
-  Networking(messages::Queue *_queue, messages::Peers *peers,
+  Networking(messages::Queue *_queue, crypto::Ecc *keys, messages::Peers *peers,
              messages::config::Networking *config);
   ~Networking();
 

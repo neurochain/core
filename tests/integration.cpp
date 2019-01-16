@@ -94,7 +94,7 @@ TEST(INTEGRATION, simple_interaction) {
         listener.handler_connection(header, body);
       });
 
-  std::this_thread::sleep_for(5s);
+  std::this_thread::sleep_for(1s);
 
   LOG_DEBUG << "listener.received_connection() = "
             << listener.received_connection();
@@ -104,6 +104,7 @@ TEST(INTEGRATION, simple_interaction) {
 
   ASSERT_GT(listener.received_connection(), 0);
   ASSERT_EQ(listener.received_deconnection(), 0);
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
   auto peers_bot0 = (bot0->connected_peers());
   auto peers_bot1 = (bot1->connected_peers());

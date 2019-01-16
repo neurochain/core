@@ -26,11 +26,11 @@ class Bot {
   messages::Queue _queue;
   messages::Subscriber _subscriber;
   crypto::Ecc _keys;
+  messages::Peers _peers;
   networking::Networking _networking;
   boost::asio::steady_timer _update_timer;
   std::shared_ptr<ledger::Ledger> _ledger;
   std::shared_ptr<consensus::Consensus> _consensus;
-  messages::Peers _peers;
   std::unordered_set<int32_t> _request_ids;
   std::thread _io_context_thread;
 

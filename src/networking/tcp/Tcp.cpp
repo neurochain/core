@@ -16,6 +16,30 @@ namespace neuro {
 namespace networking {
 using namespace std::chrono_literals;
 
+Tcp::Tcp(const Port port, messages::Queue *queue, messages::Peers *peers,
+         crypto::Ecc *keys)
+    : TransportLayer(queue, peers, keys),
+      _stopped(false),
+      _listening_port(port),
+      _io_context(),
+      _resolver(_io_context),
+      _acceptor(_io_context,
+                bai::tcp::endpoint(bai::tcp::v4(), _listening_port)),
+      _peers(peers) {
+  assert(peers);
+  
+  while (!_acceptor.is_open()) {
+    std::this_thread::yield();
+    LOG_DEBUG << "Waiting for acceptor to be open";
+  }
+  start_accept();
+  _io_context_thread = std::thread([this]() {
+    boost::system::error_code ec;
+    this->_io_context.run(ec);
+    LOG_INFO << __FILE__ << ":" << __LINE__ << "> io_context exited " << ec;
+  });
+}
+  
 void Tcp::start_accept() {
   if (!_stopped) {
     _new_socket = std::make_shared<bai::tcp::socket>(_io_context);
@@ -39,28 +63,6 @@ void Tcp::accept(const boost::system::error_code &error) {
   }
   _new_socket.reset();  // TODO why?
   start_accept();
-}
-
-Tcp::Tcp(const Port port, messages::Queue *queue, messages::Peers *peers,
-         crypto::Ecc *keys)
-    : TransportLayer(queue, peers, keys),
-      _stopped(false),
-      _listening_port(port),
-      _io_context(),
-      _resolver(_io_context),
-      _acceptor(_io_context,
-                bai::tcp::endpoint(bai::tcp::v4(), _listening_port)),
-      _peers(peers) {
-  while (!_acceptor.is_open()) {
-    std::this_thread::yield();
-    LOG_DEBUG << "Waiting for acceptor to be open";
-  }
-  start_accept();
-  _io_context_thread = std::thread([this]() {
-    boost::system::error_code ec;
-    this->_io_context.run(ec);
-    LOG_INFO << __FILE__ << ":" << __LINE__ << "> io_context exited " << ec;
-  });
 }
 
 bool Tcp::connect(messages::Peer *peer) {
@@ -91,9 +93,9 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
   auto msg_header = message->mutable_header();
   auto msg_body = message->add_bodies();
 
-  LOG_INFO << "New connection " << *peer << " " << from_remote;
 
   if (!error) {
+    LOG_INFO << "New connection " << *peer << " " << from_remote;
     _current_id++;
 
     msg_header->set_connection_id(_current_id);
@@ -159,7 +161,8 @@ bool Tcp::serialize(std::shared_ptr<messages::Message> message,
 TransportLayer::SendResult Tcp::send(
     std::shared_ptr<messages::Message> message) const {
   if (_connections.size() == 0) {
-    LOG_ERROR << "Could not send message because there is no connection";
+    LOG_ERROR << "Could not send message because there is no connection "
+	      << message;
     return SendResult::FAILED;
   }
 

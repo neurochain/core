@@ -21,7 +21,9 @@ Bot::Bot(const messages::config::Config &config)
       _subscriber(&_queue),
       _keys(_config.networking().key_priv_path(),
             _config.networking().key_pub_path()),
-      _networking(&_queue, &_peers, _config.mutable_networking()),
+      _peers(_config.networking().tcp().peers().begin(),
+	     _config.networking().tcp().peers().end()),
+      _networking(&_queue, &_keys, &_peers, _config.mutable_networking()),
       _ledger(std::make_shared<ledger::LedgerMongodb>(_config.database())),
       _update_timer(*_io_context) {
   if (!init()) {

@@ -9,9 +9,9 @@
 namespace neuro {
 namespace networking {
 
-Networking::Networking(messages::Queue *queue, messages::Peers *peers,
+  Networking::Networking(messages::Queue *queue, crypto::Ecc *keys, messages::Peers *peers,
                        messages::config::Networking *config)
-    : _queue(queue), _dist(0, std::numeric_limits<uint32_t>::max()) {
+    : _queue(queue), _keys(keys), _dist(0, std::numeric_limits<uint32_t>::max()) {
   _queue->run();
   _transport_layer =
       std::make_unique<Tcp>(config->tcp().port(), queue, peers, _keys);
