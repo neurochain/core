@@ -45,6 +45,7 @@ const std::string OUTPUT_ID = "outputId";
 const std::string PII = "pii";
 const std::string RANK = "rank";
 const std::string SCORE = "score";
+const std::string SEED = "seed";
 const std::string TAGGED_BLOCK = "taggedBlock";
 const std::string TRANSACTION_ID = "transaction.id";
 const std::string TRANSACTION = "transaction";
@@ -1021,7 +1022,9 @@ bool LedgerMongodb::get_next_assembly(const messages::Hash &assembly_id,
   return true;
 }
 
-bool LedgerMongodb::add_assembly(const messages::TaggedBlock &tagged_block) {
+bool LedgerMongodb::add_assembly(const messages::TaggedBlock &tagged_block,
+                                 const messages::BlockHeight &first_height,
+                                 const messages::BlockHeight &last_height) {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   if (tagged_block.branch() != messages::Branch::MAIN &&
       tagged_block.branch() != messages::Branch::FORK) {
@@ -1044,6 +1047,8 @@ bool LedgerMongodb::add_assembly(const messages::TaggedBlock &tagged_block) {
         tagged_block.previous_assembly_id());
   }
   assembly.set_finished_computation(false);
+  assembly.set_first_height(first_height);
+  assembly.set_last_height(first_height);
   auto bson_assembly = to_bson(assembly);
   auto result = _assemblies.insert_one(std::move(bson_assembly));
   return (bool)result;
@@ -1125,6 +1130,17 @@ bool LedgerMongodb::set_nb_addresses(const messages::Hash &assembly_id,
   auto update = bss::document{} << $SET << bss::open_document << NB_ADDRESSES
                                 << nb_addresses << bss::close_document
                                 << bss::finalize;
+  auto update_result =
+      _assemblies.update_one(std::move(filter), std::move(update));
+  return update_result && update_result->modified_count() > 0;
+}
+
+bool LedgerMongodb::set_seed(const messages::Hash &assembly_id, int32_t seed) {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  auto filter = bss::document{} << ASSEMBLY_ID << to_bson(assembly_id)
+                                << bss::finalize;
+  auto update = bss::document{} << $SET << bss::open_document << SEED << seed
+                                << bss::close_document << bss::finalize;
   auto update_result =
       _assemblies.update_one(std::move(filter), std::move(update));
   return update_result && update_result->modified_count() > 0;

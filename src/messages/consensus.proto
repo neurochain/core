@@ -14,13 +14,15 @@ message Pii {
   required _Address address = 1;
   required Hash assembly_id = 2;
   required double score = 3;
-  required uint32 rank = 4;
+  required int32 rank = 4;
 }
 
 message Assembly {
   required Hash assembly_id = 1; // This id is the hash of the last block of the assembly
   optional Hash previous_assembly_id = 2;
   required bool finished_computation = 3;
-  optional uint32 seed = 4;
-  optional uint32 nb_addresses = 5;
+  optional int32 seed = 4;
+  optional int32 nb_addresses = 5;
+  optional int32 first_height = 6;
+  optional int32 last_height = 7;
 }

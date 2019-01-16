@@ -150,7 +150,9 @@ class Ledger {
   virtual bool get_assembly(const messages::Hash &assembly_id,
                             messages::Assembly *assembly) const = 0;
 
-  virtual bool add_assembly(const messages::TaggedBlock &tagged_block) = 0;
+  virtual bool add_assembly(const messages::TaggedBlock &tagged_block,
+                            const messages::BlockHeight &first_height,
+                            const messages::BlockHeight &last_height) = 0;
 
   virtual bool get_pii(const messages::Address &address,
                        const messages::Hash &assembly_id,
@@ -177,6 +179,8 @@ class Ledger {
 
   virtual bool set_nb_addresses(const messages::Hash &assembly_id,
                                 int32_t nb_addresses) = 0;
+
+  virtual bool set_seed(const messages::Hash &assembly_id, int32_t seed) = 0;
 
   // helpers
 

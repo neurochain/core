@@ -422,23 +422,37 @@ TEST_F(LedgerMongodb, assembly) {
   messages::Assembly assembly;
   ASSERT_FALSE(
       ledger->get_assembly(tagged_block.block().header().id(), &assembly));
-  ASSERT_TRUE(ledger->add_assembly(tagged_block));
+  ASSERT_TRUE(ledger->add_assembly(tagged_block, 0, 100));
   ASSERT_TRUE(
       ledger->get_assembly(tagged_block.block().header().id(), &assembly));
   ASSERT_EQ(assembly.assembly_id(), tagged_block.block().header().id());
   ASSERT_FALSE(assembly.has_previous_assembly_id());
   ASSERT_FALSE(assembly.finished_computation());
+
+  // set_nb_addresses
   ASSERT_FALSE(assembly.has_nb_addresses());
   ASSERT_TRUE(ledger->set_nb_addresses(assembly.assembly_id(), 17));
   ASSERT_TRUE(
       ledger->get_assembly(tagged_block.block().header().id(), &assembly));
   ASSERT_EQ(assembly.nb_addresses(), 17);
+
+  // set_seed
+  ASSERT_FALSE(assembly.has_seed());
+  ASSERT_TRUE(ledger->set_seed(assembly.assembly_id(), 19));
+  ASSERT_TRUE(
+      ledger->get_assembly(tagged_block.block().header().id(), &assembly));
+  ASSERT_EQ(assembly.seed(), 19);
+
+  // get_assemblies_to_compute
+  std::vector<messages::Assembly> assemblies;
+  ASSERT_TRUE(ledger->get_assemblies_to_compute(&assemblies));
+  ASSERT_EQ(assemblies.size(), 1);
 }
 
 TEST_F(LedgerMongodb, pii) {
   messages::TaggedBlock tagged_block;
   ASSERT_TRUE(ledger->get_block(0, &tagged_block));
-  ASSERT_TRUE(ledger->add_assembly(tagged_block));
+  ASSERT_TRUE(ledger->add_assembly(tagged_block, 0, 100));
   auto assembly_id = tagged_block.block().header().id();
   std::vector<crypto::Ecc> keys{5};
   for (int i = 0; i < 5; i++) {
@@ -454,6 +468,18 @@ TEST_F(LedgerMongodb, pii) {
     ledger->get_block_writer(assembly_id, i, &address);
     ASSERT_EQ(address, messages::Address(keys[i].public_key()));
   }
+}
+
+TEST_F(LedgerMongodb, set_previous_assembly_id) {
+  messages::TaggedBlock tagged_block;
+  ASSERT_TRUE(ledger->get_block(0, &tagged_block));
+  ASSERT_FALSE(tagged_block.has_previous_assembly_id());
+  auto block_id = tagged_block.block().header().id();
+  auto assembly_id = block_id;
+  ASSERT_TRUE(ledger->set_previous_assembly_id(block_id, assembly_id));
+  ASSERT_TRUE(ledger->get_block(0, &tagged_block));
+  ASSERT_TRUE(tagged_block.has_previous_assembly_id());
+  ASSERT_EQ(tagged_block.previous_assembly_id(), assembly_id);
 }
 
 }  // namespace tests

@@ -1,6 +1,7 @@
 #ifndef NEURO_SRC_CONSENSUS_CONSENSUS_HPP
 #define NEURO_SRC_CONSENSUS_CONSENSUS_HPP
 
+#include <algorithm>
 #include <random>
 #include <unordered_set>
 #include "consensus/Pii.hpp"
@@ -236,8 +237,23 @@ class Consensus {
   }
 
   bool check_block_author(const messages::Block &block) const {
-    // TODO
-    return true;
+    messages::TaggedBlock tagged_block;
+    messages::Assembly previous_assembly, previous_previous_assembly;
+    if (!_ledger->get_block(block.header().id(), &tagged_block) ||
+        !_ledger->get_assembly(tagged_block.previous_assembly_id(),
+                               &previous_assembly) ||
+        !_ledger->get_assembly(previous_assembly.previous_assembly_id(),
+                               &previous_previous_assembly)) {
+      return false;
+    }
+
+    messages::Address address;
+    if (!get_block_writer(previous_previous_assembly, block.header().height(),
+                          &address)) {
+      return false;
+    }
+
+    return address == block.header().author();
   }
 
   Double get_block_score(const messages::TaggedBlock &tagged_block) {
@@ -265,7 +281,10 @@ class Consensus {
         assert(previous.branch() == messages::Branch::MAIN ||
                previous.branch() == messages::Branch::FORK);
         if (is_new_assembly(tagged_block, previous)) {
-          _ledger->add_assembly(previous);
+          uint32_t first_height =
+              previous.block().header().height() / config.blocks_per_assembly;
+          uint32_t last_height = first_height + config.blocks_per_assembly - 1;
+          _ledger->add_assembly(previous, first_height, last_height);
           const auto previous_assembly_id = previous.block().header().id();
           _ledger->set_block_verified(tagged_block.block().header().id(),
                                       get_block_score(tagged_block),
@@ -399,17 +418,23 @@ class Consensus {
     if (!_ledger->get_block(assembly.assembly_id(), &tagged_block)) {
       LOG_WARNING << "During Pii computation missing block "
                   << assembly.assembly_id();
+      remove_current_computation(assembly.assembly_id());
       return;
     }
+    uint32_t seed = 0;
 
     while (tagged_block.block().header().id() !=
            assembly.previous_assembly_id()) {
       pii.add_block(tagged_block);
+      auto block_id = tagged_block.block().header().id().data();
+      seed += block_id.at(block_id.size()) % 2;
+      seed <<= 1;
       if (!_ledger->get_block(
               tagged_block.block().header().previous_block_hash(),
               &tagged_block)) {
         LOG_WARNING << "During Pii computation missing block "
                     << tagged_block.block().header().previous_block_hash();
+        remove_current_computation(assembly.assembly_id());
         return;
       }
     }
@@ -435,7 +460,8 @@ class Consensus {
     std::mt19937 rng;
     rng.seed(assembly.seed());
     auto dist = std::uniform_int_distribution<std::mt19937::result_type>(
-        0, std::min(assembly.nb_addresses(), config.members_per_assembly));
+        0, std::min(assembly.nb_addresses(),
+                    (int32_t)config.members_per_assembly));
     return _ledger->get_block_writer(assembly.assembly_id(), dist(rng),
                                      address);
   }
@@ -452,6 +478,7 @@ class Consensus {
     messages::TaggedBlock tagged_block;
     _ledger->get_block(_ledger->height(), &tagged_block);
     messages::Assembly previous_assembly, previous_previous_assembly;
+
     if (!_ledger->get_assembly(tagged_block.previous_assembly_id(),
                                &previous_assembly) ||
         !_ledger->get_assembly(previous_assembly.previous_assembly_id(),
@@ -459,10 +486,40 @@ class Consensus {
       return false;
     }
 
-    // starting from the current height
-    // how do I get the correct assembly for the given height ????
-    // TODO TODO TODO
-    // auto height = get_current_height();
+    if (previous_previous_assembly.finished_computation()) {
+      LOG_WARNING << "The computation of the assembly "
+                  << previous_previous_assembly.assembly_id()
+                  << " is not finished.";
+      return false;
+    }
+    auto height = get_current_height();
+    for (auto i = height; i < previous_previous_assembly.last_height(); i++) {
+      messages::Address writer;
+      if (!get_block_writer(previous_previous_assembly,
+                            i % config.blocks_per_assembly, &writer)) {
+        LOG_WARNING << "Did not manage to get the block writer for assembly "
+                    << previous_previous_assembly.assembly_id() << " at height "
+                    << i;
+      }
+      if (writer == address) {
+        heights->push_back(i);
+      }
+    }
+
+    if (previous_assembly.finished_computation()) {
+      for (auto i = previous_assembly.first_height();
+           i < previous_assembly.last_height(); i++) {
+        messages::Address writer;
+        if (!get_block_writer(previous_assembly, i % config.blocks_per_assembly,
+                              &writer)) {
+          LOG_WARNING << "Did not manage to get the block writer for assembly "
+                      << previous_assembly.assembly_id() << " at height " << i;
+        }
+        if (writer == address) {
+          heights->push_back(i);
+        }
+      }
+    }
 
     return true;
   }
