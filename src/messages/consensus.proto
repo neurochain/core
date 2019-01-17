@@ -18,7 +18,7 @@ message Pii {
 }
 
 message Assembly {
-  required Hash assembly_id = 1; // This id is the hash of the last block of the assembly
+  required Hash id = 1; // This id is the hash of the last block of the assembly
   optional Hash previous_assembly_id = 2;
   required bool finished_computation = 3;
   optional int32 seed = 4;

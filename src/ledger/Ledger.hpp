@@ -76,6 +76,8 @@ class Ledger {
                                 messages::BlockHeader *header) const = 0;
   virtual bool get_last_block_header(
       messages::BlockHeader *block_header) const = 0;
+  virtual bool get_last_block(messages::TaggedBlock *tagged_block,
+                              bool include_transactions = false) const = 0;
   virtual bool get_block(const messages::BlockID &id, messages::Block *block,
                          bool include_transactions = true) const = 0;
   virtual bool get_block(const messages::BlockID &id,

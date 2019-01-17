@@ -384,8 +384,8 @@ class Consensus {
     std::vector<messages::Assembly> assemblies;
     _ledger->get_assemblies_to_compute(&assemblies);
     for (const auto &assembly : assemblies) {
-      if (_current_computations.count(assembly.assembly_id()) == 0) {
-        if (add_current_computation(assembly.assembly_id())) {
+      if (_current_computations.count(assembly.id()) == 0) {
+        if (add_current_computation(assembly.id())) {
           std::thread([&]() { compute_assembly_pii(assembly); });
         }
       }
@@ -415,10 +415,9 @@ class Consensus {
   void compute_assembly_pii(const messages::Assembly &assembly) {
     auto pii = Pii(_ledger, config);
     messages::TaggedBlock tagged_block;
-    if (!_ledger->get_block(assembly.assembly_id(), &tagged_block)) {
-      LOG_WARNING << "During Pii computation missing block "
-                  << assembly.assembly_id();
-      remove_current_computation(assembly.assembly_id());
+    if (!_ledger->get_block(assembly.id(), &tagged_block)) {
+      LOG_WARNING << "During Pii computation missing block " << assembly.id();
+      remove_current_computation(assembly.id());
       return;
     }
     uint32_t seed = 0;
@@ -434,7 +433,7 @@ class Consensus {
               &tagged_block)) {
         LOG_WARNING << "During Pii computation missing block "
                     << tagged_block.block().header().previous_block_hash();
-        remove_current_computation(assembly.assembly_id());
+        remove_current_computation(assembly.id());
         return;
       }
     }
@@ -442,13 +441,13 @@ class Consensus {
     auto piis = pii.get_addresses_pii();
     for (int i = 0; i < piis.size(); i++) {
       auto pii = piis[i];
-      pii.mutable_assembly_id()->CopyFrom(assembly.assembly_id());
+      pii.mutable_assembly_id()->CopyFrom(assembly.id());
       pii.set_rank(i);
       _ledger->set_pii(pii);
     }
-    _ledger->set_nb_addresses(assembly.assembly_id(), piis.size());
+    _ledger->set_nb_addresses(assembly.id(), piis.size());
 
-    remove_current_computation(assembly.assembly_id());
+    remove_current_computation(assembly.id());
   }
 
   bool get_block_writer(const messages::Assembly &assembly,
@@ -462,8 +461,7 @@ class Consensus {
     auto dist = std::uniform_int_distribution<std::mt19937::result_type>(
         0, std::min(assembly.nb_addresses(),
                     (int32_t)config.members_per_assembly));
-    return _ledger->get_block_writer(assembly.assembly_id(), dist(rng),
-                                     address);
+    return _ledger->get_block_writer(assembly.id(), dist(rng), address);
   }
 
   messages::BlockHeight get_current_height() {
@@ -488,8 +486,7 @@ class Consensus {
 
     if (previous_previous_assembly.finished_computation()) {
       LOG_WARNING << "The computation of the assembly "
-                  << previous_previous_assembly.assembly_id()
-                  << " is not finished.";
+                  << previous_previous_assembly.id() << " is not finished.";
       return false;
     }
     auto height = get_current_height();
@@ -498,8 +495,7 @@ class Consensus {
       if (!get_block_writer(previous_previous_assembly,
                             i % config.blocks_per_assembly, &writer)) {
         LOG_WARNING << "Did not manage to get the block writer for assembly "
-                    << previous_previous_assembly.assembly_id() << " at height "
-                    << i;
+                    << previous_previous_assembly.id() << " at height " << i;
       }
       if (writer == address) {
         heights->push_back(i);
@@ -513,7 +509,7 @@ class Consensus {
         if (!get_block_writer(previous_assembly, i % config.blocks_per_assembly,
                               &writer)) {
           LOG_WARNING << "Did not manage to get the block writer for assembly "
-                      << previous_assembly.assembly_id() << " at height " << i;
+                      << previous_assembly.id() << " at height " << i;
         }
         if (writer == address) {
           heights->push_back(i);

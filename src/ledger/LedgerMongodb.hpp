@@ -13,6 +13,10 @@
 #include "messages/config/Database.hpp"
 
 namespace neuro {
+namespace tooling {
+class Simulator;
+}
+
 namespace ledger {
 namespace tests {
 class LedgerMongodb;
@@ -42,6 +46,11 @@ class LedgerMongodb : public Ledger {
 
   bool init_block0(const messages::config::Database &config);
 
+  bool load_block0(const messages::config::Database &config,
+                   messages::Block *block0);
+
+  bool init_database(const messages::Block &block0);
+
   bool is_ancestor(const messages::TaggedBlock &ancestor,
                    const messages::TaggedBlock &block) const;
 
@@ -50,7 +59,7 @@ class LedgerMongodb : public Ledger {
 
   int fill_block_transactions(messages::Block *block) const;
 
-  bool unsafe_get_block(const messages::BlockID &id,
+  bool unsafe_get_block(const messages::Hash &id,
                         messages::TaggedBlock *tagged_block,
                         bool include_transactions = true) const;
 
@@ -94,6 +103,9 @@ class LedgerMongodb : public Ledger {
   bool unsafe_get_assembly(const messages::Hash &assembly_id,
                            messages::Assembly *assembly) const;
 
+  bool generate_first_assemblies(
+      const std::vector<messages::Address> &addresses);
+
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);
   LedgerMongodb(const messages::config::Database &config);
@@ -112,6 +124,9 @@ class LedgerMongodb : public Ledger {
                         messages::BlockHeader *header) const;
 
   bool get_last_block_header(messages::BlockHeader *block_header) const;
+
+  bool get_last_block(messages::TaggedBlock *tagged_block,
+                      bool include_transactions = false) const;
 
   bool get_block(const messages::BlockID &id,
                  messages::TaggedBlock *tagged_block,
@@ -226,6 +241,7 @@ class LedgerMongodb : public Ledger {
   bool set_seed(const messages::Hash &assembly_id, int32_t seed);
 
   friend class neuro::ledger::tests::LedgerMongodb;
+  friend class neuro::tooling::Simulator;
 };
 
 }  // namespace ledger

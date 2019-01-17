@@ -94,12 +94,45 @@ mongocxx::options::find LedgerMongodb::projection(
   return find_options;
 }
 
-bool LedgerMongodb::init_block0(const messages::config::Database &config) {
-  messages::Block block0;
-  if (unsafe_get_block(0, &block0)) {
-    return true;
+bool LedgerMongodb::generate_first_assemblies(
+    const std::vector<messages::Address> &addresses) {
+  messages::Assembly assembly_minus_1, assembly_minus_2;
+  crypto::Ecc key0, key1;
+  assembly_minus_1.mutable_id()->CopyFrom(
+      messages::Hasher(key0.public_key()));  // Just a random hash
+  assembly_minus_1.mutable_previous_assembly_id()->CopyFrom(
+      messages::Hasher(key1.public_key()));
+  assembly_minus_1.set_finished_computation(true);
+  assembly_minus_2.mutable_id()->CopyFrom(
+      assembly_minus_1.previous_assembly_id());
+  assembly_minus_2.set_finished_computation(true);
+
+  // Insert the Piis
+  for (const auto &assembly : {assembly_minus_1, assembly_minus_2}) {
+    auto bson_assembly = to_bson(assembly);
+    auto result = _assemblies.insert_one(std::move(bson_assembly));
+    if (!result) {
+      return false;
+    }
+    for (size_t i = 0; i < addresses.size(); i++) {
+      auto &address = addresses[i];
+      messages::Pii pii;
+      pii.mutable_address()->CopyFrom(address);
+      pii.mutable_assembly_id()->CopyFrom(assembly.id());
+      pii.set_score(1);
+      pii.set_rank(i);
+      set_pii(pii);
+    }
   }
-  block0.Clear();
+
+  messages::Block block0;
+  return (
+      !get_block(0, &block0) ||
+      !set_previous_assembly_id(block0.header().id(), assembly_minus_1.id()));
+}
+
+bool LedgerMongodb::load_block0(const messages::config::Database &config,
+                                messages::Block *block0) {
   std::ifstream block0stream(config.block0_path());
   if (!block0stream.is_open()) {
     LOG_ERROR << "Could not load block from " << config.block0_path()
@@ -112,23 +145,47 @@ bool LedgerMongodb::init_block0(const messages::config::Database &config) {
   auto d = bss::document{};
   switch (config.block0_format()) {
     case messages::config::Database::Block0Format::_Database_Block0Format_PROTO:
-      block0.ParseFromString(str);
+      block0->ParseFromString(str);
       break;
     case messages::config::Database::Block0Format::_Database_Block0Format_BSON:
       d << str;
-      from_bson(d.view(), &block0);
+      from_bson(d.view(), block0);
       break;
     case messages::config::Database::Block0Format::_Database_Block0Format_JSON:
-      messages::from_json(str, &block0);
+      messages::from_json(str, block0);
       break;
   }
 
+  return true;
+}
+
+bool LedgerMongodb::init_block0(const messages::config::Database &config) {
+  messages::Block block0;
+  if (unsafe_get_block(0, &block0)) {
+    return true;
+  }
+  block0.Clear();
+  if (!load_block0(config, &block0)) {
+    return false;
+  }
+  return init_database(block0);
+}
+
+bool LedgerMongodb::init_database(const messages::Block &block0) {
   messages::TaggedBlock tagged_block0;
   tagged_block0.set_branch(messages::Branch::MAIN);
   tagged_block0.mutable_branch_path()->add_branch_ids(0);
   tagged_block0.mutable_branch_path()->add_block_numbers(0);
-  *tagged_block0.mutable_block() = block0;
+  tagged_block0.mutable_block()->CopyFrom(block0);
   unsafe_insert_block(&tagged_block0);
+
+  std::vector<messages::Address> addresses;
+  for (const auto &transaction : block0.transactions()) {
+    for (const auto &output : transaction.outputs()) {
+      addresses.push_back(output.address());
+    }
+  }
+  generate_first_assemblies(addresses);
 
   //! add index to mongo collection
   _blocks.create_index(bss::document{} << BLOCK_HEADER_ID << 1
@@ -158,6 +215,7 @@ bool LedgerMongodb::init_block0(const messages::config::Database &config) {
   _assemblies.create_index(bss::document{} << FINISHED_COMPUTATION << 1
                                            << bss::finalize);
 
+  return true;
   return true;
 }
 
@@ -272,6 +330,24 @@ bool LedgerMongodb::get_last_block_header(
   }
 
   from_bson(result->view()[BLOCK][HEADER].get_document(), block_header);
+  return true;
+}
+
+bool LedgerMongodb::get_last_block(messages::TaggedBlock *tagged_block,
+                                   bool include_transactions) const {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  auto query = bss::document{} << BRANCH << MAIN_BRANCH_NAME << bss::finalize;
+  auto options = projection(BLOCK + "." + HEADER);
+  options.sort(bss::document{} << BLOCK_HEADER_HEIGHT << -1 << bss::finalize);
+
+  const auto result = _blocks.find_one(std::move(query), options);
+  if (!result) {
+    return false;
+  }
+  from_bson(result->view(), tagged_block);
+  if (include_transactions) {
+    fill_block_transactions(tagged_block->mutable_block());
+  }
   return true;
 }
 
@@ -1035,7 +1111,7 @@ bool LedgerMongodb::add_assembly(const messages::TaggedBlock &tagged_block,
     // The assembly already exist
     return false;
   }
-  assembly.mutable_assembly_id()->CopyFrom(tagged_block.block().header().id());
+  assembly.mutable_id()->CopyFrom(tagged_block.block().header().id());
   if (!tagged_block.has_previous_assembly_id()) {
     if (tagged_block.block().header().height() != 0) {
       throw(
