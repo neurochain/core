@@ -22,10 +22,11 @@ Bot::Bot(const messages::config::Config &config)
       _keys(_config.networking().key_priv_path(),
             _config.networking().key_pub_path()),
       _peers(_config.networking().tcp().peers().begin(),
-	     _config.networking().tcp().peers().end()),
+             _config.networking().tcp().peers().end()),
       _networking(&_queue, &_keys, &_peers, _config.mutable_networking()),
       _ledger(std::make_shared<ledger::LedgerMongodb>(_config.database())),
       _update_timer(*_io_context) {
+  LOG_DEBUG << this << " hello from bot " << _keys.public_key();
   if (!init()) {
     throw std::runtime_error("Could not create bot from configuration file");
   }
@@ -210,8 +211,8 @@ bool Bot::init() {
 
   _io_context_thread = std::thread([this]() { _io_context->run(); });
 
-  this->keep_max_connections();
   update_ledger();
+  this->keep_max_connections();
 
   _update_timer.expires_after(boost::asio::chrono::seconds(_update_time));
   _update_timer.async_wait(boost::bind(&Bot::regular_update, this));
@@ -223,7 +224,7 @@ bool Bot::init() {
 
 void Bot::regular_update() {
   update_peerlist();
-  keep_max_connections();
+  //keep_max_connections();
   update_ledger();
   _update_timer.expires_at(_update_timer.expiry() +
                            boost::asio::chrono::seconds(_update_time));
@@ -306,7 +307,7 @@ void Bot::handler_connection(const messages::Header &header,
 
   // send hello msg
   auto message = std::make_shared<messages::Message>();
-  messages::fill_header(message->mutable_header());
+  messages::fill_header_reply(header, message->mutable_header());
 
   auto hello = message->add_bodies()->mutable_hello();
   hello->set_listen_port(_networking.listening_port());

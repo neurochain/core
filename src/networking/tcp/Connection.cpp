@@ -111,7 +111,7 @@ void Connection::read_body(std::size_t body_size) {
                            sizeof(header_pattern->signature));
 
         if (!check) {
-          LOG_ERROR << "Bad signature, dropping message";
+          LOG_ERROR << "Bad signature, dropping message " << ecc_pub;
           return;
         }
         _this->_queue->publish(message);

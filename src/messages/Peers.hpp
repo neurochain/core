@@ -26,7 +26,7 @@ class Peers : public _Peers {
       insert(*it);
     }
   }
-  
+
   bool load(const std::string &path) { return false; }
   bool save(const std::string &path) { return false; }
   std::size_t size() const { return peers().size(); }
@@ -116,10 +116,6 @@ class Peers : public _Peers {
 
   std::vector<Peer> connected_peers() const {
     return peers_by_status(Peer::CONNECTED);
-  }
-
-  ~Peers() {
-    std::cout << "Killing Peers" << std::endl;
   }
 };
 

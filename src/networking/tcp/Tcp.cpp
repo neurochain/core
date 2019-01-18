@@ -27,7 +27,7 @@ Tcp::Tcp(const Port port, messages::Queue *queue, messages::Peers *peers,
                 bai::tcp::endpoint(bai::tcp::v4(), _listening_port)),
       _peers(peers) {
   assert(peers);
-  
+
   while (!_acceptor.is_open()) {
     std::this_thread::yield();
     LOG_DEBUG << "Waiting for acceptor to be open";
@@ -39,7 +39,7 @@ Tcp::Tcp(const Port port, messages::Queue *queue, messages::Peers *peers,
     LOG_INFO << __FILE__ << ":" << __LINE__ << "> io_context exited " << ec;
   });
 }
-  
+
 void Tcp::start_accept() {
   if (!_stopped) {
     _new_socket = std::make_shared<bai::tcp::socket>(_io_context);
@@ -56,7 +56,7 @@ void Tcp::accept(const boost::system::error_code &error) {
 
     auto peer = _peers->add_peers();
     peer->set_endpoint(remote_endpoint);
-    peer->set_port(_new_socket->remote_endpoint().port());
+    peer->set_port(0);
     this->new_connection(_new_socket, error, peer, true);
   } else {
     LOG_WARNING << "Rejected connection";
@@ -92,7 +92,6 @@ void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
   auto message = std::make_shared<messages::Message>();
   auto msg_header = message->mutable_header();
   auto msg_body = message->add_bodies();
-
 
   if (!error) {
     LOG_INFO << "New connection " << *peer << " " << from_remote;
@@ -162,7 +161,7 @@ TransportLayer::SendResult Tcp::send(
     std::shared_ptr<messages::Message> message) const {
   if (_connections.size() == 0) {
     LOG_ERROR << "Could not send message because there is no connection "
-	      << message;
+              << message;
     return SendResult::FAILED;
   }
 
@@ -173,12 +172,14 @@ TransportLayer::SendResult Tcp::send(
       std::make_shared<Buffer>(sizeof(networking::tcp::HeaderPattern), 0);
   auto body_tcp = std::make_shared<Buffer>();
 
-  std::cout << "\033[1;34mSending message[" << this->listening_port() << "]: >>"
-            << *message << "<<\033[0m\n";
   if (!serialize(message, header_tcp.get(), body_tcp.get())) {
+    LOG_WARNING << "Could not serialize message";
     return SendResult::FAILED;
   }
 
+  std::cout << "\033[1;34mSending message[" << this->listening_port() << "]: >>"
+            << *message << "<<\033[0m\n";
+  
   int res_count = 0;
   for (auto &[_, connection] : _connections) {
     bool res_send = true;
@@ -203,11 +204,13 @@ TransportLayer::SendResult Tcp::send(
 
 bool Tcp::send_unicast(std::shared_ptr<messages::Message> message) const {
   if (_stopped || !message->header().has_connection_id()) {
+    LOG_WARNING << "not sending message " << _stopped;
     return false;
   }
 
   auto got = _connections.find(message->header().connection_id());
   if (got == _connections.end()) {
+    LOG_WARNING << "not sending message because could not find connection";
     return false;
   }
 

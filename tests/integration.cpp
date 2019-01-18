@@ -33,7 +33,7 @@ class Listener {
   Listener() {}
   void handler_connection(const messages::Header &header,
                           const messages::Body &body) {
-    LOG_DEBUG << __FILE__ << ": It entered the handler_connection !!";
+    LOG_DEBUG << this << " It entered the handler_connection !!";
     ++_received_connection;
   }
   void handler_deconnection(const messages::Header &header,
@@ -110,6 +110,16 @@ TEST(INTEGRATION, simple_interaction) {
   auto peers_bot1 = (bot1->connected_peers());
   auto peers_bot2 = (bot2->connected_peers());
 
+  for (const auto &peer : peers_bot0) {
+    std::cout << "0 " << &bot0 << " connected peer " << peer << std::endl;
+  }
+  for (const auto &peer : peers_bot1) {
+    std::cout << "1 " << &bot1 << " connected peer " << peer << std::endl;
+  }
+  for (const auto &peer : peers_bot2) {
+    std::cout << "2 " << &bot2 << " connected peer " << peer << std::endl;
+  }
+  
   ASSERT_EQ(peers_bot0.size(), peers_bot1.size());
   ASSERT_EQ(peers_bot1.size(), peers_bot2.size());
   ASSERT_EQ(peers_bot2.size(), 2);

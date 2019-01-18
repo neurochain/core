@@ -126,6 +126,7 @@ int32_t fill_header(messages::Header *header) {
 int32_t fill_header_reply(const messages::Header &header_request,
                           messages::Header *header_reply) {
   const auto id = fill_header(header_reply);
+  header_reply->set_connection_id(header_request.connection_id());
   header_reply->set_request_id(header_request.id());
   return id;
 }
