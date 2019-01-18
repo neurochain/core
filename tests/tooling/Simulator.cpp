@@ -48,6 +48,7 @@ TEST_F(Simulator, send_ncc) {
   auto recipient_public_key = simulator.addresses[1];
   auto transaction0 =
       simulator.send_ncc(sender_private_key, recipient_public_key, 0.5);
+  LOG_INFO << transaction0 << std::endl;
   ASSERT_EQ(transaction0.inputs_size(), 1);
   ASSERT_EQ(transaction0.outputs_size(), 2);
   ASSERT_EQ(transaction0.outputs(0).value().value(), ncc_block0.value() * 0.5);

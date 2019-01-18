@@ -463,9 +463,9 @@ TEST_F(LedgerMongodb, pii) {
     pii.set_rank(i);
     ASSERT_TRUE(ledger->set_pii(pii));
   }
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 5; i++) {
     messages::Address address;
-    ledger->get_block_writer(assembly_id, i, &address);
+    ASSERT_TRUE(ledger->get_block_writer(assembly_id, i, &address));
     ASSERT_EQ(address, messages::Address(keys[i].public_key()));
   }
 }
@@ -473,13 +473,14 @@ TEST_F(LedgerMongodb, pii) {
 TEST_F(LedgerMongodb, set_previous_assembly_id) {
   messages::TaggedBlock tagged_block;
   ASSERT_TRUE(ledger->get_block(0, &tagged_block));
+  auto block_id = tagged_block.block().header().id();
+  auto assembly_id = block_id;
   messages::Assembly assembly;
   ASSERT_TRUE(
       ledger->get_assembly(tagged_block.previous_assembly_id(), &assembly));
   ASSERT_TRUE(ledger->get_assembly(assembly.previous_assembly_id(), &assembly));
-  ASSERT_FALSE(tagged_block.has_previous_assembly_id());
-  auto block_id = tagged_block.block().header().id();
-  auto assembly_id = block_id;
+  ASSERT_TRUE(tagged_block.has_previous_assembly_id());
+  ASSERT_NE(tagged_block.previous_assembly_id(), assembly_id);
   ASSERT_TRUE(ledger->set_previous_assembly_id(block_id, assembly_id));
   ASSERT_TRUE(ledger->get_block(0, &tagged_block));
   ASSERT_TRUE(tagged_block.has_previous_assembly_id());

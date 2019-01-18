@@ -303,6 +303,8 @@ class Ledger {
   messages::NCCAmount balance(const messages::Address &address) {
     uint64_t total = 0;
     const auto unspent_transactions = list_unspent_transactions(address);
+    std::cout << "nb unspent transactions " << unspent_transactions.size()
+              << std::endl;
     for (const auto &unspent_transaction : unspent_transactions) {
       total += unspent_transaction.value().value();
     }

@@ -26,6 +26,7 @@ Simulator::Simulator(const std::string &db_url, const std::string &db_name,
   }
   auto tagged_block = tooling::blockgen::gen_block0(keys, _ncc_block0);
   ledger->init_database(tagged_block.block());
+  ledger->set_main_branch_tip();
 }
 
 messages::Transaction Simulator::send_ncc(const crypto::EccPriv &from_key_priv,
@@ -34,8 +35,10 @@ messages::Transaction Simulator::send_ncc(const crypto::EccPriv &from_key_priv,
   const auto from_address = messages::Address(from_key_priv.make_public_key());
   const auto balance = ledger->balance(from_address);
   auto amount = messages::NCCAmount(ncc_ratio * balance.value());
+  std::cout << "ncc balance " << amount << std::endl;
   auto transaction =
       ledger->build_transaction(to_address, amount, from_key_priv);
+  LOG_INFO << "transaction " << transaction << std::endl;
   return transaction;
 }
 
