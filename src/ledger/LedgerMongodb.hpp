@@ -49,7 +49,7 @@ class LedgerMongodb : public Ledger {
   bool load_block0(const messages::config::Database &config,
                    messages::Block *block0);
 
-  bool init_database(const messages::Block &block0);
+  void init_database(const messages::Block &block0);
 
   bool is_ancestor(const messages::TaggedBlock &ancestor,
                    const messages::TaggedBlock &block) const;
@@ -103,8 +103,9 @@ class LedgerMongodb : public Ledger {
   bool unsafe_get_assembly(const messages::Hash &assembly_id,
                            messages::Assembly *assembly) const;
 
-  bool generate_first_assemblies(
-      const std::vector<messages::Address> &addresses);
+  void create_indexes();
+
+  void create_first_assemblies(const std::vector<messages::Address> &addresses);
 
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);

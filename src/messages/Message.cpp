@@ -19,7 +19,7 @@ bool from_json(const std::string &json, Packet *packet) {
     std::stringstream error;
     error << "Could not parse json " << r;
     std::cout << boost::stacktrace::stacktrace() << std::endl;
-    throw error.str();
+    throw std::runtime_error(error.str());
   }
   return r.ok();
 }

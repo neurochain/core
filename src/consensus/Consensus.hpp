@@ -30,6 +30,8 @@ class Consensus {
     messages::TaggedBlock tip;
     if (tagged_transaction.has_block_id()) {
       if (!_ledger->get_block(tagged_transaction.block_id(), &tip, false)) {
+        LOG_INFO << "Could not find transaction block for transaction "
+                 << tagged_transaction.transaction().id();
         return false;
       };
     } else {
@@ -54,6 +56,8 @@ class Consensus {
                           return true;
                         });
       if (invalid) {
+        LOG_INFO << "Failed check_input for transaction "
+                 << tagged_transaction.transaction().id();
         return false;
       }
     }
@@ -68,6 +72,8 @@ class Consensus {
     messages::TaggedBlock tip;
     if (tagged_transaction.has_block_id()) {
       if (!_ledger->get_block(tagged_transaction.block_id(), &tip, false)) {
+        LOG_INFO << "Failed check_output for transaction "
+                 << tagged_transaction.transaction().id();
         return false;
       };
     } else {
@@ -80,9 +86,13 @@ class Consensus {
       if (!_ledger->get_transaction(input.id(), &input_transaction, tip,
                                     check_transaction_pool)) {
         // The input must exist
+        LOG_INFO << "Failed check_output for transaction "
+                 << tagged_transaction.transaction().id();
         return false;
       }
       if (input.output_id() >= input_transaction.transaction().outputs_size()) {
+        LOG_INFO << "Failed check_output for transaction "
+                 << tagged_transaction.transaction().id();
         return false;
       }
       total_received += input_transaction.transaction()
@@ -99,18 +109,36 @@ class Consensus {
       total_spent += tagged_transaction.transaction().fees().value();
     }
 
-    return total_spent == total_received;
+    bool result = total_spent == total_received;
+    if (!result) {
+      LOG_INFO << "Failed check_output for transaction "
+               << tagged_transaction.transaction().id();
+    }
+    return result;
   }
 
   bool check_signatures(
       const messages::TaggedTransaction &tagged_transaction) const {
-    return crypto::verify(tagged_transaction.transaction());
+    bool result = crypto::verify(tagged_transaction.transaction());
+    if (!result) {
+      LOG_INFO << "Failed check_signatures for transaction "
+               << tagged_transaction.transaction().id();
+    }
+    return result;
   }
 
   bool check_id(const messages::TaggedTransaction &tagged_transaction) const {
     auto transaction = messages::Transaction(tagged_transaction.transaction());
     messages::set_transaction_hash(&transaction);
-    return transaction.id() == tagged_transaction.transaction().id();
+    if (!tagged_transaction.transaction().has_id()) {
+      LOG_INFO << "Failed check_id the transaction has no idea field";
+    }
+    bool result = transaction.id() == tagged_transaction.transaction().id();
+    if (!result) {
+      LOG_INFO << "Failed check_id for transaction "
+               << tagged_transaction.transaction().id();
+    }
+    return result;
   }
 
   bool check_double_inputs(
@@ -123,6 +151,8 @@ class Consensus {
       clean_input.mutable_id()->CopyFrom(input.id());
       clean_input.set_output_id(input.output_id());
       if (inputs.count(clean_input) > 0) {
+        LOG_INFO << "Failed check_double_inputs for transaction "
+                 << tagged_transaction.transaction().id();
         return false;
       }
       inputs.insert(clean_input);
@@ -136,6 +166,8 @@ class Consensus {
     if (!tagged_transaction.has_block_id() ||
         !_ledger->get_block(tagged_transaction.block_id(), &tagged_block,
                             false)) {
+      LOG_INFO << "Invalid coinbase for transaction "
+               << tagged_transaction.transaction().id();
       return false;
     }
 
@@ -148,13 +180,20 @@ class Consensus {
         total_spent += output.value().value();
       }
       if (to_spend != total_spent) {
+        LOG_INFO << "Failed check_coinbase for transaction "
+                 << tagged_transaction.transaction().id();
         return false;
       }
     }
 
     // Let's be strict here, a coinbase should not have any input or fee
-    return tagged_transaction.transaction().inputs_size() == 0 &&
-           !tagged_transaction.transaction().has_fees();
+    bool result = tagged_transaction.transaction().inputs_size() == 0 &&
+                  !tagged_transaction.transaction().has_fees();
+    if (!result) {
+      LOG_INFO << "Failed check_coinbase for transaction "
+               << tagged_transaction.transaction().id();
+    }
+    return result;
   }
 
   messages::NCCAmount block_reward(const messages::BlockHeight height) const {
@@ -166,6 +205,9 @@ class Consensus {
     auto block_id = block->header().id();
     messages::set_block_hash(block);
 
+    if (!block->header().has_id()) {
+      LOG_INFO << "Failed check_block_id the block is missing the id field";
+    }
     bool result = block->header().id() == block_id;
     if (!result) {
       // Try rehashing...
@@ -177,11 +219,16 @@ class Consensus {
       block->mutable_header()->mutable_id()->CopyFrom(block_id);
     }
 
+    if (!result) {
+      LOG_INFO << "Failed check_block_id for block " << block->header().id();
+    }
     return result;
   }
 
   bool check_block_transactions(const messages::Block &block) const {
     if (block.coinbases_size() != 1) {
+      LOG_INFO << "Failed check_block_transactions for block "
+               << block.header().id();
       return false;
     }
 
@@ -191,6 +238,8 @@ class Consensus {
       tagged_transaction.mutable_block_id()->CopyFrom(block.header().id());
       tagged_transaction.mutable_transaction()->CopyFrom(transaction);
       if (!is_valid(tagged_transaction)) {
+        LOG_INFO << "Failed check_block_transactions for block "
+                 << block.header().id();
         return false;
       }
     }
@@ -201,6 +250,8 @@ class Consensus {
       tagged_transaction.mutable_block_id()->CopyFrom(block.header().id());
       tagged_transaction.mutable_transaction()->CopyFrom(transaction);
       if (!is_valid(tagged_transaction)) {
+        LOG_INFO << "Failed check_block_transactions for block "
+                 << block.header().id();
         return false;
       }
     }
@@ -211,7 +262,11 @@ class Consensus {
   bool check_block_size(const messages::Block &block) const {
     Buffer buffer;
     messages::to_buffer(block, &buffer);
-    return buffer.size() < config.max_block_size;
+    bool result = buffer.size() < config.max_block_size;
+    if (!result) {
+      LOG_INFO << "Failed check_block_size for block " << block.header().id();
+    }
+    return result;
   }
 
   bool check_transactions_order(const messages::Block &block) const {
@@ -223,13 +278,19 @@ class Consensus {
     std::vector<std::string> orig_transaction_ids{transaction_ids};
     std::sort(transaction_ids.begin(), transaction_ids.end());
 
-    return orig_transaction_ids == transaction_ids;
+    bool result = orig_transaction_ids == transaction_ids;
+    if (!result) {
+      LOG_INFO << "Failed check_transactions_order for block "
+               << block.header().id();
+    }
+    return result;
   }
 
   bool check_block_height(const messages::Block &block) const {
     messages::Block previous;
     if (!_ledger->get_block(block.header().previous_block_hash(), &previous,
                             false)) {
+      LOG_INFO << "Failed check_block_height for block " << block.header().id();
       return false;
     }
 
@@ -239,21 +300,44 @@ class Consensus {
   bool check_block_author(const messages::Block &block) const {
     messages::TaggedBlock tagged_block;
     messages::Assembly previous_assembly, previous_previous_assembly;
-    if (!_ledger->get_block(block.header().id(), &tagged_block) ||
-        !_ledger->get_assembly(tagged_block.previous_assembly_id(),
-                               &previous_assembly) ||
-        !_ledger->get_assembly(previous_assembly.previous_assembly_id(),
+
+    if (!_ledger->get_block(block.header().id(), &tagged_block)) {
+      LOG_INFO << "Failed check_block_author for block " << block.header().id()
+               << " failed to get the tagged block";
+      return false;
+    }
+    if (!tagged_block.has_previous_assembly_id()) {
+      LOG_INFO << "Failed check_block_author for block " << block.header().id()
+               << " tagged block is missing field previous_assembly_id";
+      return false;
+    }
+    if (!_ledger->get_assembly(tagged_block.previous_assembly_id(),
+                               &previous_assembly)) {
+      LOG_INFO << "Failed check_block_author for block " << block.header().id()
+               << " failed to get previous assembly "
+               << tagged_block.previous_assembly_id();
+      return false;
+    }
+    if (!_ledger->get_assembly(previous_assembly.previous_assembly_id(),
                                &previous_previous_assembly)) {
+      LOG_INFO << "Failed check_block_author for block " << block.header().id()
+               << " failed to get previous previous assembly "
+               << previous_assembly.previous_assembly_id();
       return false;
     }
 
     messages::Address address;
     if (!get_block_writer(previous_previous_assembly, block.header().height(),
                           &address)) {
+      LOG_INFO << "Failed check_block_author for block " << block.header().id();
       return false;
     }
 
-    return address == block.header().author();
+    bool result = address == block.header().author();
+    if (!result) {
+      LOG_INFO << "Failed check_block_author for block " << block.header().id();
+    }
+    return result;
   }
 
   Double get_block_score(const messages::TaggedBlock &tagged_block) {
@@ -297,10 +381,12 @@ class Consensus {
       } else {
         if (!_ledger->delete_block_and_children(
                 tagged_block.block().header().id())) {
-          return false;
+          throw std::runtime_error("Failed to delete an invalid block");
         }
+
         // The list of unverified blocks should have changed
-        return verify_blocks();
+        verify_blocks();
+        return false;
       }
     }
     return true;
@@ -313,7 +399,7 @@ class Consensus {
         // Create an assembly that contain only the block0
         return true;
       } else {
-        throw(
+        throw std::runtime_error(
             "Something is wrong here only the block0 should not have a "
             "previous_assembly_id");
       }
@@ -344,8 +430,8 @@ class Consensus {
 
   bool is_valid(messages::Block *block) const {
     // This method should be only be called after the block has been inserted
-    return check_block_transactions(*block) && check_block_size(*block) &&
-           check_block_id(block) && check_transactions_order(*block) &&
+    return check_block_id(block) && check_block_transactions(*block) &&
+           check_block_size(*block) && check_transactions_order(*block) &&
            check_block_author(*block) && check_block_height(*block);
   }
 
@@ -453,11 +539,12 @@ class Consensus {
   bool get_block_writer(const messages::Assembly &assembly,
                         const messages::BlockHeight &height,
                         messages::Address *address) const {
+    LOG_DEBUG << "get_block_writer " << assembly << height << std::endl;
     if (!assembly.has_seed() || !assembly.has_nb_addresses()) {
       return false;
     }
     std::mt19937 rng;
-    rng.seed(assembly.seed());
+    rng.seed(assembly.seed() + height);
     auto dist = std::uniform_int_distribution<std::mt19937::result_type>(
         0, std::min(assembly.nb_addresses(),
                     (int32_t)config.members_per_assembly));
@@ -492,8 +579,7 @@ class Consensus {
     auto height = get_current_height();
     for (auto i = height; i < previous_previous_assembly.last_height(); i++) {
       messages::Address writer;
-      if (!get_block_writer(previous_previous_assembly,
-                            i % config.blocks_per_assembly, &writer)) {
+      if (!get_block_writer(previous_previous_assembly, i, &writer)) {
         LOG_WARNING << "Did not manage to get the block writer for assembly "
                     << previous_previous_assembly.id() << " at height " << i;
       }
@@ -506,8 +592,7 @@ class Consensus {
       for (auto i = previous_assembly.first_height();
            i < previous_assembly.last_height(); i++) {
         messages::Address writer;
-        if (!get_block_writer(previous_assembly, i % config.blocks_per_assembly,
-                              &writer)) {
+        if (!get_block_writer(previous_assembly, i, &writer)) {
           LOG_WARNING << "Did not manage to get the block writer for assembly "
                       << previous_assembly.id() << " at height " << i;
         }

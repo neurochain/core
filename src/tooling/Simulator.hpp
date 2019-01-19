@@ -19,6 +19,7 @@ class Simulator {
   neuro::consensus::Consensus consensus;
   std::vector<crypto::Ecc> keys;
   std::vector<messages::Address> addresses;
+  std::unordered_map<messages::Address, uint32_t> addresses_indexes;
 
   Simulator(const std::string &db_url, const std::string &db_name,
             const int nb_keys, const messages::NCCAmount ncc_block0,
