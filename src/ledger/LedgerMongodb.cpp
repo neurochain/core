@@ -204,6 +204,7 @@ void LedgerMongodb::create_indexes() {
 void LedgerMongodb::init_database(const messages::Block &block0) {
   create_indexes();
   messages::TaggedBlock tagged_block0;
+  tagged_block0.set_score(0);
   tagged_block0.set_branch(messages::Branch::MAIN);
   tagged_block0.mutable_branch_path()->add_branch_ids(0);
   tagged_block0.mutable_branch_path()->add_block_numbers(0);
@@ -703,8 +704,21 @@ bool LedgerMongodb::for_each(const Filter &filter,
   auto query = bss::document{};
 
   if (filter.output_address()) {
+    const auto bson2 = to_bson(*filter.output_address());
+    auto query2 = bss::document{};
+    query2 << TRANSACTION + "." + OUTPUTS << bss::open_document << "$elemMatch"
+           << bss::open_document << ADDRESS << bson2 << bss::close_document
+           << bss::close_document;
+
+    LOG_INFO << "QUERY" << bsoncxx::to_json((query2 << bss::finalize).view())
+             << std::endl;
+  }
+
+  if (filter.output_address()) {
     const auto bson = to_bson(*filter.output_address());
-    query << TRANSACTION + "." + OUTPUTS + "." + ADDRESS << bson;
+    query << TRANSACTION + "." + OUTPUTS << bss::open_document << "$elemMatch"
+          << bss::open_document << ADDRESS << bson << bss::close_document
+          << bss::close_document;
   }
 
   if (filter.transaction_id()) {
@@ -979,7 +993,8 @@ bool LedgerMongodb::update_branch_tag(const messages::Hash &id,
   return update_result && update_result->modified_count() > 0;
 }
 
-bool LedgerMongodb::update_main_branch(messages::TaggedBlock *main_branch_tip) {
+bool LedgerMongodb::update_main_branch() {
+  messages::TaggedBlock main_branch_tip;
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto query = bss::document{} << bss::finalize;
   auto options = remove_OID();
@@ -988,16 +1003,16 @@ bool LedgerMongodb::update_main_branch(messages::TaggedBlock *main_branch_tip) {
   if (!bson_block) {
     return false;
   }
-  from_bson(bson_block->view(), main_branch_tip);
+  from_bson(bson_block->view(), &main_branch_tip);
 
-  assert(main_branch_tip->branch() != messages::Branch::DETACHED);
-  if (main_branch_tip->branch() == messages::Branch::MAIN) {
+  assert(main_branch_tip.branch() != messages::Branch::DETACHED);
+  if (main_branch_tip.branch() == messages::Branch::MAIN) {
     return true;
   }
 
   // Go back from the new tip to a block tagged MAIN
   std::vector<messages::Hash> new_main_branch;
-  messages::TaggedBlock tagged_block{*main_branch_tip};
+  messages::TaggedBlock tagged_block{main_branch_tip};
   do {
     new_main_branch.push_back(tagged_block.block().header().id());
     assert(unsafe_get_block(tagged_block.block().header().previous_block_hash(),
@@ -1028,7 +1043,8 @@ bool LedgerMongodb::update_main_branch(messages::TaggedBlock *main_branch_tip) {
   }
 
   // In my code I trust, update_branch_tag modified the branch of the tip
-  main_branch_tip->set_branch(messages::Branch::MAIN);
+  main_branch_tip.set_branch(messages::Branch::MAIN);
+  _main_branch_tip.CopyFrom(main_branch_tip);
 
   return true;
 }

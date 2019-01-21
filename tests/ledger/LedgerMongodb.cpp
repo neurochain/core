@@ -127,10 +127,11 @@ class LedgerMongodb : public ::testing::Test {
     ASSERT_TRUE(ledger->set_block_verified(fork2.header().id(), 2.5,
                                            block0.header().id()));
 
-    messages::TaggedBlock tip, tagged_block;
-    ASSERT_TRUE(ledger->update_main_branch(&tip));
+    ASSERT_TRUE(ledger->update_main_branch());
+    auto tip = ledger->get_main_branch_tip();
     ASSERT_EQ(tip.block().header().id(), block2.header().id());
     ASSERT_EQ(tip.branch(), messages::Branch::MAIN);
+    messages::TaggedBlock tagged_block;
     ASSERT_TRUE(ledger->get_block(block2.header().id(), &tagged_block));
     ASSERT_EQ(tagged_block.branch(), messages::Branch::MAIN);
     ASSERT_TRUE(ledger->get_block(block1.header().id(), &tagged_block));
@@ -145,7 +146,8 @@ class LedgerMongodb : public ::testing::Test {
     ASSERT_TRUE(ledger->set_block_verified(fork3.header().id(), 3.5,
                                            block0.header().id()));
     tip.Clear();
-    ASSERT_TRUE(ledger->update_main_branch(&tip));
+    ASSERT_TRUE(ledger->update_main_branch());
+    tip = ledger->get_main_branch_tip();
     ASSERT_EQ(tip.block().header().id(), fork3.header().id());
     ASSERT_EQ(tip.branch(), messages::Branch::MAIN);
     ASSERT_TRUE(ledger->get_block(fork3.header().id(), &tagged_block));

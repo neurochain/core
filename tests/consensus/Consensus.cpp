@@ -67,17 +67,16 @@ class Consensus : public testing::Test {
     messages::TaggedBlock tagged_block;
     for (int i = 0; i <= 3; i++) {
       ASSERT_TRUE(ledger->get_block(i, &tagged_block));
-      auto block = tagged_block.mutable_block();
-      ASSERT_TRUE(consensus.check_transactions_order(*block));
-      ASSERT_TRUE(consensus.check_block_id(block));
-      ASSERT_TRUE(consensus.check_block_size(*block));
+      ASSERT_TRUE(consensus.check_transactions_order(tagged_block));
+      ASSERT_TRUE(consensus.check_block_id(&tagged_block));
+      ASSERT_TRUE(consensus.check_block_size(tagged_block));
       if (i == 0) {
-        ASSERT_FALSE(consensus.is_valid(block));
+        ASSERT_FALSE(consensus.is_valid(&tagged_block));
       } else {
-        ASSERT_TRUE(consensus.check_block_transactions(*block));
-        ASSERT_TRUE(consensus.check_block_author(*block));
-        ASSERT_TRUE(consensus.check_block_height(*block));
-        ASSERT_TRUE(consensus.is_valid(block));
+        ASSERT_TRUE(consensus.check_block_transactions(tagged_block));
+        ASSERT_TRUE(consensus.check_block_author(tagged_block));
+        ASSERT_TRUE(consensus.check_block_height(tagged_block));
+        ASSERT_TRUE(consensus.is_valid(&tagged_block));
       }
     }
   }

@@ -141,6 +141,8 @@ class Ledger {
       const messages::Hash &id, const messages::BlockScore &score,
       const messages::Hash previous_assembly_id) = 0;
 
+  virtual bool update_main_branch() = 0;
+
   virtual bool get_pii(const messages::Address &address,
                        const messages::Hash &assembly_id,
                        Double *score) const = 0;
@@ -191,11 +193,13 @@ class Ledger {
     Filter filter;
     filter.output_address(address);
     messages::Transactions transactions;
+    LOG_DEBUG << "transactions";
 
     for_each(
         filter,
         [&transactions](
             const messages::TaggedTransaction &tagged_transaction) -> bool {
+          LOG_DEBUG << tagged_transaction.transaction().id();
           transactions.add_transactions()->CopyFrom(
               tagged_transaction.transaction());
           return true;
@@ -344,7 +348,7 @@ class Ledger {
       auto transaction_outputs =
           get_outputs_for_address(transaction_id, address);
 
-      for (auto output : transaction_outputs) {
+      for (const auto &output : transaction_outputs) {
         auto &input = inputs.emplace_back();
         input.mutable_id()->CopyFrom(transaction_id);
         input.set_output_id(output.output_id());

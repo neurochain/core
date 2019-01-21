@@ -153,6 +153,7 @@ class Consensus {
       if (inputs.count(clean_input) > 0) {
         LOG_INFO << "Failed check_double_inputs for transaction "
                  << tagged_transaction.transaction().id();
+        throw std::runtime_error("toto");
         return false;
       }
       inputs.insert(clean_input);
@@ -201,7 +202,8 @@ class Consensus {
     return config.block_reward;
   }
 
-  bool check_block_id(messages::Block *block) const {
+  bool check_block_id(messages::TaggedBlock *tagged_block) const {
+    auto block = tagged_block->mutable_block();
     auto block_id = block->header().id();
     messages::set_block_hash(block);
 
@@ -225,7 +227,9 @@ class Consensus {
     return result;
   }
 
-  bool check_block_transactions(const messages::Block &block) const {
+  bool check_block_transactions(
+      const messages::TaggedBlock &tagged_block) const {
+    const auto &block = tagged_block.block();
     if (block.coinbases_size() != 1) {
       LOG_INFO << "Failed check_block_transactions for block "
                << block.header().id();
@@ -259,7 +263,8 @@ class Consensus {
     return true;
   }
 
-  bool check_block_size(const messages::Block &block) const {
+  bool check_block_size(const messages::TaggedBlock &tagged_block) const {
+    const auto &block = tagged_block.block();
     Buffer buffer;
     messages::to_buffer(block, &buffer);
     bool result = buffer.size() < config.max_block_size;
@@ -269,7 +274,9 @@ class Consensus {
     return result;
   }
 
-  bool check_transactions_order(const messages::Block &block) const {
+  bool check_transactions_order(
+      const messages::TaggedBlock &tagged_block) const {
+    const auto &block = tagged_block.block();
     std::vector<std::string> transaction_ids;
     for (const auto &transaction : block.transactions()) {
       transaction_ids.push_back(messages::to_json(transaction.id()));
@@ -286,7 +293,8 @@ class Consensus {
     return result;
   }
 
-  bool check_block_height(const messages::Block &block) const {
+  bool check_block_height(const messages::TaggedBlock &tagged_block) const {
+    const auto &block = tagged_block.block();
     messages::Block previous;
     if (!_ledger->get_block(block.header().previous_block_hash(), &previous,
                             false)) {
@@ -297,15 +305,10 @@ class Consensus {
     return block.header().height() > previous.header().height();
   }
 
-  bool check_block_author(const messages::Block &block) const {
-    messages::TaggedBlock tagged_block;
+  bool check_block_author(const messages::TaggedBlock &tagged_block) const {
     messages::Assembly previous_assembly, previous_previous_assembly;
+    const auto &block = tagged_block.block();
 
-    if (!_ledger->get_block(block.header().id(), &tagged_block)) {
-      LOG_INFO << "Failed check_block_author for block " << block.header().id()
-               << " failed to get the tagged block";
-      return false;
-    }
     if (!tagged_block.has_previous_assembly_id()) {
       LOG_INFO << "Failed check_block_author for block " << block.header().id()
                << " tagged block is missing field previous_assembly_id";
@@ -329,13 +332,17 @@ class Consensus {
     messages::Address address;
     if (!get_block_writer(previous_previous_assembly, block.header().height(),
                           &address)) {
-      LOG_INFO << "Failed check_block_author for block " << block.header().id();
+      LOG_INFO << "Failed check_block_author for block " << block.header().id()
+               << " could not find the block writer";
       return false;
     }
 
-    bool result = address == block.header().author();
+    const auto author_address = messages::Address(block.header().author());
+    bool result = address == author_address;
     if (!result) {
-      LOG_INFO << "Failed check_block_author for block " << block.header().id();
+      LOG_INFO << "Failed check_block_author for block " << block.header().id()
+               << " the author address " << author_address
+               << " does not match the required block writer " << address;
     }
     return result;
   }
@@ -345,7 +352,10 @@ class Consensus {
     if (!_ledger->get_block(tagged_block.block().header().previous_block_hash(),
                             &previous) ||
         !previous.has_score()) {
-      return 0;
+      throw std::runtime_error(
+          "Trying to score block " +
+          messages::to_json(tagged_block.block().header().id()) +
+          " when the previous block does not have a score");
     }
     return previous.score() + 1;
   }
@@ -354,36 +364,46 @@ class Consensus {
     std::vector<messages::TaggedBlock> tagged_blocks;
     _ledger->get_unverified_blocks(&tagged_blocks);
     for (auto &tagged_block : tagged_blocks) {
-      if (is_valid(tagged_block.mutable_block())) {
-        messages::TaggedBlock previous;
-        if (!_ledger->get_block(
-                tagged_block.block().header().previous_block_hash(), &previous,
-                false)) {
-          // Something is wrong here
-          return false;
-        }
-        assert(previous.branch() == messages::Branch::MAIN ||
-               previous.branch() == messages::Branch::FORK);
-        if (is_new_assembly(tagged_block, previous)) {
-          uint32_t first_height =
-              previous.block().header().height() / config.blocks_per_assembly;
-          uint32_t last_height = first_height + config.blocks_per_assembly - 1;
-          _ledger->add_assembly(previous, first_height, last_height);
-          const auto previous_assembly_id = previous.block().header().id();
-          _ledger->set_block_verified(tagged_block.block().header().id(),
-                                      get_block_score(tagged_block),
-                                      previous.block().header().id());
-        } else if (previous.has_previous_assembly_id()) {
-          _ledger->set_block_verified(tagged_block.block().header().id(),
-                                      get_block_score(tagged_block),
-                                      previous.previous_assembly_id());
-        }
-      } else {
-        if (!_ledger->delete_block_and_children(
-                tagged_block.block().header().id())) {
-          throw std::runtime_error("Failed to delete an invalid block");
-        }
+      messages::TaggedBlock previous;
+      if (!_ledger->get_block(
+              tagged_block.block().header().previous_block_hash(), &previous,
+              false)) {
+        // Something is wrong here
+        throw std::runtime_error(
+            "Could not find the previous block of an unverified block " +
+            messages::to_json(tagged_block.block().header().id()));
+      }
+      assert(previous.branch() == messages::Branch::MAIN ||
+             previous.branch() == messages::Branch::FORK);
+      bool added_new_assembly = false;
+      if (is_new_assembly(tagged_block, previous)) {
+        uint32_t first_height =
+            previous.block().header().height() / config.blocks_per_assembly;
+        uint32_t last_height = first_height + config.blocks_per_assembly - 1;
+        _ledger->add_assembly(previous, first_height, last_height);
+        added_new_assembly = true;
+        tagged_block.mutable_previous_assembly_id()->CopyFrom(
+            previous.block().header().id());
 
+      } else if (!previous.has_previous_assembly_id()) {
+        throw std::runtime_error(
+            "A verified tagged_block is missing a previous_assembly_id " +
+            messages::to_json(previous.block().header().id()));
+      }
+      auto assembly_id = added_new_assembly ? previous.block().header().id()
+                                            : previous.previous_assembly_id();
+
+      // Temporarily setup the previous_assembly_id so that check_block_author
+      // can work
+      tagged_block.mutable_previous_assembly_id()->CopyFrom(assembly_id);
+
+      if (is_valid(&tagged_block)) {
+        _ledger->set_block_verified(tagged_block.block().header().id(),
+                                    get_block_score(tagged_block), assembly_id);
+      } else if (!_ledger->delete_block_and_children(
+                     tagged_block.block().header().id())) {
+        throw std::runtime_error("Failed to delete an invalid block");
+      } else {
         // The list of unverified blocks should have changed
         verify_blocks();
         return false;
@@ -394,21 +414,17 @@ class Consensus {
 
   bool is_new_assembly(const messages::TaggedBlock &tagged_block,
                        const messages::TaggedBlock &previous) const {
-    if (!tagged_block.has_previous_assembly_id()) {
-      if (tagged_block.block().header().height() == 0) {
-        // Create an assembly that contain only the block0
-        return true;
-      } else {
-        throw std::runtime_error(
-            "Something is wrong here only the block0 should not have a "
-            "previous_assembly_id");
-      }
+    if (!previous.has_previous_assembly_id()) {
+      throw std::runtime_error(
+          "Something is wrong here block " +
+          messages::to_json(previous.block().header().id()) +
+          " is missing the previous_assembly_id");
     }
-    int32_t block_assembly =
+    int32_t block_assembly_height =
         tagged_block.block().header().height() / config.blocks_per_assembly;
-    int32_t previous_assembly =
-        tagged_block.block().header().height() / config.blocks_per_assembly;
-    return block_assembly != previous_assembly;
+    int32_t previous_assembly_height =
+        previous.block().header().height() / config.blocks_per_assembly;
+    return block_assembly_height != previous_assembly_height;
   }
 
  public:
@@ -428,11 +444,14 @@ class Consensus {
     }
   }
 
-  bool is_valid(messages::Block *block) const {
+  bool is_valid(messages::TaggedBlock *tagged_block) const {
     // This method should be only be called after the block has been inserted
-    return check_block_id(block) && check_block_transactions(*block) &&
-           check_block_size(*block) && check_transactions_order(*block) &&
-           check_block_author(*block) && check_block_height(*block);
+    return check_block_id(tagged_block) &&
+           check_block_transactions(*tagged_block) &&
+           check_block_size(*tagged_block) &&
+           check_transactions_order(*tagged_block) &&
+           check_block_author(*tagged_block) &&
+           check_block_height(*tagged_block);
   }
 
   /**
@@ -448,7 +467,8 @@ class Consensus {
    * \param [in] block block to add
    */
   bool add_block(messages::Block *block) {
-    return _ledger->insert_block(block) && verify_blocks();
+    return _ledger->insert_block(block) && verify_blocks() &&
+           _ledger->update_main_branch();
   }
 
   // /**
@@ -539,7 +559,6 @@ class Consensus {
   bool get_block_writer(const messages::Assembly &assembly,
                         const messages::BlockHeight &height,
                         messages::Address *address) const {
-    LOG_DEBUG << "get_block_writer " << assembly << height << std::endl;
     if (!assembly.has_seed() || !assembly.has_nb_addresses()) {
       return false;
     }

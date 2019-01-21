@@ -197,7 +197,7 @@ class LedgerMongodb : public Ledger {
                           const messages::BlockScore &score,
                           const messages::Hash previous_assembly_id);
 
-  bool update_main_branch(messages::TaggedBlock *main_branch_tip);
+  bool update_main_branch();
 
   messages::BranchPath fork_from(const messages::BranchPath &branch_path) const;
 

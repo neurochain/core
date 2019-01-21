@@ -93,6 +93,14 @@ struct hash<neuro::messages::Hash> {
   }
 };
 
+template <>
+struct hash<neuro::messages::TaggedTransaction> {
+  size_t operator()(
+      const neuro::messages::TaggedTransaction &tagged_transaction) const {
+    return hash<string>()(neuro::messages::to_json(tagged_transaction));
+  }
+};
+
 }  // namespace std
 
 #endif /* NEURO_SRC_MESSAGES_MESSAGE_HPP */
