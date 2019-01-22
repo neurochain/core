@@ -107,6 +107,8 @@ class LedgerMongodb : public Ledger {
 
   void create_first_assemblies(const std::vector<messages::Address> &addresses);
 
+  bool cleanup_transaction_pool(const messages::Hash &block_id);
+
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);
   LedgerMongodb(const messages::config::Database &config);

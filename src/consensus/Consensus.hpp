@@ -153,6 +153,7 @@ class Consensus {
       if (inputs.count(clean_input) > 0) {
         LOG_INFO << "Failed check_double_inputs for transaction "
                  << tagged_transaction.transaction().id();
+        LOG_DEBUG << "INPUTS" << tagged_transaction.transaction().inputs();
         throw std::runtime_error("toto");
         return false;
       }
@@ -167,6 +168,15 @@ class Consensus {
     if (!tagged_transaction.has_block_id() ||
         !_ledger->get_block(tagged_transaction.block_id(), &tagged_block,
                             false)) {
+      LOG_INFO << "Invalid coinbase for transaction "
+               << tagged_transaction.transaction().id();
+      return false;
+    }
+
+    // Check coinbase height
+    if (!tagged_transaction.transaction().has_coinbase_height() ||
+        tagged_transaction.transaction().coinbase_height() !=
+            tagged_block.block().header().height()) {
       LOG_INFO << "Invalid coinbase for transaction "
                << tagged_transaction.transaction().id();
       return false;
@@ -639,7 +649,7 @@ class Consensus {
     // Block reward
     auto transaction = block->add_coinbases();
     tooling::blockgen::coinbase(keys.public_key(), block_reward(height),
-                                transaction);
+                                transaction, height);
 
     // Transactions
     if (!_ledger->get_transaction_pool(block)) {

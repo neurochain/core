@@ -16,6 +16,7 @@ namespace messages {
 
 using BlockHeight = decltype(((BlockHeader *)nullptr)->height());
 using BlockID = decltype(((BlockHeader *)nullptr)->id());
+// TODO using BlockID = decltype(*(((BlockHeader *)nullptr)->mutable_id()));
 using TransactionID = decltype(((Transaction *)nullptr)->id());
 using Packet = google::protobuf::Message;
 

@@ -11,6 +11,7 @@ namespace blockgen {
 
 void coinbase(const crypto::EccPub &key_pub, const messages::NCCAmount &ncc,
               messages::Transaction *transaction,
+              const messages::BlockHeight &height,
               const std::string output_data) {
   Buffer key_pub_raw;
   key_pub.save(&key_pub_raw);
@@ -19,6 +20,7 @@ void coinbase(const crypto::EccPub &key_pub, const messages::NCCAmount &ncc,
   output->mutable_address()->CopyFrom(address);
   output->mutable_value()->CopyFrom(ncc);
   output->set_data(output_data);
+  transaction->set_coinbase_height(height);
 
   messages::set_transaction_hash(transaction);
 }
@@ -36,7 +38,7 @@ messages::TaggedBlock gen_block0(std::vector<crypto::Ecc> keys,
   header->set_height(0);
   for (const auto &key : keys) {
     auto transaction = block->add_coinbases();
-    blockgen::coinbase(key.public_key(), ncc_block0, transaction);
+    blockgen::coinbase(key.public_key(), ncc_block0, transaction, 0);
   }
   tagged_block.set_branch(messages::Branch::MAIN);
   tagged_block.mutable_branch_path()->add_branch_ids(0);
@@ -96,10 +98,10 @@ void testnet_blockg(uint32_t bots, const std::string &pathdir,
   header->set_height(0);
 
   messages::Transaction *transaction = blockfaucet.add_coinbases();
-  coinbase(ecc.public_key(), nccsdf, transaction, "trax killed me");
+  coinbase(ecc.public_key(), nccsdf, transaction, 0, "trax killed me");
 
   messages::Transaction *transaction2 = blockfaucet.add_coinbases();
-  coinbase(ecc_save.public_key(), nccsdf, transaction2, "what olivier ?");
+  coinbase(ecc_save.public_key(), nccsdf, transaction2, 0, "what olivier ?");
 
   neuro::Buffer t23("riados");
   messages::Hasher hash_id_tmp(t23);

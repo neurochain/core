@@ -74,7 +74,7 @@ messages::Block Simulator::new_block(int nb_transactions,
   // Block reward
   auto transaction = block.add_coinbases();
   blockgen::coinbase(keys[miner_index].public_key(),
-                     consensus.config.block_reward, transaction);
+                     consensus.config.block_reward, transaction, height);
 
   for (int i = 0; i < nb_transactions; i++) {
     auto transaction = random_transaction();

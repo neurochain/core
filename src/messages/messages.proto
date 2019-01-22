@@ -73,6 +73,7 @@ message Transaction {
   repeated Output outputs = 3;
   repeated Signature signatures = 4;
   optional _NCCAmount fees = 5;
+  optional int32 coinbase_height = 6;
 }
 
 message BlockHeader {

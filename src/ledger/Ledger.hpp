@@ -193,13 +193,12 @@ class Ledger {
     Filter filter;
     filter.output_address(address);
     messages::Transactions transactions;
-    LOG_DEBUG << "transactions";
+    assert(get_main_branch_tip().branch() == messages::MAIN);
 
     for_each(
         filter,
         [&transactions](
             const messages::TaggedTransaction &tagged_transaction) -> bool {
-          LOG_DEBUG << tagged_transaction.transaction().id();
           transactions.add_transactions()->CopyFrom(
               tagged_transaction.transaction());
           return true;

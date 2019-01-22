@@ -12,6 +12,8 @@ const std::string FORK_BRANCH_NAME =
 const std::string UNVERIFIED_BRANCH_NAME =
     messages::Branch_Name(messages::Branch::UNVERIFIED);
 const std::string _ID = "_id";
+const std::string $EXISTS = "$exists";
+const std::string $IN = "$in";
 const std::string $SET = "$set";
 const std::string AS = "as";
 const std::string ASSEMBLIES = "assemblies";
@@ -224,6 +226,8 @@ void LedgerMongodb::remove_all() {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   _blocks.delete_many(bss::document{} << bss::finalize);
   _transactions.delete_many(bss::document{} << bss::finalize);
+  _pii.delete_many(bss::document{} << bss::finalize);
+  _assemblies.delete_many(bss::document{} << bss::finalize);
 }
 
 messages::TaggedBlock LedgerMongodb::get_main_branch_tip() const {
@@ -540,7 +544,7 @@ bool LedgerMongodb::unsafe_insert_block(messages::TaggedBlock *tagged_block) {
     return false;
   }
 
-  const auto header = tagged_block->block().header();
+  const auto &header = tagged_block->block().header();
   auto bson_header = to_bson(header);
 
   std::vector<bsoncxx::document::value> bson_transactions;
@@ -563,6 +567,7 @@ bool LedgerMongodb::unsafe_insert_block(messages::TaggedBlock *tagged_block) {
     messages::TaggedTransaction tagged_transaction;
     tagged_transaction.set_is_coinbase(true);
     tagged_transaction.mutable_transaction()->CopyFrom(transaction);
+    tagged_transaction.mutable_block_id()->CopyFrom(header.id());
     tagged_transaction.mutable_block_id()->CopyFrom(header.id());
     bson_transactions.push_back(to_bson(tagged_transaction));
   }
@@ -704,17 +709,6 @@ bool LedgerMongodb::for_each(const Filter &filter,
   auto query = bss::document{};
 
   if (filter.output_address()) {
-    const auto bson2 = to_bson(*filter.output_address());
-    auto query2 = bss::document{};
-    query2 << TRANSACTION + "." + OUTPUTS << bss::open_document << "$elemMatch"
-           << bss::open_document << ADDRESS << bson2 << bss::close_document
-           << bss::close_document;
-
-    LOG_INFO << "QUERY" << bsoncxx::to_json((query2 << bss::finalize).view())
-             << std::endl;
-  }
-
-  if (filter.output_address()) {
     const auto bson = to_bson(*filter.output_address());
     query << TRANSACTION + "." + OUTPUTS << bss::open_document << "$elemMatch"
           << bss::open_document << ADDRESS << bson << bss::close_document
@@ -757,6 +751,7 @@ bool LedgerMongodb::for_each(const Filter &filter,
                           false)) {
       return false;
     }
+
     if (is_ancestor(tagged_block, tip)) {
       functor(tagged_transaction);
       applied_functor = true;
@@ -767,6 +762,7 @@ bool LedgerMongodb::for_each(const Filter &filter,
 }
 
 bool LedgerMongodb::for_each(const Filter &filter, Functor functor) const {
+  assert(get_main_branch_tip().branch() == messages::MAIN);
   return for_each(filter, _main_branch_tip, true, functor);
 }
 
@@ -811,7 +807,7 @@ bool LedgerMongodb::delete_transaction(const messages::Hash &id) {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto query = bss::document{} << TRANSACTION_ID << to_bson(id) << BLOCK_ID
                                << bsoncxx::types::b_null{} << bss::finalize;
-  auto result = _transactions.delete_one(std::move(query));
+  auto result = _transactions.delete_many(std::move(query));
   bool did_delete = result && result->deleted_count();
   if (did_delete) {
     return true;
@@ -993,6 +989,25 @@ bool LedgerMongodb::update_branch_tag(const messages::Hash &id,
   return update_result && update_result->modified_count() > 0;
 }
 
+bool LedgerMongodb::cleanup_transaction_pool(const messages::Hash &block_id) {
+  auto query = bss::document{} << BLOCK_ID << to_bson(block_id)
+                               << bss::finalize;
+  auto cursor =
+      _transactions.find(std::move(query), projection("transaction.id"));
+
+  std::vector<messages::Hash> ids;
+  bsoncxx::builder::basic::array bson_ids;
+  for (const auto &bson_transaction : cursor) {
+    bson_ids.append(bson_transaction["transaction"]["id"].get_document());
+  }
+
+  query = bss::document{} << TRANSACTION + "." + ID << bss::open_document << $IN
+                          << bson_ids << bss::close_document << BLOCK_ID
+                          << bss::open_document << $EXISTS << false
+                          << bss::close_document << bss::finalize;
+  return (bool)_transactions.delete_many(query.view());
+}
+
 bool LedgerMongodb::update_main_branch() {
   messages::TaggedBlock main_branch_tip;
   std::lock_guard<std::mutex> lock(_ledger_mutex);
@@ -1037,6 +1052,9 @@ bool LedgerMongodb::update_main_branch() {
   // This order makes the database never be in a inconsistent state
   std::reverse(new_main_branch.begin(), new_main_branch.end());
   for (const auto &id : new_main_branch) {
+    // Cleanup transaction pool
+    cleanup_transaction_pool(id);
+
     if (!update_branch_tag(id, messages::Branch::MAIN)) {
       return false;
     }
