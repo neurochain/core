@@ -70,12 +70,13 @@ class Consensus : public testing::Test {
       ASSERT_TRUE(consensus.check_transactions_order(tagged_block));
       ASSERT_TRUE(consensus.check_block_id(&tagged_block));
       ASSERT_TRUE(consensus.check_block_size(tagged_block));
+      ASSERT_TRUE(consensus.check_block_timestamp(tagged_block));
       if (i == 0) {
         ASSERT_FALSE(consensus.is_valid(&tagged_block));
       } else {
         ASSERT_TRUE(consensus.check_block_transactions(tagged_block));
-        ASSERT_TRUE(consensus.check_block_author(tagged_block));
         ASSERT_TRUE(consensus.check_block_height(tagged_block));
+        ASSERT_TRUE(consensus.check_block_author(tagged_block));
         ASSERT_TRUE(consensus.is_valid(&tagged_block));
       }
     }
@@ -84,9 +85,31 @@ class Consensus : public testing::Test {
 
 TEST_F(Consensus, is_valid_transaction) { test_is_valid_transaction(); }
 
-// TODO separate tests for each transaction check
-
 TEST_F(Consensus, is_valid_block) { test_is_valid_block(); }
+
+TEST_F(Consensus, get_current_height) {
+  messages::Block block0;
+  ASSERT_TRUE(ledger->get_block(0, &block0));
+  auto height = consensus.get_current_height();
+  ASSERT_TRUE(
+      abs(height - ((std::time(nullptr) - block0.header().timestamp().data()) /
+                    consensus.config.block_period)) <= 1);
+}
+
+TEST_F(Consensus, add_block) {
+  messages::TaggedBlock block0;
+  ASSERT_TRUE(ledger->get_block(0, &block0));
+  auto block = simulator.new_block(10, block0);
+  ASSERT_TRUE(consensus.add_block(&block));
+}
+
+TEST_F(Consensus, start_computations) {
+  std::vector<messages::Assembly> assemblies;
+  ASSERT_FALSE(ledger->get_assemblies_to_compute(&assemblies));
+  simulator.run(consensus.config.blocks_per_assembly, 10);
+  ASSERT_TRUE(ledger->get_assemblies_to_compute(&assemblies));
+  ASSERT_EQ(assemblies.size(), 1);
+}
 
 }  // namespace tests
 }  // namespace consensus

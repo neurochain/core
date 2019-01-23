@@ -315,6 +315,35 @@ class Consensus {
     return block.header().height() > previous.header().height();
   }
 
+  bool check_block_timestamp(const messages::TaggedBlock &tagged_block) const {
+    const auto &block = tagged_block.block();
+    messages::Block block0;
+    _ledger->get_block(0, &block0);
+    auto expected_timestamp = block0.header().timestamp().data() +
+                              block.header().height() * config.block_period;
+    auto real_timestamp = tagged_block.block().header().timestamp().data();
+    if (!block.header().has_timestamp()) {
+      LOG_INFO << "Failed check_block_timestamp for block "
+               << block.header().id() << " it is missing the timestamp field";
+      return false;
+    }
+    if (real_timestamp < expected_timestamp) {
+      LOG_INFO << "Failed check_block_timestamp for block "
+               << block.header().id() << " it is too early" << std::endl
+               << "Real timestamp " << real_timestamp << std::endl
+               << "Expected timestamp " << expected_timestamp << std::endl;
+      return false;
+    }
+    if (real_timestamp > expected_timestamp + config.block_period) {
+      LOG_INFO << "Failed check_block_timestamp for block "
+               << block.header().id() << " it is too late" << std::endl
+               << "Real timestamp " << real_timestamp << std::endl
+               << "Expected timestamp " << expected_timestamp << std::endl;
+      return false;
+    }
+    return true;
+  }
+
   bool check_block_author(const messages::TaggedBlock &tagged_block) const {
     messages::Assembly previous_assembly, previous_previous_assembly;
     const auto &block = tagged_block.block();
@@ -460,8 +489,9 @@ class Consensus {
            check_block_transactions(*tagged_block) &&
            check_block_size(*tagged_block) &&
            check_transactions_order(*tagged_block) &&
-           check_block_author(*tagged_block) &&
-           check_block_height(*tagged_block);
+           check_block_height(*tagged_block) &&
+           check_block_timestamp(*tagged_block) &&
+           check_block_author(*tagged_block);
   }
 
   /**
@@ -486,13 +516,6 @@ class Consensus {
   //  * \return Address of next block builder
   //  */
   // messages::Address get_next_owner() const{}
-
-  // /**
-  //  * \brief Check if the owner of the block is the right one
-  //  * \param [in] block_header the block header
-  //  * \return false if the owner is not the right one
-  //  */
-  // bool check_owner(const messages::BlockHeader &block_header) const{}
 
   void add_wallet_key_pair(const std::shared_ptr<crypto::Ecc> wallet) {}
 
@@ -569,7 +592,14 @@ class Consensus {
   bool get_block_writer(const messages::Assembly &assembly,
                         const messages::BlockHeight &height,
                         messages::Address *address) const {
-    if (!assembly.has_seed() || !assembly.has_nb_addresses()) {
+    if (!assembly.has_seed()) {
+      LOG_WARNING << "Failed get_block_writer assembly is missing the seed";
+      return false;
+    }
+
+    if (!assembly.has_nb_addresses()) {
+      LOG_INFO << "Failed get_block_writer assembly is missing the number of "
+                  "addresses";
       return false;
     }
     std::mt19937 rng;
@@ -577,7 +607,13 @@ class Consensus {
     auto dist = std::uniform_int_distribution<std::mt19937::result_type>(
         0, std::min(assembly.nb_addresses(),
                     (int32_t)config.members_per_assembly));
-    return _ledger->get_block_writer(assembly.id(), dist(rng), address);
+    auto writer_rank = dist(rng);
+    if (!_ledger->get_block_writer(assembly.id(), writer_rank, address)) {
+      LOG_WARNING << "Could not find block writer of rank " << writer_rank
+                  << " in assembly " << assembly.id();
+      return false;
+    }
+    return true;
   }
 
   messages::BlockHeight get_current_height() {
@@ -664,7 +700,7 @@ class Consensus {
   }
 
   friend class neuro::consensus::tests::Consensus;
-};
+};  // namespace consensus
 
 }  // namespace consensus
 }  // namespace neuro

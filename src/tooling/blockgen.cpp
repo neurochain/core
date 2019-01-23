@@ -31,7 +31,7 @@ messages::TaggedBlock gen_block0(std::vector<crypto::Ecc> keys,
   auto block = tagged_block.mutable_block();
   auto header = block->mutable_header();
   keys[0].public_key().save(header->mutable_author());
-  header->mutable_timestamp()->set_data(std::time(nullptr));
+  header->mutable_timestamp()->set_data(std::time(nullptr) - 100000);
   auto previons_block_hash = header->mutable_previous_block_hash();
   previons_block_hash->set_data("");
   previons_block_hash->set_type(messages::Hash::Type::Hash_Type_SHA256);

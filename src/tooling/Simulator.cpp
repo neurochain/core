@@ -50,7 +50,8 @@ messages::Transaction Simulator::random_transaction() {
 
 messages::Block Simulator::new_block(int nb_transactions,
                                      const messages::TaggedBlock &last_block) {
-  messages::Block block;
+  messages::Block block, block0;
+  ledger->get_block(0, &block0);
   messages::Assembly assembly_n_minus_1, assembly_n_minus_2;
   assert(ledger->get_assembly(last_block.previous_assembly_id(),
                               &assembly_n_minus_1));
@@ -66,7 +67,8 @@ messages::Block Simulator::new_block(int nb_transactions,
   uint32_t miner_index = addresses_indexes.at(address);
   auto header = block.mutable_header();
   keys[miner_index].public_key().save(header->mutable_author());
-  header->mutable_timestamp()->set_data(std::time(nullptr));
+  header->mutable_timestamp()->set_data(block0.header().timestamp().data() +
+                                        height * consensus.config.block_period);
   header->mutable_previous_block_hash()->CopyFrom(
       last_block.block().header().id());
   header->set_height(height);
