@@ -136,6 +136,25 @@ target_link_libraries(Simulator
   )
 add_test(Simulator Simulator)
 
+add_executable(Pii
+  consensus/Pii.cpp
+  )
+target_link_libraries(Pii
+  GTest::main
+  Boost::program_options
+  Boost::filesystem
+  Boost::system
+  Boost::thread
+  Boost::log
+  cpr::cpr
+  ${LIBMONGOCXX_STATIC_LIBRARIES}
+  core
+  protos
+  libonion::onion
+  libonion::onioncpp
+  )
+add_test(Pii Pii)
+
 add_executable(Consensus
   consensus/Consensus.cpp
   )

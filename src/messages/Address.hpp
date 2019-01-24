@@ -3,6 +3,7 @@
 
 #include "common.pb.h"
 #include "common/logger.hpp"
+#include "crypto/Ecc.hpp"
 #include "messages/Hasher.hpp"
 
 namespace neuro {
@@ -33,6 +34,11 @@ class Address : public _Address {
   Address(const messages::_Address &address) : _Address(address) {}
 
   Address() : _Address() {}
+
+  static Address random() {
+    crypto::Ecc ecc;
+    return Address(ecc.public_key());
+  }
 
   bool verify() const {
     if (!has_data()) {

@@ -8,6 +8,9 @@
 
 namespace neuro {
 namespace consensus {
+namespace tests {
+class Pii;
+}
 
 class Addresses {
  public:

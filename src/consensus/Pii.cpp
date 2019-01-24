@@ -106,16 +106,16 @@ void Addresses::add_enthalpy(const messages::Address &sender,
                              const messages::Address &recipient,
                              Double enthalpy) {
   Transactions *recipient_transactions =
-      &_addresses.try_emplace(recipient).first->second;
+      &(_addresses.try_emplace(recipient).first->second);
   Counters *incoming =
-      &recipient_transactions->_in.try_emplace(sender).first->second;
+      &(recipient_transactions->_in.try_emplace(sender).first->second);
   incoming->nb_transactions += 1;
   incoming->enthalpy += enthalpy;
 
   Transactions *sender_transactions =
-      &_addresses.try_emplace(sender).first->second;
+      &(_addresses.try_emplace(sender).first->second);
   Counters *outgoing =
-      &sender_transactions->_out.try_emplace(recipient).first->second;
+      &(sender_transactions->_out.try_emplace(recipient).first->second);
   outgoing->nb_transactions += 1;
   outgoing->enthalpy += enthalpy;
 }
@@ -127,8 +127,9 @@ Double Addresses::get_entropy(const messages::Address &address) const {
   for (const auto &[_, counters] : transactions->_in) {
     total_nb_transactions += counters.nb_transactions;
   }
+  LOG_DEBUG << "TOTAL IN " << total_nb_transactions;
   for (const auto &[_, counters] : transactions->_in) {
-    Double p = counters.nb_transactions / total_nb_transactions;
+    Double p = (Double)counters.nb_transactions / (Double)total_nb_transactions;
     entropy -= counters.enthalpy * p * log2(p);
   }
   total_nb_transactions = 0;
@@ -136,7 +137,7 @@ Double Addresses::get_entropy(const messages::Address &address) const {
     total_nb_transactions += counters.nb_transactions;
   }
   for (const auto &[_, counters] : transactions->_out) {
-    Double p = counters.nb_transactions / total_nb_transactions;
+    Double p = (Double)counters.nb_transactions / (Double)total_nb_transactions;
     entropy -= counters.enthalpy * p * log2(p);
   }
   return fmax(1, entropy);

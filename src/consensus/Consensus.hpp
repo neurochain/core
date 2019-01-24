@@ -21,6 +21,7 @@ class Consensus {
  private:
   std::shared_ptr<ledger::Ledger> _ledger;
   std::unordered_set<messages::Hash> _current_computations;
+  std::unordered_map<messages::Hash, std::thread> _current_threads;
   std::mutex _current_computations_mutex;
 
   bool check_inputs(
@@ -511,12 +512,6 @@ class Consensus {
            _ledger->update_main_branch();
   }
 
-  // /**
-  //  * \brief Get the next addr to build block
-  //  * \return Address of next block builder
-  //  */
-  // messages::Address get_next_owner() const{}
-
   void add_wallet_key_pair(const std::shared_ptr<crypto::Ecc> wallet) {}
 
   void start_computations() {
@@ -525,7 +520,9 @@ class Consensus {
     for (const auto &assembly : assemblies) {
       if (_current_computations.count(assembly.id()) == 0) {
         if (add_current_computation(assembly.id())) {
-          std::thread([&]() { compute_assembly_pii(assembly); });
+          auto pii_thread =
+              std::thread([&]() { compute_assembly_pii(assembly); });
+          pii_thread.detach();
         }
       }
     }
@@ -606,7 +603,8 @@ class Consensus {
     rng.seed(assembly.seed() + height);
     auto dist = std::uniform_int_distribution<std::mt19937::result_type>(
         0, std::min(assembly.nb_addresses(),
-                    (int32_t)config.members_per_assembly));
+                    (int32_t)config.members_per_assembly) -
+               1);
     auto writer_rank = dist(rng);
     if (!_ledger->get_block_writer(assembly.id(), writer_rank, address)) {
       LOG_WARNING << "Could not find block writer of rank " << writer_rank

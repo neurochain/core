@@ -11,19 +11,17 @@ namespace tooling {
 class Simulator {
  private:
   messages::NCCAmount _ncc_block0;
-  messages::NCCAmount _block_reward;
 
  public:
   const float RATIO_TO_SEND = 0.5;
   std::shared_ptr<neuro::ledger::LedgerMongodb> ledger;
-  neuro::consensus::Consensus consensus;
+  std::shared_ptr<neuro::consensus::Consensus> consensus;
   std::vector<crypto::Ecc> keys;
   std::vector<messages::Address> addresses;
   std::unordered_map<messages::Address, uint32_t> addresses_indexes;
 
   Simulator(const std::string &db_url, const std::string &db_name,
-            const int nb_keys, const messages::NCCAmount ncc_block0,
-            const messages::NCCAmount block_reward);
+            const int nb_keys, const messages::NCCAmount ncc_block0);
 
   messages::Block new_block(int nb_transactions,
                             const messages::TaggedBlock &last_block);

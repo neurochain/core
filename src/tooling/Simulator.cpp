@@ -14,11 +14,10 @@ consensus::Config config{
 };
 
 Simulator::Simulator(const std::string &db_url, const std::string &db_name,
-                     const int nb_keys, const messages::NCCAmount ncc_block0,
-                     const messages::NCCAmount block_reward)
+                     const int nb_keys, const messages::NCCAmount ncc_block0)
     : _ncc_block0(ncc_block0),
       ledger(std::make_shared<ledger::LedgerMongodb>(db_url, db_name)),
-      consensus(ledger, config),
+      consensus(std::make_shared<consensus::Consensus>(ledger, config)),
       keys(nb_keys) {
   ledger->empty_database();
   for (size_t i = 0; i < keys.size(); i++) {
@@ -58,17 +57,18 @@ messages::Block Simulator::new_block(int nb_transactions,
   assert(ledger->get_assembly(assembly_n_minus_1.previous_assembly_id(),
                               &assembly_n_minus_2));
   auto height = last_block.block().header().height() + 1;
-  auto &assembly = height % consensus.config.blocks_per_assembly == 0
+  auto &assembly = height % consensus->config.blocks_per_assembly == 0
                        ? assembly_n_minus_1
                        : assembly_n_minus_2;
 
   messages::Address address;
-  assert(consensus.get_block_writer(assembly, height, &address));
+  assert(consensus->get_block_writer(assembly, height, &address));
   uint32_t miner_index = addresses_indexes.at(address);
   auto header = block.mutable_header();
   keys[miner_index].public_key().save(header->mutable_author());
   header->mutable_timestamp()->set_data(block0.header().timestamp().data() +
-                                        height * consensus.config.block_period);
+                                        height *
+                                            consensus->config.block_period);
   header->mutable_previous_block_hash()->CopyFrom(
       last_block.block().header().id());
   header->set_height(height);
@@ -76,7 +76,7 @@ messages::Block Simulator::new_block(int nb_transactions,
   // Block reward
   auto transaction = block.add_coinbases();
   blockgen::coinbase(keys[miner_index].public_key(),
-                     consensus.config.block_reward, transaction, height);
+                     consensus->config.block_reward, transaction, height);
 
   for (int i = 0; i < nb_transactions; i++) {
     auto transaction = random_transaction();
@@ -98,7 +98,7 @@ void Simulator::run(int nb_blocks, int transactions_per_block) {
   for (int i = 0; i < nb_blocks; i++) {
     ledger->get_last_block(&last_block);
     auto block = new_block(transactions_per_block, last_block);
-    if (!consensus.add_block(&block)) {
+    if (!consensus->add_block(&block)) {
       throw std::runtime_error("Failed to add block in the simulator");
     }
   }

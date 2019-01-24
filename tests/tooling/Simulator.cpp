@@ -23,7 +23,6 @@ class Simulator : public ::testing::Test {
   const std::string db_url = "mongodb://mongo:27017";
   const std::string db_name = "test_simulator";
   const messages::NCCAmount ncc_block0 = messages::NCCAmount(1000000);
-  const messages::NCCAmount block_reward = messages::NCCAmount(100);
   const int nb_keys = 20;
 
  protected:
@@ -31,7 +30,7 @@ class Simulator : public ::testing::Test {
   std::shared_ptr<neuro::ledger::LedgerMongodb> ledger;
 
   Simulator()
-      : simulator(db_url, db_name, nb_keys, ncc_block0, block_reward),
+      : simulator(db_url, db_name, nb_keys, ncc_block0),
         ledger(simulator.ledger) {}
 };
 
