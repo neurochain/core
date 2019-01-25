@@ -85,7 +85,9 @@ bool Pii::add_transaction(const messages::Transaction &transaction,
                         &enthalpy)) {
         return false;
       }
-      _addresses.add_enthalpy(sender, recipient, enthalpy);
+      if (sender != recipient) {
+        _addresses.add_enthalpy(sender, recipient, enthalpy);
+      }
     }
   }
   return true;
@@ -93,7 +95,8 @@ bool Pii::add_transaction(const messages::Transaction &transaction,
 
 bool Pii::add_block(const messages::TaggedBlock &tagged_block) {
   // Warning: this method only works for blocks that are already inserted in the
-  // ledger Notice that for now coinbases don't give any entropy
+  // ledger.
+  // Notice that for now coinbases don't give any entropy
   for (const auto &transaction : tagged_block.block().transactions()) {
     if (!add_transaction(transaction, tagged_block)) {
       return false;
@@ -127,7 +130,6 @@ Double Addresses::get_entropy(const messages::Address &address) const {
   for (const auto &[_, counters] : transactions->_in) {
     total_nb_transactions += counters.nb_transactions;
   }
-  LOG_DEBUG << "TOTAL IN " << total_nb_transactions;
   for (const auto &[_, counters] : transactions->_in) {
     Double p = (Double)counters.nb_transactions / (Double)total_nb_transactions;
     entropy -= counters.enthalpy * p * log2(p);

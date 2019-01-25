@@ -129,7 +129,7 @@ class LedgerMongodb : public Ledger {
   bool get_last_block_header(messages::BlockHeader *block_header) const;
 
   bool get_last_block(messages::TaggedBlock *tagged_block,
-                      bool include_transactions = false) const;
+                      bool include_transactions = true) const;
 
   bool get_block(const messages::BlockID &id,
                  messages::TaggedBlock *tagged_block,
@@ -242,6 +242,8 @@ class LedgerMongodb : public Ledger {
                         int32_t nb_addresses);
 
   bool set_seed(const messages::Hash &assembly_id, int32_t seed);
+
+  bool set_finished_computation(const messages::Hash &assembly_id);
 
   friend class neuro::ledger::tests::LedgerMongodb;
   friend class neuro::tooling::Simulator;

@@ -21,7 +21,6 @@ class Consensus {
  private:
   std::shared_ptr<ledger::Ledger> _ledger;
   std::unordered_set<messages::Hash> _current_computations;
-  std::unordered_map<messages::Hash, std::thread> _current_threads;
   std::mutex _current_computations_mutex;
 
   bool check_inputs(
@@ -520,9 +519,7 @@ class Consensus {
     for (const auto &assembly : assemblies) {
       if (_current_computations.count(assembly.id()) == 0) {
         if (add_current_computation(assembly.id())) {
-          auto pii_thread =
-              std::thread([&]() { compute_assembly_pii(assembly); });
-          pii_thread.detach();
+          std::thread([&]() { compute_assembly_pii(assembly); }).detach();
         }
       }
     }
@@ -545,16 +542,18 @@ class Consensus {
       return false;
     }
     _current_computations.erase(assembly_id);
+
     return true;
   }
 
-  void compute_assembly_pii(const messages::Assembly &assembly) {
+  bool compute_assembly_pii(const messages::Assembly &assembly) {
     auto pii = Pii(_ledger, config);
     messages::TaggedBlock tagged_block;
     if (!_ledger->get_block(assembly.id(), &tagged_block)) {
-      LOG_WARNING << "During Pii computation missing block " << assembly.id();
+      LOG_WARNING << "During Pii computation missing block with id assembly_id "
+                  << assembly.id();
       remove_current_computation(assembly.id());
-      return;
+      return false;
     }
     uint32_t seed = 0;
 
@@ -562,17 +561,26 @@ class Consensus {
            assembly.previous_assembly_id()) {
       pii.add_block(tagged_block);
       auto block_id = tagged_block.block().header().id().data();
-      seed += block_id.at(block_id.size()) % 2;
       seed <<= 1;
+      seed += block_id.at(block_id.size() - 1) % 2;
+      if (tagged_block.block().header().height() == 0) {
+        break;
+      }
       if (!_ledger->get_block(
               tagged_block.block().header().previous_block_hash(),
-              &tagged_block)) {
+              &tagged_block, false)) {
         LOG_WARNING << "During Pii computation missing block "
                     << tagged_block.block().header().previous_block_hash();
         remove_current_computation(assembly.id());
-        return;
+        return false;
       }
     }
+    if (!_ledger->set_seed(assembly.id(), seed)) {
+      LOG_WARNING << "During Pii computation failed to set seed for assembly "
+                  << assembly.id();
+      remove_current_computation(assembly.id());
+      return false;
+    };
 
     auto piis = pii.get_addresses_pii();
     for (int i = 0; i < piis.size(); i++) {
@@ -580,10 +588,24 @@ class Consensus {
       pii.mutable_assembly_id()->CopyFrom(assembly.id());
       pii.set_rank(i);
       _ledger->set_pii(pii);
-    }
-    _ledger->set_nb_addresses(assembly.id(), piis.size());
+    };
 
+    if (!_ledger->set_nb_addresses(assembly.id(), piis.size())) {
+      LOG_WARNING
+          << "During Pii computation failed to set nb_addresses for assembly "
+          << assembly.id();
+      remove_current_computation(assembly.id());
+      return false;
+    };
+    if (!_ledger->set_finished_computation(assembly.id())) {
+      LOG_WARNING << "During Pii computation failed to set "
+                     "finished_computation for assembly "
+                  << assembly.id();
+      remove_current_computation(assembly.id());
+      return false;
+    };
     remove_current_computation(assembly.id());
+    return true;
   }
 
   bool get_block_writer(const messages::Assembly &assembly,

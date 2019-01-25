@@ -29,6 +29,7 @@ class Consensus : public testing::Test {
     ASSERT_TRUE(assembly.has_seed());
     ASSERT_TRUE(assembly.has_nb_addresses());
     ASSERT_TRUE(assembly.nb_addresses() >= 1);
+    ASSERT_TRUE(assembly.finished_computation());
     for (int i = 0; i < assembly.nb_addresses(); i++) {
       messages::Address address;
       ASSERT_TRUE(ledger->get_block_writer(assembly.id(), i, &address));
@@ -88,6 +89,35 @@ class Consensus : public testing::Test {
       }
     }
   }
+
+  void test_start_computations() {
+    std::vector<messages::Assembly> assemblies;
+    ASSERT_FALSE(ledger->get_assemblies_to_compute(&assemblies));
+    simulator.run(consensus->config.blocks_per_assembly, 10);
+    ASSERT_TRUE(ledger->get_assemblies_to_compute(&assemblies));
+    ASSERT_EQ(assemblies.size(), 1);
+    auto assembly_id = assemblies[0].id();
+    consensus->start_computations();
+    while (true) {
+      sleep(100);
+      consensus->_current_computations_mutex.lock();
+      if (consensus->_current_computations.size() == 0) {
+        consensus->_current_computations_mutex.unlock();
+        break;
+      }
+      consensus->_current_computations_mutex.unlock();
+    }
+    ASSERT_FALSE(ledger->get_assemblies_to_compute(&assemblies));
+    messages::Assembly assembly;
+    ASSERT_TRUE(ledger->get_assembly(assembly_id, &assembly));
+    ASSERT_TRUE(assembly.has_seed());
+    ASSERT_TRUE(assembly.has_nb_addresses());
+    ASSERT_TRUE(assembly.nb_addresses() >= 1);
+    for (int i = 0; i < assembly.nb_addresses(); i++) {
+      messages::Address address;
+      ASSERT_TRUE(ledger->get_block_writer(assembly_id, i, &address));
+    }
+  }
 };
 
 TEST_F(Consensus, is_valid_transaction) { test_is_valid_transaction(); }
@@ -111,37 +141,18 @@ TEST_F(Consensus, add_block) {
 }
 
 TEST_F(Consensus, compute_assembly_pii) {
+  return;
   std::vector<messages::Assembly> assemblies;
   simulator.run(consensus->config.blocks_per_assembly, 10);
   ASSERT_TRUE(ledger->get_assemblies_to_compute(&assemblies));
   ASSERT_EQ(assemblies.size(), 1);
   auto &assembly = assemblies[0];
-  consensus->compute_assembly_pii(assembly);
+  ASSERT_TRUE(consensus->compute_assembly_pii(assembly));
+  ASSERT_TRUE(ledger->get_assembly(assembly.id(), &assembly));
   check_assembly_pii(assembly);
 }
 
-TEST_F(Consensus, start_computations) {
-  return;
-  std::vector<messages::Assembly> assemblies;
-  ASSERT_FALSE(ledger->get_assemblies_to_compute(&assemblies));
-  simulator.run(consensus->config.blocks_per_assembly, 10);
-  ASSERT_TRUE(ledger->get_assemblies_to_compute(&assemblies));
-  ASSERT_EQ(assemblies.size(), 1);
-  auto assembly_id = assemblies[0].id();
-  consensus->start_computations();
-  LOG_DEBUG << "TOTORO" << std::endl;
-  sleep(20000);
-  ASSERT_FALSE(ledger->get_assemblies_to_compute(&assemblies));
-  messages::Assembly assembly;
-  ASSERT_TRUE(ledger->get_assembly(assembly_id, &assembly));
-  ASSERT_TRUE(assembly.has_seed());
-  ASSERT_TRUE(assembly.has_nb_addresses());
-  ASSERT_TRUE(assembly.nb_addresses() >= 1);
-  for (int i = 0; i < assembly.nb_addresses(); i++) {
-    messages::Address address;
-    ASSERT_TRUE(ledger->get_block_writer(assembly_id, i, &address));
-  }
-}
+TEST_F(Consensus, start_computations) { test_start_computations(); }
 
 }  // namespace tests
 }  // namespace consensus

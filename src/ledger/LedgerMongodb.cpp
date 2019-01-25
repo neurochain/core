@@ -1076,10 +1076,18 @@ bool LedgerMongodb::get_pii(const messages::Address &address,
 
   const auto result = _pii.find_one(std::move(query), remove_OID());
   if (!result) {
+    *pii = 1;
     return false;
   }
 
-  *pii = result->view()[SCORE].get_double();
+  auto score = result->view()[SCORE];
+  if (score.type() == bsoncxx::types::b_double::type_id) {
+    *pii = score.get_double();
+  } else if (score.type() == bsoncxx::types::b_int32::type_id) {
+    *pii = score.get_int32();
+  } else if (score.type() == bsoncxx::types::b_int64::type_id) {
+    *pii = score.get_int64();
+  }
   return true;
 }
 
@@ -1246,6 +1254,18 @@ bool LedgerMongodb::set_seed(const messages::Hash &assembly_id, int32_t seed) {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto filter = bss::document{} << ID << to_bson(assembly_id) << bss::finalize;
   auto update = bss::document{} << $SET << bss::open_document << SEED << seed
+                                << bss::close_document << bss::finalize;
+  auto update_result =
+      _assemblies.update_one(std::move(filter), std::move(update));
+  return update_result && update_result->modified_count() > 0;
+}
+
+bool LedgerMongodb::set_finished_computation(
+    const messages::Hash &assembly_id) {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  auto filter = bss::document{} << ID << to_bson(assembly_id) << bss::finalize;
+  auto update = bss::document{} << $SET << bss::open_document
+                                << FINISHED_COMPUTATION << true
                                 << bss::close_document << bss::finalize;
   auto update_result =
       _assemblies.update_one(std::move(filter), std::move(update));

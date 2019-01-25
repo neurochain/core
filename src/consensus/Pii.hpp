@@ -35,6 +35,7 @@ class Addresses {
   Double get_entropy(const messages::Address &address) const;
 
   friend class Pii;
+  friend class tests::Pii;
 };
 
 class Pii {
@@ -69,6 +70,8 @@ class Pii {
   bool add_block(const messages::TaggedBlock &tagged_block);
 
   std::vector<messages::Pii> get_addresses_pii();
+
+  friend class tests::Pii;
 };
 
 }  // namespace consensus

@@ -77,7 +77,7 @@ class Ledger {
   virtual bool get_last_block_header(
       messages::BlockHeader *block_header) const = 0;
   virtual bool get_last_block(messages::TaggedBlock *tagged_block,
-                              bool include_transactions = false) const = 0;
+                              bool include_transactions = true) const = 0;
   virtual bool get_block(const messages::BlockID &id, messages::Block *block,
                          bool include_transactions = true) const = 0;
   virtual bool get_block(const messages::BlockID &id,
@@ -185,6 +185,8 @@ class Ledger {
                                 int32_t nb_addresses) = 0;
 
   virtual bool set_seed(const messages::Hash &assembly_id, int32_t seed) = 0;
+
+  virtual bool set_finished_computation(const messages::Hash &assembly_id) = 0;
 
   // helpers
 

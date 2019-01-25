@@ -96,7 +96,8 @@ messages::Block Simulator::new_block(int nb_transactions,
 void Simulator::run(int nb_blocks, int transactions_per_block) {
   messages::TaggedBlock last_block;
   for (int i = 0; i < nb_blocks; i++) {
-    ledger->get_last_block(&last_block);
+    bool include_transactions = false;
+    ledger->get_last_block(&last_block, include_transactions);
     auto block = new_block(transactions_per_block, last_block);
     if (!consensus->add_block(&block)) {
       throw std::runtime_error("Failed to add block in the simulator");
