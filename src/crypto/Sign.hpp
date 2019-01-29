@@ -13,6 +13,10 @@ bool sign(const std::vector<const crypto::Ecc *> keys,
 
 bool verify(const messages::Transaction &transaction);
 
+bool sign(const crypto::Ecc &keys, messages::Block *block);
+
+bool verify(const messages::Block &block);
+
 }  // namespace crypto
 }  // namespace neuro
 

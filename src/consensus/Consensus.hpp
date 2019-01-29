@@ -5,6 +5,7 @@
 #include <random>
 #include <unordered_set>
 #include "consensus/Pii.hpp"
+#include "crypto/Sign.hpp"
 #include "ledger/Ledger.hpp"
 #include "tooling/blockgen.hpp"
 
@@ -379,14 +380,20 @@ class Consensus {
       return false;
     }
 
-    const auto author_address = messages::Address(block.header().author());
-    bool result = address == author_address;
-    if (!result) {
+    const auto author_address =
+        messages::Address(block.header().author().key_pub());
+    if (address != author_address) {
       LOG_INFO << "Failed check_block_author for block " << block.header().id()
                << " the author address " << author_address
                << " does not match the required block writer " << address;
+      return false;
     }
-    return result;
+
+    if (!crypto::verify(block)) {
+      LOG_INFO << "Failed check_block_author for block " << block.header().id()
+               << " the signature is wrong";
+    }
+    return true;
   }
 
   Double get_block_score(const messages::TaggedBlock &tagged_block) {
@@ -710,7 +717,6 @@ class Consensus {
       return false;
     }
     auto header = block->mutable_header();
-    keys.public_key().save(header->mutable_author());
     header->set_height(height);
     header->mutable_previous_block_hash()->CopyFrom(last_block_header.id());
     header->mutable_timestamp()->set_data(std::time(nullptr));
@@ -722,9 +728,9 @@ class Consensus {
 
     _ledger->get_transaction_pool(block);
     messages::sort_transactions(block);
+    crypto::sign(keys, block);
     messages::set_block_hash(block);
 
-    // TODO sign blocks
     return true;
   }
 

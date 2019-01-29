@@ -1,5 +1,6 @@
 #include "tooling/Simulator.hpp"
 #include "consensus/Config.hpp"
+#include "crypto/Sign.hpp"
 #include "tooling/blockgen.hpp"
 
 namespace neuro {
@@ -65,7 +66,6 @@ messages::Block Simulator::new_block(int nb_transactions,
   assert(consensus->get_block_writer(assembly, height, &address));
   uint32_t miner_index = addresses_indexes.at(address);
   auto header = block.mutable_header();
-  keys[miner_index].public_key().save(header->mutable_author());
   header->mutable_timestamp()->set_data(block0.header().timestamp().data() +
                                         height *
                                             consensus->config.block_period);
@@ -84,10 +84,11 @@ messages::Block Simulator::new_block(int nb_transactions,
     tagged_transaction.mutable_transaction()->CopyFrom(transaction);
     tagged_transaction.set_is_coinbase(false);
     ledger->add_transaction(tagged_transaction);
-    block.add_transactions()->CopyFrom(transaction);
   }
 
+  ledger->get_transaction_pool(&block);
   messages::sort_transactions(&block);
+  crypto::sign(keys[miner_index], &block);
   messages::set_block_hash(&block);
 
   return block;

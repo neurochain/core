@@ -25,32 +25,26 @@ class Pii : public testing::Test {
   void new_block_3_transactions() {
     messages::TaggedBlock last_block;
     ledger->get_last_block(&last_block);
-    auto block = simulator.new_block(0, last_block);
-    block.clear_transactions();
 
     // Create 3 transactions so that addresses 0 and 2 have entropy
     auto transaction = simulator.send_ncc(simulator.keys[0].private_key(),
                                           simulator.addresses[2], 0.5);
-    block.add_transactions()->CopyFrom(transaction);
     messages::TaggedTransaction tagged_transaction;
     tagged_transaction.mutable_transaction()->CopyFrom(transaction);
     tagged_transaction.set_is_coinbase(true);
     ledger->add_transaction(tagged_transaction);
     transaction = simulator.send_ncc(simulator.keys[1].private_key(),
                                      simulator.addresses[2], 0.5);
-    block.add_transactions()->CopyFrom(transaction);
     tagged_transaction.mutable_transaction()->CopyFrom(transaction);
     tagged_transaction.set_is_coinbase(true);
     ledger->add_transaction(tagged_transaction);
     transaction = simulator.send_ncc(simulator.keys[0].private_key(),
                                      simulator.addresses[1], 0.5);
-    block.add_transactions()->CopyFrom(transaction);
     tagged_transaction.mutable_transaction()->CopyFrom(transaction);
     tagged_transaction.set_is_coinbase(true);
     ledger->add_transaction(tagged_transaction);
 
-    messages::sort_transactions(&block);
-    messages::set_block_hash(&block);
+    auto block = simulator.new_block(0, last_block);
     ASSERT_TRUE(simulator.consensus->add_block(&block));
     messages::TaggedBlock tagged_block;
     ASSERT_TRUE(ledger->get_last_block(&tagged_block));
@@ -62,17 +56,13 @@ class Pii : public testing::Test {
   void new_block_1_transaction() {
     messages::TaggedBlock last_block;
     ledger->get_last_block(&last_block);
-    auto block = simulator.new_block(0, last_block);
-    block.clear_transactions();
     auto transaction = simulator.send_ncc(simulator.keys[0].private_key(),
                                           simulator.addresses[1], 0.5);
-    block.add_transactions()->CopyFrom(transaction);
     messages::TaggedTransaction tagged_transaction;
     tagged_transaction.mutable_transaction()->CopyFrom(transaction);
     tagged_transaction.set_is_coinbase(true);
     ledger->add_transaction(tagged_transaction);
-    messages::sort_transactions(&block);
-    messages::set_block_hash(&block);
+    auto block = simulator.new_block(0, last_block);
     ASSERT_TRUE(simulator.consensus->add_block(&block));
     messages::TaggedBlock tagged_block;
     ASSERT_TRUE(ledger->get_last_block(&tagged_block));

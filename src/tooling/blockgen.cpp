@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include "common/logger.hpp"
+#include "crypto/Sign.hpp"
 
 namespace po = boost::program_options;
 
@@ -30,7 +31,6 @@ messages::TaggedBlock gen_block0(std::vector<crypto::Ecc> keys,
   messages::TaggedBlock tagged_block;
   auto block = tagged_block.mutable_block();
   auto header = block->mutable_header();
-  keys[0].public_key().save(header->mutable_author());
   header->mutable_timestamp()->set_data(std::time(nullptr) - 100000);
   auto previons_block_hash = header->mutable_previous_block_hash();
   previons_block_hash->set_data("");
@@ -45,6 +45,7 @@ messages::TaggedBlock gen_block0(std::vector<crypto::Ecc> keys,
   tagged_block.mutable_branch_path()->add_block_numbers(0);
   tagged_block.set_score(0);
   messages::sort_transactions(tagged_block.mutable_block());
+  crypto::sign(keys[0], tagged_block.mutable_block());
   messages::set_block_hash(tagged_block.mutable_block());
   return tagged_block;
 }
@@ -75,8 +76,6 @@ void testnet_blockg(uint32_t bots, const std::string &pathdir,
   crypto::Ecc ecc;
   ecc.save({pathdir + "/key_faucet.priv"}, {pathdir + "/key_faucet.pub"});
 
-  Buffer key_pub_raw = ecc.mutable_public_key()->save();
-
   crypto::Ecc ecc_save;
   ecc_save.save({pathdir + "/key_faucet_save.priv"},
                 {pathdir + "/key_faucet_save.pub"});
@@ -84,10 +83,6 @@ void testnet_blockg(uint32_t bots, const std::string &pathdir,
   Buffer key_pub_raw_save = ecc_save.mutable_public_key()->save();
 
   messages::BlockHeader *header = blockfaucet.mutable_header();
-
-  messages::KeyPub *author = header->mutable_author();
-  author->set_type(messages::KeyType::ECP256K1);
-  author->set_raw_data(key_pub_raw.data(), key_pub_raw.size());
 
   auto previons_block_hash = header->mutable_previous_block_hash();
   previons_block_hash->set_data("");  ///!< load 0
@@ -107,9 +102,9 @@ void testnet_blockg(uint32_t bots, const std::string &pathdir,
   messages::Hasher hash_id_tmp(t23);
   header->mutable_id()->CopyFrom(hash_id_tmp);
 
-  neuro::Buffer tmpbuffer(blockfaucet.SerializeAsString());
-  messages::Hasher hash_id(tmpbuffer);
-  header->mutable_id()->CopyFrom(hash_id);
+  messages::sort_transactions(&blockfaucet);
+  crypto::sign(ecc, &blockfaucet);
+  messages::set_block_hash(&blockfaucet);
 
   std::cout << "block0 " << blockfaucet << std::endl;
   std::ofstream blockfile0;
@@ -134,7 +129,9 @@ bool blockgen_from_block(messages::Block *block,
   neuro::messages::BlockHeader *header = block->mutable_header();
 
   if (author) {
-    header->mutable_author()->CopyFrom(*author);
+    header->mutable_author()->mutable_key_pub()->CopyFrom(*author);
+    auto signature = header->mutable_author()->mutable_signature();
+    signature->set_data("");
   } else {
     header->mutable_author()->CopyFrom(last_block.header().author());
   }

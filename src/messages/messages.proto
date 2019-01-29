@@ -80,7 +80,7 @@ message BlockHeader {
   required Hash id = 1;
   required Timestamp timestamp = 2;
   required Hash previous_block_hash = 3;
-  required KeyPub author = 5;
+  required Signature author = 4;
   required int32 height = 6;
 }
 
