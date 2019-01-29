@@ -797,6 +797,13 @@ bool LedgerMongodb::add_transaction(
 bool LedgerMongodb::add_to_transaction_pool(
     const messages::Transaction &transaction) {
   messages::TaggedTransaction tagged_transaction;
+  bool include_transaction_pool = true;
+
+  // Check that the transaction doesn't already exist
+  if (get_transaction(transaction.id(), &tagged_transaction, _main_branch_tip,
+                      include_transaction_pool)) {
+    return false;
+  }
   tagged_transaction.set_is_coinbase(false);
   tagged_transaction.mutable_transaction()->CopyFrom(transaction);
   return add_transaction(tagged_transaction);

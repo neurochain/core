@@ -273,7 +273,7 @@ bool Bot::init() {
   }
 
   _consensus = std::make_shared<consensus::Consensus>(_ledger);
-  _consensus->add_wallet_key_pair(_keys);
+  //_consensus->add_wallet_key_pair(_keys);
   _io_context_thread = std::thread([this]() { _io_context->run(); });
 
   // if (!_config.has_rest()) {

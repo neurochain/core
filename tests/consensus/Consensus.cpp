@@ -99,7 +99,7 @@ class Consensus : public testing::Test {
     auto assembly_id = assemblies[0].id();
     consensus->start_computations();
     while (true) {
-      sleep(100);
+      sleep(1);
       consensus->_current_computations_mutex.lock();
       if (consensus->_current_computations.size() == 0) {
         consensus->_current_computations_mutex.unlock();
@@ -116,6 +116,50 @@ class Consensus : public testing::Test {
     for (int i = 0; i < assembly.nb_addresses(); i++) {
       messages::Address address;
       ASSERT_TRUE(ledger->get_block_writer(assembly_id, i, &address));
+    }
+  }
+
+  void test_write_block() {
+    messages::TaggedBlock tagged_block;
+    messages::Assembly assembly_minus_1, assembly_minus_2;
+    bool include_transactions = false;
+    ASSERT_TRUE(ledger->get_last_block(&tagged_block, include_transactions));
+    ledger->get_assembly(tagged_block.previous_assembly_id(),
+                         &assembly_minus_1);
+    ledger->get_assembly(assembly_minus_1.previous_assembly_id(),
+                         &assembly_minus_2);
+    for (int32_t i = 1; i < consensus->config.blocks_per_assembly; i++) {
+      messages::Address address;
+      ASSERT_TRUE(consensus->get_block_writer(assembly_minus_2, i, &address));
+      ASSERT_TRUE(address == simulator.addresses[0] ||
+                  address == simulator.addresses[1]);
+
+      const auto keys = address == simulator.addresses[0] ? simulator.keys[0]
+                                                          : simulator.keys[1];
+      messages::Block block;
+      ASSERT_TRUE(consensus->write_block(keys, i, &block));
+      ASSERT_EQ(block.header().height(), i);
+      ASSERT_EQ(block.coinbases_size(), 1);
+      ASSERT_EQ(block.header().has_id(), 1);
+      ASSERT_EQ(block.header().has_author(), 1);
+      messages::TaggedBlock tagged_block;
+      tagged_block.mutable_block()->CopyFrom(block);
+
+      // The timestamp of the block should be wrong we don't write it at the
+      // correct time
+      ASSERT_FALSE(consensus->check_block_timestamp(tagged_block));
+
+      // So we fix it
+      ASSERT_TRUE(ledger->get_block(block.header().previous_block_hash(),
+                                    &tagged_block));
+      block.mutable_header()->mutable_timestamp()->set_data(
+          tagged_block.block().header().timestamp().data() +
+          consensus->config.block_period);
+
+      // Rewrite the block hash which should have changed
+      messages::set_block_hash(&block);
+
+      ASSERT_TRUE(consensus->add_block(&block));
     }
   }
 };
@@ -141,7 +185,6 @@ TEST_F(Consensus, add_block) {
 }
 
 TEST_F(Consensus, compute_assembly_pii) {
-  return;
   std::vector<messages::Assembly> assemblies;
   simulator.run(consensus->config.blocks_per_assembly, 10);
   ASSERT_TRUE(ledger->get_assemblies_to_compute(&assemblies));
@@ -153,6 +196,28 @@ TEST_F(Consensus, compute_assembly_pii) {
 }
 
 TEST_F(Consensus, start_computations) { test_start_computations(); }
+
+TEST_F(Consensus, add_transaction) {
+  auto t0 = simulator.send_ncc(simulator.keys[0].private_key(),
+                               simulator.addresses[1], 0.5);
+  auto t1 = simulator.send_ncc(simulator.keys[0].private_key(),
+                               simulator.addresses[0], 0.5);
+  ASSERT_TRUE(consensus->add_transaction(t0));
+
+  // The second time the transaction should be valid but not inserted twice
+  ASSERT_FALSE(consensus->add_transaction(t0));
+
+  // t1 is also invalid because it tries to double spend
+  ASSERT_FALSE(consensus->add_transaction(t1));
+
+  // Now that t1 has been added to the transaction pool. t2 should be build with
+  // a different input so there should be no double spending
+  auto t2 = simulator.send_ncc(simulator.keys[0].private_key(),
+                               simulator.addresses[0], 0.5);
+  ASSERT_TRUE(consensus->add_transaction(t2));
+}
+
+TEST_F(Consensus, write_block) { test_write_block(); }
 
 }  // namespace tests
 }  // namespace consensus

@@ -25,8 +25,6 @@ class Consensus {
 
   bool check_inputs(
       const messages::TaggedTransaction &tagged_transaction) const {
-    const bool check_transaction_pool = tagged_transaction.has_block_id();
-
     messages::TaggedBlock tip;
     if (tagged_transaction.has_block_id()) {
       if (!_ledger->get_block(tagged_transaction.block_id(), &tip, false)) {
@@ -44,9 +42,10 @@ class Consensus {
       filter.input_transaction_id(input.id());
       filter.output_id(input.output_id());
 
-      auto invalid = false;
+      bool invalid = false;
 
       // Check that inputs are not spent by any other transaction
+      const bool check_transaction_pool = true;
       _ledger->for_each(filter, tip, check_transaction_pool,
                         [&](const messages::TaggedTransaction match) {
                           if ((match.transaction().id() != transaction.id())) {
@@ -67,8 +66,6 @@ class Consensus {
 
   bool check_outputs(
       const messages::TaggedTransaction tagged_transaction) const {
-    const bool check_transaction_pool = tagged_transaction.has_block_id();
-
     messages::TaggedBlock tip;
     if (tagged_transaction.has_block_id()) {
       if (!_ledger->get_block(tagged_transaction.block_id(), &tip, false)) {
@@ -81,18 +78,24 @@ class Consensus {
     }
 
     uint64_t total_received = 0;
+    const bool check_transaction_pool = !tagged_transaction.has_block_id();
     for (const auto &input : tagged_transaction.transaction().inputs()) {
       messages::TaggedTransaction input_transaction;
       if (!_ledger->get_transaction(input.id(), &input_transaction, tip,
                                     check_transaction_pool)) {
         // The input must exist
         LOG_INFO << "Failed check_output for transaction "
-                 << tagged_transaction.transaction().id();
+                 << tagged_transaction.transaction().id()
+                 << " the input transaction " << input.id()
+                 << " does not exist";
         return false;
       }
       if (input.output_id() >= input_transaction.transaction().outputs_size()) {
         LOG_INFO << "Failed check_output for transaction "
-                 << tagged_transaction.transaction().id();
+                 << tagged_transaction.transaction().id()
+                 << " the input transaction " << input.id()
+                 << " does not have enough outputs";
+
         return false;
       }
       total_received += input_transaction.transaction()
@@ -112,7 +115,9 @@ class Consensus {
     bool result = total_spent == total_received;
     if (!result) {
       LOG_INFO << "Failed check_output for transaction "
-               << tagged_transaction.transaction().id();
+               << tagged_transaction.transaction().id()
+               << " the total amount available in the inputs " << total_received
+               << " does not match the total amount spent " << total_spent;
     }
     return result;
   }
@@ -153,8 +158,6 @@ class Consensus {
       if (inputs.count(clean_input) > 0) {
         LOG_INFO << "Failed check_double_inputs for transaction "
                  << tagged_transaction.transaction().id();
-        LOG_DEBUG << "INPUTS" << tagged_transaction.transaction().inputs();
-        throw std::runtime_error("toto");
         return false;
       }
       inputs.insert(clean_input);
@@ -466,6 +469,27 @@ class Consensus {
     return block_assembly_height != previous_assembly_height;
   }
 
+  bool add_current_computation(const messages::Hash &assembly_id) {
+    std::lock_guard<std::mutex> lock(_current_computations_mutex);
+    if (_current_computations.count(assembly_id) != 0) {
+      // The computation was already added
+      return false;
+    }
+    _current_computations.insert(assembly_id);
+    return true;
+  }
+
+  bool remove_current_computation(const messages::Hash &assembly_id) {
+    std::lock_guard<std::mutex> lock(_current_computations_mutex);
+    if (_current_computations.count(assembly_id) == 0) {
+      // The computation was already removed
+      return false;
+    }
+    _current_computations.erase(assembly_id);
+
+    return true;
+  }
+
  public:
   Consensus(std::shared_ptr<ledger::Ledger> ledger) : _ledger(ledger) {}
   Consensus(std::shared_ptr<ledger::Ledger> ledger, const Config &config)
@@ -499,11 +523,15 @@ class Consensus {
    * \param [in] transaction
    */
   bool add_transaction(const messages::Transaction &transaction) {
-    return false;
+    messages::TaggedTransaction tagged_transaction;
+    tagged_transaction.set_is_coinbase(false);
+    tagged_transaction.mutable_transaction()->CopyFrom(transaction);
+    return is_valid(tagged_transaction) &&
+           _ledger->add_to_transaction_pool(transaction);
   }
 
   /**
-   * \brief Add block and compute Pii
+   * \brief Verify that a block is valid and insert it
    * \param [in] block block to add
    */
   bool add_block(messages::Block *block) {
@@ -511,39 +539,22 @@ class Consensus {
            _ledger->update_main_branch();
   }
 
-  void add_wallet_key_pair(const std::shared_ptr<crypto::Ecc> wallet) {}
-
+  /**
+   * \brief Check if there is any assembly to compute and if so starts the
+   * computation in another thread
+   */
   void start_computations() {
     std::vector<messages::Assembly> assemblies;
     _ledger->get_assemblies_to_compute(&assemblies);
     for (const auto &assembly : assemblies) {
       if (_current_computations.count(assembly.id()) == 0) {
         if (add_current_computation(assembly.id())) {
-          std::thread([&]() { compute_assembly_pii(assembly); }).detach();
+          std::thread(
+              [this, assembly]() { this->compute_assembly_pii(assembly); })
+              .detach();
         }
       }
     }
-  }
-
-  bool add_current_computation(const messages::Hash &assembly_id) {
-    std::lock_guard<std::mutex> lock(_current_computations_mutex);
-    if (_current_computations.count(assembly_id) != 0) {
-      // The computation was already added
-      return false;
-    }
-    _current_computations.insert(assembly_id);
-    return true;
-  }
-
-  bool remove_current_computation(const messages::Hash &assembly_id) {
-    std::lock_guard<std::mutex> lock(_current_computations_mutex);
-    if (_current_computations.count(assembly_id) == 0) {
-      // The computation was already removed
-      return false;
-    }
-    _current_computations.erase(assembly_id);
-
-    return true;
   }
 
   bool compute_assembly_pii(const messages::Assembly &assembly) {
@@ -612,12 +623,14 @@ class Consensus {
                         const messages::BlockHeight &height,
                         messages::Address *address) const {
     if (!assembly.has_seed()) {
-      LOG_WARNING << "Failed get_block_writer assembly is missing the seed";
+      LOG_WARNING << "Failed get_block_writer assembly " << assembly.id()
+                  << " is missing the seed";
       return false;
     }
 
     if (!assembly.has_nb_addresses()) {
-      LOG_INFO << "Failed get_block_writer assembly is missing the number of "
+      LOG_INFO << "Failed get_block_writer assembly " << assembly.id()
+               << " is missing the number of "
                   "addresses";
       return false;
     }
@@ -707,11 +720,7 @@ class Consensus {
     tooling::blockgen::coinbase(keys.public_key(), block_reward(height),
                                 transaction, height);
 
-    // Transactions
-    if (!_ledger->get_transaction_pool(block)) {
-      return false;
-    }
-
+    _ledger->get_transaction_pool(block);
     messages::sort_transactions(block);
     messages::set_block_hash(block);
 
