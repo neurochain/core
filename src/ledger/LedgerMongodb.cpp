@@ -747,8 +747,9 @@ bool LedgerMongodb::for_each(const Filter &filter,
       continue;
     }
     messages::TaggedBlock tagged_block;
+    bool include_transactions = false;
     if (!unsafe_get_block(tagged_transaction.block_id(), &tagged_block,
-                          false)) {
+                          include_transactions)) {
       return false;
     }
 
