@@ -4,11 +4,13 @@
 #include <eccrypto.h>
 #include <files.h>
 #include <filters.h>
+#include <hex.h>
 #include <oids.h>
 #include <osrng.h>
 #include <memory>
 
 #include "common/Buffer.hpp"
+#include "rest.pb.h"
 
 namespace neuro {
 namespace crypto {
@@ -33,6 +35,7 @@ class EccPub {
   bool load(const std::string &filepath);
   bool load(const uint8_t *data, const std::size_t size);
   bool load(const messages::KeyPub &keypub);
+  bool load(const messages::PublicKey &pubkey);
   bool save(Buffer *buffer) const;
   Buffer save() const;
   bool save(messages::KeyPub *key_pub) const;

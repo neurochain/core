@@ -5,6 +5,7 @@ package neuro.messages;
 import "messages.proto";
 import "common.proto";
 
+
 message Transactions {
   repeated Transaction transactions = 1;
 }
@@ -39,3 +40,15 @@ message ConnectionsGraph {
   required Hash own_address = 1;
   repeated Hash peers_addresses = 2;
 }
+
+
+message PublicKey {
+  enum PublicKeyEnc {
+    Hex = 0;
+    Base64 = 1;
+  }
+  required string x = 1;
+  required string y = 2;
+  optional PublicKeyEnc enc = 3 [default = Hex];
+}
+

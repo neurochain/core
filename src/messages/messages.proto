@@ -4,7 +4,6 @@ package neuro.messages;
 
 import "common.proto";
 
-
 // Handshake
 // =========
 message Hello {
@@ -18,7 +17,7 @@ message World {
   repeated Peer peers = 3;
 }
 
-// Update 
+// Update
 // ======
 
 message GetPeers {
@@ -28,12 +27,11 @@ message Peers {
   repeated Peer peers = 1;
 }
 
-
 // Ask for block hash
 // ------------------
 message GetRoots {
   optional Hash last_known_root = 1;
-  optional int32 count = 2; // ask for count last roots 
+  optional int32 count = 2;  // ask for count last roots
 }
 
 message Roots {
@@ -133,7 +131,8 @@ message ConnectionReady {
   required bool from_remote = 1;
 }
 
-message BodyCount {}
+message BodyCount {
+}
 
 message Body {
   oneof body {

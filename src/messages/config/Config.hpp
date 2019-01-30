@@ -28,13 +28,13 @@ class Config : public _Config {
       throw std::runtime_error(s);
     }
   }
-  explicit Config(const std::string &data) {
+  /*explicit Config(const std::string &data) {
     if (!messages::from_json(data, this)) {
       const auto s =
           std::string{"Could not parse configuration <" + data + ">"};
       throw std::runtime_error(s);
     }
-  }
+  }*/
 };
 
 }  // namespace config

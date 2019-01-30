@@ -62,6 +62,22 @@ bool EccPub::load(const messages::KeyPub &keypub) {
   return true;
 }
 
+bool EccPub::load(const messages::PublicKey &pubkey) {
+  std::string pt = pubkey.x() + pubkey.y();
+  CryptoPP::HexDecoder decoder;
+  decoder.Put((byte *)&pt[0], pt.size());
+  decoder.MessageEnd();
+
+  CryptoPP::ECP::Point q;
+  size_t len = decoder.MaxRetrievable();
+
+  q.identity = false;
+  q.x.Decode(decoder, len / 2);
+  q.y.Decode(decoder, len / 2);
+  _key.Initialize(CryptoPP::ASN1::secp256k1(), q);
+  return true;
+}
+
 Buffer EccPub::save() const {
   Buffer tmp;
   std::string s;

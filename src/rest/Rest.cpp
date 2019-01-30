@@ -142,6 +142,29 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
   _root->add("get_last_blocks", get_last_blocks_route);
   _root->add("total_nb_transactions", total_nb_transactions_route);
   _root->add("total_nb_blocks", total_nb_blocks_route);
+
+  /* NEW REST API */
+  const auto transactions_route = [&](Onion::Request &request,
+                                      Onion::Response &response) {
+    std::string post_data =
+        onion_block_data(onion_request_get_data(request.c_handler()));
+    messages::PublicKey publickey;
+    messages::from_json(post_data, &publickey);
+    crypto::EccPub eccpubkey;
+    eccpubkey.load(publickey);
+    messages::Hasher address(eccpubkey);
+    const auto transactions = _ledger->list_transactions(address);
+    response << messages::to_json(transactions);
+    return OCS_PROCESSED;
+  };
+
+  const auto build_raw_transactions = [&](Onion::Request &request,
+                                          Onion::Response &response) {
+    return OCS_PROCESSED;
+  };
+
+  _root->add("transactions", transactions_route);
+
   serve_folder("^static/", "static");
   serve_file("", "index.html");
   serve_file("index.html");

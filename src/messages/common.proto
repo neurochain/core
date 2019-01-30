@@ -20,7 +20,7 @@ enum KeyType {
 }
 
 message KeyPub {
-  optional KeyType type = 1 [ default = ECP256K1 ];
+  optional KeyType type = 1 [default = ECP256K1];
   oneof data {
     bytes raw_data = 2;
     string hex_data = 3;
@@ -28,14 +28,14 @@ message KeyPub {
 }
 
 message KeyPriv {
-  required KeyType type = 1 [ default = ECP256K1 ];
+  required KeyType type = 1 [default = ECP256K1];
   required bytes data = 2;
 }
 
 message Hash {
   enum Type { SHA256 = 0; }
 
-  required Type type = 1 [ default = SHA256 ];
+  required Type type = 1 [default = SHA256];
   required bytes data = 2;
 }
 
@@ -55,5 +55,3 @@ message Peer {
   optional int32 transport_layer_id = 5;
   optional int32 connection_id = 6;
 }
-
-
