@@ -32,16 +32,16 @@ bool sign(const std::vector<const crypto::Ecc *> keys,
 }
 
 bool verify(const messages::Transaction &transaction) {
-  auto transaction_raw = transaction;
-  transaction_raw.clear_signatures();
+  auto transaction_copy = transaction;
+  transaction_copy.clear_signatures();
 
   // Fill the id which is a required field. This makes the transaction
   // serializable.
-  transaction_raw.mutable_id()->set_type(messages::Hash::SHA256);
-  transaction_raw.mutable_id()->set_data("");
+  transaction_copy.mutable_id()->set_type(messages::Hash::SHA256);
+  transaction_copy.mutable_id()->set_data("");
 
   Buffer buffer;
-  messages::to_buffer(transaction_raw, &buffer);
+  messages::to_buffer(transaction_copy, &buffer);
 
   for (const auto &input : transaction.inputs()) {
     const auto signature = transaction.signatures(input.signature_id());

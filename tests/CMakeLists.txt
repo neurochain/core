@@ -73,6 +73,7 @@ add_executable(ut
   ./common/Buffer.cpp
   ./crypto/Hash.cpp
   ./crypto/Ecc.cpp
+  ./crypto/Sign.cpp
   ./messages/Config.cpp
   ./messages/Queue.cpp
   ./messages/Subscriber.cpp

@@ -2,6 +2,7 @@
 #define NEURO_SRC_MESSAGES_HASHER_HPP
 
 #include "common/Buffer.hpp"
+#include "crypto/Ecc.hpp"
 #include "crypto/EccPub.hpp"
 #include "crypto/Hash.hpp"
 #include "messages/Message.hpp"
@@ -21,7 +22,7 @@ class Hasher : public messages::Hash {
   }
 
   explicit Hasher(const Buffer &data) { from_buffer(data); }
-  
+
   explicit Hasher(const crypto::EccPub &ecc_pub) {
     Buffer data;
     ecc_pub.save(&data);
@@ -34,6 +35,11 @@ class Hasher : public messages::Hash {
     Buffer data;
     to_buffer(packet, &data);
     from_buffer(data);
+  }
+
+  static Hasher random() {
+    crypto::Ecc ecc;
+    return Hasher(ecc.public_key());
   }
 
   std::string raw() const { return this->data(); }
