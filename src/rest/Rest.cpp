@@ -153,6 +153,7 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
     crypto::EccPub eccpubkey;
     eccpubkey.load(publickey);
     messages::Hasher address(eccpubkey);
+    std::cout << address << std::endl;
     const auto transactions = _ledger->list_transactions(address);
     response << messages::to_json(transactions);
     return OCS_PROCESSED;
@@ -160,10 +161,48 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
 
   const auto build_raw_transactions = [&](Onion::Request &request,
                                           Onion::Response &response) {
+    std::string post_data =
+        onion_block_data(onion_request_get_data(request.c_handler()));
+    messages::BuildTransaction buildtransaction;
+    messages::from_json(post_data, &buildtransaction);
+
+    crypto::EccPub eccpubkey;
+    eccpubkey.load(buildtransaction.publickey());
+    messages::Hasher address(eccpubkey);
+
     return OCS_PROCESSED;
   };
 
+  const auto build_coinbase = [&](Onion::Request &request,
+                                  Onion::Response &response) {
+    std::string post_data =
+        onion_block_data(onion_request_get_data(request.c_handler()));
+    messages::PublicKey publickey;
+    messages::from_json(post_data, &publickey);
+    crypto::EccPub eccpubkey;
+    eccpubkey.load(publickey);
+    messages::Hasher address(eccpubkey);
+    
+    messages::TaggedTransaction taggedtransaction;
+    messages::NCCAmount ncc;
+    ncc.set_value(100000);
+
+    consensus::TransactionPool tp(_ledger);    
+    tp.coinbase(taggedtransaction.mutable_transaction(), address, ncc);    
+    LOG_DEBUG << taggedtransaction.transaction().id();
+
+    messages::BlockHeader lastblock;
+    _ledger->get_last_block_header(&lastblock);
+    taggedtransaction.mutable_block_id()->CopyFrom(lastblock.id());
+
+    _ledger->add_transaction(taggedtransaction);
+
+    response << ncc;
+    return OCS_PROCESSED;
+  };
   _root->add("transactions", transactions_route);
+  _root->add("build_transactions", build_raw_transactions);
+  _root->add("build_coinbase", build_coinbase);
 
   serve_folder("^static/", "static");
   serve_file("", "index.html");

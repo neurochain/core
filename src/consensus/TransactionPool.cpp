@@ -103,6 +103,9 @@ void TransactionPool::coinbase(messages::Transaction *transaction,
   output->set_data({"at " + std::to_string(std::time(nullptr))});
   transaction->mutable_fees()->set_value(0);  //"0");
 
+  auto trnid = transaction->mutable_id();
+  trnid->set_type(messages::Hash::SHA256);
+  trnid->set_data("");
   Buffer buf(transaction->SerializeAsString());
   messages::Address id(buf);
   transaction->mutable_id()->CopyFrom(id);

@@ -3,6 +3,7 @@
 
 #include "common/types.hpp"
 #include "consensus/Consensus.hpp"
+#include "consensus/TransactionPool.hpp"
 #include "crypto/Sign.hpp"
 #include "ledger/Ledger.hpp"
 

@@ -52,3 +52,8 @@ message PublicKey {
   optional PublicKeyEnc enc = 3 [default = Hex];
 }
 
+message BuildTransaction {
+  required PublicKey publicKey = 1;
+  repeated Input transactionsID = 2;
+}
+

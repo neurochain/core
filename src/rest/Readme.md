@@ -14,7 +14,11 @@
   - output : Array( Transaction) 
 * Build raw hash for signature
   - input : Array( Transactions ID)
-  - output : string ( hex) hash
+  - output : Array ( Raw Transactions ( string ) )
 * Send Transaction 
-  - input : Array( Transactions ID), Signature 
-  - ouput : bool( status), error( int) 
+  - input : Array( Raw transactions), Signature 
+  - ouput : bool( status), error( int ) 
+
+* For Test : add coin base transaction
+  - input : public key
+  - output : int ( max ncc )
