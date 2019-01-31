@@ -2,7 +2,9 @@
 #define NEURO_SRC_CONSENSUS_CONSENSUS_HPP
 
 #include <algorithm>
+#include <chrono>
 #include <random>
+#include <thread>
 #include <unordered_set>
 #include "consensus/Pii.hpp"
 #include "crypto/Sign.hpp"
@@ -21,8 +23,13 @@ class Consensus {
 
  private:
   std::shared_ptr<ledger::Ledger> _ledger;
-  std::unordered_set<messages::Hash> _current_computations;
-  std::mutex _current_computations_mutex;
+  std::atomic<bool> _stop_compute_pii;
+  std::optional<std::thread> _compute_pii_thread;
+  std::vector<messages::BlockHeight> _heights_to_write;
+  std::mutex _heights_to_write_mutex;
+  messages::Hash _previous_assembly_id;
+  std::atomic<bool> _stop_update_heights;
+  std::optional<std::thread> _update_heights_thread;
 
   bool check_inputs(
       const messages::TaggedTransaction &tagged_transaction) const {
@@ -476,31 +483,34 @@ class Consensus {
     return block_assembly_height != previous_assembly_height;
   }
 
-  bool add_current_computation(const messages::Hash &assembly_id) {
-    std::lock_guard<std::mutex> lock(_current_computations_mutex);
-    if (_current_computations.count(assembly_id) != 0) {
-      // The computation was already added
-      return false;
-    }
-    _current_computations.insert(assembly_id);
-    return true;
-  }
-
-  bool remove_current_computation(const messages::Hash &assembly_id) {
-    std::lock_guard<std::mutex> lock(_current_computations_mutex);
-    if (_current_computations.count(assembly_id) == 0) {
-      // The computation was already removed
-      return false;
-    }
-    _current_computations.erase(assembly_id);
-
-    return true;
-  }
-
  public:
-  Consensus(std::shared_ptr<ledger::Ledger> ledger) : _ledger(ledger) {}
+  Consensus(std::shared_ptr<ledger::Ledger> ledger)
+      : _ledger(ledger), _stop_compute_pii(false), _stop_update_heights(false) {
+    start_compute_pii_thread();
+    // start_update_heights_thread();
+  }
   Consensus(std::shared_ptr<ledger::Ledger> ledger, const Config &config)
-      : config(config), _ledger(ledger) {}
+      : config(config),
+        _ledger(ledger),
+        _stop_compute_pii(false),
+        _stop_update_heights(false) {
+    start_compute_pii_thread();
+    // start_update_heights_thread();
+  }
+  ~Consensus() {
+    if (_compute_pii_thread) {
+      _stop_compute_pii = true;
+      if (_compute_pii_thread->joinable()) {
+        _compute_pii_thread->join();
+      }
+    }
+    if (_update_heights_thread) {
+      _stop_update_heights = true;
+      if (_update_heights_thread->joinable()) {
+        _update_heights_thread->join();
+      }
+    }
+  }
 
   bool is_valid(const messages::TaggedTransaction &tagged_transaction) const {
     if (tagged_transaction.is_coinbase()) {
@@ -550,17 +560,19 @@ class Consensus {
    * \brief Check if there is any assembly to compute and if so starts the
    * computation in another thread
    */
-  void start_computations() {
-    std::vector<messages::Assembly> assemblies;
-    _ledger->get_assemblies_to_compute(&assemblies);
-    for (const auto &assembly : assemblies) {
-      if (_current_computations.count(assembly.id()) == 0) {
-        if (add_current_computation(assembly.id())) {
-          std::thread(
-              [this, assembly]() { this->compute_assembly_pii(assembly); })
-              .detach();
+  void start_compute_pii_thread() {
+    if (!_compute_pii_thread) {
+      _compute_pii_thread = std::thread([this]() {
+        while (!_stop_compute_pii) {
+          std::vector<messages::Assembly> assemblies;
+          _ledger->get_assemblies_to_compute(&assemblies);
+          if (assemblies.size() > 0) {
+            this->compute_assembly_pii(assemblies[0]);
+          } else {
+            std::this_thread::sleep_for(config.compute_pii_sleep);
+          }
         }
-      }
+      });
     }
   }
 
@@ -570,7 +582,6 @@ class Consensus {
     if (!_ledger->get_block(assembly.id(), &tagged_block)) {
       LOG_WARNING << "During Pii computation missing block with id assembly_id "
                   << assembly.id();
-      remove_current_computation(assembly.id());
       return false;
     }
     uint32_t seed = 0;
@@ -589,14 +600,12 @@ class Consensus {
               &tagged_block, false)) {
         LOG_WARNING << "During Pii computation missing block "
                     << tagged_block.block().header().previous_block_hash();
-        remove_current_computation(assembly.id());
         return false;
       }
     }
     if (!_ledger->set_seed(assembly.id(), seed)) {
       LOG_WARNING << "During Pii computation failed to set seed for assembly "
                   << assembly.id();
-      remove_current_computation(assembly.id());
       return false;
     };
 
@@ -612,17 +621,14 @@ class Consensus {
       LOG_WARNING
           << "During Pii computation failed to set nb_addresses for assembly "
           << assembly.id();
-      remove_current_computation(assembly.id());
       return false;
     };
     if (!_ledger->set_finished_computation(assembly.id())) {
       LOG_WARNING << "During Pii computation failed to set "
                      "finished_computation for assembly "
                   << assembly.id();
-      remove_current_computation(assembly.id());
       return false;
     };
-    remove_current_computation(assembly.id());
     return true;
   }
 
@@ -663,8 +669,8 @@ class Consensus {
            config.block_period;
   }
 
-  bool heights_to_write(const messages::Address &address,
-                        std::vector<messages::BlockHeight> *heights) {
+  bool get_heights_to_write(const messages::Address &address,
+                            std::vector<messages::BlockHeight> *heights) {
     messages::TaggedBlock tagged_block;
     _ledger->get_block(_ledger->height(), &tagged_block);
     messages::Assembly previous_assembly, previous_previous_assembly;
@@ -733,6 +739,39 @@ class Consensus {
 
     return true;
   }
+
+  void start_update_heights_thread(const messages::Address &address) {
+    if (!_update_heights_thread) {
+      _update_heights_thread = std::thread([this, address]() {
+        while (!_stop_update_heights) {
+          this->update_heights_to_write(address);
+          std::this_thread::sleep_for(config.update_heights_sleep);
+        }
+      });
+    }
+  }
+
+  void update_heights_to_write(const messages::Address &address) {
+    messages::TaggedBlock tagged_block;
+    bool include_transactions = false;
+    if (!_ledger->get_last_block(&tagged_block, include_transactions)) {
+      LOG_ERROR << "Failed to get the last block in update_heights_to_mine";
+      return;
+    }
+    if (_previous_assembly_id == tagged_block.previous_assembly_id()) {
+      return;
+    }
+    std::vector<messages::BlockHeight> heights;
+    get_heights_to_write(address, &heights);
+    _heights_to_write_mutex.lock();
+    _heights_to_write = heights;
+    _heights_to_write_mutex.unlock();
+    _previous_assembly_id = tagged_block.previous_assembly_id();
+  }
+
+  void start_miner_thread() {}
+
+  void mine_blocks() {}
 
   friend class neuro::consensus::tests::Consensus;
 };  // namespace consensus

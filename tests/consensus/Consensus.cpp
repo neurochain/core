@@ -1,5 +1,6 @@
 #include "consensus/Consensus.hpp"
 #include <gtest/gtest.h>
+#include <thread>
 #include "ledger/LedgerMongodb.hpp"
 #include "tooling/Simulator.hpp"
 
@@ -97,15 +98,14 @@ class Consensus : public testing::Test {
     ASSERT_TRUE(ledger->get_assemblies_to_compute(&assemblies));
     ASSERT_EQ(assemblies.size(), 1);
     auto assembly_id = assemblies[0].id();
-    consensus->start_computations();
-    while (true) {
-      sleep(1);
-      consensus->_current_computations_mutex.lock();
-      if (consensus->_current_computations.size() == 0) {
-        consensus->_current_computations_mutex.unlock();
-        break;
-      }
-      consensus->_current_computations_mutex.unlock();
+
+    // Make sure that the compute_assembly thread has started the computation
+    std::this_thread::sleep_for(consensus->config.compute_pii_sleep);
+
+    // Wait for the computation to be finished
+    consensus->_stop_compute_pii = true;
+    if (consensus->_compute_pii_thread->joinable()) {
+      consensus->_compute_pii_thread->join();
     }
     ASSERT_FALSE(ledger->get_assemblies_to_compute(&assemblies));
     messages::Assembly assembly;

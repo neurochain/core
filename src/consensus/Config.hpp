@@ -1,5 +1,6 @@
 #ifndef NEURO_SRC_CONSENSUS_CONFIG_HPP
 #define NEURO_SRC_CONSENSUS_CONFIG_HPP
+#include <chrono>
 #include "common/types.hpp"
 #include "messages/Message.hpp"
 
@@ -12,6 +13,8 @@ struct Config {
   uint32_t block_period{15};
   messages::NCCAmount block_reward{100};
   uint32_t max_block_size{128000};
+  std::chrono::seconds update_heights_sleep{5};
+  std::chrono::seconds compute_pii_sleep{5};
 };
 
 }  // namespace consensus
