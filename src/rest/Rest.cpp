@@ -173,6 +173,9 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
     return OCS_PROCESSED;
   };
 
+  /**
+   * For tests
+   */
   const auto build_coinbase = [&](Onion::Request &request,
                                   Onion::Response &response) {
     std::string post_data =
@@ -200,6 +203,7 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
     response << ncc;
     return OCS_PROCESSED;
   };
+
   _root->add("transactions", transactions_route);
   _root->add("build_transactions", build_raw_transactions);
   _root->add("build_coinbase", build_coinbase);
