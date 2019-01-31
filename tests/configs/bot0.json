@@ -8,6 +8,7 @@
     "key_priv_path": "key0.priv",
 	"max_connections": 3,
 	"tcp": {
+	    "endpoint": "localhost",
 	    "port": 1337,
 	    "peers": [
 		{

@@ -8,15 +8,11 @@ import "common.proto";
 // Handshake
 // =========
 message Hello {
-  required KeyPub key_pub = 1;
-  optional int32 listen_port = 2;
-  optional string endpoint = 3;
+  required _Peer peer = 1;
 }
 
 message World {
   required bool accepted = 1;
-  required KeyPub key_pub = 2;
-  repeated Peer peers = 3;
 }
 
 // Update 
@@ -26,7 +22,7 @@ message GetPeers {
 }
 
 message _Peers {
-  repeated Peer peers = 1;
+  repeated _Peer peers = 1;
 }
 
 // Ask for block hash
@@ -127,7 +123,7 @@ message TaggedTransaction {
 }
 
 message ConnectionClosed {
-  required Peer peer = 1;
+  required _Peer peer = 1;
 }
 
 message ConnectionReady {

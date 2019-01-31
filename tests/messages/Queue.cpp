@@ -10,13 +10,6 @@ namespace neuro {
 namespace messages {
 namespace test {
 
-template <typename T, typename... U>
-size_t function_address(std::function<T(U...)> f) {
-  typedef T(fnType)(U...);
-  fnType **fn_ptr = f.template target<fnType *>();
-  return (size_t)*fn_ptr;
-}
-
 void callback_hello1(const messages::Header &header,
                      const messages::Body &body) {}
 

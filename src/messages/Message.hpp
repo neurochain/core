@@ -4,11 +4,15 @@
 #include <google/protobuf/message.h>
 #include <google/protobuf/util/json_util.h>
 #include <fstream>
+#include <functional>
 #include <string>
+
+#include "common/Buffer.hpp"
 #include "common/types.hpp"
 #include "crypto/EccPriv.hpp"
 #include "ledger/mongo.hpp"
 #include "messages.pb.h"
+#include "messages/Peer.hpp"
 
 namespace neuro {
 namespace messages {
@@ -72,5 +76,34 @@ class NCCAmount : public _NCCAmount {
 
 }  // namespace messages
 }  // namespace neuro
+
+namespace std {
+template <>
+struct hash<neuro::messages::Packet> {
+  using argument_type = neuro::messages::Packet;
+  using result_type = size_t;
+
+  result_type operator()(argument_type const &packet) const noexcept {
+    neuro::Buffer buffer;
+    neuro::messages::to_buffer(packet, &buffer);
+    const auto hash = std::hash<neuro::Buffer>{}(buffer);
+    return hash;
+  }
+};
+
+template <>
+struct hash<neuro::messages::KeyPub> {
+  using argument_type = neuro::messages::KeyPub;
+  using result_type = size_t;
+
+  result_type operator()(argument_type const &packet) const noexcept {
+    neuro::Buffer buffer;
+    neuro::messages::to_buffer(packet, &buffer);
+    const auto hash = std::hash<neuro::Buffer>{}(buffer);
+    return hash;
+  }
+};
+
+}  // namespace std
 
 #endif /* NEURO_SRC_MESSAGES_MESSAGE_HPP */

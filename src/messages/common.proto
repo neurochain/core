@@ -39,7 +39,7 @@ message Hash {
   required bytes data = 2;
 }
 
-message Peer {
+message _Peer {
   enum Status {
     CONNECTED = 1;
     CONNECTING = 2;

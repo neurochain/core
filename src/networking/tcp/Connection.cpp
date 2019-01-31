@@ -12,14 +12,22 @@ namespace tcp {
 
 Connection::Connection(const ID id, messages::Queue *queue,
                        const std::shared_ptr<tcp::socket> &socket,
-                       messages::Peer *remote_peer)
+                       const messages::Peer &remote_peer)
     : ::neuro::networking::Connection::Connection(id, queue),
       _header(sizeof(HeaderPattern), 0),
       _buffer(128, 0),
       _socket(socket),
       _remote_peer(remote_peer) {
   assert(_socket != nullptr);
-  assert(_remote_peer != nullptr);
+}
+
+Connection::Connection(const ID id, messages::Queue *queue,
+                       const std::shared_ptr<tcp::socket> &socket)
+    : ::neuro::networking::Connection::Connection(id, queue),
+      _header(sizeof(HeaderPattern), 0),
+      _buffer(128, 0),
+      _socket(socket) {
+  assert(_socket != nullptr);
 }
 
 std::shared_ptr<const tcp::socket> Connection::socket() const {
@@ -81,26 +89,18 @@ void Connection::read_body(std::size_t body_size) {
           LOG_DEBUG << _this << " read_body TYPE " << type;
           if (type == messages::Type::kHello) {
             const auto hello = body.hello();
-
-            if (hello.has_listen_port()) {
-              _this->_listen_port = hello.listen_port();
-            }
-
-            if (!_this->_remote_peer->has_key_pub()) {
-              LOG_INFO << "Updating peer with hello key pub";
-              _this->_remote_peer->mutable_key_pub()->CopyFrom(hello.key_pub());
-            }
+            _remote_peer.CopyFrom(hello.peer());
           }
         }
         LOG_DEBUG << "\033[1;32mMessage received: " << *message << "\033[0m";
 
-        if (!_this->_remote_peer->has_key_pub()) {
+        if (!_this->_remote_peer.has_key_pub()) {
           LOG_ERROR << "Not Key pub set";
           _this->read_header();
           return;
         }
         crypto::EccPub ecc_pub;
-        const auto key_pub = _this->_remote_peer->key_pub();
+        const auto key_pub = _this->_remote_peer.key_pub();
 
         ecc_pub.load(
             reinterpret_cast<const uint8_t *>(key_pub.raw_data().data()),
@@ -145,7 +145,6 @@ void Connection::terminate() {
   header->set_connection_id(_id);
   auto body = message->add_bodies();
   body->mutable_connection_closed();
-  _remote_peer->set_status(messages::Peer::DISCONNECTED);
 
   _queue->publish(message);
 }
@@ -160,7 +159,7 @@ const Port Connection::remote_port() const {
   return static_cast<Port>(endpoint.port());
 }
 
-const messages::Peer *Connection::remote_peer() const { return _remote_peer; }
+const messages::Peer Connection::remote_peer() const { return _remote_peer; }
 Connection::~Connection() {
   terminate();
   LOG_DEBUG << this << " Connection killed";

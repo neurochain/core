@@ -25,8 +25,7 @@ class Connection : public networking::Connection,
   Buffer _header;
   Buffer _buffer;
   std::shared_ptr<tcp::socket> _socket;
-  messages::Peer* _remote_peer;
-  Port _listen_port;
+  messages::Peer _remote_peer;
 
   void read_header();
   void read_body(std::size_t body_size);
@@ -34,8 +33,10 @@ class Connection : public networking::Connection,
 
  public:
   Connection(const ID id, messages::Queue* queue,
+             const std::shared_ptr<tcp::socket>& socket);
+  Connection(const ID id, messages::Queue* queue,
              const std::shared_ptr<tcp::socket>& socket,
-             messages::Peer* remote_peer);
+             const messages::Peer& remote_peer);
 
   std::shared_ptr<const tcp::socket> socket() const;
   void terminate();
@@ -43,7 +44,7 @@ class Connection : public networking::Connection,
   void read();
 
   bool send(std::shared_ptr<Buffer>& message);
-  const messages::Peer* remote_peer() const;
+  const messages::Peer remote_peer() const;
   const IP remote_ip() const;
   const Port remote_port() const;
   void close();

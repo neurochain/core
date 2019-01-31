@@ -40,9 +40,12 @@ class Tcp : public TransportLayer {
   ConnectionById _connections;
   mutable std::mutex _connections_mutex;
 
-  void new_connection(std::shared_ptr<bai::tcp::socket> socket,
-                      const boost::system::error_code &error,
-                      messages::Peer *peer, const bool from_remote);
+  void new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
+                                  const boost::system::error_code &error);
+
+  void new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
+                            const boost::system::error_code &error,
+                            messages::Peer *peer);
 
   bool serialize(std::shared_ptr<messages::Message> message, Buffer *header_tcp,
                  Buffer *body_tcp) const;

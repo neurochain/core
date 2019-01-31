@@ -46,7 +46,7 @@ using std::uint32_t;
 using std::uint64_t;
 using std::uint8_t;
 
-using Duration = std::chrono::duration<int>;
+using Duration = std::chrono::seconds;
 
 using Endpoint = std::string;
 using Port = uint16_t;

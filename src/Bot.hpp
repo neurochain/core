@@ -7,6 +7,7 @@
 #include "crypto/Ecc.hpp"
 #include "ledger/LedgerMongodb.hpp"
 #include "messages/Message.hpp"
+#include "messages/Peer.hpp"
 #include "messages/Queue.hpp"
 #include "messages/Subscriber.hpp"
 #include "messages/config/Config.hpp"
@@ -26,6 +27,7 @@ class Bot {
   messages::Queue _queue;
   messages::Subscriber _subscriber;
   crypto::Ecc _keys;
+  messages::Peer _me;
   messages::Peers _peers;
   networking::Networking _networking;
   std::shared_ptr<ledger::Ledger> _ledger;
@@ -73,46 +75,6 @@ class Bot {
   bool update_ledger();
   void update_peerlist();
 
-  std::optional<messages::Peer *> add_peer(const messages::Peer &peer) {
-    // std::optional<messages::Peer *> res;
-    // messages::KeyPub my_key_pub;
-    // auto peers = _tcp_config->mutable_peers();
-    // _keys->public_key().save(&my_key_pub);
-
-    // if (peer.key_pub() == my_key_pub) {
-    //   return res;
-    // }
-
-    // // auto got = std::find(peers->begin(), peers->end(), peer);
-    // for (auto &p : *peers) {
-    //   if (p.key_pub() == peer.key_pub()) {
-    //     if (!p.has_connection_id()) {
-    //       p.set_connection_id(peer.connection_id());
-    //     }
-    //     res = &p;
-    //     return res;
-    //   }
-    // }
-
-    // // if (got != peers->end()) {
-    // //   res = &(*got);
-    // //   return res;
-    // // }
-
-    // res = _tcp_config->add_peers();
-    // (*res)->CopyFrom(peer);
-
-    // return res;
-    return {};
-  }
-
-  template <typename T>
-  void add_peers(const T &remote_peers) {
-    for (const auto &peer : remote_peers) {
-      add_peer(peer);
-    }
-  }
-
  public:
   Bot(const messages::config::Config &config);
   Bot(const std::string &config_path);
@@ -125,7 +87,7 @@ class Bot {
 
   const messages::Peers &peers() const;
   void keep_max_connections();
-  std::vector<messages::Peer> connected_peers() const;
+  std::vector<messages::Peer *> connected_peers() const;
   networking::Networking *networking();
   messages::Queue *queue();
   void subscribe(const messages::Type type,

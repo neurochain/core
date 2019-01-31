@@ -9,6 +9,7 @@
 #include "common/logger.hpp"
 #include "common/types.hpp"
 #include "consensus/PiiConsensus.hpp"
+#include "messages/Peer.hpp"
 #include "messages/Subscriber.hpp"
 
 namespace neuro {
@@ -21,6 +22,8 @@ Bot::Bot(const messages::config::Config &config)
       _subscriber(&_queue),
       _keys(_config.networking().key_priv_path(),
             _config.networking().key_pub_path()),
+      _me(_config.networking().tcp().endpoint(),
+          _config.networking().tcp().port(), _keys.public_key()),
       _peers(_config.networking().tcp().peers().begin(),
              _config.networking().tcp().peers().end()),
       _networking(&_queue, &_keys, &_peers, _config.mutable_networking()),
@@ -224,7 +227,7 @@ bool Bot::init() {
 
 void Bot::regular_update() {
   update_peerlist();
-  //keep_max_connections();
+  // keep_max_connections();
   update_ledger();
   _update_timer.expires_at(_update_timer.expiry() +
                            boost::asio::chrono::seconds(_update_time));
@@ -287,7 +290,10 @@ void Bot::handler_get_peers(const messages::Header &header,
 void Bot::handler_peers(const messages::Header &header,
                         const messages::Body &body) {
   LOG_DEBUG << this << " Got a Peers message";
-  add_peers(body.peers().peers());
+  const auto &peers = body.peers().peers();
+  for (const auto &peer : peers) {
+    _peers.insert(peer);
+  }
 }
 
 void Bot::handler_connection(const messages::Header &header,
@@ -298,10 +304,6 @@ void Bot::handler_connection(const messages::Header &header,
 
   if (connection_ready.from_remote()) {
     // Nothing to do; just wait for the hello message from remote peer
-    // add the peer from the header to my list of peers
-    //_tcp_config->add_peers()->CopyFrom(peer);
-    // add_peer(peer);
-    // Nothing else to do; just wait for the hello message from remote peer
     return;
   }
 
@@ -310,12 +312,7 @@ void Bot::handler_connection(const messages::Header &header,
   messages::fill_header_reply(header, message->mutable_header());
 
   auto hello = message->add_bodies()->mutable_hello();
-  hello->set_listen_port(_networking.listening_port());
-
-  auto key_pub = hello->mutable_key_pub();
-  key_pub->set_type(messages::KeyType::ECP256K1);
-  const auto tmp = _keys.public_key().save();
-  key_pub->set_raw_data(tmp.data(), tmp.size());
+  hello->mutable_peer()->CopyFrom(_me);
 
   _networking.send_unicast(message);
   LOG_DEBUG << this << __LINE__
@@ -337,7 +334,6 @@ void Bot::handler_deconnection(const messages::Header &header,
 void Bot::handler_world(const messages::Header &header,
                         const messages::Body &body) {
   auto world = body.world();
-  add_peers(world.peers());
 
   if (!world.accepted()) {
     LOG_DEBUG << this << " Not accepted, disconnecting ...";
@@ -362,21 +358,10 @@ void Bot::handler_hello(const messages::Header &header,
   // == Create world message for replying ==
   auto message = std::make_shared<messages::Message>();
   auto world = message->add_bodies()->mutable_world();
+  auto peers = message->add_bodies()->mutable_peers();
   bool accepted = _networking.peer_count() < (2 * _max_connections);
 
-  messages::Peer *remote_peer;
-  if (hello.has_listen_port() && hello.has_endpoint()) {
-    remote_peer =
-        _peers.insert(hello.key_pub(), std::make_optional(hello.endpoint()),
-                      std::make_optional(hello.listen_port()));
-  } else {
-    remote_peer = _peers.insert(hello.key_pub(), {}, {});
-  }
-
-  remote_peer->set_status(messages::Peer::CONNECTED);
-  if (hello.has_listen_port()) {
-    remote_peer->set_port(hello.listen_port());
-  }
+  messages::Peer *remote_peer = _peers.insert(hello.peer());
 
   // update peer status
   if (accepted) {
@@ -389,11 +374,7 @@ void Bot::handler_hello(const messages::Header &header,
   messages::fill_header_reply(header, header_reply);
   world->set_accepted(accepted);
 
-  Buffer key_pub_buffer;
-  _keys.public_key().save(&key_pub_buffer);
-  auto key_pub = world->mutable_key_pub();
-  key_pub->set_type(messages::KeyType::ECP256K1);
-  key_pub->set_hex_data(key_pub_buffer.str());
+  _peers.fill(peers);
 
   if (!_networking.send_unicast(message)) {
     LOG_ERROR << this << " Failed to send world message.";
@@ -414,10 +395,7 @@ std::ostream &operator<<(
 std::ostream &operator<<(std::ostream &os, const neuro::Bot &bot) {
   // This is *NOT* json
   os << "Bot(" << &bot << ") { connected: ";
-  auto used_peers = bot.peers().used_peers();
-  std::copy(used_peers.begin(), used_peers.end(),
-            std::ostream_iterator<messages::Peer>(os, " "));
-
+  os << bot.peers();
   os << " }";
   return os;
 }
@@ -430,56 +408,28 @@ std::ostream &operator<<(std::ostream &os, const neuro::Bot &bot) {
 //   return status;
 // }
 
-std::vector<messages::Peer> Bot::connected_peers() const {
+std::vector<messages::Peer *> Bot::connected_peers() const {
   return _peers.connected_peers();
-}
-
-bool Bot::next_to_connect(messages::Peer **peer) {
-  // it is locked from the caller
-  auto peers = _tcp_config->mutable_peers();
-
-  // for (auto &peer : *_tcp_config->mutable_peers()) {
-  //   LOG_TRACE << this << " PEER STATUS " << peer.endpoint() << ":"
-  //             << peer.port() << peer.Status_Name(peer.status()) << std::endl;
-  // }
-
-  // Create a vector with all possible positions shuffled
-  std::vector<std::size_t> pos((std::size_t)peers->size());
-  std::iota(pos.begin(), pos.end(), 0);
-  std::srand(unsigned(std::time(0)));
-  std::random_shuffle(pos.begin(), pos.end());
-
-  // Check every pos until we find one that is good to use
-  for (const auto &idx : pos) {
-    auto tmp_peer = _tcp_config->peers(idx);
-    LOG_DEBUG << this << " wtf " << tmp_peer;
-    // auto &tmp_peer = peers[idx];
-    if (tmp_peer.status() != messages::Peer::CONNECTED) {
-      *peer = &tmp_peer;
-      return true;
-    }
-  }
-  LOG_DEBUG << this << " could not find remote";
-  return false;
 }
 
 void Bot::keep_max_connections() {
   if (const auto peer_count = _peers.used_peers_count();
       peer_count >= _max_connections) {
     LOG_INFO << this << " Already connected to " << peer_count << " / "
-             << _max_connections;
+             << _max_connections << std::endl
+             << _peers;
     return;
   }
 
-  auto peer = _peers.find_random(messages::Peer::DISCONNECTED, 2s);
+  auto peer = _peers.next(messages::Peer::DISCONNECTED, 2s);
   if (!peer) {
     LOG_WARNING << "Could not find peer to connect to";
     return;
   }
 
-  LOG_DEBUG << this << " Asking to connect to " << *peer;
-  peer->set_status(messages::Peer::CONNECTING);
-  _networking.connect(peer);
+  LOG_DEBUG << this << " Asking to connect to " << **peer;
+  (*peer)->set_status(messages::Peer::CONNECTING);
+  _networking.connect(*peer);
 }
 
 networking::Networking *Bot::networking() { return &_networking; }

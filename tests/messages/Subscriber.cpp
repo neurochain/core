@@ -10,17 +10,7 @@ namespace {
 
 std::shared_ptr<messages::Message> getWorldMessage() {
   auto message_world = std::make_shared<messages::Message>();
-  messages::World *world = message_world->add_bodies()->mutable_world();
-  auto world_kpub = world->mutable_key_pub();
-  world_kpub->set_type(messages::ECP256K1);
-  world_kpub->set_raw_data(
-      "MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA//////////////////////"
-      "///////////////v///"
-      "C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAA"
-      "AAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/"
-      "NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP/////"
-      "///////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABOBPdJmNMRu7dZ0O4+b/"
-      "jG5CyuLeI870VKYu0DrtJ8I8VW3wt5NcbqfqIk7OI0+9cE7+xCPtKwF1vAHi730nMJ0=");
+  auto world = message_world->add_bodies()->mutable_world();
   world->set_accepted(true);
   return message_world;
 }

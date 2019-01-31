@@ -71,8 +71,9 @@ add_executable(ut
   ./crypto/Hash.cpp
   ./crypto/Ecc.cpp
   ./messages/Config.cpp
-  ./messages/Queue.cpp
+#  ./messages/Queue.cpp
   ./messages/Subscriber.cpp
+  ./messages/Peers.cpp
   ./networking/TransportLayer.cpp
   ./networking/tcp/Tcp.cpp
   ./networking/tcp/Connection.cpp

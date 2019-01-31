@@ -15,8 +15,9 @@ bool from_json(const std::string &json, Packet *packet) {
   google::protobuf::util::JsonParseOptions options;
   auto r = google::protobuf::util::JsonStringToMessage(json, packet, options);
   if (!r.ok()) {
-    LOG_ERROR << "Could not parse json " << boost::stacktrace::stacktrace()
-              << std::endl;
+    LOG_ERROR << "Could not parse json " << std::endl
+              << r << std::endl
+              << boost::stacktrace::stacktrace() << std::endl;
   }
   return r.ok();
 }
@@ -90,7 +91,7 @@ bool operator==(const Packet &a, const Packet &b) {
 
 bool operator==(const messages::Peer &a, const messages::Peer &b) {
   LOG_TRACE << a.endpoint() << " " << b.endpoint();
-  return a.endpoint() == b.endpoint() && a.port() == b.port();
+  return a.key_pub() == b.key_pub();
 }
 
 void set_transaction_hash(Transaction *transaction) {

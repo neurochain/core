@@ -54,10 +54,7 @@ void Tcp::accept(const boost::system::error_code &error) {
     const auto remote_endpoint =
         _new_socket->remote_endpoint().address().to_string();
 
-    auto peer = _peers->add_peers();
-    peer->set_endpoint(remote_endpoint);
-    peer->set_port(0);
-    this->new_connection(_new_socket, error, peer, true);
+    this->new_connection_from_remote(_new_socket, error);
   } else {
     LOG_WARNING << "Rejected connection";
   }
@@ -78,7 +75,7 @@ bool Tcp::connect(messages::Peer *peer) {
   auto socket = std::make_shared<bai::tcp::socket>(_io_context);
   auto handler = [this, socket, peer](boost::system::error_code error,
                                       bai::tcp::resolver::iterator iterator) {
-    this->new_connection(socket, error, peer, false);
+    this->new_connection_local(socket, error, peer);
   };
   boost::asio::async_connect(*socket, endpoint_iterator, handler);
   return true;
@@ -86,25 +83,53 @@ bool Tcp::connect(messages::Peer *peer) {
 
 Port Tcp::listening_port() const { return _listening_port; }
 
-void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
-                         const boost::system::error_code &error,
-                         messages::Peer *peer, const bool from_remote) {
+void Tcp::new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
+                                     const boost::system::error_code &error) {
   auto message = std::make_shared<messages::Message>();
   auto msg_header = message->mutable_header();
   auto msg_body = message->add_bodies();
 
   if (!error) {
-    LOG_INFO << "New connection " << *peer << " " << from_remote;
     _current_id++;
 
     msg_header->set_connection_id(_current_id);
     auto connection =
-        std::make_shared<tcp::Connection>(_current_id, _queue, socket, peer);
+        std::make_shared<tcp::Connection>(_current_id, _queue, socket);
     _connections.insert(std::make_pair(_current_id, connection));
 
     auto connection_ready = msg_body->mutable_connection_ready();
 
-    connection_ready->set_from_remote(from_remote);
+    connection_ready->set_from_remote(true);
+
+    _queue->publish(message);
+    connection->read();
+  } else {
+    LOG_WARNING << "Could not create new connection to "
+                << " due to " << error.message();
+
+    msg_body->mutable_connection_closed();
+    _queue->publish(message);
+  }
+}
+
+void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
+                               const boost::system::error_code &error,
+                               messages::Peer *peer) {
+  auto message = std::make_shared<messages::Message>();
+  auto msg_header = message->mutable_header();
+  auto msg_body = message->add_bodies();
+
+  if (!error) {
+    _current_id++;
+
+    msg_header->set_connection_id(_current_id);
+    auto connection =
+        std::make_shared<tcp::Connection>(_current_id, _queue, socket, *peer);
+    _connections.insert(std::make_pair(_current_id, connection));
+
+    auto connection_ready = msg_body->mutable_connection_ready();
+
+    connection_ready->set_from_remote(false);
 
     _queue->publish(message);
     connection->read();
@@ -179,7 +204,7 @@ TransportLayer::SendResult Tcp::send(
 
   std::cout << "\033[1;34mSending message[" << this->listening_port() << "]: >>"
             << *message << "<<\033[0m\n";
-  
+
   int res_count = 0;
   for (auto &[_, connection] : _connections) {
     bool res_send = true;
