@@ -144,6 +144,11 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
   _root->add("total_nb_blocks", total_nb_blocks_route);
 
   /* NEW REST API */
+
+  /**
+   * Get Unspend Transaction
+   * For Pub Key
+   */
   const auto transactions_route = [&](Onion::Request &request,
                                       Onion::Response &response) {
     std::string post_data =
@@ -159,6 +164,10 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
     return OCS_PROCESSED;
   };
 
+  /**
+   *  Build Raw Transaction for signature
+   *  For Pubkey and Transactions Unspend ID
+   * */
   const auto build_raw_transactions = [&](Onion::Request &request,
                                           Onion::Response &response) {
     std::string post_data =
@@ -174,10 +183,28 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
     std::stringstream ss;
     ss << transaction_serialized;
     buildtransaction.set_raw_transaction(ss.str());
+    auto *signature = buildtransaction.mutable_transaction()->add_signatures();
+    signature->mutable_signature()->set_type(messages::Hash::SHA256);
+    signature->mutable_signature()->set_data("");
+    messages::KeyPub keypub;
+    eccpubkey.save(&keypub);
+    signature->mutable_key_pub()->CopyFrom(keypub);
     response << buildtransaction;
     return OCS_PROCESSED;
   };
 
+  const auto get_addr_from_x_y = [&](Onion::Request &request,
+                                     Onion::Response &response) {
+    std::string post_data =
+        onion_block_data(onion_request_get_data(request.c_handler()));
+    messages::PublicKey publickey;
+    messages::from_json(post_data, &publickey);
+    crypto::EccPub eccpubkey;
+    eccpubkey.load(publickey);
+    messages::Hasher address(eccpubkey);
+    response << address;
+    return OCS_PROCESSED;
+  };
   /**
    * For tests
    */
@@ -211,6 +238,7 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
 
   _root->add("transactions", transactions_route);
   _root->add("build_transactions", build_raw_transactions);
+  _root->add("get_addr_x_y", get_addr_from_x_y);
   _root->add("build_coinbase", build_coinbase);
 
   serve_folder("^static/", "static");
