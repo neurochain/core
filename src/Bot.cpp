@@ -272,8 +272,9 @@ bool Bot::init() {
     return false;
   }
 
-  _consensus = std::make_shared<consensus::Consensus>(_ledger);
-  //_consensus->add_wallet_key_pair(_keys);
+  _consensus = std::make_shared<consensus::Consensus>(
+      _ledger, _keys,
+      [this](const messages::Block &block) { publish_block(block); });
   _io_context_thread = std::thread([this]() { _io_context->run(); });
 
   // if (!_config.has_rest()) {
@@ -751,6 +752,15 @@ void Bot::publish_transaction(const messages::Transaction &transaction) const {
   messages::fill_header(message->mutable_header());
   auto body = message->add_bodies();
   body->mutable_transaction()->CopyFrom(transaction);
+  _networking->send(message, networking::ProtocolType::PROTOBUF2);
+}
+
+void Bot::publish_block(const messages::Block &block) const {
+  // Send the transaction on the network
+  auto message = std::make_shared<messages::Message>();
+  messages::fill_header(message->mutable_header());
+  auto body = message->add_bodies();
+  body->mutable_block()->CopyFrom(block);
   _networking->send(message, networking::ProtocolType::PROTOBUF2);
 }
 

@@ -175,6 +175,27 @@ target_link_libraries(Consensus
   )
 add_test(Consensus Consensus)
 
+add_executable(RealtimeConsensus
+  consensus/RealtimeConsensus.cpp
+  )
+target_link_libraries(RealtimeConsensus
+  GTest::main
+  Boost::program_options
+  Boost::filesystem
+  Boost::system
+  Boost::thread
+  Boost::log
+  cpr::cpr
+  ${LIBMONGOCXX_STATIC_LIBRARIES}
+  core
+  protos
+  libonion::onion
+  libonion::onioncpp
+  )
+add_test(RealtimeConsensus RealtimeConsensus)
+
+
+
 add_executable(dbreset
     dbreset.cpp
 )

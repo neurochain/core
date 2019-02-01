@@ -15,7 +15,10 @@ namespace neuro {
 namespace consensus {
 namespace tests {
 class Consensus;
-}
+class RealtimeConsensus;
+}  // namespace tests
+
+using PublishBlock = std::function<void(const messages::Block &block)>;
 
 class Consensus {
  public:
@@ -23,13 +26,17 @@ class Consensus {
 
  private:
   std::shared_ptr<ledger::Ledger> _ledger;
+  std::shared_ptr<crypto::Ecc> _keys;
+  PublishBlock _publish_block;
   std::atomic<bool> _stop_compute_pii;
   std::optional<std::thread> _compute_pii_thread;
   std::vector<messages::BlockHeight> _heights_to_write;
   std::mutex _heights_to_write_mutex;
-  messages::Hash _previous_assembly_id;
+  std::optional<messages::Hash> _previous_assembly_id;
   std::atomic<bool> _stop_update_heights;
   std::optional<std::thread> _update_heights_thread;
+  std::atomic<bool> _stop_miner;
+  std::optional<std::thread> _miner_thread;
 
   bool check_inputs(
       const messages::TaggedTransaction &tagged_transaction) const {
@@ -484,19 +491,26 @@ class Consensus {
   }
 
  public:
-  Consensus(std::shared_ptr<ledger::Ledger> ledger)
-      : _ledger(ledger), _stop_compute_pii(false), _stop_update_heights(false) {
+  Consensus(std::shared_ptr<ledger::Ledger> ledger,
+            std::shared_ptr<crypto::Ecc> keys, PublishBlock publish_block)
+      : _ledger(ledger), _keys(keys), _publish_block(publish_block) {
     start_compute_pii_thread();
-    // start_update_heights_thread();
+    start_update_heights_thread();
+    start_miner_thread();
   }
-  Consensus(std::shared_ptr<ledger::Ledger> ledger, const Config &config)
+
+  Consensus(std::shared_ptr<ledger::Ledger> ledger,
+            std::shared_ptr<crypto::Ecc> keys, const Config &config,
+            PublishBlock publish_block)
       : config(config),
         _ledger(ledger),
-        _stop_compute_pii(false),
-        _stop_update_heights(false) {
+        _keys(keys),
+        _publish_block(publish_block) {
     start_compute_pii_thread();
-    // start_update_heights_thread();
+    start_update_heights_thread();
+    start_miner_thread();
   }
+
   ~Consensus() {
     if (_compute_pii_thread) {
       _stop_compute_pii = true;
@@ -508,6 +522,12 @@ class Consensus {
       _stop_update_heights = true;
       if (_update_heights_thread->joinable()) {
         _update_heights_thread->join();
+      }
+    }
+    if (_miner_thread) {
+      _stop_miner = true;
+      if (_miner_thread->joinable()) {
+        _miner_thread->join();
       }
     }
   }
@@ -561,13 +581,14 @@ class Consensus {
    * computation in another thread
    */
   void start_compute_pii_thread() {
+    _stop_compute_pii = false;
     if (!_compute_pii_thread) {
       _compute_pii_thread = std::thread([this]() {
         while (!_stop_compute_pii) {
           std::vector<messages::Assembly> assemblies;
           _ledger->get_assemblies_to_compute(&assemblies);
           if (assemblies.size() > 0) {
-            this->compute_assembly_pii(assemblies[0]);
+            compute_assembly_pii(assemblies[0]);
           } else {
             std::this_thread::sleep_for(config.compute_pii_sleep);
           }
@@ -740,40 +761,95 @@ class Consensus {
     return true;
   }
 
-  void start_update_heights_thread(const messages::Address &address) {
+  void start_update_heights_thread() {
+    _stop_update_heights = false;
     if (!_update_heights_thread) {
-      _update_heights_thread = std::thread([this, address]() {
+      _update_heights_thread = std::thread([this]() {
+        LOG_TRACE;
+        const auto address = messages::Address(_keys->public_key());
+        LOG_TRACE;
         while (!_stop_update_heights) {
-          this->update_heights_to_write(address);
+          LOG_TRACE;
+          update_heights_to_write(address);
+          LOG_TRACE;
           std::this_thread::sleep_for(config.update_heights_sleep);
+          LOG_TRACE;
         }
       });
     }
   }
 
   void update_heights_to_write(const messages::Address &address) {
+    LOG_TRACE;
     messages::TaggedBlock tagged_block;
+    LOG_TRACE;
     bool include_transactions = false;
+    LOG_TRACE;
     if (!_ledger->get_last_block(&tagged_block, include_transactions)) {
       LOG_ERROR << "Failed to get the last block in update_heights_to_mine";
       return;
     }
-    if (_previous_assembly_id == tagged_block.previous_assembly_id()) {
+    if (_previous_assembly_id &&
+        _previous_assembly_id.value() == tagged_block.previous_assembly_id()) {
+      LOG_TRACE;
       return;
     }
+    LOG_TRACE;
     std::vector<messages::BlockHeight> heights;
+    LOG_TRACE;
     get_heights_to_write(address, &heights);
+    LOG_TRACE;
+    LOG_DEBUG << "HEIGHTS TO WRITE " << heights.size() << std::endl;
     _heights_to_write_mutex.lock();
     _heights_to_write = heights;
     _heights_to_write_mutex.unlock();
     _previous_assembly_id = tagged_block.previous_assembly_id();
   }
 
-  void start_miner_thread() {}
+  void start_miner_thread() {
+    _stop_miner = false;
+    if (!_miner_thread) {
+      _miner_thread = std::thread([this]() { mine_blocks(); });
+    }
+  }
 
-  void mine_blocks() {}
+  void mine_blocks() {
+    messages::Block block0;
+    if (!_ledger->get_block(0, &block0)) {
+      throw std::runtime_error("Failed to get block0 in start_miner_thread");
+    }
+    while (!_stop_miner) {
+      _heights_to_write_mutex.lock();
+      if (_heights_to_write.size() == 0) {
+        _heights_to_write_mutex.unlock();
+        std::this_thread::sleep_for(config.miner_sleep);
+        continue;
+      }
+      const auto height = _heights_to_write[0];
+      const auto block_start =
+          block0.header().timestamp().data() + height * config.block_period;
+      const auto block_end = block_start + config.block_period;
+      const auto current_time = std::time(nullptr);
+      if (current_time < block_start) {
+        _heights_to_write_mutex.unlock();
+        std::this_thread::sleep_for(config.miner_sleep);
+        continue;
+      }
+      _heights_to_write.erase(_heights_to_write.begin());
+      _heights_to_write_mutex.unlock();
+
+      if (current_time > block_end) {
+        continue;
+      }
+
+      messages::Block new_block;
+      write_block(*_keys, height, &new_block);
+      _publish_block(new_block);
+    }
+  }
 
   friend class neuro::consensus::tests::Consensus;
+  friend class neuro::consensus::tests::RealtimeConsensus;
 };  // namespace consensus
 
 }  // namespace consensus

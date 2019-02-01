@@ -14,9 +14,9 @@ class Simulator {
 
  public:
   const float RATIO_TO_SEND = 0.5;
+  std::vector<crypto::Ecc> keys;
   std::shared_ptr<neuro::ledger::LedgerMongodb> ledger;
   std::shared_ptr<neuro::consensus::Consensus> consensus;
-  std::vector<crypto::Ecc> keys;
   std::vector<messages::Address> addresses;
   std::unordered_map<messages::Address, uint32_t> addresses_indexes;
 

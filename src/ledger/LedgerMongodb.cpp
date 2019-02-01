@@ -64,6 +64,20 @@ LedgerMongodb::LedgerMongodb(const std::string &url, const std::string &db_name)
       _pii(_db.collection(PII)),
       _assemblies(_db.collection(ASSEMBLIES)) {}
 
+LedgerMongodb::LedgerMongodb(const std::string &url, const std::string &db_name,
+                             const messages::Block &block0)
+    : _uri(url),
+      _client(_uri),
+      _db(_client[db_name]),
+      _blocks(_db.collection(BLOCKS)),
+      _transactions(_db.collection(TRANSACTIONS)),
+      _pii(_db.collection(PII)),
+      _assemblies(_db.collection(ASSEMBLIES)) {
+  empty_database();
+  init_database(block0);
+  set_main_branch_tip();
+};
+
 LedgerMongodb::LedgerMongodb(const messages::config::Database &config)
     : LedgerMongodb(config.url(), config.db_name()) {
   init_block0(config);

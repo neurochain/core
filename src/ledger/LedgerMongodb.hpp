@@ -15,7 +15,8 @@
 namespace neuro {
 namespace tooling {
 class Simulator;
-}
+class RealtimeSimulator;
+}  // namespace tooling
 
 namespace ledger {
 namespace tests {
@@ -111,6 +112,8 @@ class LedgerMongodb : public Ledger {
 
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);
+  LedgerMongodb(const std::string &url, const std::string &db_name,
+                const messages::Block &block0);
   LedgerMongodb(const messages::config::Database &config);
 
   ~LedgerMongodb() {}
@@ -247,6 +250,7 @@ class LedgerMongodb : public Ledger {
 
   friend class neuro::ledger::tests::LedgerMongodb;
   friend class neuro::tooling::Simulator;
+  friend class neuro::tooling::RealtimeSimulator;
 };
 
 }  // namespace ledger

@@ -15,6 +15,7 @@ struct Config {
   uint32_t max_block_size{128000};
   std::chrono::seconds update_heights_sleep{5};
   std::chrono::seconds compute_pii_sleep{5};
+  std::chrono::milliseconds miner_sleep{100};
 };
 
 }  // namespace consensus

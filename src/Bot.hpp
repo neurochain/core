@@ -44,7 +44,7 @@ class Bot {
   std::shared_ptr<crypto::Ecc> _keys;
   std::shared_ptr<ledger::Ledger> _ledger;
   std::shared_ptr<consensus::Consensus> _consensus;
-  //std::shared_ptr<rest::Rest> _rest;
+  // std::shared_ptr<rest::Rest> _rest;
   std::unordered_set<int32_t> _request_ids;
   std::thread _io_context_thread;
 
@@ -150,6 +150,7 @@ class Bot {
                  messages::Subscriber::Callback callback);
 
   void publish_transaction(const messages::Transaction &transaction) const;
+  void publish_block(const messages::Block &block) const;
 
   friend class neuro::tests::BotTest;
 };
