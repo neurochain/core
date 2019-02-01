@@ -165,11 +165,16 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
         onion_block_data(onion_request_get_data(request.c_handler()));
     messages::BuildTransaction buildtransaction;
     messages::from_json(post_data, &buildtransaction);
-
     crypto::EccPub eccpubkey;
     eccpubkey.load(buildtransaction.publickey());
     messages::Hasher address(eccpubkey);
-
+    _ledger->add_change(buildtransaction.mutable_transaction(), address);
+    Buffer transaction_serialized;
+    messages::to_buffer(buildtransaction, &transaction_serialized);
+    std::stringstream ss;
+    ss << transaction_serialized;
+    buildtransaction.set_raw_transaction(ss.str());
+    response << buildtransaction;
     return OCS_PROCESSED;
   };
 
@@ -185,13 +190,13 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
     crypto::EccPub eccpubkey;
     eccpubkey.load(publickey);
     messages::Hasher address(eccpubkey);
-    
+
     messages::TaggedTransaction taggedtransaction;
     messages::NCCAmount ncc;
     ncc.set_value(100000);
 
-    consensus::TransactionPool tp(_ledger);    
-    tp.coinbase(taggedtransaction.mutable_transaction(), address, ncc);    
+    consensus::TransactionPool tp(_ledger);
+    tp.coinbase(taggedtransaction.mutable_transaction(), address, ncc);
     LOG_DEBUG << taggedtransaction.transaction().id();
 
     messages::BlockHeader lastblock;

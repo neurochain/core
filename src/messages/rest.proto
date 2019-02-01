@@ -53,7 +53,8 @@ message PublicKey {
 }
 
 message BuildTransaction {
-  required PublicKey publicKey = 1;
-  repeated Input transactionsID = 2;
+  required PublicKey publickey = 1;
+  required Transaction transaction = 2;
+  optional string raw_transaction = 3;
 }
 

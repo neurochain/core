@@ -12,7 +12,7 @@
 * List of transactions ...[ok]
   - input : public key Array( x,y)
   - output : Array( Transaction) 
-* Build raw hash for signature
+* Build raw hash for signature 
   - input : Array( Transactions ID)
   - output : Array ( Raw Transactions ( string ) )
 * Send Transaction 
