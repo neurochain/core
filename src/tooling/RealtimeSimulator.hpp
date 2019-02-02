@@ -9,9 +9,9 @@ namespace neuro {
 namespace tooling {
 
 consensus::Config realtime_config{
-    10,     // blocks_per_assembly
+    5,      // blocks_per_assembly
     10,     // members_per_assembly
-    3,      // block_period
+    1,      // block_period
     100,    // block_reward
     128000  // max_block_size
 };
@@ -33,7 +33,7 @@ class RealtimeSimulator {
             tooling::blockgen::gen_block0(keys, _ncc_block0, 0).block())),
         consensus(std::make_shared<consensus::Consensus>(
             ledger, std::make_shared<crypto::Ecc>(keys[0]), realtime_config,
-            consensus::PublishBlock())) {}
+            [](const messages::Block &block) {})) {}
 };
 
 }  // namespace tooling

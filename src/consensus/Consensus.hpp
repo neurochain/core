@@ -13,6 +13,7 @@
 
 namespace neuro {
 namespace consensus {
+
 namespace tests {
 class Consensus;
 class RealtimeConsensus;
@@ -440,10 +441,9 @@ class Consensus {
              previous.branch() == messages::Branch::FORK);
       bool added_new_assembly = false;
       if (is_new_assembly(tagged_block, previous)) {
-        uint32_t first_height =
+        const int32_t height =
             previous.block().header().height() / config.blocks_per_assembly;
-        uint32_t last_height = first_height + config.blocks_per_assembly - 1;
-        _ledger->add_assembly(previous, first_height, last_height);
+        _ledger->add_assembly(previous, height);
         added_new_assembly = true;
         tagged_block.mutable_previous_assembly_id()->CopyFrom(
             previous.block().header().id());
@@ -631,6 +631,14 @@ class Consensus {
     };
 
     auto piis = pii.get_addresses_pii();
+    if (piis.size() == 0) {
+      if (!_ledger->get_assembly_piis(assembly.previous_assembly_id(), &piis)) {
+        LOG_WARNING << "Failed to get the previous assembly piis during pii "
+                       "computation of assembly "
+                    << assembly.id();
+        return false;
+      }
+    }
     for (int i = 0; i < piis.size(); i++) {
       auto pii = piis[i];
       pii.mutable_assembly_id()->CopyFrom(assembly.id());
@@ -697,19 +705,33 @@ class Consensus {
     messages::Assembly previous_assembly, previous_previous_assembly;
 
     if (!_ledger->get_assembly(tagged_block.previous_assembly_id(),
-                               &previous_assembly) ||
-        !_ledger->get_assembly(previous_assembly.previous_assembly_id(),
-                               &previous_previous_assembly)) {
+                               &previous_assembly)) {
+      LOG_WARNING
+          << "Could not find the previous assembly in get_heights_to_write";
       return false;
     }
-
-    if (previous_previous_assembly.finished_computation()) {
+    if (!_ledger->get_assembly(previous_assembly.previous_assembly_id(),
+                               &previous_previous_assembly)) {
+      LOG_WARNING << "Could not find the previous previous assembly in "
+                     "get_heights_to_write";
+      return false;
+    }
+    if (!previous_previous_assembly.finished_computation()) {
       LOG_WARNING << "The computation of the assembly "
                   << previous_previous_assembly.id() << " is not finished.";
       return false;
     }
-    auto height = get_current_height();
-    for (auto i = height; i < previous_previous_assembly.last_height(); i++) {
+
+    // I never want anyone to mine the block 0
+    const int32_t current_height = std::max(get_current_height(), 1);
+
+    int32_t first_height =
+        (previous_previous_assembly.height() + 2) * config.blocks_per_assembly;
+    int32_t last_height =
+        (previous_previous_assembly.height() + 3) * config.blocks_per_assembly -
+        1;
+    for (int32_t i = std::max(current_height, first_height); i <= last_height;
+         i++) {
       messages::Address writer;
       if (!get_block_writer(previous_previous_assembly, i, &writer)) {
         LOG_WARNING << "Did not manage to get the block writer for assembly "
@@ -721,8 +743,13 @@ class Consensus {
     }
 
     if (previous_assembly.finished_computation()) {
-      for (auto i = previous_assembly.first_height();
-           i < previous_assembly.last_height(); i++) {
+      first_height =
+          (previous_assembly.height() + 2) * config.blocks_per_assembly;
+      last_height =
+          (previous_assembly.height() + 3) * config.blocks_per_assembly - 1;
+
+      for (auto i = std::max(current_height, first_height); i <= last_height;
+           i++) {
         messages::Address writer;
         if (!get_block_writer(previous_assembly, i, &writer)) {
           LOG_WARNING << "Did not manage to get the block writer for assembly "
@@ -765,41 +792,28 @@ class Consensus {
     _stop_update_heights = false;
     if (!_update_heights_thread) {
       _update_heights_thread = std::thread([this]() {
-        LOG_TRACE;
         const auto address = messages::Address(_keys->public_key());
-        LOG_TRACE;
         while (!_stop_update_heights) {
-          LOG_TRACE;
           update_heights_to_write(address);
-          LOG_TRACE;
           std::this_thread::sleep_for(config.update_heights_sleep);
-          LOG_TRACE;
         }
       });
     }
   }
 
   void update_heights_to_write(const messages::Address &address) {
-    LOG_TRACE;
     messages::TaggedBlock tagged_block;
-    LOG_TRACE;
     bool include_transactions = false;
-    LOG_TRACE;
     if (!_ledger->get_last_block(&tagged_block, include_transactions)) {
       LOG_ERROR << "Failed to get the last block in update_heights_to_mine";
       return;
     }
     if (_previous_assembly_id &&
         _previous_assembly_id.value() == tagged_block.previous_assembly_id()) {
-      LOG_TRACE;
       return;
     }
-    LOG_TRACE;
     std::vector<messages::BlockHeight> heights;
-    LOG_TRACE;
     get_heights_to_write(address, &heights);
-    LOG_TRACE;
-    LOG_DEBUG << "HEIGHTS TO WRITE " << heights.size() << std::endl;
     _heights_to_write_mutex.lock();
     _heights_to_write = heights;
     _heights_to_write_mutex.unlock();
@@ -845,12 +859,13 @@ class Consensus {
       messages::Block new_block;
       write_block(*_keys, height, &new_block);
       _publish_block(new_block);
+      add_block(&new_block);
     }
   }
 
   friend class neuro::consensus::tests::Consensus;
   friend class neuro::consensus::tests::RealtimeConsensus;
-};  // namespace consensus
+};
 
 }  // namespace consensus
 }  // namespace neuro

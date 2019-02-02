@@ -186,7 +186,6 @@ TEST_F(Consensus, add_block) {
 }
 
 TEST_F(Consensus, compute_assembly_pii) {
-  return;
   std::vector<messages::Assembly> assemblies;
   simulator.run(consensus->config.blocks_per_assembly, 10);
   ASSERT_TRUE(ledger->get_assemblies_to_compute(&assemblies));
@@ -197,7 +196,7 @@ TEST_F(Consensus, compute_assembly_pii) {
   check_assembly_pii(assembly);
 }
 
-// TEST_F(Consensus, start_computations) { test_start_computations(); }
+TEST_F(Consensus, start_computations) { test_start_computations(); }
 
 TEST_F(Consensus, add_transaction) {
   auto t0 = simulator.send_ncc(simulator.keys[0].private_key(),

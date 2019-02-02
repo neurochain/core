@@ -215,14 +215,16 @@ class LedgerMongodb : public Ledger {
   bool save_pii(const messages::Address &address,
                 const messages::Hash &assembly_id, const Double &score);
 
+  bool get_assembly_piis(const messages::Hash &assembly_id,
+                         std::vector<messages::Pii> *piis);
+
   void empty_database();
 
   bool get_assembly(const messages::Hash &assembly_id,
                     messages::Assembly *assembly) const;
 
   bool add_assembly(const messages::TaggedBlock &tagged_block,
-                    const messages::BlockHeight &first_height,
-                    const messages::BlockHeight &last_height);
+                    const int32_t height);
 
   bool get_pii(const messages::Address &address,
                const messages::Hash &assembly_id, messages::Pii *pii) const;

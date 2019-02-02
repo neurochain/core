@@ -121,10 +121,12 @@ void LedgerMongodb::create_first_assemblies(
   assembly_minus_1.set_finished_computation(true);
   assembly_minus_1.set_seed(0);
   assembly_minus_1.set_nb_addresses(addresses.size());
+  assembly_minus_1.set_height(-1);
   assembly_minus_2.mutable_id()->CopyFrom(
       assembly_minus_1.previous_assembly_id());
   assembly_minus_2.set_finished_computation(true);
   assembly_minus_2.set_seed(0);
+  assembly_minus_2.set_height(-2);
   assembly_minus_2.set_nb_addresses(addresses.size());
 
   // Insert the Piis
@@ -1165,8 +1167,7 @@ bool LedgerMongodb::get_next_assembly(const messages::Hash &assembly_id,
 }
 
 bool LedgerMongodb::add_assembly(const messages::TaggedBlock &tagged_block,
-                                 const messages::BlockHeight &first_height,
-                                 const messages::BlockHeight &last_height) {
+                                 const int32_t height) {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   if (tagged_block.branch() != messages::Branch::MAIN &&
       tagged_block.branch() != messages::Branch::FORK) {
@@ -1185,8 +1186,7 @@ bool LedgerMongodb::add_assembly(const messages::TaggedBlock &tagged_block,
   assembly.mutable_previous_assembly_id()->CopyFrom(
       tagged_block.previous_assembly_id());
   assembly.set_finished_computation(false);
-  assembly.set_first_height(first_height);
-  assembly.set_last_height(last_height);
+  assembly.set_height(height);
   auto bson_assembly = to_bson(assembly);
   auto result = _assemblies.insert_one(std::move(bson_assembly));
   return (bool)result;
@@ -1204,6 +1204,20 @@ bool LedgerMongodb::get_pii(const messages::Address &address,
   };
   from_bson(result->view(), pii);
   return true;
+}
+
+bool LedgerMongodb::get_assembly_piis(const messages::Hash &assembly_id,
+                                      std::vector<messages::Pii> *piis) {
+  auto options = remove_OID();
+  auto query = bss::document{} << ASSEMBLY_ID << to_bson(assembly_id)
+                               << bss::finalize;
+  options.sort(bss::document{} << RANK << 1 << bss::finalize);
+  auto result = _pii.find(std::move(query), options);
+  for (const auto &bson_pii : result) {
+    auto &pii = piis->emplace_back();
+    from_bson(bson_pii, &pii);
+  }
+  return piis->size() > 0;
 }
 
 bool LedgerMongodb::set_pii(const messages::Pii &pii) {

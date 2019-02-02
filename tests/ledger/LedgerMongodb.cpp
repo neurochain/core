@@ -424,7 +424,7 @@ TEST_F(LedgerMongodb, assembly) {
   messages::Assembly assembly;
   ASSERT_FALSE(
       ledger->get_assembly(tagged_block.block().header().id(), &assembly));
-  ASSERT_TRUE(ledger->add_assembly(tagged_block, 0, 100));
+  ASSERT_TRUE(ledger->add_assembly(tagged_block, 0));
   ASSERT_TRUE(
       ledger->get_assembly(tagged_block.block().header().id(), &assembly));
   ASSERT_EQ(assembly.id(), tagged_block.block().header().id());
@@ -454,7 +454,7 @@ TEST_F(LedgerMongodb, assembly) {
 TEST_F(LedgerMongodb, pii) {
   messages::TaggedBlock tagged_block;
   ASSERT_TRUE(ledger->get_block(0, &tagged_block));
-  ASSERT_TRUE(ledger->add_assembly(tagged_block, 0, 100));
+  ASSERT_TRUE(ledger->add_assembly(tagged_block, 0));
   auto assembly_id = tagged_block.block().header().id();
   std::vector<crypto::Ecc> keys{5};
   for (int i = 0; i < 5; i++) {

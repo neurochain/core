@@ -19,10 +19,9 @@ message Pii {
 
 message Assembly {
   required Hash id = 1; // This id is the hash of the last block of the assembly
-  optional Hash previous_assembly_id = 2;
-  required bool finished_computation = 3;
-  optional int32 seed = 4;
-  optional int32 nb_addresses = 5;
-  optional int32 first_height = 6;
-  optional int32 last_height = 7;
+  required bool finished_computation = 2;
+  required int32 height = 3;
+  optional Hash previous_assembly_id = 4;
+  optional int32 seed = 5;
+  optional int32 nb_addresses = 6;
 }

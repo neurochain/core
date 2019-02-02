@@ -23,7 +23,7 @@ Simulator::Simulator(const std::string &db_url, const std::string &db_name,
           tooling::blockgen::gen_block0(keys, _ncc_block0).block())),
       consensus(std::make_shared<consensus::Consensus>(
           ledger, std::make_shared<crypto::Ecc>(), config,
-          consensus::PublishBlock())) {
+          [](const messages::Block &block) {})) {
   for (size_t i = 0; i < keys.size(); i++) {
     auto &address = addresses.emplace_back(keys[i].public_key());
     addresses_indexes.insert({address, i});

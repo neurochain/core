@@ -151,12 +151,14 @@ class Ledger {
                         const messages::Hash &assembly_id,
                         const Double &score) = 0;
 
+  virtual bool get_assembly_piis(const messages::Hash &assembly_id,
+                                 std::vector<messages::Pii> *piis) = 0;
+
   virtual bool get_assembly(const messages::Hash &assembly_id,
                             messages::Assembly *assembly) const = 0;
 
   virtual bool add_assembly(const messages::TaggedBlock &tagged_block,
-                            const messages::BlockHeight &first_height,
-                            const messages::BlockHeight &last_height) = 0;
+                            const int32_t height) = 0;
 
   virtual bool get_pii(const messages::Address &address,
                        const messages::Hash &assembly_id,
