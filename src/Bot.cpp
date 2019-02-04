@@ -272,8 +272,9 @@ bool Bot::init() {
     return false;
   }
 
+  auto keys_vector = std::vector<crypto::Ecc>{*_keys};
   _consensus = std::make_shared<consensus::Consensus>(
-      _ledger, _keys,
+      _ledger, keys_vector,
       [this](const messages::Block &block) { publish_block(block); });
   _io_context_thread = std::thread([this]() { _io_context->run(); });
 

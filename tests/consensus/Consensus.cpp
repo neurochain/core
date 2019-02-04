@@ -2,7 +2,6 @@
 #include <gtest/gtest.h>
 #include <thread>
 #include "ledger/LedgerMongodb.hpp"
-#include "tooling/RealtimeSimulator.hpp"
 #include "tooling/Simulator.hpp"
 
 namespace neuro {
@@ -22,7 +21,8 @@ class Consensus : public testing::Test {
   std::shared_ptr<consensus::Consensus> consensus;
 
   Consensus()
-      : simulator(db_url, db_name, nb_keys, ncc_block0),
+      : simulator(tooling::Simulator::Simulator::StaticSimulator(
+            db_url, db_name, nb_keys, ncc_block0)),
         ledger(simulator.ledger),
         consensus(simulator.consensus) {}
 
@@ -92,6 +92,18 @@ class Consensus : public testing::Test {
     }
   }
 
+  void test_compute_assembly_pii() {
+    consensus->_stop_compute_pii = false;
+    std::vector<messages::Assembly> assemblies;
+    simulator.run(consensus->config.blocks_per_assembly, 10);
+    ASSERT_TRUE(ledger->get_assemblies_to_compute(&assemblies));
+    ASSERT_EQ(assemblies.size(), 1);
+    auto &assembly = assemblies[0];
+    ASSERT_TRUE(consensus->compute_assembly_pii(assembly));
+    ASSERT_TRUE(ledger->get_assembly(assembly.id(), &assembly));
+    check_assembly_pii(assembly);
+  }
+
   void test_start_computations() {
     std::vector<messages::Assembly> assemblies;
     ASSERT_FALSE(ledger->get_assemblies_to_compute(&assemblies));
@@ -101,6 +113,7 @@ class Consensus : public testing::Test {
     auto assembly_id = assemblies[0].id();
 
     // Make sure that the compute_assembly thread has started the computation
+    consensus->_stop_compute_pii = false;
     std::this_thread::sleep_for(consensus->config.compute_pii_sleep);
 
     // Wait for the computation to be finished
@@ -185,16 +198,7 @@ TEST_F(Consensus, add_block) {
   ASSERT_TRUE(consensus->add_block(&block));
 }
 
-TEST_F(Consensus, compute_assembly_pii) {
-  std::vector<messages::Assembly> assemblies;
-  simulator.run(consensus->config.blocks_per_assembly, 10);
-  ASSERT_TRUE(ledger->get_assemblies_to_compute(&assemblies));
-  ASSERT_EQ(assemblies.size(), 1);
-  auto &assembly = assemblies[0];
-  ASSERT_TRUE(consensus->compute_assembly_pii(assembly));
-  ASSERT_TRUE(ledger->get_assembly(assembly.id(), &assembly));
-  check_assembly_pii(assembly);
-}
+TEST_F(Consensus, compute_assembly_pii) { test_compute_assembly_pii(); }
 
 TEST_F(Consensus, start_computations) { test_start_computations(); }
 

@@ -21,7 +21,18 @@ class Simulator {
   std::unordered_map<messages::Address, uint32_t> addresses_indexes;
 
   Simulator(const std::string &db_url, const std::string &db_name,
-            const int nb_keys, const messages::NCCAmount ncc_block0);
+            const int32_t nb_keys, const messages::NCCAmount &ncc_block0,
+            const int32_t time_delta);
+
+  static Simulator RealtimeSimulator(const std::string &db_url,
+                                     const std::string &db_name,
+                                     const int nb_keys,
+                                     const messages::NCCAmount ncc_block0);
+
+  static Simulator StaticSimulator(const std::string &db_url,
+                                   const std::string &db_name,
+                                   const int nb_keys,
+                                   const messages::NCCAmount ncc_block0);
 
   messages::Block new_block(int nb_transactions,
                             const messages::TaggedBlock &last_block);

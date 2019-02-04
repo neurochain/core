@@ -12,12 +12,6 @@ namespace neuro {
 namespace tooling {
 namespace tests {
 
-std::shared_ptr<ledger::LedgerMongodb> empty_ledger(
-    messages::config::Database config) {
-  tooling::blockgen::create_empty_db(config);
-  return std::make_shared<neuro::ledger::LedgerMongodb>(config);
-}
-
 class Simulator : public ::testing::Test {
  public:
   const std::string db_url = "mongodb://mongo:27017";
@@ -30,7 +24,8 @@ class Simulator : public ::testing::Test {
   std::shared_ptr<neuro::ledger::LedgerMongodb> ledger;
 
   Simulator()
-      : simulator(db_url, db_name, nb_keys, ncc_block0),
+      : simulator(tooling::Simulator::Simulator::StaticSimulator(
+            db_url, db_name, nb_keys, ncc_block0)),
         ledger(simulator.ledger) {}
 };
 

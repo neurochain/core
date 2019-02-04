@@ -18,7 +18,8 @@ class Pii : public testing::Test {
   consensus::Pii pii;
 
   Pii()
-      : simulator(tooling::Simulator(db_url, db_name, nb_keys, ncc_block0)),
+      : simulator(tooling::Simulator::Simulator::StaticSimulator(
+            db_url, db_name, nb_keys, ncc_block0)),
         ledger(simulator.ledger),
         pii(ledger, simulator.consensus->config) {}
 

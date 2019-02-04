@@ -28,11 +28,11 @@ void coinbase(const crypto::EccPub &key_pub, const messages::NCCAmount &ncc,
 
 messages::TaggedBlock gen_block0(std::vector<crypto::Ecc> keys,
                                  const messages::NCCAmount &ncc_block0,
-                                 int32_t timedelta) {
+                                 int32_t time_delta) {
   messages::TaggedBlock tagged_block;
   auto block = tagged_block.mutable_block();
   auto header = block->mutable_header();
-  header->mutable_timestamp()->set_data(std::time(nullptr) + timedelta);
+  header->mutable_timestamp()->set_data(std::time(nullptr) + time_delta);
   auto previons_block_hash = header->mutable_previous_block_hash();
   previons_block_hash->set_data("");
   previons_block_hash->set_type(messages::Hash::Type::Hash_Type_SHA256);

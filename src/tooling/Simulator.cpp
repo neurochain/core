@@ -7,27 +7,49 @@ namespace neuro {
 namespace tooling {
 
 consensus::Config config{
-    10,     // blocks_per_assembly
+    5,      // blocks_per_assembly
     10,     // members_per_assembly
-    15,     // block_period
+    1,      // block_period
     100,    // block_reward
     128000  // max_block_size
 };
 
 Simulator::Simulator(const std::string &db_url, const std::string &db_name,
-                     const int nb_keys, const messages::NCCAmount ncc_block0)
+                     const int32_t nb_keys,
+                     const messages::NCCAmount &ncc_block0,
+                     const int32_t time_delta)
     : _ncc_block0(ncc_block0),
       keys(nb_keys),
       ledger(std::make_shared<ledger::LedgerMongodb>(
           db_url, db_name,
-          tooling::blockgen::gen_block0(keys, _ncc_block0).block())),
+          tooling::blockgen::gen_block0(keys, _ncc_block0, time_delta)
+              .block())),
       consensus(std::make_shared<consensus::Consensus>(
-          ledger, std::make_shared<crypto::Ecc>(), config,
-          [](const messages::Block &block) {})) {
+          ledger, keys, config, [](const messages::Block &block) {})) {
+  if (time_delta < 0) {
+    // If the time_delta is in the past we have a StaticSimulator and it should
+    // not mine new blocks
+    consensus->_stop_update_heights = true;
+    consensus->_stop_miner = true;
+  }
   for (size_t i = 0; i < keys.size(); i++) {
     auto &address = addresses.emplace_back(keys[i].public_key());
     addresses_indexes.insert({address, i});
   }
+}
+
+Simulator Simulator::RealtimeSimulator(const std::string &db_url,
+                                       const std::string &db_name,
+                                       const int nb_keys,
+                                       const messages::NCCAmount ncc_block0) {
+  return Simulator(db_url, db_name, nb_keys, ncc_block0, 0);
+}
+
+Simulator Simulator::StaticSimulator(const std::string &db_url,
+                                     const std::string &db_name,
+                                     const int nb_keys,
+                                     const messages::NCCAmount ncc_block0) {
+  return Simulator(db_url, db_name, nb_keys, ncc_block0, -100000);
 }
 
 messages::Transaction Simulator::send_ncc(const crypto::EccPriv &from_key_priv,

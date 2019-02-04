@@ -20,6 +20,7 @@ class RealtimeConsensus;
 }  // namespace tests
 
 using PublishBlock = std::function<void(const messages::Block &block)>;
+using AddressIndex = uint32_t;
 
 class Consensus {
  public:
@@ -27,11 +28,12 @@ class Consensus {
 
  private:
   std::shared_ptr<ledger::Ledger> _ledger;
-  std::shared_ptr<crypto::Ecc> _keys;
+  std::vector<crypto::Ecc> _keys;
+  std::vector<messages::Address> _addresses;
   PublishBlock _publish_block;
   std::atomic<bool> _stop_compute_pii;
   std::optional<std::thread> _compute_pii_thread;
-  std::vector<messages::BlockHeight> _heights_to_write;
+  std::vector<std::pair<messages::BlockHeight, AddressIndex>> _heights_to_write;
   std::mutex _heights_to_write_mutex;
   std::optional<messages::Hash> _previous_assembly_id;
   std::atomic<bool> _stop_update_heights;
@@ -492,23 +494,28 @@ class Consensus {
 
  public:
   Consensus(std::shared_ptr<ledger::Ledger> ledger,
-            std::shared_ptr<crypto::Ecc> keys, PublishBlock publish_block)
+            std::vector<crypto::Ecc> &keys, PublishBlock publish_block)
       : _ledger(ledger), _keys(keys), _publish_block(publish_block) {
-    start_compute_pii_thread();
-    start_update_heights_thread();
-    start_miner_thread();
+    init();
   }
 
   Consensus(std::shared_ptr<ledger::Ledger> ledger,
-            std::shared_ptr<crypto::Ecc> keys, const Config &config,
+            const std::vector<crypto::Ecc> &keys, const Config &config,
             PublishBlock publish_block)
       : config(config),
         _ledger(ledger),
         _keys(keys),
         _publish_block(publish_block) {
+    init();
+  }
+
+  void init() {
     start_compute_pii_thread();
     start_update_heights_thread();
     start_miner_thread();
+    for (const auto &key : _keys) {
+      _addresses.push_back(messages::Address(key.public_key()));
+    }
   }
 
   ~Consensus() {
@@ -698,8 +705,9 @@ class Consensus {
            config.block_period;
   }
 
-  bool get_heights_to_write(const messages::Address &address,
-                            std::vector<messages::BlockHeight> *heights) {
+  bool get_heights_to_write(
+      const std::vector<messages::Address> &addresses,
+      std::vector<std::pair<messages::BlockHeight, AddressIndex>> *heights) {
     messages::TaggedBlock tagged_block;
     _ledger->get_block(_ledger->height(), &tagged_block);
     messages::Assembly previous_assembly, previous_previous_assembly;
@@ -721,6 +729,10 @@ class Consensus {
                   << previous_previous_assembly.id() << " is not finished.";
       return false;
     }
+    std::unordered_map<messages::Address, AddressIndex> addresses_map;
+    for (auto i = 0; i < addresses.size(); i++) {
+      addresses_map[addresses[i]] = i;
+    }
 
     // I never want anyone to mine the block 0
     const int32_t current_height = std::max(get_current_height(), 1);
@@ -737,8 +749,8 @@ class Consensus {
         LOG_WARNING << "Did not manage to get the block writer for assembly "
                     << previous_previous_assembly.id() << " at height " << i;
       }
-      if (writer == address) {
-        heights->push_back(i);
+      if (addresses_map.count(writer) > 0) {
+        heights->push_back({i, addresses_map[writer]});
       }
     }
 
@@ -755,8 +767,8 @@ class Consensus {
           LOG_WARNING << "Did not manage to get the block writer for assembly "
                       << previous_assembly.id() << " at height " << i;
         }
-        if (writer == address) {
-          heights->push_back(i);
+        if (addresses_map.count(writer) > 0) {
+          heights->push_back({i, addresses_map[writer]});
         }
       }
     }
@@ -792,16 +804,15 @@ class Consensus {
     _stop_update_heights = false;
     if (!_update_heights_thread) {
       _update_heights_thread = std::thread([this]() {
-        const auto address = messages::Address(_keys->public_key());
         while (!_stop_update_heights) {
-          update_heights_to_write(address);
+          update_heights_to_write();
           std::this_thread::sleep_for(config.update_heights_sleep);
         }
       });
     }
   }
 
-  void update_heights_to_write(const messages::Address &address) {
+  void update_heights_to_write() {
     messages::TaggedBlock tagged_block;
     bool include_transactions = false;
     if (!_ledger->get_last_block(&tagged_block, include_transactions)) {
@@ -812,8 +823,8 @@ class Consensus {
         _previous_assembly_id.value() == tagged_block.previous_assembly_id()) {
       return;
     }
-    std::vector<messages::BlockHeight> heights;
-    get_heights_to_write(address, &heights);
+    std::vector<std::pair<messages::BlockHeight, AddressIndex>> heights;
+    get_heights_to_write(_addresses, &heights);
     _heights_to_write_mutex.lock();
     _heights_to_write = heights;
     _heights_to_write_mutex.unlock();
@@ -839,7 +850,8 @@ class Consensus {
         std::this_thread::sleep_for(config.miner_sleep);
         continue;
       }
-      const auto height = _heights_to_write[0];
+      const auto height = _heights_to_write[0].first;
+      const auto address_index = _heights_to_write[0].second;
       const auto block_start =
           block0.header().timestamp().data() + height * config.block_period;
       const auto block_end = block_start + config.block_period;
@@ -857,7 +869,7 @@ class Consensus {
       }
 
       messages::Block new_block;
-      write_block(*_keys, height, &new_block);
+      write_block(_keys[address_index], height, &new_block);
       _publish_block(new_block);
       add_block(&new_block);
     }
@@ -865,6 +877,7 @@ class Consensus {
 
   friend class neuro::consensus::tests::Consensus;
   friend class neuro::consensus::tests::RealtimeConsensus;
+  friend class neuro::tooling::Simulator;
 };
 
 }  // namespace consensus

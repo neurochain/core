@@ -194,7 +194,24 @@ target_link_libraries(RealtimeConsensus
   )
 add_test(RealtimeConsensus RealtimeConsensus)
 
-
+add_executable(RealtimeSimulator
+    tooling/RealtimeSimulator.cpp
+  )
+target_link_libraries(RealtimeSimulator
+  GTest::main
+  Boost::program_options
+  Boost::filesystem
+  Boost::system
+  Boost::thread
+  Boost::log
+  cpr::cpr
+  ${LIBMONGOCXX_STATIC_LIBRARIES}
+  core
+  protos
+  libonion::onion
+  libonion::onioncpp
+  )
+add_test(RealtimeSimulator RealtimeSimulator)
 
 add_executable(dbreset
     dbreset.cpp

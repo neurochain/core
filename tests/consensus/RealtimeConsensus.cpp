@@ -2,7 +2,7 @@
 #include <thread>
 #include "consensus/Consensus.hpp"
 #include "ledger/LedgerMongodb.hpp"
-#include "tooling/RealtimeSimulator.hpp"
+#include "tooling/Simulator.hpp"
 
 namespace neuro {
 namespace consensus {
@@ -13,15 +13,16 @@ class RealtimeConsensus : public testing::Test {
   const std::string db_url = "mongodb://mongo:27017";
   const std::string db_name = "test_consensus";
   const messages::NCCAmount ncc_block0 = messages::NCCAmount(100000);
-  const int nb_keys = 2;
+  const int nb_keys = 1;
 
  protected:
-  tooling::RealtimeSimulator simulator;
+  tooling::Simulator simulator;
   std::shared_ptr<neuro::ledger::LedgerMongodb> ledger;
   std::shared_ptr<consensus::Consensus> consensus;
 
   RealtimeConsensus()
-      : simulator(db_url, db_name, ncc_block0),
+      : simulator(tooling::Simulator::Simulator::RealtimeSimulator(
+            db_url, db_name, nb_keys, ncc_block0)),
         ledger(simulator.ledger),
         consensus(simulator.consensus) {}
 
@@ -29,19 +30,20 @@ class RealtimeConsensus : public testing::Test {
   void test_update_heights_thread() {
     consensus->_stop_miner = true;
     consensus->_stop_compute_pii = true;
-    std::vector<messages::BlockHeight> heights;
-    consensus->get_heights_to_write(
-        messages::Address(simulator.keys[0].public_key()), &heights);
+    std::vector<std::pair<messages::BlockHeight, AddressIndex>> heights;
+    consensus->get_heights_to_write(simulator.addresses, &heights);
     ASSERT_GT(heights.size(), 0);
     messages::TaggedBlock tagged_block;
     ledger->get_last_block(&tagged_block);
     ASSERT_EQ(tagged_block.block().header().height(), 0);
     std::this_thread::sleep_for(consensus->config.update_heights_sleep * 2);
     consensus->_heights_to_write_mutex.lock();
-    ASSERT_EQ(consensus->_heights_to_write.at(0), 1);
-    ASSERT_EQ(consensus->_heights_to_write.at(
-                  consensus->_heights_to_write.size() - 1),
-              consensus->config.blocks_per_assembly * 2 - 1);
+    ASSERT_EQ(consensus->_heights_to_write.at(0).first, 1);
+    ASSERT_EQ(consensus->_heights_to_write.at(0).second, 0);
+    ASSERT_EQ(
+        consensus->_heights_to_write.at(consensus->_heights_to_write.size() - 1)
+            .first,
+        consensus->config.blocks_per_assembly * 2 - 1);
     ASSERT_EQ(consensus->_heights_to_write.size(),
               2 * consensus->config.blocks_per_assembly - 1);
     consensus->_heights_to_write_mutex.unlock();
