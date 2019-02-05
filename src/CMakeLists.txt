@@ -75,6 +75,8 @@ add_library(core
   ./Bot.hpp
 #  ./rest/Rest.cpp
 #  ./rest/Rest.hpp
+  ./consensus/Consensus.hpp
+  ./consensus/Consensus.cpp
   ./consensus/Pii.hpp
   ./consensus/Pii.cpp
   )

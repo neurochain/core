@@ -1,4 +1,5 @@
 #include "tooling/Simulator.hpp"
+#include <chrono>
 #include "consensus/Config.hpp"
 #include "crypto/Sign.hpp"
 #include "tooling/blockgen.hpp"
@@ -7,11 +8,14 @@ namespace neuro {
 namespace tooling {
 
 consensus::Config config{
-    5,      // blocks_per_assembly
-    10,     // members_per_assembly
-    1,      // block_period
-    100,    // block_reward
-    128000  // max_block_size
+    5,                               // blocks_per_assembly
+    10,                              // members_per_assembly
+    1,                               // block_period
+    100,                             // block_reward
+    128000,                          // max_block_size
+    std::chrono::seconds(1),         // update_heights_sleep
+    std::chrono::seconds(1),         // compute_pii_sleep
+    std::chrono::milliseconds(100),  // miner_sleep
 };
 
 Simulator::Simulator(const std::string &db_url, const std::string &db_name,
@@ -42,7 +46,9 @@ Simulator Simulator::RealtimeSimulator(const std::string &db_url,
                                        const std::string &db_name,
                                        const int nb_keys,
                                        const messages::NCCAmount ncc_block0) {
-  return Simulator(db_url, db_name, nb_keys, ncc_block0, 0);
+  // Put the block0 2 seconds in the future so that we have time to create the
+  // database and still be ready to write block 1
+  return Simulator(db_url, db_name, nb_keys, ncc_block0, 2);
 }
 
 Simulator Simulator::StaticSimulator(const std::string &db_url,
