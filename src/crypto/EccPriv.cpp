@@ -60,6 +60,18 @@ bool EccPriv::load(const Buffer &buffer) {
   return true;
 }
 
+bool EccPriv::loadFromHex(const std::string &hexstr) {
+  CryptoPP::HexDecoder decoder;
+  decoder.Put((byte *)&hexstr[0], hexstr.size());
+  decoder.MessageEnd();
+
+  CryptoPP::Integer x;
+  x.Decode(decoder, decoder.MaxRetrievable());
+
+  _key.Initialize(CryptoPP::ASN1::secp256k1(), x);
+  return true;
+}
+
 void EccPriv::sign(const uint8_t *data, const std::size_t size,
                    uint8_t *signature) const {
   CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA256>::Signer signer(_key);

@@ -25,6 +25,8 @@ class EccPriv {
   bool save(messages::KeyPriv *key_priv) const;
   bool load(const Buffer &buffer);
   bool load(const std::string &filepath);
+  bool loadFromHex(const std::string &hexstr);
+
   static constexpr std::size_t sign_length() { return 64; /* TODO  magic */ }
   void sign(const uint8_t *data, const std::size_t size,
             uint8_t *signature) const;
