@@ -213,8 +213,9 @@ class Ledger {
 
   bool is_unspent_output(const messages::Hash &transaction_id,
                          int output_id) const {
+    bool include_transaction_pool = true;
     return is_unspent_output(transaction_id, output_id, get_main_branch_tip(),
-                             true);
+                             include_transaction_pool);
   }
 
   bool is_unspent_output(const messages::Hash &transaction_id, int output_id,
@@ -307,6 +308,38 @@ class Ledger {
     return unspent_transactions;
   }
 
+  /**
+   * Return a list of transactions containing only the unspent outputs
+   * for a given address
+   */
+  std::vector<messages::Transaction> list_unspent_outputs(
+      const messages::Address &address) const {
+    std::vector<messages::Transaction> result_transactions;
+
+    auto transactions = list_transactions(address);
+    for (int i = 0; i < transactions.transactions_size(); i++) {
+      auto transaction = transactions.mutable_transactions(i);
+      std::vector<messages::Output> outputs;
+      for (int j = 0; j < transaction->outputs_size(); j++) {
+        auto output = transaction->outputs(j);
+        if (output.address() == address &&
+            is_unspent_output(transaction->id(), j)) {
+          output.set_output_id(j);
+          outputs.push_back(output);
+        }
+      }
+      if (outputs.size() == 0) {
+        continue;
+      }
+      transaction->mutable_outputs()->Clear();
+      for (const auto output : outputs) {
+        transaction->add_outputs()->CopyFrom(output);
+      }
+      result_transactions.push_back(*transaction);
+    }
+    return result_transactions;
+  }
+
   messages::NCCAmount balance(const messages::Address &address) {
     uint64_t total = 0;
     const auto unspent_transactions = list_unspent_transactions(address);
@@ -354,6 +387,27 @@ class Ledger {
       for (const auto &output : transaction_outputs) {
         auto &input = inputs.emplace_back();
         input.mutable_id()->CopyFrom(transaction_id);
+        input.set_output_id(output.output_id());
+        input.set_signature_id(0);
+      }
+    }
+    return inputs;
+  }
+
+  /*
+   * Build inputs for a new transaction given a list of transactions containing
+   * only the unpsent output for the desired address.
+   */
+  std::vector<messages::Input> build_inputs(
+      const std::vector<messages::Transaction> &unspent_outputs) const {
+    std::vector<messages::Input> inputs;
+
+    // The list of transactions contains only the unspent outputs which makes it
+    // easier
+    for (const auto &transaction : unspent_outputs) {
+      for (const auto &output : transaction.outputs()) {
+        auto &input = inputs.emplace_back();
+        input.mutable_id()->CopyFrom(transaction.id());
         input.set_output_id(output.output_id());
         input.set_signature_id(0);
       }
@@ -430,6 +484,35 @@ class Ledger {
     output.mutable_address()->CopyFrom(address);
     output.mutable_value()->CopyFrom(amount);
     return build_transaction(unspent_transactions_ids, outputs, key_priv, fees);
+  }
+
+  /*
+   * Build a transaction using all the unspent outputs of a given address and
+   * sending a ratio of all those coin to the recipient
+   */
+  messages::Transaction send_ncc(
+      const crypto::EccPriv &sender_key_priv,
+      const messages::Address &recipient_address, const float ratio_to_send,
+      const std::optional<messages::NCCAmount> &fees = {}) const {
+    auto sender_address = messages::Address(sender_key_priv.make_public_key());
+    std::vector<messages::Transaction> unspent_outputs =
+        list_unspent_outputs(sender_address);
+
+    int32_t inputs_total = 0;
+    for (const auto &transaction : unspent_outputs) {
+      for (const auto output : transaction.outputs()) {
+        inputs_total += output.value().value();
+      }
+    }
+
+    // Set outputs
+    std::vector<messages::Output> outputs;
+    auto &output = outputs.emplace_back();
+    output.mutable_address()->CopyFrom(recipient_address);
+    output.mutable_value()->CopyFrom(
+        messages::NCCAmount((int32_t)(inputs_total * ratio_to_send)));
+    auto inputs = build_inputs(unspent_outputs);
+    return build_transaction(inputs, outputs, sender_key_priv, fees);
   }
 
   virtual ~Ledger() {}

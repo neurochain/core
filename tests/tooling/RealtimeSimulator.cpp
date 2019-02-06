@@ -32,14 +32,14 @@ class RealtimeSimulator : public testing::Test {
     messages::Block block0;
     ASSERT_TRUE(ledger->get_block(0, &block0));
     uint64_t block0_timestamp = block0.header().timestamp().data();
-    const auto nb_transactions = 2;
+    const auto nb_transactions = 10;
     for (auto i = 1; i < 5 * consensus->config.blocks_per_assembly; i++) {
       for (auto j = 0; j < nb_transactions; j++) {
         int sender_index = rand() % nb_keys;
         int recipient_index = rand() % nb_keys;
         auto transaction =
-            simulator.send_ncc(simulator.keys[sender_index].private_key(),
-                               simulator.addresses[recipient_index], 0.5);
+            ledger->send_ncc(simulator.keys[sender_index].private_key(),
+                             simulator.addresses[recipient_index], 0.5);
         ASSERT_TRUE(consensus->add_transaction(transaction));
       }
       milliseconds sleep_time =
@@ -47,6 +47,8 @@ class RealtimeSimulator : public testing::Test {
               1000 * (block0_timestamp + i * consensus->config.block_period) +
               500 * consensus->config.block_period) -
           duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+      LOG_DEBUG << "WAITING " << sleep_time.count() << " MS FOR BLOCK " << i
+                << std::endl;
       std::this_thread::sleep_for(sleep_time);
       messages::TaggedBlock tagged_block;
 

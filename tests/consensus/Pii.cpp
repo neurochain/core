@@ -28,19 +28,19 @@ class Pii : public testing::Test {
     ledger->get_last_block(&last_block);
 
     // Create 3 transactions so that addresses 0 and 2 have entropy
-    auto transaction = simulator.send_ncc(simulator.keys[0].private_key(),
-                                          simulator.addresses[2], 0.5);
+    auto transaction = ledger->send_ncc(simulator.keys[0].private_key(),
+                                        simulator.addresses[2], 0.5);
     messages::TaggedTransaction tagged_transaction;
     tagged_transaction.mutable_transaction()->CopyFrom(transaction);
     tagged_transaction.set_is_coinbase(true);
     ledger->add_transaction(tagged_transaction);
-    transaction = simulator.send_ncc(simulator.keys[1].private_key(),
-                                     simulator.addresses[2], 0.5);
+    transaction = ledger->send_ncc(simulator.keys[1].private_key(),
+                                   simulator.addresses[2], 0.5);
     tagged_transaction.mutable_transaction()->CopyFrom(transaction);
     tagged_transaction.set_is_coinbase(true);
     ledger->add_transaction(tagged_transaction);
-    transaction = simulator.send_ncc(simulator.keys[0].private_key(),
-                                     simulator.addresses[1], 0.5);
+    transaction = ledger->send_ncc(simulator.keys[0].private_key(),
+                                   simulator.addresses[1], 0.5);
     tagged_transaction.mutable_transaction()->CopyFrom(transaction);
     tagged_transaction.set_is_coinbase(true);
     ledger->add_transaction(tagged_transaction);
@@ -57,8 +57,8 @@ class Pii : public testing::Test {
   void new_block_1_transaction() {
     messages::TaggedBlock last_block;
     ledger->get_last_block(&last_block);
-    auto transaction = simulator.send_ncc(simulator.keys[0].private_key(),
-                                          simulator.addresses[1], 0.5);
+    auto transaction = ledger->send_ncc(simulator.keys[0].private_key(),
+                                        simulator.addresses[1], 0.5);
     messages::TaggedTransaction tagged_transaction;
     tagged_transaction.mutable_transaction()->CopyFrom(transaction);
     tagged_transaction.set_is_coinbase(true);

@@ -22,10 +22,6 @@ const std::string ADDRESS = "address";
 const std::string BLOCK = "block";
 const std::string BLOCK_ID = "blockId";
 const std::string BLOCKS = "blocks";
-const std::string BLOCK_HEADER_ID = "block.header.id";
-const std::string BLOCK_HEADER_HEIGHT = "block.header.height";
-const std::string BLOCK_HEADER_PREVIOUS_BLOCK_HASH =
-    "block.header.previousBlockHash";
 const std::string BRANCH = "branch";
 const std::string BRANCH_IDS = "branchIds";
 const std::string BRANCH_PATH = "branchPath";
@@ -45,11 +41,11 @@ const std::string PREVIOUS_ASSEMBLY_ID = "previousAssemblyId";
 const std::string OUTPUTS = "outputs";
 const std::string OUTPUT_ID = "outputId";
 const std::string PII = "pii";
+const std::string PREVIOUS_BLOCK_HASH = "previousBlockHash";
 const std::string RANK = "rank";
 const std::string SCORE = "score";
 const std::string SEED = "seed";
 const std::string TAGGED_BLOCK = "taggedBlock";
-const std::string TRANSACTION_ID = "transaction.id";
 const std::string TRANSACTION = "transaction";
 const std::string TRANSACTIONS = "transactions";
 
@@ -192,22 +188,27 @@ bool LedgerMongodb::init_block0(const messages::config::Database &config) {
 }
 
 void LedgerMongodb::create_indexes() {
-  _blocks.create_index(bss::document{} << BLOCK_HEADER_ID << 1
+  _blocks.create_index(bss::document{} << BLOCK + "." + HEADER + "." + ID << 1
                                        << bss::finalize);
-  _blocks.create_index(bss::document{} << BLOCK_HEADER_HEIGHT << 1
-                                       << bss::finalize);
-  _blocks.create_index(bss::document{} << BLOCK_HEADER_PREVIOUS_BLOCK_HASH << 1
-                                       << bss::finalize);
+  _blocks.create_index(bss::document{} << BLOCK + "." + HEADER + "." + HEIGHT
+                                       << 1 << bss::finalize);
+  _blocks.create_index(bss::document{}
+                       << BLOCK + "." + HEADER + "." + PREVIOUS_BLOCK_HASH << 1
+                       << bss::finalize);
   _blocks.create_index(bss::document{} << BRANCH_PATH + "." + BRANCH_IDS + ".0"
                                        << 1 << bss::finalize);
   _blocks.create_index(bss::document{} << BLOCK + "." + SCORE << 1
                                        << bss::finalize);
-  _transactions.create_index(bss::document{} << TRANSACTION_ID << 1
+  _transactions.create_index(bss::document{} << TRANSACTION + "." + ID << 1
                                              << bss::finalize);
   _transactions.create_index(bss::document{} << BLOCK_ID << 1 << bss::finalize);
-  _transactions.create_index(bss::document{} << TRANSACTION + "." + OUTPUTS +
-                                                    "." + ADDRESS + "." + DATA
-                                             << 1 << bss::finalize);
+  _transactions.create_index(bss::document{}
+                             << TRANSACTION + "." + OUTPUTS + "." + ADDRESS << 1
+                             << bss::finalize);
+  _transactions.create_index(bss::document{}
+                             << TRANSACTION + "." + INPUTS + "." + ID << 1
+                             << TRANSACTION + "." + INPUTS + "." + OUTPUT_ID
+                             << 1 << bss::finalize);
   _pii.create_index(bss::document{} << ADDRESS << 1 << ASSEMBLY_ID << 1
                                     << bss::finalize);
   _pii.create_index(bss::document{} << RANK << 1 << ASSEMBLY_ID << 1
@@ -258,8 +259,9 @@ bool LedgerMongodb::set_main_branch_tip() {
 messages::BlockHeight LedgerMongodb::unsafe_height() const {
   auto query = bss::document{} << BRANCH << MAIN_BRANCH_NAME << bss::finalize;
 
-  auto options = projection(BLOCK_HEADER_HEIGHT);
-  options.sort(bss::document{} << BLOCK_HEADER_HEIGHT << -1 << bss::finalize);
+  auto options = projection(BLOCK + "." + HEADER + "." + HEIGHT);
+  options.sort(bss::document{} << BLOCK + "." + HEADER + "." + HEIGHT << -1
+                               << bss::finalize);
 
   const auto result = _blocks.find_one(std::move(query), options);
   if (!result) {
@@ -327,7 +329,7 @@ bool LedgerMongodb::is_main_branch(
 bool LedgerMongodb::get_block_header(const messages::BlockID &id,
                                      messages::BlockHeader *header) const {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
-  auto query = bss::document{} << BLOCK_HEADER_ID << to_bson(id)
+  auto query = bss::document{} << BLOCK + "." + HEADER + "." + ID << to_bson(id)
                                << bss::finalize;
   auto result =
       _blocks.find_one(std::move(query), projection(BLOCK + "." + HEADER));
@@ -343,7 +345,8 @@ bool LedgerMongodb::get_last_block_header(
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto query = bss::document{} << BRANCH << MAIN_BRANCH_NAME << bss::finalize;
   auto options = projection(BLOCK + "." + HEADER);
-  options.sort(bss::document{} << BLOCK_HEADER_HEIGHT << -1 << bss::finalize);
+  options.sort(bss::document{} << BLOCK + "." + HEADER + "." + HEIGHT << -1
+                               << bss::finalize);
 
   const auto result = _blocks.find_one(std::move(query), options);
   if (!result) {
@@ -359,7 +362,8 @@ bool LedgerMongodb::get_last_block(messages::TaggedBlock *tagged_block,
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto query = bss::document{} << BRANCH << MAIN_BRANCH_NAME << bss::finalize;
   auto options = remove_OID();
-  options.sort(bss::document{} << BLOCK_HEADER_HEIGHT << -1 << bss::finalize);
+  options.sort(bss::document{} << BLOCK + "." + HEADER + "." + HEIGHT << -1
+                               << bss::finalize);
 
   const auto result = _blocks.find_one(std::move(query), options);
   if (!result) {
@@ -377,7 +381,7 @@ int LedgerMongodb::fill_block_transactions(messages::Block *block) const {
   auto query = bss::document{} << BLOCK_ID << to_bson(block->header().id())
                                << bss::finalize;
   auto options = remove_OID();
-  options.sort(bss::document{} << TRANSACTION_ID << 1 << bss::finalize);
+  options.sort(bss::document{} << TRANSACTION + "." + ID << 1 << bss::finalize);
   auto cursor = _transactions.find(std::move(query), options);
 
   int num_transactions = 0;
@@ -398,7 +402,7 @@ int LedgerMongodb::fill_block_transactions(messages::Block *block) const {
 bool LedgerMongodb::unsafe_get_block(const messages::BlockID &id,
                                      messages::TaggedBlock *tagged_block,
                                      bool include_transactions) const {
-  auto query = bss::document{} << BLOCK_HEADER_ID << to_bson(id)
+  auto query = bss::document{} << BLOCK + "." + HEADER + "." + ID << to_bson(id)
                                << bss::finalize;
   auto result = _blocks.find_one(std::move(query), remove_OID());
   if (!result) {
@@ -425,7 +429,7 @@ bool LedgerMongodb::get_block(const messages::BlockID &id,
                               messages::Block *block,
                               bool include_transactions) const {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
-  auto query = bss::document{} << BLOCK_HEADER_ID << to_bson(id)
+  auto query = bss::document{} << BLOCK + "." + HEADER + "." + ID << to_bson(id)
                                << bss::finalize;
   auto result = _blocks.find_one(std::move(query), projection(BLOCK));
   if (!result) {
@@ -441,9 +445,10 @@ bool LedgerMongodb::unsafe_get_block_by_previd(
     bool include_transactions) const {
   // Look for a block in the main branch.
   // There may be several blocks with the same previd in forks.
-  auto query = bss::document{} << BRANCH << MAIN_BRANCH_NAME
-                               << BLOCK_HEADER_PREVIOUS_BLOCK_HASH
-                               << to_bson(previd) << bss::finalize;
+  auto query = bss::document{}
+               << BRANCH << MAIN_BRANCH_NAME
+               << BLOCK + "." + HEADER + "." + PREVIOUS_BLOCK_HASH
+               << to_bson(previd) << bss::finalize;
 
   const auto result = _blocks.find_one(std::move(query), projection(BLOCK));
 
@@ -469,8 +474,9 @@ bool LedgerMongodb::unsafe_get_blocks_by_previd(
     const messages::BlockID &previd,
     std::vector<messages::TaggedBlock> *tagged_blocks,
     bool include_transactions) const {
-  auto query = bss::document{} << BLOCK_HEADER_PREVIOUS_BLOCK_HASH
-                               << to_bson(previd) << bss::finalize;
+  auto query = bss::document{}
+               << BLOCK + "." + HEADER + "." + PREVIOUS_BLOCK_HASH
+               << to_bson(previd) << bss::finalize;
 
   auto bson_blocks = _blocks.find(std::move(query), remove_OID());
 
@@ -505,7 +511,7 @@ bool LedgerMongodb::unsafe_get_block(const messages::BlockHeight height,
                                      messages::Block *block,
                                      bool include_transactions) const {
   auto query = bss::document{} << BRANCH << MAIN_BRANCH_NAME
-                               << BLOCK_HEADER_HEIGHT << height
+                               << BLOCK + "." + HEADER + "." + HEIGHT << height
                                << bss::finalize;
 
   const auto result = _blocks.find_one(std::move(query), projection(BLOCK));
@@ -531,7 +537,7 @@ bool LedgerMongodb::unsafe_get_block(const messages::BlockHeight height,
                                      messages::TaggedBlock *tagged_block,
                                      bool include_transactions) const {
   auto query = bss::document{} << BRANCH << MAIN_BRANCH_NAME
-                               << BLOCK_HEADER_HEIGHT << height
+                               << BLOCK + "." + HEADER + "." + HEIGHT << height
                                << bss::finalize;
 
   const auto result = _blocks.find_one(std::move(query), remove_OID());
@@ -572,7 +578,7 @@ bool LedgerMongodb::unsafe_insert_block(messages::TaggedBlock *tagged_block) {
     tagged_transaction.mutable_block_id()->CopyFrom(header.id());
     bson_transactions.push_back(to_bson(tagged_transaction));
     if (tagged_block->branch() == messages::Branch::MAIN) {
-      auto query = bss::document{} << TRANSACTION_ID
+      auto query = bss::document{} << TRANSACTION + "." + ID
                                    << to_bson(transaction.id()) << BLOCK_ID
                                    << bsoncxx::types::b_null{} << bss::finalize;
       _transactions.delete_one(std::move(query));
@@ -608,8 +614,8 @@ bool LedgerMongodb::insert_block(messages::TaggedBlock *tagged_block) {
 
 bool LedgerMongodb::delete_block(const messages::Hash &id) {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
-  auto delete_block_query = bss::document{} << BLOCK_HEADER_ID << to_bson(id)
-                                            << bss::finalize;
+  auto delete_block_query = bss::document{} << BLOCK + "." + HEADER + "." + ID
+                                            << to_bson(id) << bss::finalize;
   auto result = _blocks.delete_one(std::move(delete_block_query));
   bool did_delete = result && result->deleted_count() > 0;
   if (did_delete) {
@@ -663,8 +669,8 @@ bool LedgerMongodb::get_transaction(const messages::Hash &id,
   // TODO this will return a bad height if the transaction is in 2 blocks
   // but is the height really needed???
   std::lock_guard<std::mutex> lock(_ledger_mutex);
-  auto query_transaction = bss::document{} << TRANSACTION_ID << to_bson(id)
-                                           << bss::finalize;
+  auto query_transaction = bss::document{} << TRANSACTION + "." + ID
+                                           << to_bson(id) << bss::finalize;
 
   auto bson_transactions =
       _transactions.find(std::move(query_transaction), remove_OID());
@@ -687,8 +693,9 @@ bool LedgerMongodb::get_transaction(const messages::Hash &id,
 std::size_t LedgerMongodb::total_nb_transactions() const {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto lookup = bss::document{} << FROM << BLOCKS << FOREIGN_FIELD
-                                << BLOCK_HEADER_ID << LOCAL_FIELD << BLOCK_ID
-                                << AS << TAGGED_BLOCK << bss::finalize;
+                                << BLOCK + "." + HEADER + "." + ID
+                                << LOCAL_FIELD << BLOCK_ID << AS << TAGGED_BLOCK
+                                << bss::finalize;
 
   auto match = bss::document{} << TAGGED_BLOCK + "." + BRANCH << MAIN
                                << bss::finalize;
@@ -722,17 +729,41 @@ bool LedgerMongodb::for_each(const Filter &filter,
     return false;
   }
 
+  auto query2 = bss::document{};
+
+  if (filter.output_address()) {
+    const auto bson = to_bson(*filter.output_address());
+    query2 << TRANSACTION + "." + OUTPUTS + "." + ADDRESS << bson;
+  }
+
+  if (filter.transaction_id()) {
+    query2 << TRANSACTION + "." + ID << to_bson(*filter.transaction_id());
+  }
+
+  if (filter.input_transaction_id() && filter.output_id()) {
+    query2 << TRANSACTION + "." + INPUTS << bss::open_document << "$elemMatch"
+           << bss::open_document << ID
+           << to_bson(*filter.input_transaction_id()) << OUTPUT_ID
+           << *filter.output_id() << bss::close_document << bss::close_document;
+  } else if (filter.input_transaction_id()) {
+    query2 << TRANSACTIONS + "." + INPUTS + "." + ID
+           << to_bson(*filter.input_transaction_id());
+  } else if (filter.output_id()) {
+    query2 << TRANSACTIONS + "." + INPUTS + "." + OUTPUT_ID
+           << *filter.output_id();
+  }
+
+  // LOG_DEBUG << bsoncxx::to_json(query2 << bss::finalize);
+
   auto query = bss::document{};
 
   if (filter.output_address()) {
     const auto bson = to_bson(*filter.output_address());
-    query << TRANSACTION + "." + OUTPUTS << bss::open_document << "$elemMatch"
-          << bss::open_document << ADDRESS << bson << bss::close_document
-          << bss::close_document;
+    query << TRANSACTION + "." + OUTPUTS + "." + ADDRESS << bson;
   }
 
   if (filter.transaction_id()) {
-    query << TRANSACTION_ID << to_bson(*filter.transaction_id());
+    query << TRANSACTION + "." + ID << to_bson(*filter.transaction_id());
   }
 
   if (filter.input_transaction_id() && filter.output_id()) {
@@ -829,8 +860,9 @@ bool LedgerMongodb::add_to_transaction_pool(
 bool LedgerMongodb::delete_transaction(const messages::Hash &id) {
   // Delete a transaction in the transaction pool
   std::lock_guard<std::mutex> lock(_ledger_mutex);
-  auto query = bss::document{} << TRANSACTION_ID << to_bson(id) << BLOCK_ID
-                               << bsoncxx::types::b_null{} << bss::finalize;
+  auto query = bss::document{} << TRANSACTION + "." + ID << to_bson(id)
+                               << BLOCK_ID << bsoncxx::types::b_null{}
+                               << bss::finalize;
   auto result = _transactions.delete_many(std::move(query));
   bool did_delete = result && result->deleted_count();
   if (did_delete) {
@@ -849,7 +881,7 @@ std::size_t LedgerMongodb::get_transaction_pool(messages::Block *block) {
                                << bss::finalize;
 
   auto options = projection(TRANSACTION);
-  options.sort(bss::document{} << TRANSACTION_ID << 1 << bss::finalize);
+  options.sort(bss::document{} << TRANSACTION + "." + ID << 1 << bss::finalize);
   auto cursor = _transactions.find(std::move(query), options);
 
   int num_transactions = 0;
@@ -912,8 +944,8 @@ messages::BranchPath LedgerMongodb::first_child(
 bool LedgerMongodb::set_branch_path(const messages::BlockHeader &block_header,
                                     const messages::BranchPath &branch_path) {
   // Set the branch path of the given block
-  auto filter = bss::document{} << BLOCK_HEADER_ID << to_bson(block_header.id())
-                                << bss::finalize;
+  auto filter = bss::document{} << BLOCK + "." + HEADER + "." + ID
+                                << to_bson(block_header.id()) << bss::finalize;
   auto update = bss::document{} << $SET << bss::open_document << BRANCH_PATH
                                 << to_bson(branch_path) << BRANCH
                                 << UNVERIFIED_BRANCH_NAME << bss::close_document
@@ -976,7 +1008,8 @@ bool LedgerMongodb::get_unverified_blocks(
   auto query = bss::document{} << BRANCH << UNVERIFIED_BRANCH_NAME
                                << bss::finalize;
   auto options = remove_OID();
-  options.sort(bss::document{} << BLOCK_HEADER_HEIGHT << 1 << bss::finalize);
+  options.sort(bss::document{} << BLOCK + "." + HEADER + "." + HEIGHT << 1
+                               << bss::finalize);
   auto result = _blocks.find(std::move(query), options);
   for (const auto &bson_block : result) {
     auto &tagged_block = tagged_blocks->emplace_back();
@@ -991,8 +1024,8 @@ bool LedgerMongodb::set_block_verified(
     const messages::Hash previous_assembly_id) {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   messages::TaggedBlock previous;
-  auto filter = bss::document{} << BLOCK_HEADER_ID << to_bson(id)
-                                << bss::finalize;
+  auto filter = bss::document{} << BLOCK + "." + HEADER + "." + ID
+                                << to_bson(id) << bss::finalize;
   auto update = bss::document{}
                 << $SET << bss::open_document << SCORE << score << BRANCH
                 << FORK_BRANCH_NAME << PREVIOUS_ASSEMBLY_ID
@@ -1004,8 +1037,8 @@ bool LedgerMongodb::set_block_verified(
 
 bool LedgerMongodb::update_branch_tag(const messages::Hash &id,
                                       const messages::Branch &branch) {
-  auto filter = bss::document{} << BLOCK_HEADER_ID << to_bson(id)
-                                << bss::finalize;
+  auto filter = bss::document{} << BLOCK + "." + HEADER + "." + ID
+                                << to_bson(id) << bss::finalize;
   auto update = bss::document{} << $SET << bss::open_document << BRANCH
                                 << messages::Branch_Name(branch)
                                 << bss::close_document << bss::finalize;
@@ -1231,8 +1264,8 @@ bool LedgerMongodb::set_previous_assembly_id(
     const messages::Hash &block_id,
     const messages::Hash &previous_assembly_id) {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
-  auto filter = bss::document{} << BLOCK_HEADER_ID << to_bson(block_id)
-                                << bss::finalize;
+  auto filter = bss::document{} << BLOCK + "." + HEADER + "." + ID
+                                << to_bson(block_id) << bss::finalize;
   auto update = bss::document{}
                 << $SET << bss::open_document << PREVIOUS_ASSEMBLY_ID
                 << to_bson(previous_assembly_id) << bss::close_document

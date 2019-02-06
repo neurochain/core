@@ -50,9 +50,10 @@ class RealtimeConsensus : public testing::Test {
   }
 
   void test_miner_thread() {
-    std::this_thread::sleep_for(
-        (std::chrono::seconds)consensus->config.blocks_per_assembly *
-        consensus->config.block_period);
+    // Sleep for 1 more second because the block0 is 1 second in the future
+    std::this_thread::sleep_for((std::chrono::seconds)(
+        consensus->config.blocks_per_assembly * consensus->config.block_period +
+        1));
     messages::TaggedBlock tagged_block;
     ASSERT_TRUE(ledger->get_last_block(&tagged_block, false));
     ASSERT_GT(tagged_block.block().header().height(),

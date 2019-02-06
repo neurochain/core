@@ -10,7 +10,7 @@ namespace tooling {
 consensus::Config config{
     5,                               // blocks_per_assembly
     10,                              // members_per_assembly
-    1,                               // block_period
+    3,                               // block_period
     100,                             // block_reward
     128000,                          // max_block_size
     std::chrono::seconds(1),         // update_heights_sleep
@@ -46,9 +46,9 @@ Simulator Simulator::RealtimeSimulator(const std::string &db_url,
                                        const std::string &db_name,
                                        const int nb_keys,
                                        const messages::NCCAmount ncc_block0) {
-  // Put the block0 2 seconds in the future so that we have time to create the
+  // Put the block0 1 seconds in the future so that we have time to create the
   // database and still be ready to write block 1
-  return Simulator(db_url, db_name, nb_keys, ncc_block0, 2);
+  return Simulator(db_url, db_name, nb_keys, ncc_block0, 1);
 }
 
 Simulator Simulator::StaticSimulator(const std::string &db_url,
@@ -58,22 +58,11 @@ Simulator Simulator::StaticSimulator(const std::string &db_url,
   return Simulator(db_url, db_name, nb_keys, ncc_block0, -100000);
 }
 
-messages::Transaction Simulator::send_ncc(const crypto::EccPriv &from_key_priv,
-                                          const messages::Address &to_address,
-                                          float ncc_ratio) {
-  const auto from_address = messages::Address(from_key_priv.make_public_key());
-  const auto balance = ledger->balance(from_address);
-  auto amount = messages::NCCAmount(ncc_ratio * balance.value());
-  auto transaction =
-      ledger->build_transaction(to_address, amount, from_key_priv);
-  return transaction;
-}
-
 messages::Transaction Simulator::random_transaction() {
   int sender_index = rand() % keys.size();
   int recipient_index = rand() % keys.size();
-  return send_ncc(keys[sender_index].private_key(), addresses[recipient_index],
-                  RATIO_TO_SEND);
+  return ledger->send_ncc(keys[sender_index].private_key(),
+                          addresses[recipient_index], RATIO_TO_SEND);
 }
 
 messages::Block Simulator::new_block(int nb_transactions,
