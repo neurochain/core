@@ -151,16 +151,37 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
    */
   const auto transactions_route = [&](Onion::Request &request,
                                       Onion::Response &response) {
-    std::string post_data =
-        onion_block_data(onion_request_get_data(request.c_handler()));
-    messages::PublicKey publickey;
-    messages::from_json(post_data, &publickey);
-    crypto::EccPub eccpubkey;
-    eccpubkey.load(publickey);
-    messages::Hasher address(eccpubkey);
-    std::cout << address << std::endl;
-    const auto transactions = _ledger->list_transactions(address);
-    response << messages::to_json(transactions);
+    onion_response_set_header(response.c_handler(),
+                              "Access-Control-Allow-Origin", "*");
+    onion_response_set_header(response.c_handler(),
+                              "Access-Control-Allow-Credentials", "true");
+    onion_response_set_header(
+        response.c_handler(), "Access-Control-Allow-Headers",
+        "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, "
+        "Content-Type, Access-Control-Request-Method, "
+        "Access-Control-Request-Headers");
+    onion_response_set_header(response.c_handler(),
+                              "Access-Control-Allow-Method", "OPTIONS,POST");
+
+    if ((onion_request_get_flags(request.c_handler()) & OR_OPTIONS) ==
+        OR_OPTIONS) {
+      response << "done";
+      return OCS_PROCESSED;
+    }
+    if ((onion_request_get_flags(request.c_handler()) & OR_POST) == OR_POST) {
+      std::string post_data =
+          onion_block_data(onion_request_get_data(request.c_handler()));
+      messages::PublicKey publickey;
+      messages::from_json(post_data, &publickey);
+      crypto::EccPub eccpubkey;
+      eccpubkey.load(publickey);
+      messages::Hasher address(eccpubkey);
+      std::cout << address << std::endl;
+      const auto transactions = _ledger->list_transactions(address);
+      response << messages::to_json(transactions);
+      return OCS_PROCESSED;
+    }
+    response << "No Allow";
     return OCS_PROCESSED;
   };
 
@@ -170,39 +191,85 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
    * */
   const auto build_raw_transactions = [&](Onion::Request &request,
                                           Onion::Response &response) {
-    std::string post_data =
-        onion_block_data(onion_request_get_data(request.c_handler()));
-    messages::BuildTransaction buildtransaction;
-    messages::from_json(post_data, &buildtransaction);
-    crypto::EccPub eccpubkey;
-    eccpubkey.load(buildtransaction.publickey());
-    messages::Hasher address(eccpubkey);
-    _ledger->add_change(buildtransaction.mutable_transaction(), address);
-    Buffer transaction_serialized;
-    messages::to_buffer(buildtransaction, &transaction_serialized);
-    std::stringstream ss;
-    ss << transaction_serialized;
-    buildtransaction.set_raw_transaction(ss.str());
-    auto *signature = buildtransaction.mutable_transaction()->add_signatures();
-    signature->mutable_signature()->set_type(messages::Hash::SHA256);
-    signature->mutable_signature()->set_data("");
-    messages::KeyPub keypub;
-    eccpubkey.save(&keypub);
-    signature->mutable_key_pub()->CopyFrom(keypub);
-    response << buildtransaction;
+    onion_response_set_header(response.c_handler(),
+                              "Access-Control-Allow-Origin", "*");
+    onion_response_set_header(response.c_handler(),
+                              "Access-Control-Allow-Credentials", "true");
+    onion_response_set_header(
+        response.c_handler(), "Access-Control-Allow-Headers",
+        "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, "
+        "Content-Type, Access-Control-Request-Method, "
+        "Access-Control-Request-Headers");
+    onion_response_set_header(response.c_handler(),
+                              "Access-Control-Allow-Method", "OPTIONS,POST");
+
+    if ((onion_request_get_flags(request.c_handler()) & OR_OPTIONS) ==
+        OR_OPTIONS) {
+      response << "done";
+      return OCS_PROCESSED;
+    }
+
+    if ((onion_request_get_flags(request.c_handler()) & OR_POST) == OR_POST) {
+      std::string post_data =
+          onion_block_data(onion_request_get_data(request.c_handler()));
+      messages::BuildTransaction buildtransaction;
+      messages::from_json(post_data, &buildtransaction);
+      crypto::EccPub eccpubkey;
+      eccpubkey.load(buildtransaction.publickey());
+      messages::Hasher address(eccpubkey);
+      _ledger->add_change(buildtransaction.mutable_transaction(), address);
+      Buffer transaction_serialized;
+      messages::to_buffer(buildtransaction, &transaction_serialized);
+      std::stringstream ss;
+      ss << transaction_serialized;
+      buildtransaction.set_raw_transaction(ss.str());
+      auto *signature =
+          buildtransaction.mutable_transaction()->add_signatures();
+      signature->mutable_signature()->set_type(messages::Hash::SHA256);
+      signature->mutable_signature()->set_data("");
+      messages::KeyPub keypub;
+      eccpubkey.save(&keypub);
+      signature->mutable_key_pub()->CopyFrom(keypub);
+      response << buildtransaction;
+      return OCS_PROCESSED;
+    }
+    response << "No Allow";
     return OCS_PROCESSED;
   };
 
   const auto get_addr_from_x_y = [&](Onion::Request &request,
                                      Onion::Response &response) {
-    std::string post_data =
-        onion_block_data(onion_request_get_data(request.c_handler()));
-    messages::PublicKey publickey;
-    messages::from_json(post_data, &publickey);
-    crypto::EccPub eccpubkey;
-    eccpubkey.load(publickey);
-    messages::Hasher address(eccpubkey);
-    response << address;
+    onion_response_set_header(response.c_handler(),
+                              "Access-Control-Allow-Origin", "*");
+    onion_response_set_header(response.c_handler(),
+                              "Access-Control-Allow-Credentials", "true");
+    onion_response_set_header(
+        response.c_handler(), "Access-Control-Allow-Headers",
+        "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, "
+        "Content-Type, Access-Control-Request-Method, "
+        "Access-Control-Request-Headers");
+    onion_response_set_header(response.c_handler(),
+                              "Access-Control-Allow-Method", "OPTIONS,POST");
+
+    if ((onion_request_get_flags(request.c_handler()) & OR_OPTIONS) ==
+        OR_OPTIONS) {
+      response << "done";
+      return OCS_PROCESSED;
+    }
+
+    if ((onion_request_get_flags(request.c_handler()) & OR_POST) == OR_POST) {
+      std::string post_data =
+          onion_block_data(onion_request_get_data(request.c_handler()));
+      messages::PublicKey publickey;
+      messages::from_json(post_data, &publickey);
+      crypto::EccPub eccpubkey;
+      eccpubkey.load(publickey);
+      messages::Hasher address(eccpubkey);
+      response << address;
+      return OCS_PROCESSED;
+    }
+
+    response << "No Allow";
     return OCS_PROCESSED;
   };
   /**
