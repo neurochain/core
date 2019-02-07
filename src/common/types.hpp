@@ -4,6 +4,7 @@
 #include <boost/asio.hpp>
 #include <boost/filesystem/path.hpp>
 #include <cassert>
+#include <chrono>
 #include <cstdint>
 #include <vector>
 
@@ -50,6 +51,9 @@ const int32_t MAX_MESSAGE_SIZE = 256 * 1024;
 // This is used both in the ledger and the consensus
 // we might change double implementation later
 using Double = double;
+
+// Useful debug utilities
+using Timer = std::chrono::high_resolution_clock;
 
 namespace crypto {
 namespace keys {

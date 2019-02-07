@@ -25,26 +25,27 @@ class Ledger {
   class Filter {
    private:
     std::optional<messages::Address> _output_address;
-    std::optional<messages::Hash> _block_id;
-    std::optional<messages::Hash> _input_transaction_id;
-    std::optional<messages::Hash> _transaction_id;
+    std::optional<messages::BlockID> _block_id;
+    std::optional<messages::TransactionID> _input_transaction_id;
+    std::optional<messages::TransactionID> _transaction_id;
     std::optional<int32_t> _output_id;
 
    public:
-    void input_transaction_id(const messages::Hash &transaction_id) {
+    void input_transaction_id(const messages::TransactionID &transaction_id) {
       _input_transaction_id =
-          std::make_optional<messages::Hash>(transaction_id);
+          std::make_optional<messages::TransactionID>(transaction_id);
     }
 
-    std::optional<const messages::Hash> input_transaction_id() const {
+    std::optional<const messages::TransactionID> input_transaction_id() const {
       return _input_transaction_id;
     }
 
-    void transaction_id(const messages::Hash &transaction_id) {
-      _transaction_id = std::make_optional<messages::Hash>(transaction_id);
+    void transaction_id(const messages::TransactionID &transaction_id) {
+      _transaction_id =
+          std::make_optional<messages::TransactionID>(transaction_id);
     }
 
-    std::optional<const messages::Hash> transaction_id() const {
+    std::optional<const messages::TransactionID> transaction_id() const {
       return _transaction_id;
     }
 
@@ -60,10 +61,12 @@ class Ledger {
       return _output_address;
     }
 
-    void block_id(const messages::Hash &id) {
-      _block_id = std::make_optional<messages::Hash>(id);
+    void block_id(const messages::BlockID &id) {
+      _block_id = std::make_optional<messages::BlockID>(id);
     }
-    std::optional<const messages::Hash> block_id() const { return _block_id; }
+    std::optional<const messages::BlockID> block_id() const {
+      return _block_id;
+    }
   };
 
  private:
@@ -98,18 +101,18 @@ class Ledger {
                          bool include_transactions = true) const = 0;
   virtual bool insert_block(messages::TaggedBlock *tagged_block) = 0;
   virtual bool insert_block(messages::Block *block) = 0;
-  virtual bool delete_block(const messages::Hash &id) = 0;
-  virtual bool delete_block_and_children(const messages::Hash &id) = 0;
+  virtual bool delete_block(const messages::BlockID &id) = 0;
+  virtual bool delete_block_and_children(const messages::BlockID &id) = 0;
   virtual bool for_each(const Filter &filter, const messages::TaggedBlock &tip,
                         bool include_transaction_pool,
                         Functor functor) const = 0;
   virtual bool for_each(const Filter &filter, Functor functor) const = 0;
-  virtual bool get_transaction(const messages::Hash &id,
+  virtual bool get_transaction(const messages::TransactionID &id,
                                messages::Transaction *transaction) const = 0;
-  virtual bool get_transaction(const messages::Hash &id,
+  virtual bool get_transaction(const messages::TransactionID &id,
                                messages::Transaction *transaction,
                                messages::BlockHeight *blockheight) const = 0;
-  virtual bool get_transaction(const messages::Hash &id,
+  virtual bool get_transaction(const messages::TransactionID &id,
                                messages::TaggedTransaction *tagged_transaction,
                                const messages::TaggedBlock &tip,
                                bool include_transaction_pool) const = 0;
@@ -117,7 +120,7 @@ class Ledger {
       const messages::TaggedTransaction &tagged_transaction) = 0;
   virtual bool add_to_transaction_pool(
       const messages::Transaction &transaction) = 0;
-  virtual bool delete_transaction(const messages::Hash &id) = 0;
+  virtual bool delete_transaction(const messages::TransactionID &id) = 0;
   virtual std::size_t get_transaction_pool(messages::Block *block) = 0;
 
   // virtual bool get_blocks(int start, int size,
@@ -138,57 +141,59 @@ class Ledger {
       std::vector<messages::TaggedBlock> *tagged_blocks) const = 0;
 
   virtual bool set_block_verified(
-      const messages::Hash &id, const messages::BlockScore &score,
-      const messages::Hash previous_assembly_id) = 0;
+      const messages::BlockID &id, const messages::BlockScore &score,
+      const messages::AssemblyID previous_assembly_id) = 0;
 
   virtual bool update_main_branch() = 0;
 
   virtual bool get_pii(const messages::Address &address,
-                       const messages::Hash &assembly_id,
+                       const messages::AssemblyID &assembly_id,
                        Double *score) const = 0;
 
   virtual bool save_pii(const messages::Address &address,
-                        const messages::Hash &assembly_id,
+                        const messages::AssemblyID &assembly_id,
                         const Double &score) = 0;
 
-  virtual bool get_assembly_piis(const messages::Hash &assembly_id,
+  virtual bool get_assembly_piis(const messages::AssemblyID &assembly_id,
                                  std::vector<messages::Pii> *piis) = 0;
 
-  virtual bool get_assembly(const messages::Hash &assembly_id,
+  virtual bool get_assembly(const messages::AssemblyID &assembly_id,
                             messages::Assembly *assembly) const = 0;
 
   virtual bool add_assembly(const messages::TaggedBlock &tagged_block,
                             const int32_t height) = 0;
 
   virtual bool get_pii(const messages::Address &address,
-                       const messages::Hash &assembly_id,
+                       const messages::AssemblyID &assembly_id,
                        messages::Pii *pii) const = 0;
 
   virtual bool set_pii(const messages::Pii &pii) = 0;
 
   virtual bool set_previous_assembly_id(
-      const messages::Hash &block_id,
-      const messages::Hash &previous_assembly_id) = 0;
+      const messages::BlockID &block_id,
+      const messages::AssemblyID &previous_assembly_id) = 0;
 
-  virtual bool get_next_assembly(const messages::Hash &assembly_id,
+  virtual bool get_next_assembly(const messages::AssemblyID &assembly_id,
                                  messages::Assembly *assembly) const = 0;
 
   virtual bool get_assemblies_to_compute(
       std::vector<messages::Assembly> *assemblies) const = 0;
 
-  virtual bool unsafe_get_assembly(const messages::Hash &assembly_id,
+  virtual bool unsafe_get_assembly(const messages::AssemblyID &assembly_id,
                                    messages::Assembly *assembly) const = 0;
 
-  virtual bool get_block_writer(const messages::Hash &assembly_id,
+  virtual bool get_block_writer(const messages::AssemblyID &assembly_id,
                                 int32_t address_rank,
                                 messages::Address *address) const = 0;
 
-  virtual bool set_nb_addresses(const messages::Hash &assembly_id,
+  virtual bool set_nb_addresses(const messages::AssemblyID &assembly_id,
                                 int32_t nb_addresses) = 0;
 
-  virtual bool set_seed(const messages::Hash &assembly_id, int32_t seed) = 0;
+  virtual bool set_seed(const messages::AssemblyID &assembly_id,
+                        int32_t seed) = 0;
 
-  virtual bool set_finished_computation(const messages::Hash &assembly_id) = 0;
+  virtual bool set_finished_computation(
+      const messages::AssemblyID &assembly_id) = 0;
 
   // helpers
 
@@ -211,15 +216,15 @@ class Ledger {
     return transactions;
   }
 
-  bool is_unspent_output(const messages::Hash &transaction_id,
+  bool is_unspent_output(const messages::TransactionID &transaction_id,
                          int output_id) const {
     bool include_transaction_pool = true;
     return is_unspent_output(transaction_id, output_id, get_main_branch_tip(),
                              include_transaction_pool);
   }
 
-  bool is_unspent_output(const messages::Hash &transaction_id, int output_id,
-                         const messages::TaggedBlock &tip,
+  bool is_unspent_output(const messages::TransactionID &transaction_id,
+                         int output_id, const messages::TaggedBlock &tip,
                          bool include_transaction_pool) const {
     Filter filter;
     filter.input_transaction_id(transaction_id);
@@ -235,7 +240,7 @@ class Ledger {
   }
 
   std::vector<messages::Output> get_outputs_for_address(
-      const messages::Hasher &transaction_id,
+      const messages::TransactionID &transaction_id,
       const messages::Address &address) const {
     messages::Transaction transaction;
     get_transaction(transaction_id, &transaction);
@@ -269,7 +274,7 @@ class Ledger {
     get_block(last_height, &block);
     auto blocks = std::vector<messages::Block>{block};
     for (uint32_t i = 0; i < nb_blocks - 1; i++) {
-      messages::Hash previous_hash = block.header().previous_block_hash();
+      messages::BlockID previous_hash = block.header().previous_block_hash();
       if (previous_hash.data().size() == 0) {
         break;
       }
@@ -350,6 +355,16 @@ class Ledger {
   }
 
   void add_change(messages::Transaction *transaction,
+                  const messages::Address &change_address,
+                  uint64_t change_amount) const {
+    if (change_amount) {
+      auto change = transaction->add_outputs();
+      change->mutable_value()->set_value(change_amount);
+      change->mutable_address()->CopyFrom(change_address);
+    }
+  }
+
+  void add_change(messages::Transaction *transaction,
                   const messages::Address &change_address) const {
     uint64_t inputs_ncc = 0;
     uint64_t outputs_ncc = 0;
@@ -367,15 +382,11 @@ class Ledger {
       inputs_ncc += output.value().value();
     }
 
-    if (outputs_ncc < inputs_ncc) {
-      auto change = transaction->add_outputs();
-      change->mutable_value()->set_value(inputs_ncc - outputs_ncc);
-      change->mutable_address()->CopyFrom(change_address);
-    }
+    add_change(transaction, change_address, inputs_ncc - outputs_ncc);
   }
 
   std::vector<messages::Input> build_inputs(
-      const std::vector<messages::Hasher> &unspent_transactions_ids,
+      const std::vector<messages::TransactionID> &unspent_transactions_ids,
       const messages::Address &address) const {
     std::vector<messages::Input> inputs;
 
@@ -416,7 +427,7 @@ class Ledger {
   }
 
   messages::Transaction build_transaction(
-      const std::vector<messages::Hasher> &unspent_transactions_ids,
+      const std::vector<messages::TransactionID> &unspent_transactions_ids,
       const std::vector<messages::Output> &outputs,
       const crypto::EccPriv &key_priv,
       const std::optional<const messages::NCCAmount> &fees = {}) const {
@@ -432,7 +443,8 @@ class Ledger {
       const std::vector<messages::Input> &inputs,
       const std::vector<messages::Output> &outputs,
       const crypto::EccPriv &key_priv,
-      const std::optional<messages::NCCAmount> &fees = {}) const {
+      const std::optional<messages::NCCAmount> &fees = {},
+      bool add_change_output = true) const {
     messages::Transaction transaction;
 
     // Build keys
@@ -453,7 +465,9 @@ class Ledger {
       transaction.mutable_fees()->CopyFrom(fees.value());
     }
 
-    add_change(&transaction, address);
+    if (add_change_output) {
+      add_change(&transaction, address);
+    }
 
     // Sign the transaction
     crypto::sign(keys, &transaction);
@@ -472,7 +486,7 @@ class Ledger {
     std::vector<messages::UnspentTransaction> unspent_transactions =
         list_unspent_transactions(bot_address);
 
-    std::vector<messages::Hasher> unspent_transactions_ids;
+    std::vector<messages::TransactionID> unspent_transactions_ids;
     for (const auto &unspent_transaction : unspent_transactions) {
       auto &unspent_transaction_id = unspent_transactions_ids.emplace_back();
       unspent_transaction_id.CopyFrom(unspent_transaction.transaction_id());
@@ -495,6 +509,7 @@ class Ledger {
       const messages::Address &recipient_address, const float ratio_to_send,
       const std::optional<messages::NCCAmount> &fees = {}) const {
     auto sender_address = messages::Address(sender_key_priv.make_public_key());
+
     std::vector<messages::Transaction> unspent_outputs =
         list_unspent_outputs(sender_address);
 
@@ -509,10 +524,21 @@ class Ledger {
     std::vector<messages::Output> outputs;
     auto &output = outputs.emplace_back();
     output.mutable_address()->CopyFrom(recipient_address);
-    output.mutable_value()->CopyFrom(
-        messages::NCCAmount((int32_t)(inputs_total * ratio_to_send)));
+    uint64_t amount_to_send = (uint64_t)(inputs_total * ratio_to_send);
+    output.mutable_value()->CopyFrom(messages::NCCAmount(amount_to_send));
     auto inputs = build_inputs(unspent_outputs);
-    return build_transaction(inputs, outputs, sender_key_priv, fees);
+    if (inputs_total - amount_to_send > 0) {
+      auto &change = outputs.emplace_back();
+      change.mutable_address()->CopyFrom(sender_address);
+      change.mutable_value()->CopyFrom(
+          messages::NCCAmount(inputs_total - amount_to_send));
+    }
+
+    bool add_change_output = false;
+
+    auto result = build_transaction(inputs, outputs, sender_key_priv, fees,
+                                    add_change_output);
+    return result;
   }
 
   virtual ~Ledger() {}

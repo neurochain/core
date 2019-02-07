@@ -10,7 +10,7 @@ namespace tooling {
 consensus::Config config{
     5,                               // blocks_per_assembly
     10,                              // members_per_assembly
-    3,                               // block_period
+    1,                               // block_period
     100,                             // block_reward
     128000,                          // max_block_size
     std::chrono::seconds(1),         // update_heights_sleep

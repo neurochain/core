@@ -93,7 +93,7 @@ class Consensus : public testing::Test {
   }
 
   void test_compute_assembly_pii() {
-    consensus->_stop_compute_pii = false;
+    consensus->_stop_compute_pii = true;
     std::vector<messages::Assembly> assemblies;
     simulator.run(consensus->config.blocks_per_assembly, 10);
     ASSERT_TRUE(ledger->get_assemblies_to_compute(&assemblies));

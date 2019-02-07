@@ -15,7 +15,7 @@ class RealtimeSimulator : public testing::Test {
   const std::string db_url = "mongodb://mongo:27017";
   const std::string db_name = "test_simulator";
   const messages::NCCAmount ncc_block0 = messages::NCCAmount(100000);
-  const int nb_keys = 10;
+  const int nb_keys = 100;
 
  public:
   Simulator simulator;
@@ -32,15 +32,23 @@ class RealtimeSimulator : public testing::Test {
     messages::Block block0;
     ASSERT_TRUE(ledger->get_block(0, &block0));
     uint64_t block0_timestamp = block0.header().timestamp().data();
-    const auto nb_transactions = 10;
-    for (auto i = 1; i < 5 * consensus->config.blocks_per_assembly; i++) {
+    const auto nb_transactions = 3;
+    for (auto i = 1; i < 3 * consensus->config.blocks_per_assembly; i++) {
       for (auto j = 0; j < nb_transactions; j++) {
         int sender_index = rand() % nb_keys;
         int recipient_index = rand() % nb_keys;
+
+        auto t0 = Timer::now();
         auto transaction =
             ledger->send_ncc(simulator.keys[sender_index].private_key(),
                              simulator.addresses[recipient_index], 0.5);
+        LOG_DEBUG << "SEND_NCC TOOK " << (Timer::now() - t0).count() / 1E6
+                  << " MS";
+
+        auto t1 = Timer::now();
         ASSERT_TRUE(consensus->add_transaction(transaction));
+        LOG_DEBUG << "ADD_TRANSACTION TOOK "
+                  << (Timer::now() - t1).count() / 1E6 << " MS";
       }
       milliseconds sleep_time =
           (milliseconds)(
@@ -52,7 +60,10 @@ class RealtimeSimulator : public testing::Test {
       std::this_thread::sleep_for(sleep_time);
       messages::TaggedBlock tagged_block;
 
+      auto t2 = Timer::now();
       ASSERT_TRUE(simulator.ledger->get_last_block(&tagged_block));
+      LOG_DEBUG << "GET LAST BLOCK TOOK " << (Timer::now() - t2).count() / 1E6
+                << " MS";
 
       // Make sure that we finished computing the pii of the previous assembly
       // because we will need it soon

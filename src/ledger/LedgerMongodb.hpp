@@ -60,7 +60,7 @@ class LedgerMongodb : public Ledger {
 
   int fill_block_transactions(messages::Block *block) const;
 
-  bool unsafe_get_block(const messages::Hash &id,
+  bool unsafe_get_block(const messages::BlockID &id,
                         messages::TaggedBlock *tagged_block,
                         bool include_transactions = true) const;
 
@@ -92,23 +92,23 @@ class LedgerMongodb : public Ledger {
   messages::BranchPath unsafe_first_child(
       const messages::BranchPath &branch_path) const;
 
-  bool update_branch_tag(const messages::Hash &id,
+  bool update_branch_tag(const messages::BlockID &id,
                          const messages::Branch &branch);
 
-  bool unsafe_get_block_by_previd(const messages::Hash &previd,
+  bool unsafe_get_block_by_previd(const messages::BlockID &previd,
                                   messages::Block *block,
                                   bool include_transactions = true) const;
 
   messages::BlockHeight unsafe_height() const;
 
-  bool unsafe_get_assembly(const messages::Hash &assembly_id,
+  bool unsafe_get_assembly(const messages::AssemblyID &assembly_id,
                            messages::Assembly *assembly) const;
 
   void create_indexes();
 
   void create_first_assemblies(const std::vector<messages::Address> &addresses);
 
-  bool cleanup_transaction_pool(const messages::Hash &block_id);
+  bool cleanup_transaction_pool(const messages::BlockID &block_id);
 
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);
@@ -160,18 +160,18 @@ class LedgerMongodb : public Ledger {
 
   bool insert_block(messages::Block *block);
 
-  bool delete_block(const messages::Hash &id);
+  bool delete_block(const messages::BlockID &id);
 
-  bool delete_block_and_children(const messages::Hash &id);
+  bool delete_block_and_children(const messages::BlockID &id);
 
-  bool get_transaction(const messages::Hash &id,
+  bool get_transaction(const messages::TransactionID &id,
                        messages::Transaction *transaction) const;
 
-  bool get_transaction(const messages::Hash &id,
+  bool get_transaction(const messages::TransactionID &id,
                        messages::Transaction *transaction,
                        messages::BlockHeight *blockheight) const;
 
-  bool get_transaction(const messages::Hash &id,
+  bool get_transaction(const messages::TransactionID &id,
                        messages::TaggedTransaction *tagged_transaction,
                        const messages::TaggedBlock &tip,
                        bool include_transaction_pool) const;
@@ -191,16 +191,16 @@ class LedgerMongodb : public Ledger {
 
   bool add_to_transaction_pool(const messages::Transaction &transaction);
 
-  bool delete_transaction(const messages::Hash &id);
+  bool delete_transaction(const messages::TransactionID &id);
 
   std::size_t get_transaction_pool(messages::Block *block);
 
   bool get_unverified_blocks(
       std::vector<messages::TaggedBlock> *tagged_blocks) const;
 
-  bool set_block_verified(const messages::Hash &id,
+  bool set_block_verified(const messages::BlockID &id,
                           const messages::BlockScore &score,
-                          const messages::Hash previous_assembly_id);
+                          const messages::AssemblyID previous_assembly_id);
 
   bool update_main_branch();
 
@@ -210,45 +210,47 @@ class LedgerMongodb : public Ledger {
       const messages::BranchPath &branch_path) const;
 
   bool get_pii(const messages::Address &address,
-               const messages::Hash &assembly_id, Double *score) const;
+               const messages::AssemblyID &assembly_id, Double *score) const;
 
   bool save_pii(const messages::Address &address,
-                const messages::Hash &assembly_id, const Double &score);
+                const messages::AssemblyID &assembly_id, const Double &score);
 
-  bool get_assembly_piis(const messages::Hash &assembly_id,
+  bool get_assembly_piis(const messages::AssemblyID &assembly_id,
                          std::vector<messages::Pii> *piis);
 
   void empty_database();
 
-  bool get_assembly(const messages::Hash &assembly_id,
+  bool get_assembly(const messages::AssemblyID &assembly_id,
                     messages::Assembly *assembly) const;
 
   bool add_assembly(const messages::TaggedBlock &tagged_block,
                     const int32_t height);
 
   bool get_pii(const messages::Address &address,
-               const messages::Hash &assembly_id, messages::Pii *pii) const;
+               const messages::AssemblyID &assembly_id,
+               messages::Pii *pii) const;
 
   bool set_pii(const messages::Pii &pii);
 
-  bool set_previous_assembly_id(const messages::Hash &block_id,
-                                const messages::Hash &previous_assembly_id);
+  bool set_previous_assembly_id(
+      const messages::BlockID &block_id,
+      const messages::AssemblyID &previous_assembly_id);
 
-  bool get_next_assembly(const messages::Hash &assembly_id,
+  bool get_next_assembly(const messages::AssemblyID &assembly_id,
                          messages::Assembly *assembly) const;
 
   bool get_assemblies_to_compute(
       std::vector<messages::Assembly> *assemblies) const;
 
-  bool get_block_writer(const messages::Hash &assembly_id, int32_t address_rank,
-                        messages::Address *address) const;
+  bool get_block_writer(const messages::AssemblyID &assembly_id,
+                        int32_t address_rank, messages::Address *address) const;
 
-  bool set_nb_addresses(const messages::Hash &assembly_id,
+  bool set_nb_addresses(const messages::AssemblyID &assembly_id,
                         int32_t nb_addresses);
 
-  bool set_seed(const messages::Hash &assembly_id, int32_t seed);
+  bool set_seed(const messages::AssemblyID &assembly_id, int32_t seed);
 
-  bool set_finished_computation(const messages::Hash &assembly_id);
+  bool set_finished_computation(const messages::AssemblyID &assembly_id);
 
   friend class neuro::ledger::tests::LedgerMongodb;
   friend class neuro::tooling::Simulator;

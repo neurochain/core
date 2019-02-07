@@ -15,9 +15,12 @@ namespace neuro {
 namespace messages {
 
 using BlockHeight = decltype(((BlockHeader *)nullptr)->height());
-using BlockID = decltype(((BlockHeader *)nullptr)->id());
-// TODO using BlockID = decltype(*(((BlockHeader *)nullptr)->mutable_id()));
-using TransactionID = decltype(((Transaction *)nullptr)->id());
+using BlockID = std::remove_reference<decltype(
+    *(((BlockHeader *)nullptr)->mutable_id()))>::type;
+using AssemblyID = std::remove_reference<decltype(
+    *(((Assembly *)nullptr)->mutable_id()))>::type;
+using TransactionID = std::remove_reference<decltype(
+    *(((Transaction *)nullptr)->mutable_id()))>::type;
 using Packet = google::protobuf::Message;
 
 using Type = Body::BodyCase;
