@@ -246,7 +246,7 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
    */
   const auto build_coinbase = [&](Onion::Request &request,
                                   Onion::Response &response) {
-  // TO DO #5 Remove after testing                                    
+    // TO DO #5 Remove after testing
     std::string post_data =
         onion_block_data(onion_request_get_data(request.c_handler()));
     messages::PublicKey publickey;
@@ -272,7 +272,20 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
     response << ncc;
     return OCS_PROCESSED;
   };
+  const auto open_wallet = [&](Onion::Request &request,
+                               Onion::Response &response) {
+    this->add_cors(response);
+    if ((onion_request_get_flags(request.c_handler()) & OR_OPTIONS) ==
+        OR_OPTIONS) {
+      response << "done";
+      return OCS_PROCESSED;
+    }
 
+    response << "{\"status\": true }";
+    return OCS_PROCESSED;
+  };
+
+  _root->add("open_wallet", open_wallet);
   _root->add("transactions", transactions_route);
   _root->add("build_transactions", build_raw_transactions);
   _root->add("get_addr_x_y", get_addr_from_x_y);
