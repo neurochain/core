@@ -153,36 +153,19 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
    */
   const auto transactions_route = [&](Onion::Request &request,
                                       Onion::Response &response) {
-    onion_response_set_header(response.c_handler(),
-                              "Access-Control-Allow-Origin", "*");
-    onion_response_set_header(response.c_handler(),
-                              "Access-Control-Allow-Credentials", "true");
-    onion_response_set_header(
-        response.c_handler(), "Access-Control-Allow-Headers",
-        "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, "
-        "Content-Type, Access-Control-Request-Method, "
-        "Access-Control-Request-Headers");
-    onion_response_set_header(response.c_handler(),
-                              "Access-Control-Allow-Method", "OPTIONS,POST");
-
+    this->add_cors(response);
     if ((onion_request_get_flags(request.c_handler()) & OR_OPTIONS) ==
         OR_OPTIONS) {
-      response << "done";
+      response << "done";  // TO DO #1 Static
       return OCS_PROCESSED;
     }
     if ((onion_request_get_flags(request.c_handler()) & OR_POST) == OR_POST) {
-      std::string post_data =
-          onion_block_data(onion_request_get_data(request.c_handler()));
       messages::PublicKey publickey;
-      messages::from_json(post_data, &publickey);
-      crypto::EccPub eccpubkey;
-      eccpubkey.load(publickey);
-      messages::Hasher address(eccpubkey);
-      std::cout << address << std::endl;
-      const auto transactions = _ledger->list_transactions(address);
-      response << messages::to_json(transactions);
+      this->get_post(request, &publickey);  // TO DO #2 check input
+      response << this->pubkey_transactions(publickey);
       return OCS_PROCESSED;
     }
+
     response << "No Allow";
     return OCS_PROCESSED;
   };
@@ -193,17 +176,7 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
    * */
   const auto build_raw_transactions = [&](Onion::Request &request,
                                           Onion::Response &response) {
-    onion_response_set_header(response.c_handler(),
-                              "Access-Control-Allow-Origin", "*");
-    onion_response_set_header(response.c_handler(),
-                              "Access-Control-Allow-Credentials", "true");
-    onion_response_set_header(
-        response.c_handler(), "Access-Control-Allow-Headers",
-        "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, "
-        "Content-Type, Access-Control-Request-Method, "
-        "Access-Control-Request-Headers");
-    onion_response_set_header(response.c_handler(),
-                              "Access-Control-Allow-Method", "OPTIONS,POST");
+    this->add_cors(response);
 
     if ((onion_request_get_flags(request.c_handler()) & OR_OPTIONS) ==
         OR_OPTIONS) {
@@ -212,29 +185,9 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
     }
 
     if ((onion_request_get_flags(request.c_handler()) & OR_POST) == OR_POST) {
-      std::string post_data =
-          onion_block_data(onion_request_get_data(request.c_handler()));
       messages::BuildTransaction buildtransaction;
-      messages::from_json(post_data, &buildtransaction);
-      crypto::EccPub eccpubkey;
-      eccpubkey.load(buildtransaction.publickey());
-      messages::Hasher address(eccpubkey);
-
-      _ledger->add_change(buildtransaction.mutable_transaction(), address);
-      Buffer transaction_serialized;
-      messages::to_buffer(buildtransaction.transaction(),
-                          &transaction_serialized);
-      std::stringstream ss;
-      ss << transaction_serialized;
-      buildtransaction.set_raw_transaction(ss.str());
-      auto *signature =
-          buildtransaction.mutable_transaction()->add_signatures();
-      signature->mutable_signature()->set_type(messages::Hash::SHA256);
-      signature->mutable_signature()->set_data("");
-      messages::KeyPub keypub;
-      eccpubkey.save(&keypub);
-      signature->mutable_key_pub()->CopyFrom(keypub);
-      response << buildtransaction;
+      this->get_post(request, &buildtransaction);
+      response << this->populate_transaction(buildtransaction);
       return OCS_PROCESSED;
     }
     response << "No Allow";
@@ -243,18 +196,7 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
 
   const auto send_transactions = [&](Onion::Request &request,
                                      Onion::Response &response) {
-    onion_response_set_header(response.c_handler(),
-                              "Access-Control-Allow-Origin", "*");
-    onion_response_set_header(response.c_handler(),
-                              "Access-Control-Allow-Credentials", "true");
-    onion_response_set_header(
-        response.c_handler(), "Access-Control-Allow-Headers",
-        "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, "
-        "Content-Type, Access-Control-Request-Method, "
-        "Access-Control-Request-Headers");
-    onion_response_set_header(response.c_handler(),
-                              "Access-Control-Allow-Method", "OPTIONS,POST");
-
+    this->add_cors(response);
     if ((onion_request_get_flags(request.c_handler()) & OR_OPTIONS) ==
         OR_OPTIONS) {
       response << "done";
@@ -262,36 +204,16 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
     }
 
     if ((onion_request_get_flags(request.c_handler()) & OR_POST) == OR_POST) {
-      std::string post_data =
-          onion_block_data(onion_request_get_data(request.c_handler()));
       messages::BuildTransaction buildtransaction;
-      messages::from_json(post_data, &buildtransaction);
-      crypto::EccPub eccpubkey;
-      eccpubkey.load(buildtransaction.publickey());
-      messages::Hasher address(eccpubkey);
-      // Convert DER Sign to P1363 for test
-      /*auto rawder =
-      buildtransaction.transaction().signatures(0).signature().data(); Buffer
-      sig(rawder.data(), rawder.size()); Buffer P13signature(64, 0);
-      CryptoPP::DSAConvertSignatureFormat((byte *)P13signature.data(),
-      P13signature.size(), CryptoPP::DSA_P1363, (const byte *)sig.data(),
-      sig.size(), CryptoPP::DSA_DER); auto * trx =
-      buildtransaction.mutable_transaction(); trx->clear_signatures(); auto
-      signature = trx->add_signatures();
-
-      auto hash = signature->mutable_signature();
-      hash->set_data(P13signature.data(), P13signature.size());
-      hash->set_type(messages::Hash::SHA256);
-
-      auto key_pub = signature->mutable_key_pub();
-      Buffer tmp;
-      eccpubkey.save(&tmp);
-      key_pub->set_type(messages::KeyType::ECP256K1);
-
-      key_pub->set_raw_data(tmp.data(), tmp.size());*/
-
-      auto dverify = crypto::verify(buildtransaction.transaction());
-      response << ((dverify) ? "true" : "false");
+      this->get_post(request, &buildtransaction);
+      if (crypto::verify(buildtransaction.transaction())) {
+        messages::set_transaction_hash(buildtransaction.mutable_transaction());
+        // TO DO #4 add transaction in pool of bot
+        _bot->publish_transaction(buildtransaction.transaction());
+        response << buildtransaction.transaction().id();
+      } else {
+        response << "{\"status\":false}";  // TO DO #3 messages protbuf ??
+      }
       return OCS_PROCESSED;
     }
 
@@ -301,17 +223,7 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
 
   const auto get_addr_from_x_y = [&](Onion::Request &request,
                                      Onion::Response &response) {
-    onion_response_set_header(response.c_handler(),
-                              "Access-Control-Allow-Origin", "*");
-    onion_response_set_header(response.c_handler(),
-                              "Access-Control-Allow-Credentials", "true");
-    onion_response_set_header(
-        response.c_handler(), "Access-Control-Allow-Headers",
-        "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, "
-        "Content-Type, Access-Control-Request-Method, "
-        "Access-Control-Request-Headers");
-    onion_response_set_header(response.c_handler(),
-                              "Access-Control-Allow-Method", "OPTIONS,POST");
+    this->add_cors(response);
 
     if ((onion_request_get_flags(request.c_handler()) & OR_OPTIONS) ==
         OR_OPTIONS) {
@@ -320,14 +232,9 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
     }
 
     if ((onion_request_get_flags(request.c_handler()) & OR_POST) == OR_POST) {
-      std::string post_data =
-          onion_block_data(onion_request_get_data(request.c_handler()));
       messages::PublicKey publickey;
-      messages::from_json(post_data, &publickey);
-      crypto::EccPub eccpubkey;
-      eccpubkey.load(publickey);
-      messages::Hasher address(eccpubkey);
-      response << address;
+      this->get_post(request, &publickey);
+      response << this->pubkey_addr(publickey);
       return OCS_PROCESSED;
     }
 
@@ -339,6 +246,7 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
    */
   const auto build_coinbase = [&](Onion::Request &request,
                                   Onion::Response &response) {
+  // TO DO #5 Remove after testing                                    
     std::string post_data =
         onion_block_data(onion_request_get_data(request.c_handler()));
     messages::PublicKey publickey;
@@ -365,39 +273,11 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
     return OCS_PROCESSED;
   };
 
-  const auto testprivate = [&](Onion::Request &request,
-                               Onion::Response &response) {
-    const auto privkey = request.query("private");
-    std::shared_ptr<CryptoPP::AutoSeededRandomPool> prng =
-        std::make_shared<CryptoPP::AutoSeededRandomPool>();
-    crypto::EccPriv eccprive(prng);
-    eccprive.loadFromHex(privkey);
-    crypto::EccPub eccpub = eccprive.make_public_key();
-
-    Buffer sign(
-        "0a0408001200122a0a240800122087c6ad5aeaf8217cf96ae95fc4b2aa80dda64cebe6"
-        "ac4295b24723a935584c4c100018001a2b0a2408001220ae7caa8b8bbf5c33595f89f3"
-        "f3a495f74650750860ed6c792f5c6e89368aea6a120308aa0b1a2c0a2408001220d734"
-        "9c79427e7ddd9e00366350b548d5273dbf7cc10867c13ccf4257c830d050120408f681"
-        "062a020800",
-        Buffer::InputType::HEX);
-    auto p = eccprive.sign(sign);
-
-    bool u = eccpub.verify(sign, p);
-    messages::Hash dd;
-    dd.set_data(p.data(), p.size());
-    dd.set_type(messages::Hash::SHA256);
-    response << dd << std::endl;
-    response << u;
-    return OCS_PROCESSED;
-  };
-
   _root->add("transactions", transactions_route);
   _root->add("build_transactions", build_raw_transactions);
   _root->add("get_addr_x_y", get_addr_from_x_y);
   _root->add("send_transactions", send_transactions);
   _root->add("build_coinbase", build_coinbase);
-  _root->add("test_private", testprivate);
 
   serve_folder("^static/", "static");
   serve_file("", "index.html");
@@ -409,6 +289,59 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
   _thread = std::thread([this]() { _server.listen(); });
 }
 
+void Rest::add_cors(Onion::Response &response) {
+  auto res_c = response.c_handler();
+  onion_response_set_header(res_c, "Access-Control-Allow-Origin", "*");
+  onion_response_set_header(res_c, "Access-Control-Allow-Credentials", "true");
+  onion_response_set_header(
+      res_c, "Access-Control-Allow-Headers",
+      "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, "
+      "Content-Type, Access-Control-Request-Method, "
+      "Access-Control-Request-Headers");
+  onion_response_set_header(res_c, "Access-Control-Allow-Method",
+                            "OPTIONS,POST");
+}
+
+bool Rest::get_post(Onion::Request &request, messages::Packet *packet) {
+  std::string post_data =
+      onion_block_data(onion_request_get_data(request.c_handler()));
+  messages::from_json(post_data, packet);
+  return true;
+}
+
+messages::Hasher Rest::pubkey_addr(messages::PublicKey &pubkey) {
+  crypto::EccPub eccpubkey;
+  eccpubkey.load(pubkey);
+  messages::Hasher address(eccpubkey);
+  return address;
+}
+
+std::string Rest::pubkey_transactions(messages::PublicKey &pubkey) {
+  messages::Hasher address = pubkey_addr(pubkey);
+  const auto transactions = _ledger->list_transactions(address);
+  return messages::to_json(transactions);
+}
+
+std::string Rest::populate_transaction(
+    messages::BuildTransaction &buildtransaction) {
+  crypto::EccPub eccpubkey;
+  eccpubkey.load(buildtransaction.publickey());
+  messages::Hasher address(eccpubkey);
+
+  _ledger->add_change(buildtransaction.mutable_transaction(), address);
+  Buffer transaction_serialized;
+  messages::to_buffer(buildtransaction.transaction(), &transaction_serialized);
+  std::stringstream ss;
+  ss << transaction_serialized;
+  buildtransaction.set_raw_transaction(ss.str());
+  auto *signature = buildtransaction.mutable_transaction()->add_signatures();
+  signature->mutable_signature()->set_type(messages::Hash::SHA256);
+  signature->mutable_signature()->set_data("");
+  messages::KeyPub keypub;
+  eccpubkey.save(&keypub);
+  signature->mutable_key_pub()->CopyFrom(keypub);
+  return messages::to_json(buildtransaction);
+}
 void Rest::serve_file(const std::string &filename) {
   _root->add(filename,
              Onion::Shortcuts::static_file((_static_path + filename).c_str()));

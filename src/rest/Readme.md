@@ -12,13 +12,18 @@
 * List of transactions ...[ok]
   - input : public key Array( x,y)
   - output : Array( Transaction) 
-* Build raw hash for signature 
+* Build raw hash for signature ...[ok]
   - input : Array( Transactions ID)
   - output : Array ( Raw Transactions ( string ) )
-* Send Transaction 
+* Send Transaction ...[ok]
   - input : Array( Raw transactions), Signature 
   - ouput : bool( status), error( int ) 
 
 * For Test : add coin base transaction
   - input : public key
   - output : int ( max ncc )
+
+
+## TODO
+
+*  Testing

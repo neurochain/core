@@ -41,23 +41,19 @@ bool verify(const messages::Transaction &transaction) {
   auto transaction_raw = transaction;
   transaction_raw.clear_signatures();
   transaction_raw.clear_id();
-  // ???
+  // fix transaction serialized with empty id
   transaction_raw.mutable_id()->set_type(messages::Hash::SHA256);
   transaction_raw.mutable_id()->set_data("");
+
   messages::to_buffer(transaction_raw, &bin);
-  std::cout << "Transaction Raw : ";
-  std::cout << bin << std::endl;
   for (const auto &input : transaction.inputs()) {
     const auto signature = transaction.signatures(input.signature_id());
 
     const auto key_pub_raw = signature.key_pub().raw_data();
     Buffer tmp(key_pub_raw.data(), key_pub_raw.size());
     crypto::EccPub ecc_pub(tmp);
-
-    std::cout << "Pub : " << ecc_pub << std::endl;
     const auto hash = signature.signature().data();
     const Buffer sig(hash.data(), hash.size());
-    std::cout << "Signature hex : " << sig << std::endl;
     if (!ecc_pub.verify(bin, sig)) {
       LOG_WARNING << "Wrong signature in transaction " << transaction;
       return false;

@@ -42,6 +42,14 @@ class Rest {
   void serve_file(const std::string &route, const std::string &filename);
   void serve_folder(const std::string &route, const std::string &foldername);
 
+  /*  Add for wallet Api */
+  void add_cors(Onion::Response &response);
+  bool get_post(Onion::Request &request, messages::Packet *packet);
+  messages::Hasher pubkey_addr(messages::PublicKey &pubkey);
+  std::string pubkey_transactions(messages::PublicKey &pubkey);
+  std::string populate_transaction(
+      messages::BuildTransaction &buildtransaction);
+
  public:
   Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
        std::shared_ptr<crypto::Ecc> keys,
