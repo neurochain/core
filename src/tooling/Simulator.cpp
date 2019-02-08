@@ -28,14 +28,12 @@ Simulator::Simulator(const std::string &db_url, const std::string &db_name,
           db_url, db_name,
           tooling::blockgen::gen_block0(keys, _ncc_block0, time_delta)
               .block())),
+
+      // time_delta >=0 means that we have a RealtimeConsensus and should
+      // therefore start the threads
       consensus(std::make_shared<consensus::Consensus>(
-          ledger, keys, config, [](const messages::Block &block) {})) {
-  if (time_delta < 0) {
-    // If the time_delta is in the past we have a StaticSimulator and it should
-    // not mine new blocks
-    consensus->_stop_update_heights = true;
-    consensus->_stop_miner = true;
-  }
+          ledger, keys, config, [](const messages::Block &block) {},
+          time_delta >= 0)) {
   for (size_t i = 0; i < keys.size(); i++) {
     auto &address = addresses.emplace_back(keys[i].public_key());
     addresses_indexes.insert({address, i});
@@ -58,15 +56,20 @@ Simulator Simulator::StaticSimulator(const std::string &db_url,
   return Simulator(db_url, db_name, nb_keys, ncc_block0, -100000);
 }
 
-messages::Transaction Simulator::random_transaction() {
+messages::Transaction Simulator::random_transaction() const {
   int sender_index = rand() % keys.size();
   int recipient_index = rand() % keys.size();
   return ledger->send_ncc(keys[sender_index].private_key(),
                           addresses[recipient_index], RATIO_TO_SEND);
 }
 
-messages::Block Simulator::new_block(int nb_transactions,
-                                     const messages::TaggedBlock &last_block) {
+/*
+ * Create a new block just after the last block passed.
+ * It will include transactions in the transaction pool and also generate
+ * nb_transactions random transactions.
+ */
+messages::Block Simulator::new_block(
+    int nb_transactions, const messages::TaggedBlock &last_block) const {
   messages::Block block, block0;
   ledger->get_block(0, &block0);
   messages::Assembly assembly_n_minus_1, assembly_n_minus_2;
@@ -109,6 +112,26 @@ messages::Block Simulator::new_block(int nb_transactions,
   messages::set_block_hash(&block);
 
   return block;
+}
+
+/*
+ * Create a new block just after the last block passed.
+ * It will include transactions in the transaction pool.
+ */
+messages::Block Simulator::new_block(
+    const messages::TaggedBlock &last_block) const {
+  return new_block(0, last_block);
+}
+
+/*
+ * Let's fetch the last block automatically and create a new one
+ */
+messages::Block Simulator::new_block() const {
+  messages::TaggedBlock last_block;
+  if (!ledger->get_last_block(&last_block)) {
+    throw std::runtime_error("Failed to get the last block in the simulator");
+  }
+  return new_block(0, last_block);
 }
 
 void Simulator::run(int nb_blocks, int transactions_per_block) {

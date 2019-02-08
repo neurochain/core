@@ -35,9 +35,10 @@ class Simulator {
                                    const messages::NCCAmount ncc_block0);
 
   messages::Block new_block(int nb_transactions,
-                            const messages::TaggedBlock &last_block);
-  messages::Transaction new_random_transaction();
-  messages::Transaction random_transaction();
+                            const messages::TaggedBlock &last_block) const;
+  messages::Block new_block(const messages::TaggedBlock &last_block) const;
+  messages::Block new_block() const;
+  messages::Transaction random_transaction() const;
   void run(int nb_blocks, int transactions_per_block);
 };
 

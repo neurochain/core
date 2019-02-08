@@ -197,6 +197,10 @@ class Ledger {
 
   // helpers
 
+  /*
+   * List transactions for an address that are either in the main branch or in
+   * the transaction pool
+   */
   messages::Transactions list_transactions(
       const messages::Address &address) const {
     Filter filter;

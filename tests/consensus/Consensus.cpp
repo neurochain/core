@@ -93,7 +93,6 @@ class Consensus : public testing::Test {
   }
 
   void test_compute_assembly_pii() {
-    consensus->_stop_compute_pii = true;
     std::vector<messages::Assembly> assemblies;
     simulator.run(consensus->config.blocks_per_assembly, 10);
     ASSERT_TRUE(ledger->get_assemblies_to_compute(&assemblies));
@@ -113,7 +112,7 @@ class Consensus : public testing::Test {
     auto assembly_id = assemblies[0].id();
 
     // Make sure that the compute_assembly thread has started the computation
-    consensus->_stop_compute_pii = false;
+    consensus->start_compute_pii_thread();
     std::this_thread::sleep_for(consensus->config.compute_pii_sleep);
 
     // Wait for the computation to be finished

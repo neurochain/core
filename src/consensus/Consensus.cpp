@@ -397,7 +397,8 @@ bool Consensus::check_block_author(
   return true;
 }
 
-Double Consensus::get_block_score(const messages::TaggedBlock &tagged_block) {
+Double Consensus::get_block_score(
+    const messages::TaggedBlock &tagged_block) const {
   messages::TaggedBlock previous;
   if (!_ledger->get_block(tagged_block.block().header().previous_block_hash(),
                           &previous) ||
@@ -475,25 +476,28 @@ bool Consensus::is_new_assembly(const messages::TaggedBlock &tagged_block,
 }
 
 Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
-                     std::vector<crypto::Ecc> &keys, PublishBlock publish_block)
+                     std::vector<crypto::Ecc> &keys, PublishBlock publish_block,
+                     bool start_threads)
     : _ledger(ledger), _keys(keys), _publish_block(publish_block) {
-  init();
+  init(start_threads);
 }
 
 Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
                      const std::vector<crypto::Ecc> &keys, const Config &config,
-                     PublishBlock publish_block)
+                     PublishBlock publish_block, bool start_threads)
     : config(config),
       _ledger(ledger),
       _keys(keys),
       _publish_block(publish_block) {
-  init();
+  init(start_threads);
 }
 
-void Consensus::init() {
-  start_compute_pii_thread();
-  start_update_heights_thread();
-  start_miner_thread();
+void Consensus::init(bool start_threads) {
+  if (start_threads) {
+    start_compute_pii_thread();
+    start_update_heights_thread();
+    start_miner_thread();
+  }
   for (const auto &key : _keys) {
     _addresses.push_back(messages::Address(key.public_key()));
   }
@@ -667,7 +671,7 @@ bool Consensus::get_block_writer(const messages::Assembly &assembly,
   return true;
 }
 
-messages::BlockHeight Consensus::get_current_height() {
+messages::BlockHeight Consensus::get_current_height() const {
   messages::Block block0;
   _ledger->get_block(0, &block0);
   return (std::time(nullptr) - block0.header().timestamp().data()) /
@@ -676,7 +680,8 @@ messages::BlockHeight Consensus::get_current_height() {
 
 bool Consensus::get_heights_to_write(
     const std::vector<messages::Address> &addresses,
-    std::vector<std::pair<messages::BlockHeight, AddressIndex>> *heights) {
+    std::vector<std::pair<messages::BlockHeight, AddressIndex>> *heights)
+    const {
   messages::TaggedBlock tagged_block;
   _ledger->get_block(_ledger->height(), &tagged_block);
   messages::Assembly previous_assembly, previous_previous_assembly;
@@ -747,7 +752,7 @@ bool Consensus::get_heights_to_write(
 
 bool Consensus::write_block(const crypto::Ecc &keys,
                             const messages::BlockHeight &height,
-                            messages::Block *block) {
+                            messages::Block *block) const {
   messages::BlockHeader last_block_header;
   if (!_ledger->get_last_block_header(&last_block_header)) {
     return false;

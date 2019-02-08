@@ -8,6 +8,7 @@
 #include "common/types.hpp"
 #include "messages/config/Config.hpp"
 #include "messages/config/Database.hpp"
+#include "tooling/Simulator.hpp"
 #include "tooling/blockgen.hpp"
 
 namespace neuro {
@@ -16,28 +17,17 @@ namespace tests {
 
 class LedgerMongodb : public ::testing::Test {
  public:
-  const std::string config_str =
-      "{"
-      "  \"url\": \"mongodb://localhost:27017\","
-      "  \"dbName\": \"test_ledger\","
-      "  \"block0Format\": \"PROTO\","
-      "  \"block0Path\": \"./data.0.testnet\""
-      "}";
-
- protected:
-  messages::config::Database _config;
+  const std::string db_url = "mongodb://mongo:27017";
+  const std::string db_name = "test_ledger";
+  const messages::NCCAmount ncc_block0 = messages::NCCAmount(1000000);
+  const int nb_keys = 2;
+  tooling::Simulator simulator;
   std::shared_ptr<::neuro::ledger::LedgerMongodb> ledger;
 
-  LedgerMongodb() : _config(config_str) {
-    tooling::blockgen::create_empty_db(_config);
-    ledger = std::make_shared<::neuro::ledger::LedgerMongodb>(_config);
-  }
-
-  std::string db_name() const { return _config.db_name(); }
-
-  std::string db_url() const { return _config.url(); }
-
-  messages::config::Database config() const { return _config; }
+  LedgerMongodb()
+      : simulator(tooling::Simulator::Simulator::StaticSimulator(
+            db_url, db_name, nb_keys, ncc_block0)),
+        ledger(simulator.ledger) {}
 
  public:
   void test_is_ancestor() {
@@ -220,9 +210,9 @@ TEST_F(LedgerMongodb, transactions) {
   messages::Block block0;
   ledger->get_block(0, &block0);
 
-  ASSERT_EQ(2, ledger->total_nb_transactions());
+  ASSERT_EQ(nb_keys, ledger->total_nb_transactions());
   ASSERT_EQ(0, block0.transactions().size());
-  ASSERT_EQ(2, block0.coinbases().size());
+  ASSERT_EQ(nb_keys, block0.coinbases().size());
   const auto transaction0 = block0.coinbases(0);
 
   messages::Transaction transaction0bis;
@@ -487,6 +477,35 @@ TEST_F(LedgerMongodb, set_previous_assembly_id) {
   ASSERT_TRUE(ledger->get_block(0, &tagged_block));
   ASSERT_TRUE(tagged_block.has_previous_assembly_id());
   ASSERT_EQ(tagged_block.previous_assembly_id(), assembly_id);
+}
+
+TEST_F(LedgerMongodb, list_transactions) {
+  auto &address = simulator.addresses[0];
+  auto transactions = ledger->list_transactions(address).transactions();
+  ASSERT_EQ(transactions.size(), 1);
+  ASSERT_EQ(transactions[0].outputs(0).address(), address);
+
+  // Check that we only get incoming transactions
+  // Send everything so that there is no change output going back to the address
+  auto transaction = ledger->send_ncc(simulator.keys[0].private_key(),
+                                      simulator.addresses[1], 1);
+  simulator.consensus->add_transaction(transaction);
+  transactions = ledger->list_transactions(address).transactions();
+  ASSERT_EQ(transactions.size(), 1);
+
+  // Check that we do get transactions from the transaction pool
+  transaction = ledger->send_ncc(simulator.keys[1].private_key(),
+                                 simulator.addresses[0], 0.5);
+  simulator.consensus->add_transaction(transaction);
+  transactions = ledger->list_transactions(address).transactions();
+  ASSERT_EQ(transactions.size(), 2);
+
+  // Putting the transactions in a block should not change anything
+  auto block = simulator.new_block();
+  bool has_coinbase = block.coinbases(0).outputs(0).address() == address;
+  simulator.consensus->add_block(&block);
+  transactions = ledger->list_transactions(address).transactions();
+  ASSERT_EQ(transactions.size(), has_coinbase ? 3 : 2);
 }
 
 }  // namespace tests

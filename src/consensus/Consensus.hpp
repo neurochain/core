@@ -37,7 +37,7 @@ class Consensus {
   std::optional<std::thread> _compute_pii_thread;
   std::vector<std::pair<messages::BlockHeight, AddressIndex>> _heights_to_write;
   std::mutex _heights_to_write_mutex;
-  std::optional<messages::Hash> _previous_assembly_id;
+  std::optional<messages::AssemblyID> _previous_assembly_id;
   std::atomic<bool> _stop_update_heights;
   std::optional<std::thread> _update_heights_thread;
   std::atomic<bool> _stop_miner;
@@ -78,7 +78,7 @@ class Consensus {
 
   bool check_block_author(const messages::TaggedBlock &tagged_block) const;
 
-  Double get_block_score(const messages::TaggedBlock &tagged_block);
+  Double get_block_score(const messages::TaggedBlock &tagged_block) const;
 
   bool verify_blocks();
 
@@ -87,13 +87,14 @@ class Consensus {
 
  public:
   Consensus(std::shared_ptr<ledger::Ledger> ledger,
-            std::vector<crypto::Ecc> &keys, PublishBlock publish_block);
+            std::vector<crypto::Ecc> &keys, PublishBlock publish_block,
+            bool start_threads = true);
 
   Consensus(std::shared_ptr<ledger::Ledger> ledger,
             const std::vector<crypto::Ecc> &keys, const Config &config,
-            PublishBlock publish_block);
+            PublishBlock publish_block, bool start_threads = true);
 
-  void init();
+  void init(bool start_threads);
 
   ~Consensus();
 
@@ -125,14 +126,15 @@ class Consensus {
                         const messages::BlockHeight &height,
                         messages::Address *address) const;
 
-  messages::BlockHeight get_current_height();
+  messages::BlockHeight get_current_height() const;
 
   bool get_heights_to_write(
       const std::vector<messages::Address> &addresses,
-      std::vector<std::pair<messages::BlockHeight, AddressIndex>> *heights);
+      std::vector<std::pair<messages::BlockHeight, AddressIndex>> *heights)
+      const;
 
   bool write_block(const crypto::Ecc &keys, const messages::BlockHeight &height,
-                   messages::Block *block);
+                   messages::Block *block) const;
 
   void start_update_heights_thread();
 
