@@ -508,6 +508,169 @@ TEST_F(LedgerMongodb, list_transactions) {
   ASSERT_EQ(transactions.size(), has_coinbase ? 3 : 2);
 }
 
+TEST_F(LedgerMongodb, is_unspent_output) {
+  messages::TaggedBlock block0;
+  ASSERT_TRUE(ledger->get_last_block(&block0));
+  auto coinbase =
+      block0.block().coinbases(0).outputs(0).address() == simulator.addresses[0]
+          ? block0.block().coinbases(0)
+          : block0.block().coinbases(1);
+  ASSERT_TRUE(ledger->is_unspent_output(coinbase.id(), 0));
+
+  // Spend the output
+  auto transaction = ledger->send_ncc(simulator.keys[0].private_key(),
+                                      simulator.addresses[1], 0.5);
+  simulator.consensus->add_transaction(transaction);
+  ASSERT_FALSE(ledger->is_unspent_output(coinbase.id(), 0));
+
+  // But it is not spent if I don't consider the transaction pool
+  bool include_transaction_pool = false;
+  auto &tip = block0;
+  ASSERT_TRUE(ledger->is_unspent_output(coinbase.id(), 0, tip,
+                                        include_transaction_pool));
+
+  // Let's add a block with the transaction
+  auto new_block = simulator.new_block();
+  simulator.consensus->add_block(&new_block);
+  include_transaction_pool = false;
+  ASSERT_TRUE(ledger->is_unspent_output(coinbase.id(), 0, block0,
+                                        include_transaction_pool));
+  include_transaction_pool = true;
+  ASSERT_TRUE(ledger->is_unspent_output(coinbase.id(), 0, block0,
+                                        include_transaction_pool));
+  ASSERT_FALSE(ledger->is_unspent_output(coinbase.id(), 0));
+}
+
+TEST_F(LedgerMongodb, get_outputs_for_address) {
+  auto transaction = ledger->send_ncc(simulator.keys[0].private_key(),
+                                      simulator.addresses[1], 0.5);
+  simulator.consensus->add_transaction(transaction);
+  auto outputs =
+      ledger->get_outputs_for_address(transaction.id(), simulator.addresses[1]);
+  ASSERT_EQ(outputs.size(), 1);
+  ASSERT_EQ(outputs.at(0).output_id(), 0);
+  ASSERT_EQ(outputs.at(0).address(), simulator.addresses[1]);
+  outputs =
+      ledger->get_outputs_for_address(transaction.id(), simulator.addresses[0]);
+  ASSERT_EQ(outputs.size(), 1);
+  ASSERT_EQ(outputs.at(0).output_id(), 1);
+  ASSERT_EQ(outputs.at(0).address(), simulator.addresses[0]);
+}
+
+TEST_F(LedgerMongodb, has_received_transaction) {
+  ASSERT_TRUE(ledger->has_received_transaction(simulator.addresses[0]));
+  auto address = messages::Address::random();
+  ASSERT_FALSE(ledger->has_received_transaction(address));
+  auto transaction =
+      ledger->send_ncc(simulator.keys[0].private_key(), address, 0.5);
+  simulator.consensus->add_transaction(transaction);
+  ASSERT_TRUE(ledger->has_received_transaction(address));
+}
+
+TEST_F(LedgerMongodb, get_last_blocks) {
+  for (int i = 0; i < 2; i++) {
+    auto new_block = simulator.new_block();
+    simulator.consensus->add_block(&new_block);
+  }
+  auto blocks = ledger->get_last_blocks(2);
+  ASSERT_EQ(blocks.size(), 2);
+  ASSERT_EQ(blocks.at(0).header().height(), 2);
+  ASSERT_EQ(blocks.at(1).header().height(), 1);
+}
+
+TEST_F(LedgerMongodb, list_unspent_transactions) {
+  auto &address = simulator.addresses[0];
+  auto transactions = ledger->list_unspent_transactions(address);
+  ASSERT_EQ(transactions.size(), 1);
+
+  // Send everything so that there is no change output going back to the
+  // address
+  auto transaction = ledger->send_ncc(simulator.keys[0].private_key(),
+                                      simulator.addresses[1], 1);
+  ASSERT_EQ(transaction.outputs_size(), 1);
+  simulator.consensus->add_transaction(transaction);
+  transactions = ledger->list_unspent_transactions(address);
+  ASSERT_EQ(transactions.size(), 0);
+  transactions = ledger->list_unspent_transactions(simulator.addresses[1]);
+  ASSERT_EQ(transactions.size(), 2);
+
+  // Send back the money
+  transaction = ledger->send_ncc(simulator.keys[1].private_key(),
+                                 simulator.addresses[0], 0.5);
+  ASSERT_EQ(transaction.outputs_size(), 2);
+  simulator.consensus->add_transaction(transaction);
+  transactions = ledger->list_unspent_transactions(address);
+  ASSERT_EQ(transactions.size(), 1);
+  ASSERT_EQ(transactions.at(0).transaction_id(), transaction.id());
+  transactions = ledger->list_unspent_transactions(simulator.addresses[1]);
+  ASSERT_EQ(transactions.size(), 1);
+  ASSERT_EQ(transactions.at(0).transaction_id(), transaction.id());
+
+  // Putting the transactions in a block should not change anything
+  auto block = simulator.new_block();
+  bool has_coinbase = block.coinbases(0).outputs(0).address() == address;
+  simulator.consensus->add_block(&block);
+  transactions = ledger->list_unspent_transactions(address);
+  ASSERT_EQ(transactions.size(), has_coinbase ? 2 : 1);
+}
+
+TEST_F(LedgerMongodb, list_unspent_outputs) {
+  auto &address0 = simulator.addresses[0];
+  auto &address1 = simulator.addresses[1];
+  auto transactions = ledger->list_unspent_outputs(address0);
+  ASSERT_EQ(transactions.size(), 1);
+  ASSERT_EQ(transactions.at(0).outputs_size(), 1);
+
+  // Send everything so that there is no change output going back to the
+  // address
+  auto transaction =
+      ledger->send_ncc(simulator.keys[0].private_key(), address1, 1);
+  ASSERT_EQ(transaction.outputs_size(), 1);
+  simulator.consensus->add_transaction(transaction);
+  transactions = ledger->list_unspent_outputs(address0);
+  ASSERT_EQ(transactions.size(), 0);
+  transactions = ledger->list_unspent_outputs(address1);
+  ASSERT_EQ(transactions.size(), 2);
+  ASSERT_EQ(transactions.at(0).outputs_size(), 1);
+  ASSERT_EQ(transactions.at(1).outputs_size(), 1);
+
+  // Send back the money
+  transaction = ledger->send_ncc(simulator.keys[1].private_key(),
+                                 simulator.addresses[0], 0.5);
+  ASSERT_EQ(transaction.outputs_size(), 2);
+  simulator.consensus->add_transaction(transaction);
+  for (const auto &address : {address0, address1}) {
+    transactions = ledger->list_unspent_outputs(address);
+    ASSERT_EQ(transactions.size(), 1);
+    ASSERT_EQ(transactions.at(0).id(), transaction.id());
+    ASSERT_EQ(transactions.at(0).outputs_size(), 1);
+  }
+
+  // Putting the transactions in a block should not change anything
+  auto block = simulator.new_block();
+  simulator.consensus->add_block(&block);
+  for (const auto &address : {address0, address1}) {
+    bool has_coinbase = block.coinbases(0).outputs(0).address() == address;
+    transactions = ledger->list_unspent_outputs(address);
+    ASSERT_EQ(transactions.size(), has_coinbase ? 2 : 1);
+  }
+}
+
+TEST_F(LedgerMongodb, balance) {
+  auto &address0 = simulator.addresses[0];
+  auto &address1 = simulator.addresses[1];
+  ASSERT_EQ(ledger->balance(address0), ncc_block0);
+  ASSERT_EQ(ledger->balance(address1), ncc_block0);
+  simulator.consensus->add_transaction(
+      ledger->send_ncc(simulator.keys[0].private_key(), address1, 1));
+  ASSERT_EQ(ledger->balance(address0).value(), 0);
+  ASSERT_EQ(ledger->balance(address1).value(), 2 * ncc_block0.value());
+  simulator.consensus->add_transaction(
+      ledger->send_ncc(simulator.keys[1].private_key(), address0, 0.5));
+  ASSERT_EQ(ledger->balance(address0), ncc_block0);
+  ASSERT_EQ(ledger->balance(address1), ncc_block0);
+}
+
 }  // namespace tests
 }  // namespace ledger
 }  // namespace neuro
