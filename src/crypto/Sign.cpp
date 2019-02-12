@@ -1,5 +1,6 @@
 #include "crypto/Sign.hpp"
 #include "common/logger.hpp"
+#include "messages/Address.hpp"
 
 namespace neuro {
 namespace crypto {
@@ -60,50 +61,42 @@ bool verify(const messages::Transaction &transaction) {
   return true;
 }
 
-void set_required_fields(messages::Block *block) {
-  auto header = block->mutable_header();
-  header->mutable_id()->set_type(messages::Hash::SHA256);
-  header->mutable_id()->set_data("");
-  auto author = header->mutable_author();
-  author->mutable_key_pub()->set_raw_data("");
-  author->mutable_signature()->set_type(messages::Hash::SHA256);
-  author->mutable_signature()->set_data("");
+bool sign(const crypto::Ecc &keys, messages::Block *block) {
+  // Actually we never sign a block directly but the denunciation of a block.
+  // It makes it easier for others to denunce us if we mess up.
+  // And the denunciation contains the block id so it is pretty much the same.
+  auto denunciation = messages::Denunciation(*block);
+  sign(keys, &denunciation);
+  block->mutable_header()->mutable_author()->CopyFrom(denunciation.author());
+  return true;
 }
 
-bool sign(const crypto::Ecc &keys, messages::Block *block) {
-  // Fill the id and the author which are required fields. This makes the block
-  // serializable.
-  // The block should always be hashed after setting the signature so this
-  // should not be overwriting anything
-  set_required_fields(block);
-  Buffer serialized_block;
-  messages::to_buffer(*block, &serialized_block);
+bool verify(const messages::Block &block) {
+  return verify(messages::Denunciation(block));
+}
 
-  const auto signature = keys.private_key().sign(serialized_block);
+bool sign(const crypto::Ecc &keys, messages::Denunciation *denunciation) {
+  auto author = denunciation->mutable_author();
+  messages::set_default(author);
+  Buffer serialized;
+  messages::to_buffer(*denunciation, &serialized);
 
-  auto header = block->mutable_header();
-  auto author = header->mutable_author();
+  const auto signature = keys.private_key().sign(serialized);
   author->mutable_signature()->set_data(signature.data(), signature.size());
   author->mutable_signature()->set_type(messages::Hash::SHA256);
-
   keys.public_key().save(author->mutable_key_pub());
 
   return true;
 }
 
-bool verify(const messages::Block &block) {
-  auto block_copy = block;
-  auto mutable_block = &block_copy;
-  mutable_block->mutable_header()->clear_author();
-
-  // Fill the id which is a required field. This makes the transaction
-  // serializable.
-  set_required_fields(mutable_block);
+bool verify(const messages::Denunciation &denunciation) {
+  auto copy = denunciation;
+  messages::set_default(copy.mutable_author());
 
   Buffer buffer;
-  messages::to_buffer(block_copy, &buffer);
+  messages::to_buffer(copy, &buffer);
 
-  const auto author = block.header().author();
+  const auto author = denunciation.author();
   const auto hash = author.signature().data();
   const Buffer sig(hash.data(), hash.size());
 
@@ -111,7 +104,8 @@ bool verify(const messages::Block &block) {
   ecc_pub.load(author.key_pub());
 
   if (!ecc_pub.verify(buffer, sig)) {
-    LOG_WARNING << "Wrong signature in block " << block.header().id();
+    LOG_WARNING << "Wrong signature in denunciation with block id "
+                << denunciation.id();
     return false;
   }
 

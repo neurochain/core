@@ -32,6 +32,7 @@ class LedgerMongodb : public Ledger {
   mutable mongocxx::collection _blocks;
   mutable mongocxx::collection _transactions;
   mutable mongocxx::collection _pii;
+  mutable mongocxx::collection _integrity;
   mutable mongocxx::collection _assemblies;
 
   mutable std::mutex _ledger_mutex;
@@ -212,9 +213,6 @@ class LedgerMongodb : public Ledger {
   bool get_pii(const messages::Address &address,
                const messages::AssemblyID &assembly_id, Double *score) const;
 
-  bool save_pii(const messages::Address &address,
-                const messages::AssemblyID &assembly_id, const Double &score);
-
   bool get_assembly_piis(const messages::AssemblyID &assembly_id,
                          std::vector<messages::Pii> *piis);
 
@@ -231,6 +229,8 @@ class LedgerMongodb : public Ledger {
                messages::Pii *pii) const;
 
   bool set_pii(const messages::Pii &pii);
+
+  bool set_integrity(const messages::Integrity &integrity);
 
   bool set_previous_assembly_id(
       const messages::BlockID &block_id,

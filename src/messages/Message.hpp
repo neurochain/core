@@ -56,6 +56,7 @@ bool operator==(const messages::Peer &a, const messages::Peer &b);
 bool operator!=(const messages::Peer &a, const messages::Peer &b);
 
 void sort_transactions(Block *block);
+void set_default(Signature *author);
 void set_transaction_hash(Transaction *transaction);
 void set_block_hash(Block *block);
 int32_t fill_header(messages::Header *header);
@@ -76,6 +77,18 @@ class NCCAmount : public _NCCAmount {
   NCCAmount() {}
   NCCAmount(const _NCCAmount &nccsdf) : _NCCAmount(nccsdf) {}
   NCCAmount(uint64_t amount) { set_value(amount); }
+};
+
+class Denunciation : public _Denunciation {
+ public:
+  Denunciation() {}
+  Denunciation(const _Denunciation &denunciation)
+      : _Denunciation(denunciation) {}
+  Denunciation(const Block &block) {
+    mutable_id()->CopyFrom(block.header().id());
+    set_height(block.header().height());
+    mutable_author()->CopyFrom(block.header().author());
+  }
 };
 
 }  // namespace messages

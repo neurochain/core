@@ -172,6 +172,9 @@ class Consensus : public testing::Test {
       // Rewrite the block hash which should have changed
       messages::set_block_hash(&block);
 
+      // Since we changed the hash we also need to change the signature
+      crypto::sign(keys, &block);
+
       ASSERT_TRUE(consensus->add_block(&block));
     }
   }

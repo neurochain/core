@@ -35,6 +35,7 @@ const std::string HEADER = "header";
 const std::string HEIGHT = "height";
 const std::string ID = "id";
 const std::string INPUTS = "inputs";
+const std::string INTEGRITY = "integrity";
 const std::string LOCAL_FIELD = "localField";
 const std::string MAIN = "MAIN";
 const std::string NB_ADDRESSES = "nbAddresses";
@@ -59,17 +60,12 @@ LedgerMongodb::LedgerMongodb(const std::string &url, const std::string &db_name)
       _blocks(_db.collection(BLOCKS)),
       _transactions(_db.collection(TRANSACTIONS)),
       _pii(_db.collection(PII)),
+      _integrity(_db.collection(INTEGRITY)),
       _assemblies(_db.collection(ASSEMBLIES)) {}
 
 LedgerMongodb::LedgerMongodb(const std::string &url, const std::string &db_name,
                              const messages::Block &block0)
-    : _uri(url),
-      _client(_uri),
-      _db(_client[db_name]),
-      _blocks(_db.collection(BLOCKS)),
-      _transactions(_db.collection(TRANSACTIONS)),
-      _pii(_db.collection(PII)),
-      _assemblies(_db.collection(ASSEMBLIES)) {
+    : LedgerMongodb(url, db_name) {
   empty_database();
   init_database(block0);
   set_main_branch_tip();
@@ -214,6 +210,7 @@ void LedgerMongodb::create_indexes() {
                                     << bss::finalize);
   _pii.create_index(bss::document{} << RANK << 1 << ASSEMBLY_ID << 1
                                     << bss::finalize);
+  _integrity.create_index(bss::document{} << ADDRESS << 1 << bss::finalize);
   _assemblies.create_index(bss::document{} << ID << 1 << bss::finalize);
   _assemblies.create_index(bss::document{} << PREVIOUS_ASSEMBLY_ID << 1
                                            << bss::finalize);
@@ -1132,22 +1129,6 @@ bool LedgerMongodb::get_pii(const messages::Address &address,
   return true;
 }
 
-bool LedgerMongodb::save_pii(const messages::Address &address,
-                             const messages::AssemblyID &assembly_id,
-                             const Double &score) {
-  std::lock_guard<std::mutex> lock(_ledger_mutex);
-  messages::Pii pii;
-  pii.mutable_address()->CopyFrom(address);
-  pii.mutable_assembly_id()->CopyFrom(assembly_id);
-  pii.set_score(score);
-  auto bson_pii = to_bson(pii);
-  auto result = _blocks.insert_one(std::move(bson_pii));
-  if (!result) {
-    return false;
-  }
-  return true;
-}
-
 void LedgerMongodb::empty_database() {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   _db.drop();
@@ -1240,8 +1221,7 @@ bool LedgerMongodb::get_assembly_piis(const messages::AssemblyID &assembly_id,
 bool LedgerMongodb::set_pii(const messages::Pii &pii) {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto bson_pii = to_bson(pii);
-  auto result = _pii.insert_one(std::move(bson_pii));
-  return (bool)result;
+  return (bool)_pii.insert_one(std::move(bson_pii));
 }
 
 bool LedgerMongodb::set_previous_assembly_id(
@@ -1256,6 +1236,12 @@ bool LedgerMongodb::set_previous_assembly_id(
                 << bss::finalize;
   auto update_result = _blocks.update_one(std::move(filter), std::move(update));
   return update_result && update_result->modified_count() > 0;
+}
+
+bool LedgerMongodb::set_integrity(const messages::Integrity &integrity) {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  auto bson_integrity = to_bson(integrity);
+  return (bool)_integrity.insert_one(std::move(bson_integrity));
 }
 
 bool LedgerMongodb::get_assemblies_to_compute(

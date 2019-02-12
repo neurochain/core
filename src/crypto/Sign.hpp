@@ -17,6 +17,10 @@ bool sign(const crypto::Ecc &keys, messages::Block *block);
 
 bool verify(const messages::Block &block);
 
+bool sign(const crypto::Ecc &keys, messages::Denunciation *denunciation);
+
+bool verify(const messages::Denunciation &denunciation);
+
 }  // namespace crypto
 }  // namespace neuro
 

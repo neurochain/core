@@ -46,8 +46,8 @@ messages::TaggedBlock gen_block0(std::vector<crypto::Ecc> keys,
   tagged_block.mutable_branch_path()->add_block_numbers(0);
   tagged_block.set_score(0);
   messages::sort_transactions(tagged_block.mutable_block());
-  crypto::sign(keys[0], tagged_block.mutable_block());
   messages::set_block_hash(tagged_block.mutable_block());
+  crypto::sign(keys[0], tagged_block.mutable_block());
   return tagged_block;
 }
 

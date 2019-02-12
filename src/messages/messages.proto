@@ -84,10 +84,17 @@ message BlockHeader {
   required int32 height = 6;
 }
 
+message _Denunciation {
+  required Hash id = 1;
+  required int32 height = 2;
+  required Signature author = 3;
+}
+
 message Block {
   required BlockHeader header = 1;
   repeated Transaction transactions = 20;
   repeated Transaction coinbases = 30;
+  repeated _Denunciation denunciations = 40;
 }
 
 enum Branch {

@@ -146,14 +146,6 @@ class Ledger {
 
   virtual bool update_main_branch() = 0;
 
-  virtual bool get_pii(const messages::Address &address,
-                       const messages::AssemblyID &assembly_id,
-                       Double *score) const = 0;
-
-  virtual bool save_pii(const messages::Address &address,
-                        const messages::AssemblyID &assembly_id,
-                        const Double &score) = 0;
-
   virtual bool get_assembly_piis(const messages::AssemblyID &assembly_id,
                                  std::vector<messages::Pii> *piis) = 0;
 
@@ -165,9 +157,15 @@ class Ledger {
 
   virtual bool get_pii(const messages::Address &address,
                        const messages::AssemblyID &assembly_id,
+                       Double *score) const = 0;
+
+  virtual bool get_pii(const messages::Address &address,
+                       const messages::AssemblyID &assembly_id,
                        messages::Pii *pii) const = 0;
 
   virtual bool set_pii(const messages::Pii &pii) = 0;
+
+  virtual bool set_integrity(const messages::Integrity &integrity) = 0;
 
   virtual bool set_previous_assembly_id(
       const messages::BlockID &block_id,

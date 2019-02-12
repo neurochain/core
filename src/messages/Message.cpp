@@ -128,6 +128,13 @@ void set_transaction_hash(Transaction *transaction) {
   transaction->mutable_id()->CopyFrom(id);
 }
 
+void set_default(messages::Signature *author) {
+  author->Clear();
+  author->mutable_key_pub()->set_raw_data("");
+  author->mutable_signature()->set_type(messages::Hash::SHA256);
+  author->mutable_signature()->set_data("");
+}
+
 void set_block_hash(Block *block) {
   auto header = block->mutable_header();
 
@@ -135,6 +142,11 @@ void set_block_hash(Block *block) {
   // serializable.
   header->mutable_id()->set_type(messages::Hash::SHA256);
   header->mutable_id()->set_data("");
+
+  // The author should always be filled after the hash is set because the author
+  // field contains the signature of a denunciation that contains the hash of
+  // the block
+  set_default(header->mutable_author());
 
   const auto id = messages::Hasher(*block);
   header->mutable_id()->CopyFrom(id);

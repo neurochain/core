@@ -215,26 +215,24 @@ messages::NCCAmount Consensus::block_reward(
 
 bool Consensus::check_block_id(messages::TaggedBlock *tagged_block) const {
   auto block = tagged_block->mutable_block();
-  auto block_id = block->header().id();
+  const auto block_id = block->header().id();
+  const auto author = block->header().author();
   messages::set_block_hash(block);
 
   if (!block->header().has_id()) {
     LOG_INFO << "Failed check_block_id the block is missing the id field";
   }
+
   bool result = block->header().id() == block_id;
   if (!result) {
-    // Try rehashing...
-    auto new_block_id = block->header().id();
-    messages::set_block_hash(block);
-    assert(new_block_id == block->header().id());
-
     // Restore the original block_id
     block->mutable_header()->mutable_id()->CopyFrom(block_id);
-  }
-
-  if (!result) {
     LOG_INFO << "Failed check_block_id for block " << block->header().id();
   }
+
+  // Restore the author field which was erased by the hash
+  block->mutable_header()->mutable_author()->CopyFrom(author);
+
   return result;
 }
 
@@ -769,8 +767,8 @@ bool Consensus::write_block(const crypto::Ecc &keys,
 
   _ledger->get_transaction_pool(block);
   messages::sort_transactions(block);
-  crypto::sign(keys, block);
   messages::set_block_hash(block);
+  crypto::sign(keys, block);
 
   return true;
 }

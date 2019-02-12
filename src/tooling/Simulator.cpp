@@ -108,9 +108,8 @@ messages::Block Simulator::new_block(
 
   ledger->get_transaction_pool(&block);
   messages::sort_transactions(&block);
-  crypto::sign(keys[miner_index], &block);
   messages::set_block_hash(&block);
-
+  crypto::sign(keys[miner_index], &block);
   return block;
 }
 
