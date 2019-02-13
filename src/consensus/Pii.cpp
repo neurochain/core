@@ -17,18 +17,18 @@ bool Pii::get_enthalpy(const messages::Transaction &transaction,
   Double amount = 0;
   for (const auto &input : transaction.inputs()) {
     messages::TaggedTransaction tagged_transaction;
-    messages::Block block;
+    messages::Block input_block;
     bool include_transaction_pool = false;
     if (!_ledger->get_transaction(input.id(), &tagged_transaction, tagged_block,
                                   include_transaction_pool) ||
-        !_ledger->get_block(tagged_transaction.block_id(), &block)) {
+        !_ledger->get_block(tagged_transaction.block_id(), &input_block)) {
       return false;
     }
     for (const auto &output : tagged_transaction.transaction().outputs()) {
       if (output.address() == sender) {
         amount +=
-            output.value().value() *
-            (tagged_block.block().header().height() - block.header().height());
+            output.value().value() * (tagged_block.block().header().height() -
+                                      input_block.header().height());
       }
     }
   }
@@ -40,6 +40,13 @@ bool Pii::get_enthalpy(const messages::Transaction &transaction,
       std::log(fmax(1, previous_pii * enthalpy_lambda() * enthalpy_c() *
                            amount / config.blocks_per_assembly)),
       enthalpy_n());
+  if (amount != 0) {
+    LOG_DEBUG << "ENTHALPY " << *enthalpy;
+    LOG_DEBUG << "PREVIOUS_PII " << previous_pii;
+    LOG_DEBUG << "LAMBDA " << enthalpy_lambda();
+    LOG_DEBUG << "C " << enthalpy_c();
+    LOG_DEBUG << "AMOUNT " << amount;
+  }
   return true;
 }
 
@@ -72,6 +79,7 @@ bool Pii::get_senders(const messages::Transaction &transaction,
 
 bool Pii::add_transaction(const messages::Transaction &transaction,
                           const messages::TaggedBlock &tagged_block) {
+  LOG_DEBUG << "ADDING TRANSACTION";
   std::vector<messages::Address> senders;
   std::vector<messages::Address> recipients;
   if (!get_senders(transaction, tagged_block, &senders) ||
@@ -86,6 +94,8 @@ bool Pii::add_transaction(const messages::Transaction &transaction,
         return false;
       }
       if (sender != recipient) {
+        LOG_DEBUG << "ADDING ENTHALPY " << enthalpy << " FOR SENDER " << sender
+                  << " AND RECIPIENT " << recipient;
         _addresses.add_enthalpy(sender, recipient, enthalpy);
       }
     }

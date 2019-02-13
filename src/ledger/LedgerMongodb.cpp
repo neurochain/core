@@ -16,8 +16,10 @@ const std::string _ID = "_id";
 const std::string $EXISTS = "$exists";
 const std::string $IN = "$in";
 const std::string $SET = "$set";
+const std::string $LTE = "$lte";
 const std::string AS = "as";
 const std::string ASSEMBLIES = "assemblies";
+const std::string ASSEMBLY_HEIGHT = "assemblyHeight";
 const std::string ASSEMBLY_ID = "assemblyId";
 const std::string ADDRESS = "address";
 const std::string BLOCK = "block";
@@ -279,8 +281,11 @@ bool LedgerMongodb::is_ancestor(const messages::TaggedBlock &ancestor,
   if (!ancestor.has_branch_path() || !block.has_branch_path()) {
     return false;
   }
-  auto block_path = block.branch_path();
-  auto ancestor_path = ancestor.branch_path();
+  return is_ancestor(ancestor.branch_path(), block.branch_path());
+}
+
+bool LedgerMongodb::is_ancestor(const messages::BranchPath &ancestor_path,
+                                const messages::BranchPath &block_path) const {
   auto ancestor_size = ancestor_path.branch_ids_size();
   auto block_size = block_path.branch_ids_size();
   assert(block_path.block_numbers_size() == block_size);
@@ -1242,6 +1247,31 @@ bool LedgerMongodb::set_integrity(const messages::Integrity &integrity) {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto bson_integrity = to_bson(integrity);
   return (bool)_integrity.insert_one(std::move(bson_integrity));
+}
+
+messages::IntegrityScore LedgerMongodb::get_integrity(
+    const messages::Address &address,
+    const messages::AssemblyHeight &assembly_height,
+    const messages::BranchPath &branch_path) const {
+  // This is a bit complicated the goal is to return the integrity of the
+  // address at a certain assembly. The hard part is that the integrity is only
+  // stored when it changes. And we only want to see the integrities for our
+  // branch which we cannot specify in a mongo query.
+  auto query = bss::document{} << ADDRESS << to_bson(address) << ASSEMBLY_HEIGHT
+                               << bss::open_document << $LTE << assembly_height
+                               << bss::close_document << bss::finalize;
+  auto options = remove_OID();
+  options.sort(bss::document{} << ASSEMBLY_HEIGHT << -1 << bss::finalize);
+  auto cursor = _integrity.find(std::move(query), options);
+  for (const auto bson_integrity : cursor) {
+    // Check that the integrity is in our branch
+    messages::Integrity integrity;
+    from_bson(bson_integrity, &integrity);
+    if (is_ancestor(integrity.branch_path(), branch_path)) {
+      return integrity.score();
+    }
+  }
+  return 0;
 }
 
 bool LedgerMongodb::get_assemblies_to_compute(

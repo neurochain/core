@@ -13,7 +13,7 @@ class Consensus : public testing::Test {
   const std::string db_url = "mongodb://mongo:27017";
   const std::string db_name = "test_consensus";
   const messages::NCCAmount ncc_block0 = messages::NCCAmount(100000);
-  const int nb_keys = 2;
+  const int nb_keys = 4;
 
  protected:
   tooling::Simulator simulator;
@@ -35,6 +35,12 @@ class Consensus : public testing::Test {
     for (int i = 0; i < assembly.nb_addresses(); i++) {
       messages::Address address;
       ASSERT_TRUE(ledger->get_block_writer(assembly.id(), i, &address));
+    }
+    std::vector<messages::Pii> piis;
+    ledger->get_assembly_piis(assembly.id(), &piis);
+    ASSERT_EQ(piis.size(), assembly.nb_addresses());
+    for (const auto pii : piis) {
+      ASSERT_GT(pii.score(), 1);
     }
   }
 
@@ -144,11 +150,16 @@ class Consensus : public testing::Test {
     for (int32_t i = 1; i < consensus->config.blocks_per_assembly; i++) {
       messages::Address address;
       ASSERT_TRUE(consensus->get_block_writer(assembly_minus_2, i, &address));
-      ASSERT_TRUE(address == simulator.addresses[0] ||
-                  address == simulator.addresses[1]);
+      int address_index = -1;
+      for (int i = 0; i < simulator.addresses.size(); i++) {
+        if (address == simulator.addresses[i]) {
+          address_index = i;
+          break;
+        }
+      }
+      ASSERT_NE(address_index, -1);
 
-      const auto keys = address == simulator.addresses[0] ? simulator.keys[0]
-                                                          : simulator.keys[1];
+      const auto keys = simulator.keys[address_index];
       messages::Block block;
       ASSERT_TRUE(consensus->write_block(keys, i, &block));
       ASSERT_EQ(block.header().height(), i);

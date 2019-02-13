@@ -167,6 +167,11 @@ class Ledger {
 
   virtual bool set_integrity(const messages::Integrity &integrity) = 0;
 
+  virtual messages::IntegrityScore get_integrity(
+      const messages::Address &address,
+      const messages::AssemblyHeight &assembly_height,
+      const messages::BranchPath &branch_path) const = 0;
+
   virtual bool set_previous_assembly_id(
       const messages::BlockID &block_id,
       const messages::AssemblyID &previous_assembly_id) = 0;

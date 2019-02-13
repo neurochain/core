@@ -462,6 +462,66 @@ TEST_F(LedgerMongodb, pii) {
   }
 }
 
+TEST_F(LedgerMongodb, integrity) {
+  messages::Integrity integrity;
+  integrity.mutable_address()->CopyFrom(messages::Address::random());
+
+  // It does not really matter yet I need a hash for the assembly id
+  messages::TaggedBlock block0;
+  ASSERT_TRUE(ledger->get_last_block(&block0));
+  ASSERT_EQ(block0.block().header().height(), 0);
+  integrity.mutable_assembly_id()->CopyFrom(block0.block().header().id());
+  integrity.set_assembly_height(0);
+  integrity.set_score(17);
+  integrity.mutable_branch_path()->CopyFrom(block0.branch_path());
+  ASSERT_TRUE(ledger->set_integrity(integrity));
+
+  auto assembly_height = 0;
+  auto integrity_score = ledger->get_integrity(
+      integrity.address(), assembly_height, block0.branch_path());
+  ASSERT_EQ(integrity_score, 17);
+
+  auto block = simulator.new_block();
+  simulator.consensus->add_block(&block);
+  messages::TaggedBlock block1;
+  ASSERT_TRUE(ledger->get_last_block(&block1));
+  ASSERT_EQ(block1.block().header().height(), 1);
+
+  assembly_height = 1;
+  integrity_score = ledger->get_integrity(integrity.address(), assembly_height,
+                                          block1.branch_path());
+  ASSERT_EQ(integrity_score, 17);
+
+  integrity.set_assembly_height(1);
+  integrity.set_score(18);
+  integrity.mutable_branch_path()->CopyFrom(block1.branch_path());
+  ASSERT_TRUE(ledger->set_integrity(integrity));
+
+  // We should get the new integrity when looking at this assembly height
+  assembly_height = 1;
+  integrity_score = ledger->get_integrity(integrity.address(), assembly_height,
+                                          block1.branch_path());
+  ASSERT_EQ(integrity_score, 18);
+
+  // We should get the old integrity when looking at this assembly height
+  assembly_height = 0;
+  integrity_score = ledger->get_integrity(integrity.address(), assembly_height,
+                                          block0.branch_path());
+  ASSERT_EQ(integrity_score, 17);
+
+  // And if we look in a different branch path that forked at block0 we should
+  // get the old integrity
+  messages::BranchPath branch_path;
+  branch_path.add_branch_ids(1);
+  branch_path.add_block_numbers(0);
+  branch_path.add_branch_ids(0);
+  branch_path.add_block_numbers(0);
+  assembly_height = 1;
+  integrity_score =
+      ledger->get_integrity(integrity.address(), assembly_height, branch_path);
+  ASSERT_EQ(integrity_score, 17);
+}
+
 TEST_F(LedgerMongodb, set_previous_assembly_id) {
   messages::TaggedBlock tagged_block;
   ASSERT_TRUE(ledger->get_block(0, &tagged_block));

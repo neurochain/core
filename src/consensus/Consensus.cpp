@@ -610,6 +610,9 @@ bool Consensus::compute_assembly_pii(const messages::Assembly &assembly) {
 
   auto piis = pii.get_addresses_pii();
   if (piis.size() == 0) {
+    LOG_INFO << "There were no transactions during the assembly "
+             << assembly.id()
+             << " we will therefore use the piis of the previous assembly";
     if (!_ledger->get_assembly_piis(assembly.previous_assembly_id(), &piis)) {
       LOG_WARNING << "Failed to get the previous assembly piis during pii "
                      "computation of assembly "

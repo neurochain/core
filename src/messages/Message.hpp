@@ -15,6 +15,7 @@ namespace neuro {
 namespace messages {
 
 using BlockHeight = decltype(((BlockHeader *)nullptr)->height());
+using AssemblyHeight = decltype(((Assembly *)nullptr)->height());
 using BlockID = std::remove_reference<decltype(
     *(((BlockHeader *)nullptr)->mutable_id()))>::type;
 using AssemblyID = std::remove_reference<decltype(
@@ -26,6 +27,7 @@ using Packet = google::protobuf::Message;
 using Type = Body::BodyCase;
 using BranchID = uint32_t;
 using BlockScore = double;
+using IntegrityScore = decltype(((Integrity *)nullptr)->score());
 
 Type get_type(const Body &body);
 

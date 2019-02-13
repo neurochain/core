@@ -53,6 +53,9 @@ class LedgerMongodb : public Ledger {
 
   void init_database(const messages::Block &block0);
 
+  bool is_ancestor(const messages::BranchPath &ancestor_path,
+                   const messages::BranchPath &block_path) const;
+
   bool is_ancestor(const messages::TaggedBlock &ancestor,
                    const messages::TaggedBlock &block) const;
 
@@ -231,6 +234,11 @@ class LedgerMongodb : public Ledger {
   bool set_pii(const messages::Pii &pii);
 
   bool set_integrity(const messages::Integrity &integrity);
+
+  messages::IntegrityScore get_integrity(
+      const messages::Address &address,
+      const messages::AssemblyHeight &assembly_height,
+      const messages::BranchPath &branch_path) const;
 
   bool set_previous_assembly_id(
       const messages::BlockID &block_id,
