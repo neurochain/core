@@ -63,13 +63,15 @@ class Pii {
   Double enthalpy_lambda() const;
 
  public:
-  Config config;
+  const Config config;
   Pii(std::shared_ptr<ledger::Ledger> ledger, const consensus::Config &config)
       : _ledger(ledger), config(config) {}
 
   bool add_block(const messages::TaggedBlock &tagged_block);
 
-  std::vector<messages::Pii> get_addresses_pii();
+  std::vector<messages::Pii> get_addresses_pii(
+      const messages::AssemblyHeight &assembly_height,
+      const messages::BranchPath &branch_path);
 
   friend class tests::Pii;
 };

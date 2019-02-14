@@ -81,6 +81,11 @@ class LedgerMongodb : public Ledger {
       std::vector<messages::TaggedBlock> *tagged_blocks,
       bool include_transactions = true) const;
 
+  bool get_block(const messages::BlockHeight height,
+                 const messages::BranchPath &branch_path,
+                 messages::TaggedBlock *tagged_block,
+                 bool include_transactions = true) const;
+
   messages::BranchID new_branch_id() const;
 
   bool set_branch_path(const messages::BlockHeader &block_header,
@@ -113,6 +118,8 @@ class LedgerMongodb : public Ledger {
   void create_first_assemblies(const std::vector<messages::Address> &addresses);
 
   bool cleanup_transaction_pool(const messages::BlockID &block_id);
+
+  bool unsafe_set_integrity(const messages::Integrity &integrity);
 
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);
@@ -240,6 +247,12 @@ class LedgerMongodb : public Ledger {
       const messages::AssemblyHeight &assembly_height,
       const messages::BranchPath &branch_path) const;
 
+  bool add_integrity(const messages::Address &address,
+                     const messages::AssemblyID &assembly_id,
+                     const messages::AssemblyHeight &assembly_height,
+                     const messages::BranchPath &branch_path,
+                     const messages::IntegrityScore &added_score);
+
   bool set_previous_assembly_id(
       const messages::BlockID &block_id,
       const messages::AssemblyID &previous_assembly_id);
@@ -259,6 +272,10 @@ class LedgerMongodb : public Ledger {
   bool set_seed(const messages::AssemblyID &assembly_id, int32_t seed);
 
   bool set_finished_computation(const messages::AssemblyID &assembly_id);
+
+  bool denunciation_exists(const messages::Denunciation &denunciation,
+                           const messages::BlockHeight &max_block_height,
+                           const messages::BranchPath &branch_path) const;
 
   friend class neuro::ledger::tests::LedgerMongodb;
   friend class neuro::tooling::Simulator;

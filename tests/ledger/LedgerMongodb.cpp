@@ -731,6 +731,46 @@ TEST_F(LedgerMongodb, balance) {
   ASSERT_EQ(ledger->balance(address1), ncc_block0);
 }
 
+TEST_F(LedgerMongodb, denunciation_exists) {
+  // Let's make the first miner double mine
+  auto block1 = simulator.new_block();
+  auto block1_bis = simulator.new_block(1);
+  ASSERT_TRUE(simulator.consensus->add_block(&block1));
+  ASSERT_TRUE(simulator.consensus->add_block(&block1_bis));
+
+  // Let's denounce the vile double miner
+  auto block2 = simulator.new_block();
+  auto denunciation = block2.add_denunciations();
+  denunciation->mutable_block_id()->CopyFrom(block1_bis.header().id());
+  denunciation->set_block_height(1);
+  denunciation->mutable_block_author()->CopyFrom(block1_bis.header().author());
+
+  // The hash and the signatures need to be fixed now that we changed the block
+  messages::set_block_hash(&block2);
+  uint32_t miner_index = simulator.addresses_indexes.at(
+      messages::Address(block2.header().author().key_pub()));
+  crypto::sign(simulator.keys[miner_index], &block2);
+  ASSERT_TRUE(simulator.consensus->add_block(&block2));
+  auto block2_bis = simulator.new_block();
+  ASSERT_TRUE(simulator.consensus->add_block(&block2_bis));
+
+  messages::TaggedBlock tagged_block2, tagged_block2_bis;
+  ASSERT_TRUE(ledger->get_block(block2.header().id(), &tagged_block2));
+  ASSERT_TRUE(ledger->get_block(block2_bis.header().id(), &tagged_block2_bis));
+  ASSERT_FALSE(ledger->denunciation_exists(
+      *denunciation, block2.header().height(), tagged_block2.branch_path()));
+  ASSERT_FALSE(ledger->denunciation_exists(*denunciation,
+                                           block2_bis.header().height(),
+                                           tagged_block2_bis.branch_path()));
+
+  auto block3 = simulator.new_block();
+  ASSERT_TRUE(simulator.consensus->add_block(&block3));
+  messages::TaggedBlock tagged_block3;
+  ASSERT_TRUE(ledger->get_block(3, &tagged_block3));
+  ASSERT_TRUE(ledger->denunciation_exists(
+      *denunciation, block3.header().height(), tagged_block3.branch_path()));
+}
+
 }  // namespace tests
 }  // namespace ledger
 }  // namespace neuro

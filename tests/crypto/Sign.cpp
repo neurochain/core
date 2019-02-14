@@ -54,17 +54,18 @@ TEST(Sign, block) {
 
 TEST(Sign, denunciation) {
   messages::Denunciation denunciation;
-  denunciation.mutable_id()->CopyFrom(messages::Hasher::random());
-  denunciation.set_height(0);
+  denunciation.mutable_block_id()->CopyFrom(messages::Hasher::random());
+  denunciation.set_block_height(0);
   crypto::Ecc keys;
-  ASSERT_FALSE(denunciation.has_author());
+  ASSERT_FALSE(denunciation.has_block_author());
   ASSERT_TRUE(sign(keys, &denunciation));
-  ASSERT_TRUE(denunciation.has_author());
-  auto author = denunciation.author();
+  ASSERT_TRUE(denunciation.has_block_author());
+  auto author = denunciation.block_author();
   ASSERT_TRUE(author.has_key_pub());
   ASSERT_TRUE(author.has_signature());
   ASSERT_TRUE(verify(denunciation));
-  auto mutable_signature = denunciation.mutable_author()->mutable_signature();
+  auto mutable_signature =
+      denunciation.mutable_block_author()->mutable_signature();
   auto data = mutable_signature->mutable_data();
   (*data)[0] += 1;
   ASSERT_FALSE(verify(denunciation));

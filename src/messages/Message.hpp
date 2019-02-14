@@ -87,9 +87,9 @@ class Denunciation : public _Denunciation {
   Denunciation(const _Denunciation &denunciation)
       : _Denunciation(denunciation) {}
   Denunciation(const Block &block) {
-    mutable_id()->CopyFrom(block.header().id());
-    set_height(block.header().height());
-    mutable_author()->CopyFrom(block.header().author());
+    mutable_block_id()->CopyFrom(block.header().id());
+    set_block_height(block.header().height());
+    mutable_block_author()->CopyFrom(block.header().author());
   }
 };
 

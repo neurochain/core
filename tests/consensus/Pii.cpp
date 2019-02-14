@@ -108,7 +108,9 @@ class Pii : public testing::Test {
       ASSERT_GT(entropy, 2);
       ASSERT_LT(entropy, 50);
     }
-    auto addresses_pii = pii.get_addresses_pii();
+    auto assembly_height = 0;
+    auto addresses_pii =
+        pii.get_addresses_pii(assembly_height, last_block.branch_path());
     ASSERT_EQ(addresses_pii.size(), 3);
     auto &pii0 = addresses_pii[0];
     auto &pii1 = addresses_pii[1];

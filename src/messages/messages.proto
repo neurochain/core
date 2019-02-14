@@ -85,9 +85,9 @@ message BlockHeader {
 }
 
 message _Denunciation {
-  required Hash id = 1;
-  required int32 height = 2;
-  required Signature author = 3;
+  required Hash block_id = 1;
+  required int32 block_height = 2;
+  required Signature block_author = 3;
 }
 
 message Block {

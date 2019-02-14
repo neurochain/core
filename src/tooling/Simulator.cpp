@@ -16,6 +16,9 @@ consensus::Config config{
     std::chrono::seconds(1),         // update_heights_sleep
     std::chrono::seconds(1),         // compute_pii_sleep
     std::chrono::milliseconds(100),  // miner_sleep
+    1,                               // integrity_block_reward
+    -40,                             // integrity_double_mining
+    1                                // integrity_denunciation_reward
 };
 
 Simulator::Simulator(const std::string &db_url, const std::string &db_name,
@@ -120,6 +123,17 @@ messages::Block Simulator::new_block(
 messages::Block Simulator::new_block(
     const messages::TaggedBlock &last_block) const {
   return new_block(0, last_block);
+}
+
+/*
+ * Let's fetch the last block automatically and create a new one
+ */
+messages::Block Simulator::new_block(int nb_transactions) const {
+  messages::TaggedBlock last_block;
+  if (!ledger->get_last_block(&last_block)) {
+    throw std::runtime_error("Failed to get the last block in the simulator");
+  }
+  return new_block(nb_transactions, last_block);
 }
 
 /*

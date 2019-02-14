@@ -30,6 +30,7 @@ const std::string BRANCH_IDS = "branchIds";
 const std::string BRANCH_PATH = "branchPath";
 const std::string COUNT = "count";
 const std::string DATA = "data";
+const std::string DENUNCIATIONS = "denunciations";
 const std::string FINISHED_COMPUTATION = "finishedComputation";
 const std::string FROM = "from";
 const std::string FOREIGN_FIELD = "foreignField";
@@ -197,6 +198,8 @@ void LedgerMongodb::create_indexes() {
   _blocks.create_index(bss::document{} << BRANCH_PATH + "." + BRANCH_IDS + ".0"
                                        << 1 << bss::finalize);
   _blocks.create_index(bss::document{} << BLOCK + "." + SCORE << 1
+                                       << bss::finalize);
+  _blocks.create_index(bss::document{} << DENUNCIATIONS + "." + ID << 1
                                        << bss::finalize);
   _transactions.create_index(bss::document{} << TRANSACTION + "." + ID << 1
                                              << bss::finalize);
@@ -534,6 +537,24 @@ bool LedgerMongodb::get_block(const messages::BlockHeight height,
                               bool include_transactions) const {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   return unsafe_get_block(height, block, include_transactions);
+}
+
+bool LedgerMongodb::get_block(const messages::BlockHeight height,
+                              const messages::BranchPath &branch_path,
+                              messages::TaggedBlock *tagged_block,
+                              bool include_transactions) const {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  auto query = bss::document{} << BLOCK + "." + HEADER + "." + HEIGHT << height
+                               << bss::finalize;
+
+  auto cursor = _blocks.find(std::move(query), remove_OID());
+  for (const auto &bson_tagged_block : cursor) {
+    from_bson(bson_tagged_block, tagged_block);
+    if (is_ancestor(tagged_block->branch_path(), branch_path)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 bool LedgerMongodb::unsafe_get_block(const messages::BlockHeight height,
@@ -1243,10 +1264,35 @@ bool LedgerMongodb::set_previous_assembly_id(
   return update_result && update_result->modified_count() > 0;
 }
 
-bool LedgerMongodb::set_integrity(const messages::Integrity &integrity) {
-  std::lock_guard<std::mutex> lock(_ledger_mutex);
+bool LedgerMongodb::unsafe_set_integrity(const messages::Integrity &integrity) {
   auto bson_integrity = to_bson(integrity);
   return (bool)_integrity.insert_one(std::move(bson_integrity));
+}
+
+bool LedgerMongodb::set_integrity(const messages::Integrity &integrity) {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  return unsafe_set_integrity(integrity);
+}
+
+bool LedgerMongodb::add_integrity(
+    const messages::Address &address, const messages::AssemblyID &assembly_id,
+    const messages::AssemblyHeight &assembly_height,
+    const messages::BranchPath &branch_path,
+    const messages::IntegrityScore &added_score) {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  // We want the integrity before the current assembly
+  // The branch_path is not the right one but it should work because it is a
+  // descendant of the corrent branch_path
+  auto previous_score =
+      get_integrity(address, assembly_height - 1, branch_path);
+
+  messages::Integrity integrity;
+  integrity.mutable_address()->CopyFrom(address);
+  integrity.mutable_assembly_id()->CopyFrom(assembly_id);
+  integrity.set_score(previous_score + added_score);
+  integrity.set_assembly_height(assembly_height);
+  integrity.mutable_branch_path()->CopyFrom(branch_path);
+  return unsafe_set_integrity(integrity);
 }
 
 messages::IntegrityScore LedgerMongodb::get_integrity(
@@ -1340,6 +1386,28 @@ bool LedgerMongodb::set_finished_computation(
   auto update_result =
       _assemblies.update_one(std::move(filter), std::move(update));
   return update_result && update_result->modified_count() > 0;
+}
+
+bool LedgerMongodb::denunciation_exists(
+    const messages::Denunciation &denunciation,
+    const messages::BlockHeight &max_block_height,
+    const messages::BranchPath &branch_path) const {
+  auto query = bss::document{}
+               << BLOCK + "." + DENUNCIATIONS + "." + BLOCK_ID
+               << to_bson(denunciation.block_id()) << $LTE << bss::open_document
+               << BLOCK + "." + HEADER + "." + HEIGHT << max_block_height
+               << bss::close_document << bss::finalize;
+
+  auto cursor = _blocks.find(std::move(query), projection(BRANCH_PATH));
+  for (const auto &bson_branch_path : cursor) {
+    messages::BranchPath ancestor_branch_path;
+    from_bson(bson_branch_path[BRANCH_PATH].get_document(),
+              &ancestor_branch_path);
+    if (is_ancestor(ancestor_branch_path, branch_path)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 }  // namespace ledger

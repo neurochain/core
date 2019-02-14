@@ -40,13 +40,6 @@ bool Pii::get_enthalpy(const messages::Transaction &transaction,
       std::log(fmax(1, previous_pii * enthalpy_lambda() * enthalpy_c() *
                            amount / config.blocks_per_assembly)),
       enthalpy_n());
-  if (amount != 0) {
-    LOG_DEBUG << "ENTHALPY " << *enthalpy;
-    LOG_DEBUG << "PREVIOUS_PII " << previous_pii;
-    LOG_DEBUG << "LAMBDA " << enthalpy_lambda();
-    LOG_DEBUG << "C " << enthalpy_c();
-    LOG_DEBUG << "AMOUNT " << amount;
-  }
   return true;
 }
 
@@ -79,7 +72,6 @@ bool Pii::get_senders(const messages::Transaction &transaction,
 
 bool Pii::add_transaction(const messages::Transaction &transaction,
                           const messages::TaggedBlock &tagged_block) {
-  LOG_DEBUG << "ADDING TRANSACTION";
   std::vector<messages::Address> senders;
   std::vector<messages::Address> recipients;
   if (!get_senders(transaction, tagged_block, &senders) ||
@@ -94,8 +86,6 @@ bool Pii::add_transaction(const messages::Transaction &transaction,
         return false;
       }
       if (sender != recipient) {
-        LOG_DEBUG << "ADDING ENTHALPY " << enthalpy << " FOR SENDER " << sender
-                  << " AND RECIPIENT " << recipient;
         _addresses.add_enthalpy(sender, recipient, enthalpy);
       }
     }
@@ -155,11 +145,20 @@ Double Addresses::get_entropy(const messages::Address &address) const {
   return fmax(1, entropy);
 }
 
-std::vector<messages::Pii> Pii::get_addresses_pii() {
+std::vector<messages::Pii> Pii::get_addresses_pii(
+    const messages::AssemblyHeight &assembly_height,
+    const messages::BranchPath &branch_path) {
   std::vector<messages::Pii> piis;
   for (const auto &[address, _] : _addresses._addresses) {
     auto &pii = piis.emplace_back();
-    pii.set_score(_addresses.get_entropy(address));
+    auto entropy = _addresses.get_entropy(address);
+
+    // We want to get the integrity at the assembly n - 1
+    auto integrity_score =
+        _ledger->get_integrity(address, assembly_height - 1, branch_path);
+    double divided_integrity = integrity_score / 2400;
+    auto integrity = 1 + 0.1 * divided_integrity / (1 + divided_integrity);
+    pii.set_score(fmax(1, integrity * entropy));
     pii.mutable_address()->CopyFrom(address);
   }
   std::sort(piis.begin(), piis.end(),

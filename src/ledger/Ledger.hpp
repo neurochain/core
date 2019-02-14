@@ -99,6 +99,10 @@ class Ledger {
   virtual bool get_block(const messages::BlockHeight height,
                          messages::TaggedBlock *tagged_block,
                          bool include_transactions = true) const = 0;
+  virtual bool get_block(const messages::BlockHeight height,
+                         const messages::BranchPath &branch_path,
+                         messages::TaggedBlock *tagged_block,
+                         bool include_transactions = true) const = 0;
   virtual bool insert_block(messages::TaggedBlock *tagged_block) = 0;
   virtual bool insert_block(messages::Block *block) = 0;
   virtual bool delete_block(const messages::BlockID &id) = 0;
@@ -167,6 +171,12 @@ class Ledger {
 
   virtual bool set_integrity(const messages::Integrity &integrity) = 0;
 
+  virtual bool add_integrity(const messages::Address &address,
+                             const messages::AssemblyID &assembly_id,
+                             const messages::AssemblyHeight &assembly_height,
+                             const messages::BranchPath &branch_path,
+                             const messages::IntegrityScore &added_score) = 0;
+
   virtual messages::IntegrityScore get_integrity(
       const messages::Address &address,
       const messages::AssemblyHeight &assembly_height,
@@ -197,6 +207,15 @@ class Ledger {
 
   virtual bool set_finished_computation(
       const messages::AssemblyID &assembly_id) = 0;
+
+  /*
+   * Check if a denunciation exists in a certain branch within a block with a
+   * block height at most max_block_height
+   */
+  virtual bool denunciation_exists(
+      const messages::Denunciation &denunciation,
+      const messages::BlockHeight &max_block_height,
+      const messages::BranchPath &branch_path) const = 0;
 
   // helpers
 

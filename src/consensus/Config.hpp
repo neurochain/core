@@ -16,6 +16,9 @@ struct Config {
   std::chrono::seconds update_heights_sleep{5};
   std::chrono::seconds compute_pii_sleep{5};
   std::chrono::milliseconds miner_sleep{100};
+  int32_t integrity_block_reward{1};
+  int32_t integrity_double_mining{-40};
+  int32_t integrity_denunciation_reward{1};
 };
 
 }  // namespace consensus

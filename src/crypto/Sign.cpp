@@ -67,7 +67,8 @@ bool sign(const crypto::Ecc &keys, messages::Block *block) {
   // And the denunciation contains the block id so it is pretty much the same.
   auto denunciation = messages::Denunciation(*block);
   sign(keys, &denunciation);
-  block->mutable_header()->mutable_author()->CopyFrom(denunciation.author());
+  block->mutable_header()->mutable_author()->CopyFrom(
+      denunciation.block_author());
   return true;
 }
 
@@ -76,7 +77,7 @@ bool verify(const messages::Block &block) {
 }
 
 bool sign(const crypto::Ecc &keys, messages::Denunciation *denunciation) {
-  auto author = denunciation->mutable_author();
+  auto author = denunciation->mutable_block_author();
   messages::set_default(author);
   Buffer serialized;
   messages::to_buffer(*denunciation, &serialized);
@@ -91,12 +92,12 @@ bool sign(const crypto::Ecc &keys, messages::Denunciation *denunciation) {
 
 bool verify(const messages::Denunciation &denunciation) {
   auto copy = denunciation;
-  messages::set_default(copy.mutable_author());
+  messages::set_default(copy.mutable_block_author());
 
   Buffer buffer;
   messages::to_buffer(copy, &buffer);
 
-  const auto author = denunciation.author();
+  const auto author = denunciation.block_author();
   const auto hash = author.signature().data();
   const Buffer sig(hash.data(), hash.size());
 
@@ -105,7 +106,7 @@ bool verify(const messages::Denunciation &denunciation) {
 
   if (!ecc_pub.verify(buffer, sig)) {
     LOG_WARNING << "Wrong signature in denunciation with block id "
-                << denunciation.id();
+                << denunciation.block_id();
     return false;
   }
 

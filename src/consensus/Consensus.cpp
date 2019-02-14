@@ -395,6 +395,35 @@ bool Consensus::check_block_author(
   return true;
 }
 
+bool Consensus::check_block_denunciations(
+    const messages::TaggedBlock &tagged_block) const {
+  for (const auto denunciation : tagged_block.block().denunciations()) {
+    // Check that we do have a block written by the same author at the same
+    // height The issue is that I do need to get all the blocks at the given
+    // height
+    // We should also check that it has not been already denunced in this branch
+    bool include_transactions = false;
+    messages::TaggedBlock double_mining_block;
+    if (!_ledger->get_block(denunciation.block_height(),
+                            tagged_block.branch_path(), &double_mining_block,
+                            include_transactions)) {
+      LOG_INFO << "Failed check_block_denunciations for block "
+               << tagged_block.block().header().id() << " invalid denunciation "
+               << denunciation << " there was no double mining";
+      return false;
+    }
+    if (_ledger->denunciation_exists(denunciation,
+                                     tagged_block.block().header().height() - 1,
+                                     tagged_block.branch_path())) {
+      LOG_INFO << "Failed check_block_denunciations for block "
+               << tagged_block.block().header().id() << " invalid denunciation "
+               << denunciation << " the denunciation is a duplicate";
+      return false;
+    }
+  }
+  return true;
+}
+
 Double Consensus::get_block_score(
     const messages::TaggedBlock &tagged_block) const {
   messages::TaggedBlock previous;
@@ -543,7 +572,8 @@ bool Consensus::is_valid(messages::TaggedBlock *tagged_block) const {
          check_transactions_order(*tagged_block) &&
          check_block_height(*tagged_block) &&
          check_block_timestamp(*tagged_block) &&
-         check_block_author(*tagged_block);
+         check_block_author(*tagged_block) &&
+         check_block_denunciations(*tagged_block);
 }
 
 bool Consensus::add_transaction(const messages::Transaction &transaction) {
@@ -578,6 +608,7 @@ void Consensus::start_compute_pii_thread() {
 
 bool Consensus::compute_assembly_pii(const messages::Assembly &assembly) {
   auto pii = Pii(_ledger, config);
+  auto integrities = Integrities(config);
   messages::TaggedBlock tagged_block;
   if (!_ledger->get_block(assembly.id(), &tagged_block)) {
     LOG_WARNING << "During Pii computation missing block with id assembly_id "
@@ -585,10 +616,12 @@ bool Consensus::compute_assembly_pii(const messages::Assembly &assembly) {
     return false;
   }
   uint32_t seed = 0;
+  const auto branch_path = tagged_block.branch_path();
 
   while (tagged_block.block().header().id() !=
          assembly.previous_assembly_id()) {
     pii.add_block(tagged_block);
+    integrities.add_block(tagged_block);
     auto block_id = tagged_block.block().header().id().data();
     seed <<= 1;
     seed += block_id.at(block_id.size() - 1) % 2;
@@ -608,7 +641,13 @@ bool Consensus::compute_assembly_pii(const messages::Assembly &assembly) {
     return false;
   };
 
-  auto piis = pii.get_addresses_pii();
+  // Add the integrity before the pii because it is used in the pii computations
+  for (const auto &[address, score] : integrities.scores) {
+    _ledger->add_integrity(address, assembly.id(), assembly.height(),
+                           branch_path, score);
+  }
+
+  auto piis = pii.get_addresses_pii(assembly.height(), branch_path);
   if (piis.size() == 0) {
     LOG_INFO << "There were no transactions during the assembly "
              << assembly.id()
@@ -769,6 +808,9 @@ bool Consensus::write_block(const crypto::Ecc &keys,
                               transaction, height);
 
   _ledger->get_transaction_pool(block);
+
+  // TODO add denunciations!
+
   messages::sort_transactions(block);
   messages::set_block_hash(block);
   crypto::sign(keys, block);

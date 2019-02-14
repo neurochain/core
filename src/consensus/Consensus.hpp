@@ -2,6 +2,7 @@
 #define NEURO_SRC_CONSENSUS_CONSENSUS_HPP
 
 #include <unordered_set>
+#include "consensus/Integrity.hpp"
 #include "consensus/Pii.hpp"
 #include "crypto/Sign.hpp"
 #include "ledger/Ledger.hpp"
@@ -77,6 +78,9 @@ class Consensus {
   bool check_block_timestamp(const messages::TaggedBlock &tagged_block) const;
 
   bool check_block_author(const messages::TaggedBlock &tagged_block) const;
+
+  bool check_block_denunciations(
+      const messages::TaggedBlock &tagged_block) const;
 
   Double get_block_score(const messages::TaggedBlock &tagged_block) const;
 
