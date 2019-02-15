@@ -277,6 +277,10 @@ class LedgerMongodb : public Ledger {
                            const messages::BlockHeight &max_block_height,
                            const messages::BranchPath &branch_path) const;
 
+  std::vector<messages::TaggedBlock> get_blocks(
+      const messages::BlockHeight height, const messages::KeyPub &author,
+      bool include_transactions = true) const;
+
   friend class neuro::ledger::tests::LedgerMongodb;
   friend class neuro::tooling::Simulator;
   friend class neuro::tooling::RealtimeSimulator;

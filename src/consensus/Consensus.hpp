@@ -2,7 +2,7 @@
 #define NEURO_SRC_CONSENSUS_CONSENSUS_HPP
 
 #include <unordered_set>
-#include "consensus/Integrity.hpp"
+#include "consensus/Integrities.hpp"
 #include "consensus/Pii.hpp"
 #include "crypto/Sign.hpp"
 #include "ledger/Ledger.hpp"

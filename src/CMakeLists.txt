@@ -79,6 +79,8 @@ add_library(core
   ./consensus/Consensus.cpp
   ./consensus/Pii.hpp
   ./consensus/Pii.cpp
+  ./consensus/Integrities.hpp
+  ./consensus/Integrities.cpp
   )
 
 target_link_libraries(core

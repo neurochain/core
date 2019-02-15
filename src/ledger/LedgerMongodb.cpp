@@ -22,6 +22,7 @@ const std::string ASSEMBLIES = "assemblies";
 const std::string ASSEMBLY_HEIGHT = "assemblyHeight";
 const std::string ASSEMBLY_ID = "assemblyId";
 const std::string ADDRESS = "address";
+const std::string AUTHOR = "author";
 const std::string BLOCK = "block";
 const std::string BLOCK_ID = "blockId";
 const std::string BLOCKS = "blocks";
@@ -39,6 +40,7 @@ const std::string HEIGHT = "height";
 const std::string ID = "id";
 const std::string INPUTS = "inputs";
 const std::string INTEGRITY = "integrity";
+const std::string KEY_PUB = "keyPub";
 const std::string LOCAL_FIELD = "localField";
 const std::string MAIN = "MAIN";
 const std::string NB_ADDRESSES = "nbAddresses";
@@ -1392,11 +1394,11 @@ bool LedgerMongodb::denunciation_exists(
     const messages::Denunciation &denunciation,
     const messages::BlockHeight &max_block_height,
     const messages::BranchPath &branch_path) const {
-  auto query = bss::document{}
-               << BLOCK + "." + DENUNCIATIONS + "." + BLOCK_ID
-               << to_bson(denunciation.block_id()) << $LTE << bss::open_document
-               << BLOCK + "." + HEADER + "." + HEIGHT << max_block_height
-               << bss::close_document << bss::finalize;
+  auto query = bss::document{} << BLOCK + "." + DENUNCIATIONS + "." + BLOCK_ID
+                               << to_bson(denunciation.block_id())
+                               << BLOCK + "." + HEADER + "." + HEIGHT
+                               << bss::open_document << $LTE << max_block_height
+                               << bss::close_document << bss::finalize;
 
   auto cursor = _blocks.find(std::move(query), projection(BRANCH_PATH));
   for (const auto &bson_branch_path : cursor) {
@@ -1408,6 +1410,25 @@ bool LedgerMongodb::denunciation_exists(
     }
   }
   return false;
+}
+
+std::vector<messages::TaggedBlock> LedgerMongodb::get_blocks(
+    const messages::BlockHeight height, const messages::KeyPub &author,
+    bool include_transactions) const {
+  std::vector<messages::TaggedBlock> tagged_blocks;
+  auto query = bss::document{}
+               << BLOCK + "." + HEADER + "." + HEIGHT << height
+               << BLOCK + "." + HEADER + "." + AUTHOR + "." + KEY_PUB
+               << to_bson(author) << bss::finalize;
+  auto cursor = _blocks.find(std::move(query), remove_OID());
+  for (const auto &bson_tagged_block : cursor) {
+    auto &tagged_block = tagged_blocks.emplace_back();
+    from_bson(bson_tagged_block, &tagged_block);
+    if (include_transactions) {
+      fill_block_transactions(tagged_block.mutable_block());
+    }
+  }
+  return tagged_blocks;
 }
 
 }  // namespace ledger

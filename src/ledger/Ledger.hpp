@@ -103,6 +103,9 @@ class Ledger {
                          const messages::BranchPath &branch_path,
                          messages::TaggedBlock *tagged_block,
                          bool include_transactions = true) const = 0;
+  virtual std::vector<messages::TaggedBlock> get_blocks(
+      const messages::BlockHeight height, const messages::KeyPub &author,
+      bool include_transactions = true) const = 0;
   virtual bool insert_block(messages::TaggedBlock *tagged_block) = 0;
   virtual bool insert_block(messages::Block *block) = 0;
   virtual bool delete_block(const messages::BlockID &id) = 0;
