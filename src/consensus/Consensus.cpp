@@ -321,9 +321,9 @@ bool Consensus::check_block_timestamp(
   const auto &block = tagged_block.block();
   messages::Block block0;
   _ledger->get_block(0, &block0);
-  auto expected_timestamp = block0.header().timestamp().data() +
-                            block.header().height() * config.block_period;
-  auto real_timestamp = tagged_block.block().header().timestamp().data();
+  int64_t expected_timestamp = block0.header().timestamp().data() +
+                               block.header().height() * config.block_period;
+  int64_t real_timestamp = tagged_block.block().header().timestamp().data();
   if (!block.header().has_timestamp()) {
     LOG_INFO << "Failed check_block_timestamp for block " << block.header().id()
              << " it is missing the timestamp field";
@@ -659,7 +659,7 @@ bool Consensus::compute_assembly_pii(const messages::Assembly &assembly) {
       return false;
     }
   }
-  for (int i = 0; i < piis.size(); i++) {
+  for (size_t i = 0; i < piis.size(); i++) {
     auto pii = piis[i];
     pii.mutable_assembly_id()->CopyFrom(assembly.id());
     pii.set_rank(i);

@@ -147,11 +147,11 @@ class Consensus : public testing::Test {
                          &assembly_minus_1);
     ledger->get_assembly(assembly_minus_1.previous_assembly_id(),
                          &assembly_minus_2);
-    for (int32_t i = 1; i < consensus->config.blocks_per_assembly; i++) {
+    for (uint32_t i = 1; i < consensus->config.blocks_per_assembly; i++) {
       messages::Address address;
       ASSERT_TRUE(consensus->get_block_writer(assembly_minus_2, i, &address));
       int address_index = -1;
-      for (int i = 0; i < simulator.addresses.size(); i++) {
+      for (size_t i = 0; i < simulator.addresses.size(); i++) {
         if (address == simulator.addresses[i]) {
           address_index = i;
           break;
