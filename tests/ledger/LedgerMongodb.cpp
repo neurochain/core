@@ -747,20 +747,9 @@ TEST_F(LedgerMongodb, denunciation_exists) {
   denunciation->mutable_block_author()->CopyFrom(block1_bis.header().author());
 
   // The hash and the signatures need to be fixed now that we changed the block
-  LOG_DEBUG << messages::Address(block2.header().author().key_pub());
-  for (int i = 0; i < nb_keys; i++) {
-    LOG_DEBUG << "ADDRESS " << i << " " << simulator.addresses[i];
-  }
   auto block2_author = messages::Address(block2.header().author().key_pub());
-  LOG_DEBUG << block2_author;
-  LOG_DEBUG << simulator.addresses_indexes.count(block2_author);
-  LOG_DEBUG << simulator.addresses_indexes[block2_author];
   uint32_t miner_index = simulator.addresses_indexes[messages::Address(
       block2.header().author().key_pub())];
-  for (const auto &[key, value] : simulator.addresses_indexes) {
-    LOG_DEBUG << "INDEXES " << key << " " << value;
-  }
-  LOG_DEBUG << "TOTORO " << miner_index;
 
   messages::set_block_hash(&block2);
   crypto::sign(simulator.keys[miner_index], &block2);
@@ -793,8 +782,6 @@ TEST_F(LedgerMongodb, denunciation_exists) {
   ASSERT_TRUE(simulator.consensus->add_block(&block3_bis));
   messages::TaggedBlock tagged_block3_bis;
   ASSERT_TRUE(ledger->get_block(block3_bis.header().id(), &tagged_block3_bis));
-  LOG_DEBUG << "BLOCK3 BRANCH PATH " << tagged_block3.branch_path();
-  LOG_DEBUG << "BLOCK3 BIS BRANCH PATH " << tagged_block3_bis.branch_path();
   ASSERT_FALSE(ledger->denunciation_exists(*denunciation,
                                            block3_bis.header().height() - 1,
                                            tagged_block3_bis.branch_path()));
@@ -806,20 +793,22 @@ TEST_F(LedgerMongodb, get_blocks) {
   auto block1_bis = simulator.new_block(1);
   ASSERT_TRUE(simulator.consensus->add_block(&block1));
 
-  auto include_transactions = false;
+  auto include_transactions = true;
   auto blocks = ledger->get_blocks(block1.header().height(),
                                    block1.header().author().key_pub(),
                                    include_transactions);
   ASSERT_EQ(blocks.size(), 1);
-  ASSERT_EQ(blocks.at(0), block1);
+  ASSERT_EQ(blocks.at(0).block(), block1);
 
   ASSERT_TRUE(simulator.consensus->add_block(&block1_bis));
   blocks = ledger->get_blocks(block1.header().height(),
                               block1.header().author().key_pub(),
                               include_transactions);
   ASSERT_EQ(blocks.size(), 2);
-  ASSERT_TRUE(blocks.at(0) == block1 || blocks.at(0) == block1_bis);
-  ASSERT_TRUE(blocks.at(1) == block1 || blocks.at(1) == block1_bis);
+  ASSERT_TRUE(blocks.at(0).block() == block1 ||
+              blocks.at(0).block() == block1_bis);
+  ASSERT_TRUE(blocks.at(1).block() == block1 ||
+              blocks.at(1).block() == block1_bis);
 }
 
 }  // namespace tests
