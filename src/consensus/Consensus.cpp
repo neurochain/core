@@ -744,7 +744,7 @@ bool Consensus::get_heights_to_write(
     return false;
   }
   std::unordered_map<messages::Address, AddressIndex> addresses_map;
-  for (auto i = 0; i < addresses.size(); i++) {
+  for (uint32_t i = 0; i < addresses.size(); i++) {
     addresses_map[addresses[i]] = i;
   }
 
