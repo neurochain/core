@@ -91,17 +91,17 @@ class NCCAmount : public _NCCAmount {
 
 template <typename TA, typename TB>
 typename std::enable_if<
-  std::is_base_of<::neuro::messages::Packet, TA>::value &&
-std::is_base_of<::neuro::messages::Packet, TB>::value,
-  bool>::type
-    operator==(const TA &a, const TB &b) {
+    std::is_base_of<::neuro::messages::Packet, TA>::value &&
+        std::is_base_of<::neuro::messages::Packet, TB>::value,
+    bool>::type
+operator==(const TA &a, const TB &b) {
   std::string json_a, json_b;
   to_json(a, &json_a);
   to_json(b, &json_b);
   bool res = json_a == json_b;
 
   return res;
-  }
+}
 
 template <>
 bool operator==<::neuro::messages::Peer, ::neuro::messages::Peer>(
@@ -124,9 +124,10 @@ bool operator==<::neuro::messages::Peer, ::neuro::messages::Peer>(
 
 namespace std {
 template <typename T>
-struct hash <typename std::enable_if<std::is_base_of<::neuro::messages::Packet, T>::value, T>::type> {
+struct hash<typename std::enable_if<
+    std::is_base_of<::neuro::messages::Packet, T>::value, T>::type> {
   using result_type = std::size_t;
-    
+
   typedef std::size_t result_type;
 
   result_type operator()(argument_type const &packet) const noexcept {
