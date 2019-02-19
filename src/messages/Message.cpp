@@ -80,20 +80,6 @@ std::ostream &operator<<(std::ostream &os, const Packet &packet) {
   return os;
 }
 
-bool operator==(const Packet &a, const Packet &b) {
-  std::string json_a, json_b;
-  to_json(a, &json_a);
-  to_json(b, &json_b);
-  bool res = json_a == json_b;
-
-  return res;
-}
-
-bool operator==(const messages::Peer &a, const messages::Peer &b) {
-  LOG_TRACE << a.endpoint() << " " << b.endpoint();
-  return a.key_pub() == b.key_pub();
-}
-
 void set_transaction_hash(Transaction *transaction) {
   // Fill the id which is a required field. This makes the transaction
   // serializable.

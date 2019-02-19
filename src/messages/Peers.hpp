@@ -46,12 +46,11 @@ class Peers {
   std::size_t size() const { return _peers.size(); }
 
   Peer *insert(const Peer &peer);
-  Peer *insert(const messages::KeyPub &key_pub,
-               const std::optional<Endpoint> &endpoint,
-               const std::optional<Port> &listen_port);
+  // Peer *insert(const messages::KeyPub &key_pub,
+  //              const std::optional<Endpoint> &endpoint,
+  //              const std::optional<Port> &listen_port);
 
   bool fill(_Peers *peers);
-  void set_last_update(Peer *peer);
   std::size_t used_peers_count() const;
   bool update_peer_status(const Peer &peer, const Peer::Status status);
   std::optional<Peer *> next(const Peer::Status status,

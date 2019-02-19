@@ -6,8 +6,10 @@
 #include <fstream>
 #include <functional>
 #include <string>
+#include <type_traits>
 
 #include "common/Buffer.hpp"
+#include "common/logger.hpp"
 #include "common/types.hpp"
 #include "crypto/EccPriv.hpp"
 #include "ledger/mongo.hpp"
@@ -49,8 +51,18 @@ std::ostream &operator<<(
   return os;
 }
 
-bool operator==(const Packet &a, const Packet &b);
-bool operator==(const messages::Peer &a, const messages::Peer &b);
+// struct PacketHash {
+//   template <typename T>
+//   const typename std::enable_if<std::is_base_of<Packet, T>::value,
+//   std::size_t>::type operator()(const T &packet) const noexcept {
+//     neuro::Buffer buffer;
+//     neuro::messages::to_buffer(packet, &buffer);
+//     const auto hash = std::hash<neuro::Buffer>{}(buffer);
+//     return hash;
+//     }
+// };
+
+// bool operator==(const messages::Peer &a, const messages::Peer &b);
 
 void set_transaction_hash(Transaction *transaction);
 void set_block_hash(Block *block);
@@ -77,11 +89,45 @@ class NCCAmount : public _NCCAmount {
 }  // namespace messages
 }  // namespace neuro
 
+template <typename TA, typename TB>
+typename std::enable_if<
+  std::is_base_of<::neuro::messages::Packet, TA>::value &&
+std::is_base_of<::neuro::messages::Packet, TB>::value,
+  bool>::type
+    operator==(const TA &a, const TB &b) {
+  std::string json_a, json_b;
+  to_json(a, &json_a);
+  to_json(b, &json_b);
+  bool res = json_a == json_b;
+
+  return res;
+  }
+
+template <>
+bool operator==<::neuro::messages::Peer, ::neuro::messages::Peer>(
+    const ::neuro::messages::Peer &a, const ::neuro::messages::Peer &b) {
+  return a.key_pub() == b.key_pub();
+}
+
+// template <>
+// struct hash<neuro::::neuro::messages::KeyPub> {
+//   using argument_type = neuro::::neuro::messages::KeyPub;
+//   using result_type = size_t;
+
+//   result_type operator()(argument_type const &packet) const noexcept {
+//     neuro::Buffer buffer;
+//     neuro::::neuro::messages::to_buffer(packet, &buffer);
+//     const auto hash = std::hash<neuro::Buffer>{}(buffer);
+//     return hash;
+//   }
+// };
+
 namespace std {
-template <>
-struct hash<neuro::messages::Packet> {
-  using argument_type = neuro::messages::Packet;
-  using result_type = size_t;
+template <typename T>
+struct hash <typename std::enable_if<std::is_base_of<::neuro::messages::Packet, T>::value, T>::type> {
+  using result_type = std::size_t;
+    
+  typedef std::size_t result_type;
 
   result_type operator()(argument_type const &packet) const noexcept {
     neuro::Buffer buffer;
@@ -90,20 +136,8 @@ struct hash<neuro::messages::Packet> {
     return hash;
   }
 };
-
-template <>
-struct hash<neuro::messages::KeyPub> {
-  using argument_type = neuro::messages::KeyPub;
-  using result_type = size_t;
-
-  result_type operator()(argument_type const &packet) const noexcept {
-    neuro::Buffer buffer;
-    neuro::messages::to_buffer(packet, &buffer);
-    const auto hash = std::hash<neuro::Buffer>{}(buffer);
-    return hash;
-  }
-};
-
 }  // namespace std
+
+//}  // namespace std
 
 #endif /* NEURO_SRC_MESSAGES_MESSAGE_HPP */
