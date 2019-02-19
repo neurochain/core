@@ -121,6 +121,11 @@ class LedgerMongodb : public Ledger {
 
   bool unsafe_set_integrity(const messages::Integrity &integrity);
 
+  messages::IntegrityScore unsafe_get_integrity(
+      const messages::Address &address,
+      const messages::AssemblyHeight &assembly_height,
+      const messages::BranchPath &branch_path) const;
+
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);
   LedgerMongodb(const std::string &url, const std::string &db_name,

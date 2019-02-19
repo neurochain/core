@@ -1075,8 +1075,8 @@ bool LedgerMongodb::cleanup_transaction_pool(
 }
 
 bool LedgerMongodb::update_main_branch() {
-  messages::TaggedBlock main_branch_tip;
   std::lock_guard<std::mutex> lock(_ledger_mutex);
+  messages::TaggedBlock main_branch_tip;
   auto query = bss::document{} << bss::finalize;
   auto options = remove_OID();
   options.sort(bss::document{} << SCORE << -1 << bss::finalize);
@@ -1234,6 +1234,7 @@ bool LedgerMongodb::get_pii(const messages::Address &address,
 
 bool LedgerMongodb::get_assembly_piis(const messages::AssemblyID &assembly_id,
                                       std::vector<messages::Pii> *piis) {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto options = remove_OID();
   auto query = bss::document{} << ASSEMBLY_ID << to_bson(assembly_id)
                                << bss::finalize;
@@ -1286,7 +1287,7 @@ bool LedgerMongodb::add_integrity(
   // The branch_path is not the right one but it should work because it is a
   // descendant of the corrent branch_path
   auto previous_score =
-      get_integrity(address, assembly_height - 1, branch_path);
+      unsafe_get_integrity(address, assembly_height - 1, branch_path);
 
   messages::Integrity integrity;
   integrity.mutable_address()->CopyFrom(address);
@@ -1301,10 +1302,18 @@ messages::IntegrityScore LedgerMongodb::get_integrity(
     const messages::Address &address,
     const messages::AssemblyHeight &assembly_height,
     const messages::BranchPath &branch_path) const {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+  return unsafe_get_integrity(address, assembly_height, branch_path);
+}
+
+messages::IntegrityScore LedgerMongodb::unsafe_get_integrity(
+    const messages::Address &address,
+    const messages::AssemblyHeight &assembly_height,
+    const messages::BranchPath &branch_path) const {
   // This is a bit complicated the goal is to return the integrity of the
-  // address at a certain assembly. The hard part is that the integrity is only
-  // stored when it changes. And we only want to see the integrities for our
-  // branch which we cannot specify in a mongo query.
+  // address at a certain assembly. The hard part is that the integrity is
+  // only stored when it changes. And we only want to see the integrities for
+  // our branch which we cannot specify in a mongo query.
   auto query = bss::document{} << ADDRESS << to_bson(address) << ASSEMBLY_HEIGHT
                                << bss::open_document << $LTE << assembly_height
                                << bss::close_document << bss::finalize;
@@ -1394,6 +1403,7 @@ bool LedgerMongodb::denunciation_exists(
     const messages::Denunciation &denunciation,
     const messages::BlockHeight &max_block_height,
     const messages::BranchPath &branch_path) const {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto query = bss::document{} << BLOCK + "." + DENUNCIATIONS + "." + BLOCK_ID
                                << to_bson(denunciation.block_id())
                                << BLOCK + "." + HEADER + "." + HEIGHT
