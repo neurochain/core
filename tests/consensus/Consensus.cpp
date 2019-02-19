@@ -100,7 +100,8 @@ class Consensus : public testing::Test {
 
   void test_compute_assembly_pii() {
     std::vector<messages::Assembly> assemblies;
-    simulator.run(consensus->config.blocks_per_assembly, 10);
+    bool compute_pii = false;
+    simulator.run(consensus->config.blocks_per_assembly, 10, compute_pii);
     ASSERT_TRUE(ledger->get_assemblies_to_compute(&assemblies));
     ASSERT_EQ(assemblies.size(), 1);
     auto &assembly = assemblies[0];
@@ -112,7 +113,8 @@ class Consensus : public testing::Test {
   void test_start_computations() {
     std::vector<messages::Assembly> assemblies;
     ASSERT_FALSE(ledger->get_assemblies_to_compute(&assemblies));
-    simulator.run(consensus->config.blocks_per_assembly, 10);
+    bool compute_pii = false;
+    simulator.run(consensus->config.blocks_per_assembly, 10, compute_pii);
     ASSERT_TRUE(ledger->get_assemblies_to_compute(&assemblies));
     ASSERT_EQ(assemblies.size(), 1);
     auto assembly_id = assemblies[0].id();

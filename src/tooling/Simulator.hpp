@@ -40,7 +40,7 @@ class Simulator {
   messages::Block new_block(int nb_transactions) const;
   messages::Block new_block() const;
   messages::Transaction random_transaction() const;
-  void run(int nb_blocks, int transactions_per_block);
+  void run(int nb_blocks, int transactions_per_block, bool compute_pii = true);
 };
 
 }  // namespace tooling

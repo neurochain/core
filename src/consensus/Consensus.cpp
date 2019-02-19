@@ -617,7 +617,6 @@ bool Consensus::compute_assembly_pii(const messages::Assembly &assembly) {
   }
   uint32_t seed = 0;
   const auto branch_path = tagged_block.branch_path();
-  LOG_DEBUG << "BRANCH PATH " << branch_path << std::endl;
 
   while (tagged_block.block().header().id() !=
          assembly.previous_assembly_id()) {

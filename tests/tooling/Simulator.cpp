@@ -87,7 +87,6 @@ TEST_F(Simulator, random_transaction) {
 
 TEST_F(Simulator, run) {
   // Create 10 block with 7 transactions each
-  simulator.consensus->start_compute_pii_thread();
   simulator.run(10, 7);
   ASSERT_EQ(ledger->height(), 10);
   for (int i = 1; i <= 10; i++) {

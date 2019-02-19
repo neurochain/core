@@ -147,7 +147,8 @@ messages::Block Simulator::new_block() const {
   return new_block(0, last_block);
 }
 
-void Simulator::run(int nb_blocks, int transactions_per_block) {
+void Simulator::run(int nb_blocks, int transactions_per_block,
+                    bool compute_pii) {
   messages::TaggedBlock last_block;
   for (int i = 0; i < nb_blocks; i++) {
     bool include_transactions = false;
@@ -155,6 +156,13 @@ void Simulator::run(int nb_blocks, int transactions_per_block) {
     auto block = new_block(transactions_per_block, last_block);
     if (!consensus->add_block(&block)) {
       throw std::runtime_error("Failed to add block in the simulator");
+    }
+    if (compute_pii && (i - 1) % consensus->config.blocks_per_assembly == 0) {
+      std::vector<messages::Assembly> assemblies;
+      ledger->get_assemblies_to_compute(&assemblies);
+      if (assemblies.size() > 0) {
+        consensus->compute_assembly_pii(assemblies.at(0));
+      }
     }
   }
 }
