@@ -34,6 +34,7 @@ class LedgerMongodb : public Ledger {
   mutable mongocxx::collection _pii;
   mutable mongocxx::collection _integrity;
   mutable mongocxx::collection _assemblies;
+  mutable mongocxx::collection _double_mining;
 
   mutable std::mutex _ledger_mutex;
 
@@ -285,6 +286,15 @@ class LedgerMongodb : public Ledger {
   std::vector<messages::TaggedBlock> get_blocks(
       const messages::BlockHeight height, const messages::KeyPub &author,
       bool include_transactions = true) const;
+
+  void add_double_mining(
+      const std::vector<messages::TaggedBlock> &tagged_blocks);
+
+  std::vector<messages::Denunciation> get_double_minings() const;
+
+  void add_denunciations(
+      messages::Block *block, const messages::BranchPath &branch_path,
+      const std::vector<messages::Denunciation> &denunciations) const;
 
   friend class neuro::ledger::tests::LedgerMongodb;
   friend class neuro::tooling::Simulator;

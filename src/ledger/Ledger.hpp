@@ -220,6 +220,15 @@ class Ledger {
       const messages::BlockHeight &max_block_height,
       const messages::BranchPath &branch_path) const = 0;
 
+  virtual void add_double_mining(
+      const std::vector<messages::TaggedBlock> &tagged_blocks) = 0;
+
+  virtual std::vector<messages::Denunciation> get_double_minings() const = 0;
+
+  virtual void add_denunciations(
+      messages::Block *block, const messages::BranchPath &branch_path,
+      const std::vector<messages::Denunciation> &denunciations) const = 0;
+
   // helpers
 
   /*

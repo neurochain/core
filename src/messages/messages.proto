@@ -88,6 +88,7 @@ message _Denunciation {
   required Hash block_id = 1;
   required int32 block_height = 2;
   required Signature block_author = 3;
+  optional BranchPath branch_path = 4;
 }
 
 message Block {

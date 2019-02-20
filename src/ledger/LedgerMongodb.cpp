@@ -25,12 +25,15 @@ const std::string ADDRESS = "address";
 const std::string AUTHOR = "author";
 const std::string BLOCK = "block";
 const std::string BLOCK_ID = "blockId";
+const std::string BLOCK_HEIGHT = "blockHeight";
+const std::string BLOCK_AUTHOR = "blockAuthor";
 const std::string BLOCKS = "blocks";
 const std::string BRANCH = "branch";
 const std::string BRANCH_IDS = "branchIds";
 const std::string BRANCH_PATH = "branchPath";
 const std::string COUNT = "count";
 const std::string DATA = "data";
+const std::string DOUBLE_MINING = "doubleMining";
 const std::string DENUNCIATIONS = "denunciations";
 const std::string FINISHED_COMPUTATION = "finishedComputation";
 const std::string FROM = "from";
@@ -66,7 +69,8 @@ LedgerMongodb::LedgerMongodb(const std::string &url, const std::string &db_name)
       _transactions(_db.collection(TRANSACTIONS)),
       _pii(_db.collection(PII)),
       _integrity(_db.collection(INTEGRITY)),
-      _assemblies(_db.collection(ASSEMBLIES)) {}
+      _assemblies(_db.collection(ASSEMBLIES)),
+      _double_mining(_db.collection(DOUBLE_MINING)) {}
 
 LedgerMongodb::LedgerMongodb(const std::string &url, const std::string &db_name,
                              const messages::Block &block0)
@@ -1439,6 +1443,62 @@ std::vector<messages::TaggedBlock> LedgerMongodb::get_blocks(
     }
   }
   return tagged_blocks;
+}
+
+void LedgerMongodb::add_double_mining(
+    const std::vector<messages::TaggedBlock> &tagged_blocks) {
+  mongocxx::options::update options;
+  options.upsert(true);
+
+  for (const auto tagged_block : tagged_blocks) {
+    auto &header = tagged_block.block().header();
+
+    // Upsert the denunciation
+    auto filter = bss::document{} << BLOCK_ID << to_bson(header.id())
+                                  << bss::finalize;
+    auto update = bss::document{}
+                  << $SET << bss::open_document << BLOCK_ID
+                  << to_bson(header.id()) << BLOCK_HEIGHT << header.height()
+                  << BLOCK_AUTHOR << to_bson(header.author()) << BRANCH_PATH
+                  << to_bson(tagged_block.branch_path()) << bss::close_document
+                  << bss::finalize;
+    _double_mining.update_one(std::move(filter), std::move(update), options);
+  }
+}
+
+std::vector<messages::Denunciation> LedgerMongodb::get_double_minings() const {
+  std::vector<messages::Denunciation> denunciations;
+  auto query = bss::document{} << bss::finalize;
+  auto cursor = _double_mining.find(std::move(query), remove_OID());
+  for (const auto &bson_denunciation : cursor) {
+    auto &denunciation = denunciations.emplace_back();
+    from_bson(bson_denunciation, &denunciation);
+  }
+  return denunciations;
+}
+
+void LedgerMongodb::add_denunciations(
+    messages::Block *block, const messages::BranchPath &branch_path,
+    const std::vector<messages::Denunciation> &denunciations) const {
+  // Look for the authors who double mined in our branch
+  std::unordered_map<messages::BlockHeight, const messages::KeyPub *> authors;
+  for (auto &denunciation : denunciations) {
+    if (is_ancestor(denunciation.branch_path(), branch_path)) {
+      authors[denunciation.block_height()] =
+          &(denunciation.block_author().key_pub());
+    }
+  }
+
+  for (auto &denunciation : denunciations) {
+    if (authors.count(denunciation.block_height()) > 0 &&
+        denunciation.block_author().key_pub() ==
+            *authors[denunciation.block_height()] &&
+        !is_ancestor(denunciation.branch_path(), branch_path) &&
+        !denunciation_exists(denunciation, block->header().height(),
+                             branch_path)) {
+      block->add_denunciations()->CopyFrom(denunciation);
+    }
+  }
 }
 
 }  // namespace ledger

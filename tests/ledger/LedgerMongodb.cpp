@@ -811,6 +811,40 @@ TEST_F(LedgerMongodb, get_blocks) {
               blocks.at(1).block() == block1_bis);
 }
 
+TEST_F(LedgerMongodb, double_minings) {
+  // Let's make the first miner double mine
+  auto block1 = simulator.new_block();
+  auto block1_bis = simulator.new_block(1);
+  ASSERT_TRUE(simulator.consensus->add_block(&block1));
+
+  ASSERT_TRUE(simulator.consensus->add_block(&block1_bis));
+  bool include_transactions = false;
+  auto blocks = ledger->get_blocks(block1.header().height(),
+                                   block1.header().author().key_pub(),
+                                   include_transactions);
+  ASSERT_EQ(blocks.size(), 2);
+  ledger->add_double_mining(blocks);
+  auto denunciations = ledger->get_double_minings();
+  ASSERT_EQ(denunciations.size(), 2);
+
+  for (const auto &denunciation : denunciations) {
+    const auto &block_id = denunciation.block_id();
+    ASSERT_TRUE(block_id == block1.header().id() ||
+                block_id == block1_bis.header().id());
+    ASSERT_EQ(denunciation.block_author().key_pub(),
+              block1.header().author().key_pub());
+    ASSERT_EQ(denunciation.block_height(), 1);
+    const auto &branch_path = denunciation.branch_path();
+    ASSERT_TRUE(branch_path == blocks[0].branch_path() ||
+                branch_path == blocks[1].branch_path());
+  }
+
+  // Check that adding them again does not create duplicates
+  ledger->add_double_mining(blocks);
+  denunciations = ledger->get_double_minings();
+  ASSERT_EQ(denunciations.size(), 2);
+}
+
 }  // namespace tests
 }  // namespace ledger
 }  // namespace neuro
