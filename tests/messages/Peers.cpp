@@ -22,6 +22,8 @@ class PeersF : public ::testing::Test {
 
  public:
   PeersF() {
+    Peer::_fake_time = true;
+  
     keys0.public_key().save(peer0.mutable_key_pub());
     keys1.public_key().save(peer1.mutable_key_pub());
     keys2.public_key().save(peer2.mutable_key_pub());
@@ -83,7 +85,6 @@ TEST_F(PeersF, pick) {
 TEST_F(PeersF, update_timestamp) {
   ::neuro::messages::Peers peers;
 
-  peer._fake_time = true;
   peer0.set_status(Peer::CONNECTING);
   peer1.set_status(Peer::DISCONNECTED);
   peer2.set_status(Peer::CONNECTED);

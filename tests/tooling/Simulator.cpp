@@ -1,17 +1,22 @@
+
+
+
+#include "messages/Message.hpp"
 #include "tooling/Simulator.hpp"
-#include <gtest/gtest.h>
 #include <boost/stacktrace.hpp>
 #include "common/types.hpp"
 #include "ledger/LedgerMongodb.hpp"
-#include "messages/Message.hpp"
 #include "messages/config/Config.hpp"
 #include "messages/config/Database.hpp"
 #include "tooling/blockgen.hpp"
+
+#include <gtest/gtest.h>
 
 namespace neuro {
 namespace tooling {
 namespace tests {
 
+  
 std::shared_ptr<ledger::LedgerMongodb> empty_ledger(
     messages::config::Database config) {
   tooling::blockgen::create_empty_db(config);
@@ -51,7 +56,7 @@ TEST_F(Simulator, send_ncc) {
   ledger->add_to_transaction_pool(transaction0);
   auto transaction1 =
       simulator.send_ncc(sender_private_key, recipient_public_key, 0.5);
-  ASSERT_EQ(transaction1.inputs(0).id(), transaction0.id());
+  ASSERT_TRUE((transaction1.inputs(0).id() == transaction0.id()));
 }
 
 TEST_F(Simulator, random_transaction) {

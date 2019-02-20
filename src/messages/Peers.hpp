@@ -22,7 +22,8 @@ class Peers {
   const int _used_status{(Peer::CONNECTING | Peer::CONNECTED)};
   mutable std::shared_mutex _mutex;
 
-  std::unordered_map<KeyPub, std::unique_ptr<Peer>> _peers;
+  std::unordered_map<KeyPub, std::unique_ptr<Peer>,
+		     PacketHash<KeyPub>> _peers;
 
  public:
   Peers() {}

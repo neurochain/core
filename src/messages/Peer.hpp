@@ -10,7 +10,7 @@ namespace neuro {
 namespace messages {
 
 namespace test {
-class Peers;
+class PeersF;
 }  // namespace test
 
 class Peer : public _Peer {
@@ -40,7 +40,7 @@ class Peer : public _Peer {
     }
   }
 
-  friend class neuro::messages::test::Peers;
+  friend class neuro::messages::test::PeersF;
 };
 
 }  // namespace messages

@@ -86,7 +86,20 @@ class NCCAmount : public _NCCAmount {
   NCCAmount(uint64_t amount) { set_value(amount); }
 };
 
-}  // namespace messages
+template <typename TA>
+typename std::enable_if<
+    std::is_base_of<::neuro::messages::Packet, TA>::value,
+    bool>::type
+operator==(const TA &a, const TA &b) {
+  std::string json_a, json_b;
+  to_json(a, &json_a);
+  to_json(b, &json_b);
+  bool res = json_a == json_b;
+
+  return res;
+}
+  
+}  // namespace messages  
 }  // namespace neuro
 
 template <typename TA, typename TB>
@@ -103,11 +116,13 @@ operator==(const TA &a, const TB &b) {
   return res;
 }
 
-template <>
-bool operator==<::neuro::messages::Peer, ::neuro::messages::Peer>(
-    const ::neuro::messages::Peer &a, const ::neuro::messages::Peer &b) {
-  return a.key_pub() == b.key_pub();
-}
+template <typename T>
+struct PacketHash {
+  std::size_t operator()(typename std::enable_if<std::is_base_of<::neuro::messages::Packet, T>::value, T>::type  const& s) const noexcept {
+    return 42;
+  }
+};
+
 
 // template <>
 // struct hash<neuro::::neuro::messages::KeyPub> {
@@ -122,22 +137,35 @@ bool operator==<::neuro::messages::Peer, ::neuro::messages::Peer>(
 //   }
 // };
 
-namespace std {
-template <typename T>
-struct hash<typename std::enable_if<
-    std::is_base_of<::neuro::messages::Packet, T>::value, T>::type> {
-  using result_type = std::size_t;
+// namespace std {
+// template <typename T>
+// struct hash <typename std::enable_if<
+// 	       std::is_base_of<::neuro::messages::Packet, T>::value, T>::type> {
+//   using result_type = std::size_t;
 
-  typedef std::size_t result_type;
+//   result_type operator()(argument_type const &packet) const noexcept {
+//     neuro::Buffer buffer;
+//     neuro::messages::to_buffer(packet, &buffer);
+//     const auto hash = std::hash<neuro::Buffer>{}(buffer);
+//     return hash;
+//   }
+// };
 
-  result_type operator()(argument_type const &packet) const noexcept {
-    neuro::Buffer buffer;
-    neuro::messages::to_buffer(packet, &buffer);
-    const auto hash = std::hash<neuro::Buffer>{}(buffer);
-    return hash;
-  }
-};
-}  // namespace std
+// namespace std {
+// template <class T>
+// struct hash  {
+
+//   typename std::enable_if<
+//     std::is_base_of<::neuro::messages::Packet, T>::value, T>::type operator()(argument_type const &packet) const noexcept {
+//     neuro::Buffer buffer;
+//     neuro::messages::to_buffer(packet, &buffer);
+//     const auto hash = std::hash<neuro::Buffer>{}(buffer);
+//     return hash;
+//   }
+// };
+
+
+//}  // namespace std
 
 //}  // namespace std
 
