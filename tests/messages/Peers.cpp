@@ -34,7 +34,7 @@ class PeersF : public ::testing::Test {
   }
 };
 
-TEST(PeersF, insert_peer) {
+TEST_F(PeersF, insert_peer) {
   Peer peer0;
   Peer peer1;
 
