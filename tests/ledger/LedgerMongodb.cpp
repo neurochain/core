@@ -741,19 +741,23 @@ TEST_F(LedgerMongodb, denunciation_exists) {
   // Let's denounce the vile double miner
   auto block2 = simulator.new_block();
   ASSERT_EQ(block2.header().previous_block_hash(), block1.header().id());
+  block2.clear_denunciations();
   auto denunciation = block2.add_denunciations();
   denunciation->mutable_block_id()->CopyFrom(block1_bis.header().id());
   denunciation->set_block_height(1);
   denunciation->mutable_block_author()->CopyFrom(block1_bis.header().author());
 
   // The hash and the signatures need to be fixed now that we changed the block
-  auto block2_author = messages::Address(block2.header().author().key_pub());
   uint32_t miner_index = simulator.addresses_indexes[messages::Address(
       block2.header().author().key_pub())];
-
   messages::set_block_hash(&block2);
   crypto::sign(simulator.keys[miner_index], &block2);
+
   auto block2_bis = simulator.new_block();
+  block2_bis.clear_denunciations();
+  messages::set_block_hash(&block2_bis);
+  crypto::sign(simulator.keys[miner_index], &block2_bis);
+
   ASSERT_TRUE(simulator.consensus->add_block(&block2));
   ASSERT_TRUE(simulator.consensus->add_block(&block2_bis));
 
@@ -776,6 +780,16 @@ TEST_F(LedgerMongodb, denunciation_exists) {
                                           tagged_block3.branch_path()));
 
   auto block3_bis = simulator.new_block(tagged_block2_bis);
+  block3_bis.clear_denunciations();
+
+  // The hash and the signatures need to be fixed now that we changed the block
+  miner_index = simulator.addresses_indexes[messages::Address(
+      block3_bis.header().author().key_pub())];
+  messages::set_block_hash(&block3_bis);
+  crypto::sign(simulator.keys[miner_index], &block3_bis);
+  messages::set_block_hash(&block3_bis);
+  crypto::sign(simulator.keys[miner_index], &block3_bis);
+
   ASSERT_EQ(block3_bis.header().height(), 3);
   ASSERT_EQ(block3_bis.header().previous_block_hash(),
             block2_bis.header().id());
@@ -843,6 +857,28 @@ TEST_F(LedgerMongodb, double_minings) {
   ledger->add_double_mining(blocks);
   denunciations = ledger->get_double_minings();
   ASSERT_EQ(denunciations.size(), 2);
+}
+
+TEST_F(LedgerMongodb, add_denunciations) {
+  // Let's make the first miner double mine
+  auto block1 = simulator.new_block();
+  auto block1_bis = simulator.new_block(1);
+  ASSERT_TRUE(simulator.consensus->add_block(&block1));
+
+  ASSERT_TRUE(simulator.consensus->add_block(&block1_bis));
+  auto block = simulator.new_block();
+  block.clear_denunciations();
+  messages::TaggedBlock previous;
+  bool include_transactions = false;
+  ASSERT_TRUE(ledger->get_block(block.header().previous_block_hash(), &previous,
+                                include_transactions));
+  ledger->add_denunciations(&block, previous.branch_path());
+  ASSERT_EQ(block.denunciations_size(), 1);
+  auto &denunciation = block.denunciations(0);
+  ASSERT_EQ(denunciation.block_id(), block1_bis.header().id());
+  ASSERT_EQ(denunciation.block_height(), block1_bis.header().height());
+  ASSERT_EQ(denunciation.block_author(), block1_bis.header().author());
+  ASSERT_FALSE(denunciation.has_branch_path());
 }
 
 }  // namespace tests

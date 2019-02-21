@@ -221,6 +221,7 @@ bool Consensus::check_block_id(messages::TaggedBlock *tagged_block) const {
 
   if (!block->header().has_id()) {
     LOG_INFO << "Failed check_block_id the block is missing the id field";
+    return false;
   }
 
   bool result = block->header().id() == block_id;
@@ -313,7 +314,11 @@ bool Consensus::check_block_height(
     return false;
   }
 
-  return block.header().height() > previous.header().height();
+  bool result = block.header().height() > previous.header().height();
+  if (!result) {
+    LOG_INFO << "Failed check_block_height for block " << block.header().id();
+  }
+  return result;
 }
 
 bool Consensus::check_block_timestamp(
@@ -391,6 +396,7 @@ bool Consensus::check_block_author(
   if (!crypto::verify(block)) {
     LOG_INFO << "Failed check_block_author for block " << block.header().id()
              << " the signature is wrong";
+    return false;
   }
   return true;
 }
@@ -584,9 +590,20 @@ bool Consensus::add_transaction(const messages::Transaction &transaction) {
          _ledger->add_to_transaction_pool(transaction);
 }
 
+bool Consensus::add_double_mining(const messages::Block &block) {
+  bool include_transactions = false;
+  auto blocks = _ledger->get_blocks(block.header().height(),
+                                    block.header().author().key_pub(),
+                                    include_transactions);
+  if (blocks.size() > 1) {
+    _ledger->add_double_mining(blocks);
+  }
+  return true;
+}
+
 bool Consensus::add_block(messages::Block *block) {
   return _ledger->insert_block(block) && verify_blocks() &&
-         _ledger->update_main_branch();
+         _ledger->update_main_branch() && add_double_mining(*block);
 }
 
 void Consensus::start_compute_pii_thread() {
@@ -793,10 +810,12 @@ bool Consensus::get_heights_to_write(
 bool Consensus::write_block(const crypto::Ecc &keys,
                             const messages::BlockHeight &height,
                             messages::Block *block) const {
-  messages::BlockHeader last_block_header;
-  if (!_ledger->get_last_block_header(&last_block_header)) {
+  messages::TaggedBlock last_block;
+  bool include_transactions = false;
+  if (!_ledger->get_last_block(&last_block, include_transactions)) {
     return false;
   }
+  auto &last_block_header = last_block.block().header();
   auto header = block->mutable_header();
   header->set_height(height);
   header->mutable_previous_block_hash()->CopyFrom(last_block_header.id());
@@ -808,8 +827,7 @@ bool Consensus::write_block(const crypto::Ecc &keys,
                               transaction, height);
 
   _ledger->get_transaction_pool(block);
-
-  // TODO add denunciations!
+  _ledger->add_denunciations(block, last_block.branch_path());
 
   messages::sort_transactions(block);
   messages::set_block_hash(block);

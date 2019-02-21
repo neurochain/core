@@ -75,6 +75,15 @@ messages::Block Simulator::new_block(
     int nb_transactions, const messages::TaggedBlock &last_block) const {
   messages::Block block, block0;
   ledger->get_block(0, &block0);
+
+  for (int i = 0; i < nb_transactions; i++) {
+    auto transaction = random_transaction();
+    messages::TaggedTransaction tagged_transaction;
+    tagged_transaction.mutable_transaction()->CopyFrom(transaction);
+    tagged_transaction.set_is_coinbase(false);
+    ledger->add_transaction(tagged_transaction);
+  }
+
   messages::Assembly assembly_n_minus_1, assembly_n_minus_2;
   assert(ledger->get_assembly(last_block.previous_assembly_id(),
                               &assembly_n_minus_1));
@@ -101,15 +110,8 @@ messages::Block Simulator::new_block(
   blockgen::coinbase(keys[miner_index].public_key(),
                      consensus->config.block_reward, transaction, height);
 
-  for (int i = 0; i < nb_transactions; i++) {
-    auto transaction = random_transaction();
-    messages::TaggedTransaction tagged_transaction;
-    tagged_transaction.mutable_transaction()->CopyFrom(transaction);
-    tagged_transaction.set_is_coinbase(false);
-    ledger->add_transaction(tagged_transaction);
-  }
-
   ledger->get_transaction_pool(&block);
+  ledger->add_denunciations(&block, last_block.branch_path());
   messages::sort_transactions(&block);
   messages::set_block_hash(&block);
   crypto::sign(keys[miner_index], &block);

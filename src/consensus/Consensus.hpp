@@ -112,6 +112,8 @@ class Consensus {
    */
   bool add_transaction(const messages::Transaction &transaction);
 
+  bool add_double_mining(const messages::Block &block);
+
   /**
    * \brief Verify that a block is valid and insert it
    * \param [in] block block to add
