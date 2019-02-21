@@ -593,6 +593,8 @@ bool LedgerMongodb::unsafe_insert_block(messages::TaggedBlock *tagged_block) {
   messages::TaggedBlock unused;
   if (unsafe_get_block(tagged_block->block().header().id(), &unused)) {
     // The block already exists
+    LOG_INFO << "Failed to insert block " << tagged_block->block().header().id()
+             << " it already exists";
     return false;
   }
 
@@ -1408,6 +1410,14 @@ bool LedgerMongodb::denunciation_exists(
     const messages::BlockHeight &max_block_height,
     const messages::BranchPath &branch_path) const {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
+  return unsafe_denunciation_exists(denunciation, max_block_height,
+                                    branch_path);
+}
+
+bool LedgerMongodb::unsafe_denunciation_exists(
+    const messages::Denunciation &denunciation,
+    const messages::BlockHeight &max_block_height,
+    const messages::BranchPath &branch_path) const {
   auto query = bss::document{} << BLOCK + "." + DENUNCIATIONS + "." + BLOCK_ID
                                << to_bson(denunciation.block_id())
                                << BLOCK + "." + HEADER + "." + HEIGHT
@@ -1429,6 +1439,7 @@ bool LedgerMongodb::denunciation_exists(
 std::vector<messages::TaggedBlock> LedgerMongodb::get_blocks(
     const messages::BlockHeight height, const messages::KeyPub &author,
     bool include_transactions) const {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
   std::vector<messages::TaggedBlock> tagged_blocks;
   auto query = bss::document{}
                << BLOCK + "." + HEADER + "." + HEIGHT << height
@@ -1447,6 +1458,7 @@ std::vector<messages::TaggedBlock> LedgerMongodb::get_blocks(
 
 void LedgerMongodb::add_double_mining(
     const std::vector<messages::TaggedBlock> &tagged_blocks) {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
   mongocxx::options::update options;
   options.upsert(true);
 
@@ -1467,6 +1479,7 @@ void LedgerMongodb::add_double_mining(
 }
 
 std::vector<messages::Denunciation> LedgerMongodb::get_double_minings() const {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
   std::vector<messages::Denunciation> denunciations;
   auto query = bss::document{} << bss::finalize;
   auto cursor = _double_mining.find(std::move(query), remove_OID());
@@ -1478,8 +1491,15 @@ std::vector<messages::Denunciation> LedgerMongodb::get_double_minings() const {
 }
 
 void LedgerMongodb::add_denunciations(
+    messages::Block *block, const messages::BranchPath &branch_path) const {
+  add_denunciations(block, branch_path, get_double_minings());
+}
+
+void LedgerMongodb::add_denunciations(
     messages::Block *block, const messages::BranchPath &branch_path,
     const std::vector<messages::Denunciation> &denunciations) const {
+  std::lock_guard<std::mutex> lock(_ledger_mutex);
+
   // Look for the authors who double mined in our branch
   std::unordered_map<messages::BlockHeight, const messages::KeyPub *> authors;
   for (auto &denunciation : denunciations) {
@@ -1494,9 +1514,11 @@ void LedgerMongodb::add_denunciations(
         denunciation.block_author().key_pub() ==
             *authors[denunciation.block_height()] &&
         !is_ancestor(denunciation.branch_path(), branch_path) &&
-        !denunciation_exists(denunciation, block->header().height(),
-                             branch_path)) {
-      block->add_denunciations()->CopyFrom(denunciation);
+        !unsafe_denunciation_exists(denunciation, block->header().height(),
+                                    branch_path)) {
+      auto added_denunciation = block->add_denunciations();
+      added_denunciation->CopyFrom(denunciation);
+      added_denunciation->clear_branch_path();
     }
   }
 }

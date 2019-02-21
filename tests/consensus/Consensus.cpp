@@ -239,6 +239,24 @@ TEST_F(Consensus, add_transaction) {
 
 TEST_F(Consensus, write_block) { test_write_block(); }
 
+TEST_F(Consensus, add_denunciations) {
+  // Let's make the first miner double mine
+  auto block1 = simulator.new_block();
+  auto block1_bis = simulator.new_block(1);
+  ASSERT_TRUE(simulator.consensus->add_block(&block1));
+  ASSERT_TRUE(simulator.consensus->add_block(&block1_bis));
+  messages::TaggedBlock tagged_block1;
+  bool include_transactions = false;
+  ASSERT_TRUE(ledger->get_last_block(&tagged_block1, include_transactions));
+  ASSERT_EQ(tagged_block1.block().header().id(), block1.header().id());
+  auto block = simulator.new_block();
+  ASSERT_EQ(block.denunciations_size(), 1);
+  auto denunciation = block.denunciations(0);
+  ASSERT_EQ(denunciation.block_id(), block1_bis.header().id());
+  ASSERT_EQ(denunciation.block_author(), block1_bis.header().author());
+  ASSERT_EQ(denunciation.block_height(), block1_bis.header().height());
+}
+
 }  // namespace tests
 }  // namespace consensus
 }  // namespace neuro

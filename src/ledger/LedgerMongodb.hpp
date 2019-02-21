@@ -127,6 +127,11 @@ class LedgerMongodb : public Ledger {
       const messages::AssemblyHeight &assembly_height,
       const messages::BranchPath &branch_path) const;
 
+  bool unsafe_denunciation_exists(
+      const messages::Denunciation &denunciation,
+      const messages::BlockHeight &max_block_height,
+      const messages::BranchPath &branch_path) const;
+
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);
   LedgerMongodb(const std::string &url, const std::string &db_name,
@@ -291,6 +296,9 @@ class LedgerMongodb : public Ledger {
       const std::vector<messages::TaggedBlock> &tagged_blocks);
 
   std::vector<messages::Denunciation> get_double_minings() const;
+
+  void add_denunciations(messages::Block *block,
+                         const messages::BranchPath &branch_path) const;
 
   void add_denunciations(
       messages::Block *block, const messages::BranchPath &branch_path,
