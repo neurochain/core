@@ -26,7 +26,7 @@ using Packet = google::protobuf::Message;
 
 using Type = Body::BodyCase;
 using BranchID = uint32_t;
-using BlockScore = double;
+using BlockScore = Double;
 using IntegrityScore = decltype(((Integrity *)nullptr)->score());
 
 Type get_type(const Body &body);

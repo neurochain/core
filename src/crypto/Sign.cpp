@@ -91,11 +91,11 @@ bool sign(const crypto::Ecc &keys, messages::Denunciation *denunciation) {
 }
 
 bool verify(const messages::Denunciation &denunciation) {
-  auto copy = denunciation;
-  messages::set_default(copy.mutable_block_author());
+  auto denunciation_copy = denunciation;
+  messages::set_default(denunciation_copy.mutable_block_author());
 
   Buffer buffer;
-  messages::to_buffer(copy, &buffer);
+  messages::to_buffer(denunciation_copy, &buffer);
 
   const auto author = denunciation.block_author();
   const auto hash = author.signature().data();

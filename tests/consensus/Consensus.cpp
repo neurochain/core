@@ -101,7 +101,7 @@ class Consensus : public testing::Test {
   void test_compute_assembly_pii() {
     std::vector<messages::Assembly> assemblies;
     bool compute_pii = false;
-    simulator.run(consensus->config.blocks_per_assembly, 10, compute_pii);
+    simulator.run(consensus->config().blocks_per_assembly, 10, compute_pii);
     ASSERT_TRUE(ledger->get_assemblies_to_compute(&assemblies));
     ASSERT_EQ(assemblies.size(), 1);
     auto &assembly = assemblies[0];
@@ -114,14 +114,14 @@ class Consensus : public testing::Test {
     std::vector<messages::Assembly> assemblies;
     ASSERT_FALSE(ledger->get_assemblies_to_compute(&assemblies));
     bool compute_pii = false;
-    simulator.run(consensus->config.blocks_per_assembly, 10, compute_pii);
+    simulator.run(consensus->config().blocks_per_assembly, 10, compute_pii);
     ASSERT_TRUE(ledger->get_assemblies_to_compute(&assemblies));
     ASSERT_EQ(assemblies.size(), 1);
     auto assembly_id = assemblies[0].id();
 
     // Make sure that the compute_assembly thread has started the computation
     consensus->start_compute_pii_thread();
-    std::this_thread::sleep_for(consensus->config.compute_pii_sleep);
+    std::this_thread::sleep_for(consensus->config().compute_pii_sleep);
 
     // Wait for the computation to be finished
     consensus->_stop_compute_pii = true;
@@ -149,7 +149,7 @@ class Consensus : public testing::Test {
                          &assembly_minus_1);
     ledger->get_assembly(assembly_minus_1.previous_assembly_id(),
                          &assembly_minus_2);
-    for (uint32_t i = 1; i < consensus->config.blocks_per_assembly; i++) {
+    for (uint32_t i = 1; i < consensus->config().blocks_per_assembly; i++) {
       messages::Address address;
       ASSERT_TRUE(consensus->get_block_writer(assembly_minus_2, i, &address));
       int address_index = -1;
@@ -180,7 +180,7 @@ class Consensus : public testing::Test {
                                     &tagged_block));
       block.mutable_header()->mutable_timestamp()->set_data(
           tagged_block.block().header().timestamp().data() +
-          consensus->config.block_period);
+          consensus->config().block_period);
 
       // Rewrite the block hash which should have changed
       messages::set_block_hash(&block);
@@ -203,7 +203,7 @@ TEST_F(Consensus, get_current_height) {
   auto height = consensus->get_current_height();
   ASSERT_TRUE(
       abs(height - ((std::time(nullptr) - block0.header().timestamp().data()) /
-                    consensus->config.block_period)) <= 1);
+                    consensus->config().block_period)) <= 1);
 }
 
 TEST_F(Consensus, add_block) {

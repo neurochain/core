@@ -14,6 +14,8 @@
 
 namespace neuro {
 
+using namespace std::chrono_literals;
+
 namespace networking {
 class Peer;
 namespace bai = boost::asio::ip;

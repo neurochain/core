@@ -42,6 +42,7 @@ class Pii {
  private:
   Addresses _addresses;
   std::shared_ptr<ledger::Ledger> _ledger;
+  Config _config;
 
   bool get_enthalpy(const messages::Transaction &transaction,
                     const messages::TaggedBlock &tagged_block,
@@ -63,9 +64,10 @@ class Pii {
   Double enthalpy_lambda() const;
 
  public:
-  const Config config;
   Pii(std::shared_ptr<ledger::Ledger> ledger, const consensus::Config &config)
-      : _ledger(ledger), config(config) {}
+      : _ledger(ledger), _config(config) {}
+
+  Config config() const;
 
   bool add_block(const messages::TaggedBlock &tagged_block);
 

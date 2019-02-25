@@ -21,7 +21,7 @@ class Pii : public testing::Test {
       : simulator(tooling::Simulator::Simulator::StaticSimulator(
             db_url, db_name, nb_keys, ncc_block0)),
         ledger(simulator.ledger),
-        pii(ledger, simulator.consensus->config) {}
+        pii(ledger, simulator.consensus->config()) {}
 
   void new_block_3_transactions() {
     messages::TaggedBlock last_block;

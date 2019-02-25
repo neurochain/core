@@ -38,10 +38,12 @@ bool Pii::get_enthalpy(const messages::Transaction &transaction,
   _ledger->get_pii(sender, tagged_block.previous_assembly_id(), &previous_pii);
   *enthalpy = std::pow(
       std::log(fmax(1, previous_pii * enthalpy_lambda() * enthalpy_c() *
-                           amount / config.blocks_per_assembly)),
+                           amount / _config.blocks_per_assembly)),
       enthalpy_n());
   return true;
 }
+
+Config Pii::config() const { return _config; }
 
 bool Pii::get_recipients(const messages::Transaction &transaction,
                          std::vector<messages::Address> *recipients) const {
@@ -108,17 +110,13 @@ bool Pii::add_block(const messages::TaggedBlock &tagged_block) {
 void Addresses::add_enthalpy(const messages::Address &sender,
                              const messages::Address &recipient,
                              Double enthalpy) {
-  Transactions *recipient_transactions =
-      &(_addresses.try_emplace(recipient).first->second);
-  Counters *incoming =
-      &(recipient_transactions->_in.try_emplace(sender).first->second);
-  incoming->nb_transactions += 1;
+  Transactions *recipient_transactions = &(_addresses[recipient]);
+  Counters *incoming = &(recipient_transactions->_in[sender]);
+  incoming->nb_transactions++;
   incoming->enthalpy += enthalpy;
 
-  Transactions *sender_transactions =
-      &(_addresses.try_emplace(sender).first->second);
-  Counters *outgoing =
-      &(sender_transactions->_out.try_emplace(recipient).first->second);
+  Transactions *sender_transactions = &(_addresses[sender]);
+  Counters *outgoing = &(sender_transactions->_out[recipient]);
   outgoing->nb_transactions += 1;
   outgoing->enthalpy += enthalpy;
 }

@@ -26,10 +26,8 @@ using PublishBlock = std::function<void(const messages::Block &block)>;
 using AddressIndex = uint32_t;
 
 class Consensus {
- public:
-  const Config config;
-
  private:
+  const Config _config;
   std::shared_ptr<ledger::Ledger> _ledger;
   std::vector<crypto::Ecc> _keys;
   std::vector<messages::Address> _addresses;
@@ -91,12 +89,14 @@ class Consensus {
 
  public:
   Consensus(std::shared_ptr<ledger::Ledger> ledger,
-            std::vector<crypto::Ecc> &keys, PublishBlock publish_block,
+            const std::vector<crypto::Ecc> &keys, PublishBlock publish_block,
             bool start_threads = true);
 
   Consensus(std::shared_ptr<ledger::Ledger> ledger,
             const std::vector<crypto::Ecc> &keys, const Config &config,
             PublishBlock publish_block, bool start_threads = true);
+
+  Config config() const;
 
   void init(bool start_threads);
 
@@ -152,7 +152,6 @@ class Consensus {
 
   friend class neuro::consensus::tests::Consensus;
   friend class neuro::consensus::tests::RealtimeConsensus;
-  friend class neuro::tooling::Simulator;
   friend class neuro::tooling::tests::RealtimeSimulator;
 };
 

@@ -8,17 +8,17 @@ namespace neuro {
 namespace tooling {
 
 consensus::Config config{
-    5,                               // blocks_per_assembly
-    10,                              // members_per_assembly
-    1,                               // block_period
-    100,                             // block_reward
-    128000,                          // max_block_size
-    std::chrono::seconds(1),         // update_heights_sleep
-    std::chrono::seconds(1),         // compute_pii_sleep
-    std::chrono::milliseconds(100),  // miner_sleep
-    1,                               // integrity_block_reward
-    -40,                             // integrity_double_mining
-    1                                // integrity_denunciation_reward
+    5,       // blocks_per_assembly
+    10,      // members_per_assembly
+    1,       // block_period
+    100,     // block_reward
+    128000,  // max_block_size
+    1s,      // update_heights_sleep
+    1s,      // compute_pii_sleep
+    100ms,   // miner_sleep
+    1,       // integrity_block_reward
+    -40,     // integrity_double_mining
+    1        // integrity_denunciation_reward
 };
 
 Simulator::Simulator(const std::string &db_url, const std::string &db_name,
@@ -90,7 +90,7 @@ messages::Block Simulator::new_block(
   assert(ledger->get_assembly(assembly_n_minus_1.previous_assembly_id(),
                               &assembly_n_minus_2));
   auto height = last_block.block().header().height() + 1;
-  auto &assembly = height % consensus->config.blocks_per_assembly == 0
+  auto &assembly = height % consensus->config().blocks_per_assembly == 0
                        ? assembly_n_minus_1
                        : assembly_n_minus_2;
 
@@ -100,7 +100,7 @@ messages::Block Simulator::new_block(
   auto header = block.mutable_header();
   header->mutable_timestamp()->set_data(block0.header().timestamp().data() +
                                         height *
-                                            consensus->config.block_period);
+                                            consensus->config().block_period);
   header->mutable_previous_block_hash()->CopyFrom(
       last_block.block().header().id());
   header->set_height(height);
@@ -108,7 +108,7 @@ messages::Block Simulator::new_block(
   // Block reward
   auto transaction = block.add_coinbases();
   blockgen::coinbase(keys[miner_index].public_key(),
-                     consensus->config.block_reward, transaction, height);
+                     consensus->config().block_reward, transaction, height);
 
   ledger->get_transaction_pool(&block);
   ledger->add_denunciations(&block, last_block.branch_path());
@@ -159,7 +159,7 @@ void Simulator::run(int nb_blocks, int transactions_per_block,
     if (!consensus->add_block(&block)) {
       throw std::runtime_error("Failed to add block in the simulator");
     }
-    if (compute_pii && (i - 1) % consensus->config.blocks_per_assembly == 0) {
+    if (compute_pii && (i - 1) % consensus->config().blocks_per_assembly == 0) {
       std::vector<messages::Assembly> assemblies;
       ledger->get_assemblies_to_compute(&assemblies);
       if (assemblies.size() > 0) {

@@ -210,7 +210,7 @@ bool Consensus::check_coinbase(
 messages::NCCAmount Consensus::block_reward(
     const messages::BlockHeight height) const {
   // TODO use some sort of formula here
-  return config.block_reward;
+  return _config.block_reward;
 }
 
 bool Consensus::check_block_id(messages::TaggedBlock *tagged_block) const {
@@ -278,7 +278,7 @@ bool Consensus::check_block_size(
   const auto &block = tagged_block.block();
   Buffer buffer;
   messages::to_buffer(block, &buffer);
-  bool result = buffer.size() < config.max_block_size;
+  bool result = buffer.size() < _config.max_block_size;
   if (!result) {
     LOG_INFO << "Failed check_block_size for block " << block.header().id();
   }
@@ -327,7 +327,7 @@ bool Consensus::check_block_timestamp(
   messages::Block block0;
   _ledger->get_block(0, &block0);
   int64_t expected_timestamp = block0.header().timestamp().data() +
-                               block.header().height() * config.block_period;
+                               block.header().height() * _config.block_period;
   int64_t real_timestamp = tagged_block.block().header().timestamp().data();
   if (!block.header().has_timestamp()) {
     LOG_INFO << "Failed check_block_timestamp for block " << block.header().id()
@@ -341,7 +341,7 @@ bool Consensus::check_block_timestamp(
              << "Expected timestamp " << expected_timestamp << std::endl;
     return false;
   }
-  if (real_timestamp > expected_timestamp + config.block_period) {
+  if (real_timestamp > expected_timestamp + _config.block_period) {
     LOG_INFO << "Failed check_block_timestamp for block " << block.header().id()
              << " it is too late" << std::endl
              << "Real timestamp " << real_timestamp << std::endl
@@ -461,7 +461,7 @@ bool Consensus::verify_blocks() {
     bool added_new_assembly = false;
     if (is_new_assembly(tagged_block, previous)) {
       const int32_t height =
-          previous.block().header().height() / config.blocks_per_assembly;
+          previous.block().header().height() / _config.blocks_per_assembly;
       _ledger->add_assembly(previous, height);
       added_new_assembly = true;
       tagged_block.mutable_previous_assembly_id()->CopyFrom(
@@ -502,15 +502,15 @@ bool Consensus::is_new_assembly(const messages::TaggedBlock &tagged_block,
                              " is missing the previous_assembly_id");
   }
   int32_t block_assembly_height =
-      tagged_block.block().header().height() / config.blocks_per_assembly;
+      tagged_block.block().header().height() / _config.blocks_per_assembly;
   int32_t previous_assembly_height =
-      previous.block().header().height() / config.blocks_per_assembly;
+      previous.block().header().height() / _config.blocks_per_assembly;
   return block_assembly_height != previous_assembly_height;
 }
 
 Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
-                     std::vector<crypto::Ecc> &keys, PublishBlock publish_block,
-                     bool start_threads)
+                     const std::vector<crypto::Ecc> &keys,
+                     PublishBlock publish_block, bool start_threads)
     : _ledger(ledger), _keys(keys), _publish_block(publish_block) {
   init(start_threads);
 }
@@ -518,12 +518,14 @@ Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
 Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
                      const std::vector<crypto::Ecc> &keys, const Config &config,
                      PublishBlock publish_block, bool start_threads)
-    : config(config),
+    : _config(config),
       _ledger(ledger),
       _keys(keys),
       _publish_block(publish_block) {
   init(start_threads);
 }
+
+Config Consensus::config() const { return _config; }
 
 void Consensus::init(bool start_threads) {
   if (start_threads) {
@@ -616,7 +618,7 @@ void Consensus::start_compute_pii_thread() {
         if (assemblies.size() > 0) {
           compute_assembly_pii(assemblies[0]);
         } else {
-          std::this_thread::sleep_for(config.compute_pii_sleep);
+          std::this_thread::sleep_for(_config.compute_pii_sleep);
         }
       }
     });
@@ -624,8 +626,8 @@ void Consensus::start_compute_pii_thread() {
 }
 
 bool Consensus::compute_assembly_pii(const messages::Assembly &assembly) {
-  auto pii = Pii(_ledger, config);
-  auto integrities = Integrities(config);
+  auto pii = Pii(_ledger, _config);
+  auto integrities = Integrities(_config);
   messages::TaggedBlock tagged_block;
   if (!_ledger->get_block(assembly.id(), &tagged_block)) {
     LOG_WARNING << "During Pii computation missing block with id assembly_id "
@@ -637,7 +639,11 @@ bool Consensus::compute_assembly_pii(const messages::Assembly &assembly) {
 
   while (tagged_block.block().header().id() !=
          assembly.previous_assembly_id()) {
-    pii.add_block(tagged_block);
+    if (!pii.add_block(tagged_block)) {
+      LOG_WARNING << "Failed to compute the Pii of block "
+                  << tagged_block.block().header().id();
+      return false;
+    }
     integrities.add_block(tagged_block);
     auto block_id = tagged_block.block().header().id().data();
     seed <<= 1;
@@ -659,7 +665,7 @@ bool Consensus::compute_assembly_pii(const messages::Assembly &assembly) {
   };
 
   // Add the integrity before the pii because it is used in the pii computations
-  for (const auto &[address, score] : integrities.scores) {
+  for (const auto &[address, score] : integrities.scores()) {
     _ledger->add_integrity(address, assembly.id(), assembly.height(),
                            branch_path, score);
   }
@@ -717,7 +723,7 @@ bool Consensus::get_block_writer(const messages::Assembly &assembly,
   rng.seed(assembly.seed() + height);
   auto dist = std::uniform_int_distribution<std::mt19937::result_type>(
       0,
-      std::min(assembly.nb_addresses(), (int32_t)config.members_per_assembly) -
+      std::min(assembly.nb_addresses(), (int32_t)_config.members_per_assembly) -
           1);
   auto writer_rank = dist(rng);
   if (!_ledger->get_block_writer(assembly.id(), writer_rank, address)) {
@@ -732,7 +738,7 @@ messages::BlockHeight Consensus::get_current_height() const {
   messages::Block block0;
   _ledger->get_block(0, &block0);
   return (std::time(nullptr) - block0.header().timestamp().data()) /
-         config.block_period;
+         _config.block_period;
 }
 
 bool Consensus::get_heights_to_write(
@@ -769,9 +775,9 @@ bool Consensus::get_heights_to_write(
   const int32_t current_height = std::max(get_current_height(), 1);
 
   int32_t first_height =
-      (previous_previous_assembly.height() + 2) * config.blocks_per_assembly;
+      (previous_previous_assembly.height() + 2) * _config.blocks_per_assembly;
   int32_t last_height =
-      (previous_previous_assembly.height() + 3) * config.blocks_per_assembly -
+      (previous_previous_assembly.height() + 3) * _config.blocks_per_assembly -
       1;
   for (int32_t i = std::max(current_height, first_height); i <= last_height;
        i++) {
@@ -787,9 +793,9 @@ bool Consensus::get_heights_to_write(
 
   if (previous_assembly.finished_computation()) {
     first_height =
-        (previous_assembly.height() + 2) * config.blocks_per_assembly;
+        (previous_assembly.height() + 2) * _config.blocks_per_assembly;
     last_height =
-        (previous_assembly.height() + 3) * config.blocks_per_assembly - 1;
+        (previous_assembly.height() + 3) * _config.blocks_per_assembly - 1;
 
     for (auto i = std::max(current_height, first_height); i <= last_height;
          i++) {
@@ -842,7 +848,7 @@ void Consensus::start_update_heights_thread() {
     _update_heights_thread = std::thread([this]() {
       while (!_stop_update_heights) {
         update_heights_to_write();
-        std::this_thread::sleep_for(config.update_heights_sleep);
+        std::this_thread::sleep_for(_config.update_heights_sleep);
       }
     });
   }
@@ -893,18 +899,18 @@ void Consensus::mine_blocks() {
     _heights_to_write_mutex.lock();
     if (_heights_to_write.size() == 0) {
       _heights_to_write_mutex.unlock();
-      std::this_thread::sleep_for(config.miner_sleep);
+      std::this_thread::sleep_for(_config.miner_sleep);
       continue;
     }
     const auto height = _heights_to_write[0].first;
     const auto address_index = _heights_to_write[0].second;
     const auto block_start =
-        block0.header().timestamp().data() + height * config.block_period;
-    const auto block_end = block_start + config.block_period;
+        block0.header().timestamp().data() + height * _config.block_period;
+    const auto block_end = block_start + _config.block_period;
     const auto current_time = std::time(nullptr);
     if (current_time < block_start) {
       _heights_to_write_mutex.unlock();
-      std::this_thread::sleep_for(config.miner_sleep);
+      std::this_thread::sleep_for(_config.miner_sleep);
       continue;
     }
     _heights_to_write.erase(_heights_to_write.begin());

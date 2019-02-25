@@ -8,11 +8,18 @@ namespace neuro {
 namespace consensus {
 
 class Integrities {
- public:
-  const Config config;
-  Integrities(const consensus::Config &config) : config(config) {}
+ private:
+  const Config _config;
 
-  std::unordered_map<messages::Address, messages::IntegrityScore> scores;
+  std::unordered_map<messages::Address, messages::IntegrityScore> _scores;
+
+ public:
+  Integrities(const consensus::Config &config) : _config(config) {}
+
+  Config config() const;
+
+  std::unordered_map<messages::Address, messages::IntegrityScore> scores()
+      const;
 
   void add_block(const messages::TaggedBlock &tagged_block);
 

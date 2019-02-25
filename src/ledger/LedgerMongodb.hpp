@@ -305,8 +305,6 @@ class LedgerMongodb : public Ledger {
       const std::vector<messages::Denunciation> &denunciations) const;
 
   friend class neuro::ledger::tests::LedgerMongodb;
-  friend class neuro::tooling::Simulator;
-  friend class neuro::tooling::RealtimeSimulator;
 };
 
 }  // namespace ledger

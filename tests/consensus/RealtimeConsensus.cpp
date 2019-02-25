@@ -36,40 +36,41 @@ class RealtimeConsensus : public testing::Test {
     messages::TaggedBlock tagged_block;
     ledger->get_last_block(&tagged_block);
     ASSERT_EQ(tagged_block.block().header().height(), 0);
-    std::this_thread::sleep_for(consensus->config.update_heights_sleep * 2);
+    std::this_thread::sleep_for(consensus->config().update_heights_sleep * 2);
     consensus->_heights_to_write_mutex.lock();
     ASSERT_EQ(consensus->_heights_to_write.at(0).first, 1);
     ASSERT_EQ(consensus->_heights_to_write.at(0).second, 0);
     ASSERT_EQ(
         consensus->_heights_to_write.at(consensus->_heights_to_write.size() - 1)
             .first,
-        consensus->config.blocks_per_assembly * 2 - 1);
+        consensus->config().blocks_per_assembly * 2 - 1);
     ASSERT_EQ(consensus->_heights_to_write.size(),
-              2 * consensus->config.blocks_per_assembly - 1);
+              2 * consensus->config().blocks_per_assembly - 1);
     consensus->_heights_to_write_mutex.unlock();
   }
 
   void test_miner_thread() {
     // Sleep for 1 more second because the block0 is 1 second in the future
-    std::this_thread::sleep_for((std::chrono::seconds)(
-        consensus->config.blocks_per_assembly * consensus->config.block_period +
-        1));
+    std::this_thread::sleep_for(
+        (std::chrono::seconds)(consensus->config().blocks_per_assembly *
+                                   consensus->config().block_period +
+                               1));
     messages::TaggedBlock tagged_block;
     ASSERT_TRUE(ledger->get_last_block(&tagged_block, false));
     ASSERT_GT(tagged_block.block().header().height(),
-              consensus->config.blocks_per_assembly - 2);
+              consensus->config().blocks_per_assembly - 2);
     ASSERT_LT(tagged_block.block().header().height(),
-              consensus->config.blocks_per_assembly + 2);
+              consensus->config().blocks_per_assembly + 2);
   }
 
   void test_pii_thread() {
     std::this_thread::sleep_for(
-        (std::chrono::seconds)(consensus->config.blocks_per_assembly + 2) *
-        consensus->config.block_period);
+        (std::chrono::seconds)(consensus->config().blocks_per_assembly + 2) *
+        consensus->config().block_period);
     messages::TaggedBlock tagged_block;
     ASSERT_TRUE(ledger->get_last_block(&tagged_block, false));
     ASSERT_GT(tagged_block.block().header().height(),
-              consensus->config.blocks_per_assembly - 1);
+              consensus->config().blocks_per_assembly - 1);
     messages::Assembly assembly;
     ASSERT_TRUE(
         ledger->get_assembly(tagged_block.previous_assembly_id(), &assembly));

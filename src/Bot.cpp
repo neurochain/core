@@ -142,7 +142,7 @@ bool Bot::update_ledger() {
 
   // TODO #consensus change by height by time function
   if ((std::time(nullptr) - last_header.timestamp().data()) <
-      _consensus->config.block_period) {
+      _consensus->config().block_period) {
     return true;
   }
 
