@@ -634,7 +634,8 @@ bool LedgerMongodb::unsafe_insert_block(messages::TaggedBlock *tagged_block) {
     return false;
   }
   if (bson_transactions.size() > 0) {
-    return (bool)_transactions.insert_many(std::move(bson_transactions));
+    return static_cast<bool>(
+        _transactions.insert_many(std::move(bson_transactions)));
   }
   return true;
 }
@@ -1077,7 +1078,7 @@ bool LedgerMongodb::cleanup_transaction_pool(
                           << bson_ids << bss::close_document << BLOCK_ID
                           << bss::open_document << $EXISTS << false
                           << bss::close_document << bss::finalize;
-  return (bool)_transactions.delete_many(query.view());
+  return static_cast<bool>(_transactions.delete_many(query.view()));
 }
 
 bool LedgerMongodb::update_main_branch() {
@@ -1212,8 +1213,11 @@ bool LedgerMongodb::add_assembly(const messages::TaggedBlock &tagged_block,
   }
   assembly.mutable_id()->CopyFrom(tagged_block.block().header().id());
   if (!tagged_block.has_previous_assembly_id()) {
-    throw("Something is wrong here, block " + to_json(tagged_block) +
-          "should have a previous_assembly_id");
+    std::stringstream message;
+    message << "Something is wrong here " << __FILE__ << ":" << __LINE__
+            << " , block " + to_json(tagged_block)
+            << "should have a previous_assembly_id";
+    throw(message);
   }
   assembly.mutable_previous_assembly_id()->CopyFrom(
       tagged_block.previous_assembly_id());
@@ -1221,7 +1225,7 @@ bool LedgerMongodb::add_assembly(const messages::TaggedBlock &tagged_block,
   assembly.set_height(height);
   auto bson_assembly = to_bson(assembly);
   auto result = _assemblies.insert_one(std::move(bson_assembly));
-  return (bool)result;
+  return static_cast<bool>(result);
 }
 
 bool LedgerMongodb::get_pii(const messages::Address &address,
@@ -1256,7 +1260,7 @@ bool LedgerMongodb::get_assembly_piis(const messages::AssemblyID &assembly_id,
 bool LedgerMongodb::set_pii(const messages::Pii &pii) {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   auto bson_pii = to_bson(pii);
-  return (bool)_pii.insert_one(std::move(bson_pii));
+  return static_cast<bool>(_pii.insert_one(std::move(bson_pii)));
 }
 
 bool LedgerMongodb::set_previous_assembly_id(
@@ -1275,7 +1279,7 @@ bool LedgerMongodb::set_previous_assembly_id(
 
 bool LedgerMongodb::unsafe_set_integrity(const messages::Integrity &integrity) {
   auto bson_integrity = to_bson(integrity);
-  return (bool)_integrity.insert_one(std::move(bson_integrity));
+  return static_cast<bool>(_integrity.insert_one(std::move(bson_integrity)));
 }
 
 bool LedgerMongodb::set_integrity(const messages::Integrity &integrity) {
@@ -1312,14 +1316,16 @@ messages::IntegrityScore LedgerMongodb::get_integrity(
   return unsafe_get_integrity(address, assembly_height, branch_path);
 }
 
+/*
+ * This is a bit complicated the goal is to return the integrity of the
+ * address at a certain assembly. The hard part is that the integrity is
+ * only stored when it changes. And we only want to see the integrities for
+ * our branch which we cannot specify in a mongo query.
+ */
 messages::IntegrityScore LedgerMongodb::unsafe_get_integrity(
     const messages::Address &address,
     const messages::AssemblyHeight &assembly_height,
     const messages::BranchPath &branch_path) const {
-  // This is a bit complicated the goal is to return the integrity of the
-  // address at a certain assembly. The hard part is that the integrity is
-  // only stored when it changes. And we only want to see the integrities for
-  // our branch which we cannot specify in a mongo query.
   auto query = bss::document{} << ADDRESS << to_bson(address) << ASSEMBLY_HEIGHT
                                << bss::open_document << $LTE << assembly_height
                                << bss::close_document << bss::finalize;

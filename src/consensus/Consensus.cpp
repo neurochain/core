@@ -33,7 +33,7 @@ bool Consensus::check_inputs(
     tip = _ledger->get_main_branch_tip();
   }
 
-  const auto transaction = tagged_transaction.transaction();
+  const auto &transaction = tagged_transaction.transaction();
   for (const auto &input : transaction.inputs()) {
     ledger::Ledger::Filter filter;
     filter.input_transaction_id(input.id());
@@ -43,14 +43,15 @@ bool Consensus::check_inputs(
 
     // Check that inputs are not spent by any other transaction
     const bool check_transaction_pool = true;
-    _ledger->for_each(filter, tip, check_transaction_pool,
-                      [&](const messages::TaggedTransaction match) {
-                        if ((match.transaction().id() != transaction.id())) {
-                          invalid = true;
-                          return false;
-                        }
-                        return true;
-                      });
+    _ledger->for_each(
+        filter, tip, check_transaction_pool,
+        [&transaction, &invalid](const messages::TaggedTransaction match) {
+          if ((match.transaction().id() != transaction.id())) {
+            invalid = true;
+            return false;
+          }
+          return true;
+        });
     if (invalid) {
       LOG_INFO << "Failed check_input for transaction "
                << tagged_transaction.transaction().id();
@@ -460,7 +461,7 @@ bool Consensus::verify_blocks() {
            previous.branch() == messages::Branch::FORK);
     bool added_new_assembly = false;
     if (is_new_assembly(tagged_block, previous)) {
-      const int32_t height =
+      const auto height =
           previous.block().header().height() / _config.blocks_per_assembly;
       _ledger->add_assembly(previous, height);
       added_new_assembly = true;
@@ -501,9 +502,9 @@ bool Consensus::is_new_assembly(const messages::TaggedBlock &tagged_block,
                              messages::to_json(previous.block().header().id()) +
                              " is missing the previous_assembly_id");
   }
-  int32_t block_assembly_height =
+  auto block_assembly_height =
       tagged_block.block().header().height() / _config.blocks_per_assembly;
-  int32_t previous_assembly_height =
+  auto previous_assembly_height =
       previous.block().header().height() / _config.blocks_per_assembly;
   return block_assembly_height != previous_assembly_height;
 }
