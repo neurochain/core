@@ -28,8 +28,10 @@ Bot::Bot(const messages::config::Config &config)
              _config.networking().tcp().peers().end()),
       _networking(&_queue, &_keys, &_peers, _config.mutable_networking()),
       _ledger(std::make_shared<ledger::LedgerMongodb>(_config.database())),
-      _update_timer(*_io_context) {
-  LOG_DEBUG << this << " hello from bot " << _keys.public_key();
+      _update_timer(std::ref(*_io_context)) {
+  LOG_DEBUG << this << " hello from bot " << _keys.public_key() << std::endl
+	    << _peers << std::endl;
+  
   if (!init()) {
     throw std::runtime_error("Could not create bot from configuration file");
   }
@@ -211,27 +213,36 @@ bool Bot::init() {
   subscribe();
 
   configure_networking(&_config);
+  _update_timer.expires_after(1s);
+  _update_timer.async_wait(boost::bind(&Bot::regular_update, this));
+  
 
   _io_context_thread = std::thread([this]() { _io_context->run(); });
 
+  while (_io_context->stopped()) {
+    std::cout << "is io context stopped "  << std::endl;
+    std::this_thread::sleep_for(1s);
+  }
+  std::cout << "is stopped??? " << std::boolalpha << _io_context->stopped() << std::endl;
+  
+
   update_ledger();
   this->keep_max_connections();
-
-  _update_timer.expires_after(boost::asio::chrono::seconds(_update_time));
-  _update_timer.async_wait(boost::bind(&Bot::regular_update, this));
-
-  LOG_DEBUG << this << " USING UPDATE TIME: " << _update_time;
-
+    
   return true;
 }
 
 void Bot::regular_update() {
+  std::cout << "##################################################" << std::endl;
+  _peers.update_unreachable();
   update_peerlist();
-  // keep_max_connections();
+  keep_max_connections();
   update_ledger();
+  keep_max_connections();  
   _update_timer.expires_at(_update_timer.expiry() +
                            boost::asio::chrono::seconds(_update_time));
   _update_timer.async_wait(boost::bind(&Bot::regular_update, this));
+  
 }
 
 void Bot::update_peerlist() {
@@ -421,7 +432,7 @@ void Bot::keep_max_connections() {
     return;
   }
 
-  auto peer = _peers.next(messages::Peer::DISCONNECTED, 2s);
+  auto peer = _peers.next(messages::Peer::DISCONNECTED);
   if (!peer) {
     LOG_WARNING << "Could not find peer to connect to";
     return;

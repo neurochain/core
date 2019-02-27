@@ -18,13 +18,24 @@ class Peer : public _Peer {
   static bool _fake_time;
 
  public:
-  Peer() {}
-  Peer(const _Peer &peer) { CopyFrom(peer); }
+  Peer() {
+      set_status(Peer::DISCONNECTED);
+  }
+
+  Peer(const _Peer &peer) {
+    CopyFrom(peer);
+    if (!has_status()) {
+      set_status(Peer::DISCONNECTED);
+    }
+  }
   Peer(const std::string &endpoint, const Port port,
        const crypto::EccPub &ecc_pub) {
     set_endpoint(endpoint);
     set_port(port);
     ecc_pub.save(mutable_key_pub());
+    if (!has_status()) {
+      set_status(Peer::DISCONNECTED);
+    }
   }
 
   void set_status(::neuro::messages::_Peer_Status value) {
@@ -34,9 +45,9 @@ class Peer : public _Peer {
 
   void update_timestamp() {
     if (!_fake_time) {
-      mutable_last_update()->set_data(std::time(nullptr));
+      mutable_next_update()->set_data(std::time(nullptr) + 10); // TODO: config
     } else {
-      mutable_last_update()->set_data(::neuro::_time);
+      mutable_next_update()->set_data(::neuro::_time + 1);
     }
   }
 

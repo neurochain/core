@@ -53,9 +53,9 @@ class Peers {
 
   bool fill(_Peers *peers);
   std::size_t used_peers_count() const;
+  void update_unreachable();
   bool update_peer_status(const Peer &peer, const Peer::Status status);
-  std::optional<Peer *> next(const Peer::Status status,
-                             const Duration &duration);
+  std::optional<Peer *> next(const Peer::Status status);
   Peer *find_random(const Peer::Status status, const Duration &duration);
   std::vector<Peer *> by_status(const Peer::Status status) const;
   std::vector<Peer *> used_peers() const;

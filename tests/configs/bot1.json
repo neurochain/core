@@ -1,6 +1,6 @@
 {
     "logs": {
-	"severity": "debug",
+	"severity": "trace",
 	"to_stdout": true
     },
     "networking": {

@@ -37,7 +37,7 @@ Peer *Peers::insert(const Peer &peer) {
 //   if (listen_port) {
 //     new_peer->set_port(*listen_port);
 //   }
-//   set_last_update(new_peer);
+//   set_next_update(new_peer);
 //   return new_peer;
 // }
 
@@ -65,16 +65,15 @@ bool Peers::update_peer_status(const Peer &peer, const Peer::Status status) {
   return true;
 }
 
-std::optional<Peer *> Peers::next(const Peer::Status status,
-                                  const Duration &duration) {
+std::optional<Peer *> Peers::next(const Peer::Status status) {
   LOG_TRACE;
   std::shared_lock<std::shared_mutex> lock(_mutex);
   const auto current_time = std::time(nullptr);
   for (const auto &pair : _peers) {
     auto peer = pair.second.get();
-
+    
     if (peer->has_status() && peer->status() & status &&
-        (current_time - peer->last_update().data()) > duration.count()) {
+        (current_time > peer->next_update().data())) {
       return {peer};
     }
   }
@@ -89,7 +88,7 @@ std::vector<Peer *> Peers::by_status(const Peer::Status status) const {
 
   for (const auto &pair : _peers) {
     const auto &peer = pair.second.get();
-    if (peer->has_status() && (peer->status() & status)) {
+    if (peer->status() & status) {
       res.push_back(peer);
     }
   }
@@ -115,14 +114,23 @@ std::vector<Peer> Peers::peers_copy() const {
     const auto &peer = pair.second.get();
     res.push_back(*peer);
   }
-
+  
   return res;
+}
+
+void Peers::update_unreachable() {
+  auto unreachables = by_status(Peer::UNREACHABLE);
+  for (auto *peer : unreachables) {
+    if(peer->next_update().data() < std::time(nullptr)) {
+      peer->set_status(Peer::DISCONNECTED);
+    }
+  }
 }
 
 bool Peers::fill(_Peers *peers) {
   const auto full_mask = _Peer_Status_Status_MAX * 2 - 1;
   for (int i = 0; i < 10; i++) {
-    auto peer = next(static_cast<Peer::Status>(full_mask), 0s);
+    auto peer = next(static_cast<Peer::Status>(full_mask));
     if (!peer) {
       return false;
     }

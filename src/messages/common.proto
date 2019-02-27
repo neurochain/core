@@ -52,7 +52,7 @@ message _Peer {
   optional KeyPub key_pub = 2;
   optional int32 port = 3;
   optional Status status = 4;
-  optional Timestamp last_update = 5;
+  optional Timestamp next_update = 5;
   optional int32 connection_id = 6;
 }
 

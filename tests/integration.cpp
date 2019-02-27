@@ -93,7 +93,7 @@ TEST(INTEGRATION, simple_interaction) {
         listener.handler_connection(header, body);
       });
 
-  std::this_thread::sleep_for(1s);
+  std::this_thread::sleep_for(5s);
 
   LOG_DEBUG << "listener.received_connection() = "
             << listener.received_connection();

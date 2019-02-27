@@ -46,7 +46,6 @@ void Queue::unsubscribe(Subscriber *subscriber) {
 void Queue::run() {
   _started = true;
   _main_thread = std::thread([this]() { this->do_work(); });
-  _main_thread.detach();
 }
 
 bool Queue::is_empty() {
@@ -67,6 +66,11 @@ void Queue::quit() {
   }
   _quitting = true;
   _condition.notify_all();
+  if (_main_thread.joinable()) {
+    std::cout << "joining" << std::endl;
+    _main_thread.join();
+    std::cout << "joined" << std::endl;
+  }
 }
 
 void Queue::do_work() {
