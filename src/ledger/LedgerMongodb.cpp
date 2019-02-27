@@ -185,7 +185,6 @@ bool LedgerMongodb::init_block0(const messages::config::Database &config) {
   if (unsafe_get_block(0, &block0)) {
     return true;
   }
-  block0.Clear();
   if (!load_block0(config, &block0)) {
     return false;
   }
@@ -681,7 +680,8 @@ bool LedgerMongodb::get_transaction(
   filter.transaction_id(id);
   auto found_transaction = false;
   for_each(filter, tip, include_transaction_pool,
-           [&](const messages::TaggedTransaction &match) {
+           [&found_transaction,
+            &tagged_transaction](const messages::TaggedTransaction &match) {
              if (!found_transaction) {
                tagged_transaction->CopyFrom(match);
                found_transaction = true;
@@ -1066,12 +1066,12 @@ bool LedgerMongodb::cleanup_transaction_pool(
   auto query = bss::document{} << BLOCK_ID << to_bson(block_id)
                                << bss::finalize;
   auto cursor =
-      _transactions.find(std::move(query), projection("transaction.id"));
+      _transactions.find(std::move(query), projection(TRANSACTION + "." + ID));
 
   std::vector<messages::TransactionID> ids;
   bsoncxx::builder::basic::array bson_ids;
   for (const auto &bson_transaction : cursor) {
-    bson_ids.append(bson_transaction["transaction"]["id"].get_document());
+    bson_ids.append(bson_transaction[TRANSACTION][ID].get_document());
   }
 
   query = bss::document{} << TRANSACTION + "." + ID << bss::open_document << $IN
@@ -1226,20 +1226,6 @@ bool LedgerMongodb::add_assembly(const messages::TaggedBlock &tagged_block,
   auto bson_assembly = to_bson(assembly);
   auto result = _assemblies.insert_one(std::move(bson_assembly));
   return static_cast<bool>(result);
-}
-
-bool LedgerMongodb::get_pii(const messages::Address &address,
-                            const messages::AssemblyID &assembly_id,
-                            messages::Pii *pii) const {
-  std::lock_guard<std::mutex> lock(_ledger_mutex);
-  auto query = bss::document{} << ADDRESS << to_bson(address) << ASSEMBLY_ID
-                               << to_bson(assembly_id) << bss::finalize;
-  auto result = _pii.find_one(std::move(query), remove_OID());
-  if (!result) {
-    return false;
-  };
-  from_bson(result->view(), pii);
-  return true;
 }
 
 bool LedgerMongodb::get_assembly_piis(const messages::AssemblyID &assembly_id,

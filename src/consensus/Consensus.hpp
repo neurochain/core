@@ -87,6 +87,8 @@ class Consensus {
   bool is_new_assembly(const messages::TaggedBlock &tagged_block,
                        const messages::TaggedBlock &previous) const;
 
+  bool mine_block(const messages::Block &block0);
+
  public:
   Consensus(std::shared_ptr<ledger::Ledger> ledger,
             const std::vector<crypto::Ecc> &keys, PublishBlock publish_block,
@@ -101,6 +103,9 @@ class Consensus {
   void init(bool start_threads);
 
   ~Consensus();
+
+  void halt_thread(std::optional<std::thread> *optional_thread,
+                   std::atomic<bool> *stop_thread);
 
   bool is_valid(const messages::TaggedTransaction &tagged_transaction) const;
 
@@ -139,7 +144,7 @@ class Consensus {
       std::vector<std::pair<messages::BlockHeight, AddressIndex>> *heights)
       const;
 
-  bool write_block(const crypto::Ecc &keys, const messages::BlockHeight &height,
+  bool build_block(const crypto::Ecc &keys, const messages::BlockHeight &height,
                    messages::Block *block) const;
 
   void start_update_heights_thread();

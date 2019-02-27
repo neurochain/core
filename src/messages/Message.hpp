@@ -14,6 +14,7 @@
 namespace neuro {
 namespace messages {
 
+using NCCValue = decltype(((_NCCAmount *)nullptr)->value());
 using BlockHeight = decltype(((BlockHeader *)nullptr)->height());
 using AssemblyHeight = decltype(((Assembly *)nullptr)->height());
 using BlockID = std::remove_reference<decltype(

@@ -1,6 +1,7 @@
 #include "consensus/Consensus.hpp"
 #include <algorithm>
 #include <chrono>
+#include <functional>
 #include <random>
 #include <thread>
 #include <unordered_set>
@@ -135,6 +136,7 @@ bool Consensus::check_id(
   messages::set_transaction_hash(&transaction);
   if (!tagged_transaction.transaction().has_id()) {
     LOG_INFO << "Failed check_id the transaction has no idea field";
+    return false;
   }
   bool result = transaction.id() == tagged_transaction.transaction().id();
   if (!result) {
@@ -185,9 +187,9 @@ bool Consensus::check_coinbase(
 
   // Check total spent
   if (tagged_block.block().header().height() != 0) {
-    uint64_t to_spend =
+    messages::NCCValue to_spend =
         block_reward(tagged_block.block().header().height()).value();
-    uint64_t total_spent = 0;
+    messages::NCCValue total_spent = 0;
     for (const auto &output : tagged_transaction.transaction().outputs()) {
       total_spent += output.value().value();
     }
@@ -540,22 +542,17 @@ void Consensus::init(bool start_threads) {
 }
 
 Consensus::~Consensus() {
-  if (_compute_pii_thread) {
-    _stop_compute_pii = true;
-    if (_compute_pii_thread->joinable()) {
-      _compute_pii_thread->join();
-    }
-  }
-  if (_update_heights_thread) {
-    _stop_update_heights = true;
-    if (_update_heights_thread->joinable()) {
-      _update_heights_thread->join();
-    }
-  }
-  if (_miner_thread) {
-    _stop_miner = true;
-    if (_miner_thread->joinable()) {
-      _miner_thread->join();
+  halt_thread(&_compute_pii_thread, &_stop_compute_pii);
+  halt_thread(&_update_heights_thread, &_stop_update_heights);
+  halt_thread(&_miner_thread, &_stop_miner);
+}
+
+void Consensus::halt_thread(std::optional<std::thread> *optional_thread,
+                            std::atomic<bool> *stop_thread) {
+  if (*optional_thread) {
+    *stop_thread = true;
+    if ((*optional_thread)->joinable()) {
+      (*optional_thread)->join();
     }
   }
 }
@@ -814,7 +811,7 @@ bool Consensus::get_heights_to_write(
   return true;
 }
 
-bool Consensus::write_block(const crypto::Ecc &keys,
+bool Consensus::build_block(const crypto::Ecc &keys,
                             const messages::BlockHeight &height,
                             messages::Block *block) const {
   messages::TaggedBlock last_block;
@@ -891,40 +888,42 @@ void Consensus::start_miner_thread() {
   }
 }
 
+bool Consensus::mine_block(const messages::Block &block0) {
+  std::lock_guard<std::mutex> lock(_heights_to_write_mutex);
+  if (_heights_to_write.size() == 0) {
+    return false;
+  }
+  const auto height = _heights_to_write[0].first;
+  const auto address_index = _heights_to_write[0].second;
+  const auto block_start =
+      block0.header().timestamp().data() + height * _config.block_period;
+  const auto block_end = block_start + _config.block_period;
+  const auto current_time = std::time(nullptr);
+  if (current_time < block_start) {
+    return false;
+  }
+  _heights_to_write.erase(_heights_to_write.begin());
+
+  if (current_time > block_end) {
+    return false;
+  }
+
+  messages::Block new_block;
+  build_block(_keys[address_index], height, &new_block);
+  _publish_block(new_block);
+  add_block(&new_block);
+  return true;
+}
+
 void Consensus::mine_blocks() {
   messages::Block block0;
   if (!_ledger->get_block(0, &block0)) {
     throw std::runtime_error("Failed to get block0 in start_miner_thread");
   }
   while (!_stop_miner) {
-    _heights_to_write_mutex.lock();
-    if (_heights_to_write.size() == 0) {
-      _heights_to_write_mutex.unlock();
+    if (!mine_block(block0)) {
       std::this_thread::sleep_for(_config.miner_sleep);
-      continue;
     }
-    const auto height = _heights_to_write[0].first;
-    const auto address_index = _heights_to_write[0].second;
-    const auto block_start =
-        block0.header().timestamp().data() + height * _config.block_period;
-    const auto block_end = block_start + _config.block_period;
-    const auto current_time = std::time(nullptr);
-    if (current_time < block_start) {
-      _heights_to_write_mutex.unlock();
-      std::this_thread::sleep_for(_config.miner_sleep);
-      continue;
-    }
-    _heights_to_write.erase(_heights_to_write.begin());
-    _heights_to_write_mutex.unlock();
-
-    if (current_time > block_end) {
-      continue;
-    }
-
-    messages::Block new_block;
-    write_block(_keys[address_index], height, &new_block);
-    _publish_block(new_block);
-    add_block(&new_block);
   }
 }
 

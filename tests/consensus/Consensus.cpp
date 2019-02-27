@@ -140,7 +140,7 @@ class Consensus : public testing::Test {
     }
   }
 
-  void test_write_block() {
+  void test_build_block() {
     messages::TaggedBlock tagged_block;
     messages::Assembly assembly_minus_1, assembly_minus_2;
     bool include_transactions = false;
@@ -163,7 +163,7 @@ class Consensus : public testing::Test {
 
       const auto keys = simulator.keys[address_index];
       messages::Block block;
-      ASSERT_TRUE(consensus->write_block(keys, i, &block));
+      ASSERT_TRUE(consensus->build_block(keys, i, &block));
       ASSERT_EQ(block.header().height(), i);
       ASSERT_EQ(block.coinbases_size(), 1);
       ASSERT_EQ(block.header().has_id(), 1);
@@ -237,7 +237,7 @@ TEST_F(Consensus, add_transaction) {
   ASSERT_TRUE(consensus->add_transaction(t2));
 }
 
-TEST_F(Consensus, write_block) { test_write_block(); }
+TEST_F(Consensus, build_block) { test_build_block(); }
 
 TEST_F(Consensus, add_denunciations) {
   // Let's make the first miner double mine

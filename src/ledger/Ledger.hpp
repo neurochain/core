@@ -166,10 +166,6 @@ class Ledger {
                        const messages::AssemblyID &assembly_id,
                        Double *score) const = 0;
 
-  virtual bool get_pii(const messages::Address &address,
-                       const messages::AssemblyID &assembly_id,
-                       messages::Pii *pii) const = 0;
-
   virtual bool set_pii(const messages::Pii &pii) = 0;
 
   virtual bool set_integrity(const messages::Integrity &integrity) = 0;

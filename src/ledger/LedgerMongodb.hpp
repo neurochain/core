@@ -245,10 +245,6 @@ class LedgerMongodb : public Ledger {
   bool add_assembly(const messages::TaggedBlock &tagged_block,
                     const int32_t height);
 
-  bool get_pii(const messages::Address &address,
-               const messages::AssemblyID &assembly_id,
-               messages::Pii *pii) const;
-
   bool set_pii(const messages::Pii &pii);
 
   bool set_integrity(const messages::Integrity &integrity);
