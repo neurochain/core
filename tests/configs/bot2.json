@@ -1,42 +1,42 @@
 {
-    "logs": {
-	"severity": "trace",
-	"to_stdout": true
+  "logs": {
+    "severity": "trace",
+    "toStdout": true
+  },
+  "networking": {
+    "maxConnections": 3,
+    "tcp": {
+      "port": 1339,
+      "endpoint": "localhost",
+      "peers": [
+        {
+          "endpoint": "localhost",
+          "keyPub": {
+            "type": "ECP256K1",
+            "rawData": "MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABAqh/GaK+zXAydO8h4sDf4apFNmW8SFaIqRqXioYDXy8hC+chk0UR4chWxuSQY3FIttKKlQDwSEVZ6Enazkt1a0="
+          },
+          "port": 1337
+        },
+        {
+          "endpoint": "localhost",
+          "keyPub": {
+            "type": "ECP256K1",
+            "rawData": "MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABOBPdJmNMRu7dZ0O4+b/jG5CyuLeI870VKYu0DrtJ8I8VW3wt5NcbqfqIk7OI0+9cE7+xCPtKwF1vAHi730nMJ0="
+          },
+          "port": 1338
+        }
+      ]
     },
-    "networking": {
-    "key_pub_path": "key2.pub",
-    "key_priv_path": "key2.priv",
-	"max_connections": 3,
-	"tcp": {
-	    "endpoint": "localhost",
-	    "port": 1339,
-	    "peers": [
-		{
-		    "endpoint": "127.0.0.1",
-		    "port": 1337,
-		    "keyPub": {
-			"type": "ECP256K1",
-			"rawData":"MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABIlBZ8HzPZulQg73aCVogFByUbKcFxpCHpqthn3QosZqBkBAUJbCQvatnRuuDWBJ+UYHNPAtpLBd9FGbXojs1SI="
-		    }
-		},
-		{
-		    "endpoint": "127.0.0.1",
-		    "port": 1338,
-		    "keyPub": {
-			"type": "ECP256K1",
-			"rawData":"MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABBgRu3OWNdUKOz6WzzkukD93X2qMnn9XO39a9WDXeYjBUzDfv8aJntgj7A9SfvV4e7TwHK9RR4BzN8PzUWicHrc=",
-		    }
-		}
-	    ]
-	}
-    },
-    "database": {
-	"url": "mongodb://localhost:27017/neuro",
-	"db_name": "neuro1339",
-	"block0_format": "PROTO",
-	"block0_path": "data.0.testnet"
-    },
-    "rest": {
-	"port": 8082
-    }
+    "keyPubPath": "key2.pub",
+    "keyPrivPath": "key2.priv"
+  },
+  "database": {
+    "url": "mongodb://localhost:27017/neuro",
+    "dbName": "neuro1339",
+    "block0Format": "PROTO",
+    "block0Path": "data.0.testnet"
+  },
+  "rest": {
+    "port": 8082
+  }
 }
