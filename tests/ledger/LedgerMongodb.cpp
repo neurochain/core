@@ -451,7 +451,7 @@ TEST_F(LedgerMongodb, pii) {
     messages::Pii pii;
     pii.mutable_address()->CopyFrom(messages::Address(keys[i].public_key()));
     pii.mutable_assembly_id()->CopyFrom(assembly_id);
-    pii.set_score(10 - i);
+    pii.set_score(std::to_string(10 - i));
     pii.set_rank(i);
     ASSERT_TRUE(ledger->set_pii(pii));
   }
@@ -472,7 +472,7 @@ TEST_F(LedgerMongodb, integrity) {
   ASSERT_EQ(block0.block().header().height(), 0);
   integrity.mutable_assembly_id()->CopyFrom(block0.block().header().id());
   integrity.set_assembly_height(0);
-  integrity.set_score(17);
+  integrity.set_score("17");
   integrity.mutable_branch_path()->CopyFrom(block0.branch_path());
   ASSERT_TRUE(ledger->set_integrity(integrity));
 
@@ -493,7 +493,7 @@ TEST_F(LedgerMongodb, integrity) {
   ASSERT_EQ(integrity_score, 17);
 
   integrity.set_assembly_height(1);
-  integrity.set_score(18);
+  integrity.set_score("18");
   integrity.mutable_branch_path()->CopyFrom(block1.branch_path());
   ASSERT_TRUE(ledger->set_integrity(integrity));
 

@@ -9,6 +9,8 @@ Double Pii::enthalpy_c() const { return 1; }
 
 Double Pii::enthalpy_lambda() const { return 0.5; }
 
+Pii::~Pii() { mpfr_free_cache(); }
+
 bool Pii::get_enthalpy(const messages::Transaction &transaction,
                        const messages::TaggedBlock &tagged_block,
                        const messages::Address &sender,
@@ -36,26 +38,27 @@ bool Pii::get_enthalpy(const messages::Transaction &transaction,
   // TODO reference to a pdf in english that contains the formula
   Double previous_pii;
   _ledger->get_pii(sender, tagged_block.previous_assembly_id(), &previous_pii);
-  *enthalpy = std::pow(
-      std::log(fmax(1, previous_pii * enthalpy_lambda() * enthalpy_c() *
-                           amount / _config.blocks_per_assembly)),
-      enthalpy_n());
+  *enthalpy =
+      pow(mpfr::log(fmax(1, previous_pii * enthalpy_lambda() * enthalpy_c() *
+                                amount / _config.blocks_per_assembly)),
+          enthalpy_n());
+
   return true;
 }
 
 Config Pii::config() const { return _config; }
 
 bool Pii::get_recipients(const messages::Transaction &transaction,
-                         std::vector<messages::Address> *recipients) const {
+                         std::set<messages::Address> *recipients) const {
   for (const auto &output : transaction.outputs()) {
-    recipients->push_back(output.address());
+    recipients->insert(output.address());
   }
   return true;
 }
 
 bool Pii::get_senders(const messages::Transaction &transaction,
                       const messages::TaggedBlock &tagged_block,
-                      std::vector<messages::Address> *senders) const {
+                      std::set<messages::Address> *senders) const {
   for (const auto &input : transaction.inputs()) {
     messages::TaggedTransaction tagged_transaction;
     bool include_transaction_pool = false;
@@ -66,7 +69,7 @@ bool Pii::get_senders(const messages::Transaction &transaction,
     if (tagged_transaction.transaction().outputs_size() <= input.output_id()) {
       return false;
     }
-    senders->push_back(
+    senders->insert(
         tagged_transaction.transaction().outputs(input.output_id()).address());
   }
   return true;
@@ -74,8 +77,8 @@ bool Pii::get_senders(const messages::Transaction &transaction,
 
 bool Pii::add_transaction(const messages::Transaction &transaction,
                           const messages::TaggedBlock &tagged_block) {
-  std::vector<messages::Address> senders;
-  std::vector<messages::Address> recipients;
+  std::set<messages::Address> senders;
+  std::set<messages::Address> recipients;
   if (!get_senders(transaction, tagged_block, &senders) ||
       !get_recipients(transaction, &recipients)) {
     return false;
@@ -109,7 +112,7 @@ bool Pii::add_block(const messages::TaggedBlock &tagged_block) {
 
 void Addresses::add_enthalpy(const messages::Address &sender,
                              const messages::Address &recipient,
-                             Double enthalpy) {
+                             const Double &enthalpy) {
   Transactions *recipient_transactions = &(_addresses[recipient]);
   Counters *incoming = &(recipient_transactions->_in[sender]);
   incoming->nb_transactions++;
@@ -152,16 +155,22 @@ std::vector<messages::Pii> Pii::get_addresses_pii(
     auto entropy = _addresses.get_entropy(address);
 
     // We want to get the integrity at the assembly n - 1
+    // TODO add a reference to a translated version of Dhaou's paper
     auto integrity_score =
         _ledger->get_integrity(address, assembly_height - 1, branch_path);
-    double divided_integrity = integrity_score / 2400;
+    Double divided_integrity = integrity_score / 2400;
     auto integrity = 1 + 0.1 * divided_integrity / (1 + divided_integrity);
-    pii.set_score(fmax(1, integrity * entropy));
+    auto score = fmax(1, integrity * entropy);
+    pii.set_score(score.toString());
     pii.mutable_address()->CopyFrom(address);
   }
   std::sort(piis.begin(), piis.end(),
             [](const messages::Pii &a, const messages::Pii &b) {
-              return a.score() > b.score();  // Sorted in reverse order
+              if (a.score() == b.score()) {
+                return a.address().data() > b.address().data();
+              }
+              // Sorted in reverse order
+              return a.score() > b.score();
             });
   return piis;
 }

@@ -44,8 +44,8 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 --coverage -fsanitize=address")
 include(GNUInstallDirs)
 include(FindPkgConfig)
 
-hunter_add_package(Boost COMPONENTS program_options system filesystem log thread )
-find_package(Boost 1.65 CONFIG REQUIRED program_options system filesystem log thread )
+hunter_add_package(Boost COMPONENTS program_options system filesystem log thread)
+find_package(Boost 1.68 CONFIG REQUIRED program_options system filesystem log thread)
 
 hunter_add_package(GTest)
 find_package(GTest CONFIG REQUIRED)

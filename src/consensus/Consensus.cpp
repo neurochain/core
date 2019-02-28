@@ -433,7 +433,7 @@ bool Consensus::check_block_denunciations(
   return true;
 }
 
-Double Consensus::get_block_score(
+messages::BlockScore Consensus::get_block_score(
     const messages::TaggedBlock &tagged_block) const {
   messages::TaggedBlock previous;
   if (!_ledger->get_block(tagged_block.block().header().previous_block_hash(),
@@ -656,6 +656,7 @@ bool Consensus::compute_assembly_pii(const messages::Assembly &assembly) {
       return false;
     }
   }
+
   if (!_ledger->set_seed(assembly.id(), seed)) {
     LOG_WARNING << "During Pii computation failed to set seed for assembly "
                 << assembly.id();

@@ -6,6 +6,7 @@
 namespace neuro {
 namespace ledger {
 
+// The PII is a floating point number stored as an int64
 const std::string MAIN_BRANCH_NAME =
     messages::Branch_Name(messages::Branch::MAIN);
 const std::string FORK_BRANCH_NAME =
@@ -141,7 +142,7 @@ void LedgerMongodb::create_first_assemblies(
       messages::Pii pii;
       pii.mutable_address()->CopyFrom(address);
       pii.mutable_assembly_id()->CopyFrom(assembly.id());
-      pii.set_score(1);
+      pii.set_score("1");
       pii.set_rank(i);
       assert(set_pii(pii));
     }
@@ -1154,13 +1155,7 @@ bool LedgerMongodb::get_pii(const messages::Address &address,
   }
 
   auto score = result->view()[SCORE];
-  if (score.type() == bsoncxx::types::b_double::type_id) {
-    *pii = score.get_double();
-  } else if (score.type() == bsoncxx::types::b_int32::type_id) {
-    *pii = score.get_int32();
-  } else if (score.type() == bsoncxx::types::b_int64::type_id) {
-    *pii = score.get_int64();
-  }
+  *pii = score.get_utf8().value.to_string();
   return true;
 }
 
@@ -1288,7 +1283,7 @@ bool LedgerMongodb::add_integrity(
   messages::Integrity integrity;
   integrity.mutable_address()->CopyFrom(address);
   integrity.mutable_assembly_id()->CopyFrom(assembly_id);
-  integrity.set_score(previous_score + added_score);
+  integrity.set_score((previous_score + added_score).toString());
   integrity.set_assembly_height(assembly_height);
   integrity.mutable_branch_path()->CopyFrom(branch_path);
   return unsafe_set_integrity(integrity);

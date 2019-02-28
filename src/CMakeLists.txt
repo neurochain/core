@@ -98,6 +98,8 @@ target_link_libraries(core
 
   protobuf::libprotobuf
   ${LIBMONGOCXX_STATIC_LIBRARIES}
+
+  mpfr
 )
 
 add_executable(main
@@ -120,6 +122,8 @@ target_link_libraries(main
 
   protobuf::libprotobuf
   ${LIBMONGOCXX_STATIC_LIBRARIES}
+
+  mpfr
   )
 
 add_executable(keygen

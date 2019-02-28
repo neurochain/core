@@ -121,8 +121,8 @@ enum Branch {
 // If another block arrives which also has height 1 it gets
 // {branch_ids: [2, 0], block_numbers: [0, 1]}.
 message BranchPath {
-  repeated uint32 branch_ids = 1;
-  repeated uint32 block_numbers = 2;
+  repeated int32 branch_ids = 1;
+  repeated int32 block_numbers = 2;
 }
 
 message TaggedBlock {
