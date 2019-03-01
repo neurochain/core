@@ -38,7 +38,7 @@ TEST_F(PeersF, insert_peer) {
   Peer peer0;
   Peer peer1;
 
-  ::neuro::messages::Peers peers;
+  ::neuro::messages::Peers peers(peer0.key_pub());
 
   ASSERT_EQ(peers.size(), 0);
   peers.insert(peer0);
@@ -64,7 +64,7 @@ TEST_F(PeersF, insert_peer) {
 }
 
 TEST_F(PeersF, pick) {
-  ::neuro::messages::Peers peers;
+  ::neuro::messages::Peers peers(peer0.key_pub());
 
   peers.insert(peer0);
   peers.insert(peer1);
@@ -83,7 +83,7 @@ TEST_F(PeersF, pick) {
 }
 
 TEST_F(PeersF, update_timestamp) {
-  ::neuro::messages::Peers peers;
+  ::neuro::messages::Peers peers(peer0.key_pub());
 
   peer0.set_status(Peer::CONNECTING);
   peer1.set_status(Peer::DISCONNECTED);

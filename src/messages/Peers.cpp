@@ -3,17 +3,22 @@
 namespace neuro {
 namespace messages {
 
-Peer *Peers::insert(const Peer &peer) {
+std::optional<Peer *>Peers::insert(const Peer &peer) {
   std::unique_lock<std::shared_mutex> lock(_mutex);
   // auto pair = std::make_pair(peer.key_pub(), );
-  auto got = _peers.emplace(
-      std::piecewise_construct, std::forward_as_tuple(peer.key_pub()),
-      std::forward_as_tuple(std::make_unique<Peer>(peer)));
-  auto found_peer = got.first->second.get();
-  if (!found_peer->has_status()) {
-    found_peer->set_status(Peer::DISCONNECTED);
+  if(peer.key_pub() == _own_key) {
+    return {};
   }
-  found_peer->update_timestamp();
+
+  auto got = _peers.emplace(
+			    std::piecewise_construct, std::forward_as_tuple(peer.key_pub()),
+			    std::forward_as_tuple(std::make_unique<Peer>(peer)));
+
+  if(!got.second) {
+    return got.first->second.get();
+  }
+  auto found_peer = got.first->second.get();
+  found_peer->set_status(Peer::DISCONNECTED);
   return found_peer;
 }
 
@@ -68,12 +73,10 @@ bool Peers::update_peer_status(const Peer &peer, const Peer::Status status) {
 std::optional<Peer *> Peers::next(const Peer::Status status) {
   LOG_TRACE;
   std::shared_lock<std::shared_mutex> lock(_mutex);
-  const auto current_time = std::time(nullptr);
   for (const auto &pair : _peers) {
     auto peer = pair.second.get();
     
-    if (peer->has_status() && peer->status() & status &&
-        (current_time > peer->next_update().data())) {
+    if (peer->has_status() && peer->status() & status) {
       return {peer};
     }
   }

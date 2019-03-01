@@ -20,23 +20,24 @@ namespace messages {
 class Peers {
  private:
   const int _used_status{(Peer::CONNECTING | Peer::CONNECTED)};
+  const KeyPub &_own_key;
   mutable std::shared_mutex _mutex;
 
   std::unordered_map<KeyPub, std::unique_ptr<Peer>,
 		     PacketHash<KeyPub>> _peers;
 
  public:
-  Peers() {}
-  Peers(const std::string &path) {
-    _Peers tmp;
-    from_json_file(path, &tmp);
-    for (const auto &peer : tmp.peers()) {
-      insert(peer);
-    }
-  }
+  Peers(const KeyPub &own_key) : _own_key(own_key) {}
+  // Peers(config::Peers *peers) {
+  //   _Peers tmp;
+  //   from_json_file(path, &tmp);
+  //   for (const auto &peer : tmp.peers()) {
+  //     insert(peer);
+  //   }
+  // }
 
   template <typename It>
-  Peers(It it, It end) {
+  Peers(const KeyPub &own_key, It it, It end): Peers(own_key) {
     for (; it != end; ++it) {
       insert(*it);
     }
@@ -46,7 +47,7 @@ class Peers {
   bool save(const std::string &path) { return false; }
   std::size_t size() const { return _peers.size(); }
 
-  Peer *insert(const Peer &peer);
+  std::optional<Peer *>insert(const Peer &peer);
   // Peer *insert(const messages::KeyPub &key_pub,
   //              const std::optional<Endpoint> &endpoint,
   //              const std::optional<Port> &listen_port);

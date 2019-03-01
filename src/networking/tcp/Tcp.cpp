@@ -202,8 +202,8 @@ TransportLayer::SendResult Tcp::send(
     return SendResult::FAILED;
   }
 
-  std::cout << "\033[1;34mSending message[" << this->listening_port() << "]: >>"
-            << *message << "<<\033[0m\n";
+  LOG_DEBUG << "Sending message[" << this->listening_port() << "]: >>"
+            << *message;
 
   int res_count = 0;
   for (auto &[_, connection] : _connections) {
@@ -239,8 +239,8 @@ bool Tcp::send_unicast(std::shared_ptr<messages::Message> message) const {
     return false;
   }
 
-  LOG_DEBUG << "\033[1;34mSending unicast [" << this->listening_port()
-            << "]: >>" << *message << "<<\033[0m";
+  LOG_DEBUG << "Sending unicast [" << this->listening_port()  << " -> " << got->second->remote_port()
+            << "]: >>" << *message;
 
   auto header_tcp =
       std::make_shared<Buffer>(sizeof(networking::tcp::HeaderPattern), 0);

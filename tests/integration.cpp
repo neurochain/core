@@ -105,17 +105,16 @@ TEST(INTEGRATION, simple_interaction) {
   ASSERT_EQ(listener.received_deconnection(), 0);
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
+
+  std::this_thread::sleep_for(1s);
   auto peers_bot0 = (bot0->connected_peers());
   auto peers_bot1 = (bot1->connected_peers());
   auto peers_bot2 = (bot2->connected_peers());
-
-  std::this_thread::sleep_for(1s);
   std::ofstream my_logs("my_logs");
-  my_logs << "0 peerss " << bot0->peers() << std::endl;
-  my_logs << "1 peerss " << bot1->peers() << std::endl;
-  my_logs << "1 peerss " << bot2->peers() << std::endl;
+  my_logs << "0 peerss " << std::endl << bot0->peers() << std::endl;
+  my_logs << "1 peerss " << std::endl << bot1->peers() << std::endl;
+  my_logs << "2 peerss " << std::endl << bot2->peers() << std::endl;
   my_logs.close();
-  std::this_thread::sleep_for(1s);
 
   EXPECT_EQ(peers_bot0.size(), peers_bot1.size());
   EXPECT_EQ(peers_bot1.size(), peers_bot2.size());

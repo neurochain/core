@@ -24,7 +24,8 @@ Bot::Bot(const messages::config::Config &config)
             _config.networking().key_pub_path()),
       _me(_config.networking().tcp().endpoint(),
           _config.networking().tcp().port(), _keys.public_key()),
-      _peers(_config.networking().tcp().peers().begin(),
+      _peers(_me.key_pub(),
+	     _config.networking().tcp().peers().begin(),
              _config.networking().tcp().peers().end()),
       _networking(&_queue, &_keys, &_peers, _config.mutable_networking()),
       _ledger(std::make_shared<ledger::LedgerMongodb>(_config.database())),
@@ -365,20 +366,27 @@ void Bot::handler_hello(const messages::Header &header,
   auto hello = body.hello();
 
   LOG_DEBUG << this << " Got a HELLO message in bot";
+  auto remote_peer = _peers.insert(hello.peer());
 
+  if(!remote_peer) {
+    LOG_WARNING << "Received a message from ourself (from the futuru?)";
+    return;
+  }
+  
   // == Create world message for replying ==
   auto message = std::make_shared<messages::Message>();
   auto world = message->add_bodies()->mutable_world();
   auto peers = message->add_bodies()->mutable_peers();
   bool accepted = _networking.peer_count() < (2 * _max_connections);
 
-  messages::Peer *remote_peer = _peers.insert(hello.peer());
-
+  
   // update peer status
   if (accepted) {
-    remote_peer->set_status(messages::Peer::CONNECTED);
+    (*remote_peer)->set_status(messages::Peer::CONNECTED);
+    LOG_DEBUG << this << " Accept status " << std::boolalpha << accepted << " " << **remote_peer << std::endl << _peers;
+    
   } else {
-    remote_peer->set_status(messages::Peer::DISCONNECTED);
+    (*remote_peer)->set_status(messages::Peer::DISCONNECTED);
   }
 
   auto header_reply = message->mutable_header();
