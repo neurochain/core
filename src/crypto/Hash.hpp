@@ -3,10 +3,12 @@
 
 #include "common/Buffer.hpp"
 #include "common/types.hpp"
+#include "messages/Message.hpp"
 
 namespace neuro {
 namespace crypto {
 
+Buffer hash_sha3_256(const messages::Packet &packet);
 Buffer hash_sha3_256(const Buffer &data);
 void hash_sha3_256(const Buffer &data, Buffer *out);
 

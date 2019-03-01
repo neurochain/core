@@ -1,3 +1,6 @@
+#ifndef NEURO_SRC_BLOCKGEN_HPP
+#define NEURO_SRC_BLOCKGEN_HPP
+
 #include <boost/program_options.hpp>
 #include <optional>
 #include "crypto/Ecc.hpp"
@@ -12,10 +15,12 @@ namespace blockgen {
 
 void coinbase(const crypto::EccPub &key_pub, const messages::NCCAmount &ncc,
               messages::Transaction *transaction,
+              const messages::BlockHeight &height,
               const std::string output_data = "");
 
 messages::TaggedBlock gen_block0(std::vector<crypto::Ecc> keys,
-                                 const messages::NCCAmount &ncc_block0);
+                                 const messages::NCCAmount &ncc_block0,
+                                 int32_t time_delta = -100000);
 
 void block0(uint32_t bots, const std::string &pathdir,
             const messages::NCCAmount &nccsdf, ledger::LedgerMongodb *ledger);
@@ -43,3 +48,5 @@ void create_empty_db(const messages::config::Database &config);
 }  // namespace blockgen
 }  // namespace tooling
 }  // namespace neuro
+
+#endif

@@ -6,6 +6,7 @@
 #include "Bot.hpp"
 #include "common/logger.hpp"
 #include "ledger/Ledger.hpp"
+#include "messages/Address.hpp"
 #include "rest/Rest.hpp"
 
 namespace neuro {
@@ -13,12 +14,10 @@ namespace rest {
 
 Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
            std::shared_ptr<crypto::Ecc> keys,
-           std::shared_ptr<consensus::Consensus> consensus,
            const messages::config::Rest &config)
     : _bot(bot),
       _ledger(ledger),
       _keys(keys),
-      _consensus(consensus),
       _config(config),
       _port(_config.port()),
       _static_path(_config.static_path()),
@@ -60,7 +59,7 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
     const auto faucet_amount = _config.faucet_amount();
     const auto address_str = req.query("address", "");
     LOG_INFO << "ADDRESS " << address_str;
-    const messages::Address address = load_hash(address_str);
+    const messages::Address address(address_str);
     if (_ledger->has_received_transaction(address)) {
       res << "{\"error\": \"The given address has already received some "
              "coins.\"}";
@@ -79,7 +78,7 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
   const auto get_transaction_route = [this](Onion::Request &req,
                                             Onion::Response &res) {
     const auto transaction_id_str = req.query("transaction_id", "");
-    const messages::Hasher transaction_id = load_hash(transaction_id_str);
+    const messages::Hasher transaction_id (transaction_id_str);
     messages::Transaction transaction;
     _ledger->get_transaction(transaction_id, &transaction);
     res << transaction;
@@ -168,16 +167,8 @@ void Rest::serve_folder(const std::string &route,
                         (_static_path + foldername).c_str()));
 }
 
-messages::Hasher Rest::load_hash(const std::string &hash_str) const {
-  messages::Hasher result;
-  std::stringstream hash_json;
-  hash_json << "{\"type\": \"SHA256\", \"data\": \"" << hash_str << "\"}";
-  messages::from_json(hash_json.str(), &result);
-  return result;
-}
-
 std::string Rest::list_transactions(const std::string &address_str) const {
-  const messages::Hasher address = load_hash(address_str);
+  const messages::Address address(address_str);
   std::vector<messages::UnspentTransaction> unspent_transactions =
       _ledger->list_unspent_transactions(address);
   messages::RestUnspentTransactions rest_unspent_transactions;

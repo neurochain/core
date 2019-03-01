@@ -6,6 +6,7 @@
 #include <fstream>
 #include <string>
 #include "common/types.hpp"
+#include "consensus.pb.h"
 #include "crypto/EccPriv.hpp"
 #include "ledger/mongo.hpp"
 #include "messages.pb.h"
@@ -13,14 +14,21 @@
 namespace neuro {
 namespace messages {
 
+using NCCValue = decltype(((_NCCAmount *)nullptr)->value());
 using BlockHeight = decltype(((BlockHeader *)nullptr)->height());
-using BlockID = decltype(((BlockHeader *)nullptr)->id());
-using TransactionID = decltype(((Transaction *)nullptr)->id());
+using AssemblyHeight = decltype(((Assembly *)nullptr)->height());
+using BlockID = std::remove_reference<decltype(
+    *(((BlockHeader *)nullptr)->mutable_id()))>::type;
+using AssemblyID = std::remove_reference<decltype(
+    *(((Assembly *)nullptr)->mutable_id()))>::type;
+using TransactionID = std::remove_reference<decltype(
+    *(((Transaction *)nullptr)->mutable_id()))>::type;
 using Packet = google::protobuf::Message;
 
 using Type = Body::BodyCase;
 using BranchID = uint32_t;
-using BlockScore = double;
+using BlockScore = Double;
+using IntegrityScore = decltype(((Integrity *)nullptr)->score());
 
 Type get_type(const Body &body);
 
@@ -46,8 +54,12 @@ std::ostream &operator<<(
 }
 
 bool operator==(const Packet &a, const Packet &b);
+bool operator!=(const Packet &a, const Packet &b);
 bool operator==(const messages::Peer &a, const messages::Peer &b);
+bool operator!=(const messages::Peer &a, const messages::Peer &b);
 
+void sort_transactions(Block *block);
+void set_default(Signature *author);
 void set_transaction_hash(Transaction *transaction);
 void set_block_hash(Block *block);
 int32_t fill_header(messages::Header *header);
@@ -70,7 +82,45 @@ class NCCAmount : public _NCCAmount {
   NCCAmount(uint64_t amount) { set_value(amount); }
 };
 
+class Denunciation : public _Denunciation {
+ public:
+  Denunciation() {}
+  Denunciation(const _Denunciation &denunciation)
+      : _Denunciation(denunciation) {}
+  Denunciation(const Block &block) {
+    mutable_block_id()->CopyFrom(block.header().id());
+    set_block_height(block.header().height());
+    mutable_block_author()->CopyFrom(block.header().author());
+  }
+};
+
 }  // namespace messages
 }  // namespace neuro
+
+// TODO why doesn't this work with Packet instead of Input!?!
+namespace std {
+template <>
+struct hash<neuro::messages::Input> {
+  size_t operator()(const neuro::messages::Input &input) const {
+    return hash<string>()(neuro::messages::to_json(input));
+  }
+};
+
+template <>
+struct hash<neuro::messages::Hash> {
+  size_t operator()(const neuro::messages::Hash &hash_) const {
+    return hash<string>()(neuro::messages::to_json(hash_));
+  }
+};
+
+template <>
+struct hash<neuro::messages::TaggedTransaction> {
+  size_t operator()(
+      const neuro::messages::TaggedTransaction &tagged_transaction) const {
+    return hash<string>()(neuro::messages::to_json(tagged_transaction));
+  }
+};
+
+}  // namespace std
 
 #endif /* NEURO_SRC_MESSAGES_MESSAGE_HPP */

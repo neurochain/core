@@ -4,6 +4,7 @@
 #include <boost/asio.hpp>
 #include <boost/filesystem/path.hpp>
 #include <cassert>
+#include <chrono>
 #include <cstdint>
 #include <vector>
 
@@ -12,6 +13,8 @@
 #include "common.pb.h"
 
 namespace neuro {
+
+using namespace std::chrono_literals;
 
 namespace networking {
 class Peer;
@@ -43,12 +46,16 @@ using std::uint8_t;
 using Port = uint16_t;
 using Ports = std::vector<Port>;
 const int32_t MessageVersion = 1;
-const int32_t BLOCK_PERIODE = 15;
-const int32_t ASSEMBLY_MEMBERS_COUNT = 557;
-const int32_t ASSEMBLY_BLOCKS_COUNT = 2000;
 const int32_t MESSAGE_TTL = 60;
 const int32_t MAX_MESSAGE_SIZE = 256 * 1024;
 // using Peers = google::protobuf::RepeatedPtrField<neuro::messages::Peer>;
+
+// This is used both in the ledger and the consensus
+// we might change double implementation later
+using Double = double;
+
+// Useful debug utilities
+using Timer = std::chrono::high_resolution_clock;
 
 namespace crypto {
 namespace keys {

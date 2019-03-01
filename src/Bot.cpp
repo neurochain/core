@@ -10,7 +10,6 @@
 #include <random>
 #include "common/logger.hpp"
 #include "common/types.hpp"
-#include "consensus/PiiConsensus.hpp"
 #include "messages/Subscriber.hpp"
 
 namespace neuro {
@@ -106,8 +105,7 @@ void Bot::handler_get_block(const messages::Header &header,
 void Bot::handler_block(const messages::Header &header,
                         const messages::Body &body) {
   LOG_TRACE;
-  bool reply_message = header.has_request_id();
-  _consensus->add_block(body.block(), !reply_message);
+  _consensus->add_block(body.block());
   update_ledger();
 
   if (header.has_request_id()) {
@@ -141,7 +139,8 @@ bool Bot::update_ledger() {
   }
 
   // TODO #consensus change by height by time function
-  if ((std::time(nullptr) - last_header.timestamp().data()) < BLOCK_PERIODE) {
+  if ((std::time(nullptr) - last_header.timestamp().data()) <
+      _consensus->config().block_period) {
     return true;
   }
 
@@ -271,18 +270,18 @@ bool Bot::init() {
     return false;
   }
 
-  _consensus = std::make_shared<consensus::PiiConsensus>(_io_context, _ledger,
-                                                         _networking);
-  _consensus->add_wallet_keys(_keys);
+  auto keys_vector = std::vector<crypto::Ecc>{*_keys};
+  _consensus = std::make_shared<consensus::Consensus>(
+      _ledger, keys_vector,
+      [this](const messages::Block &block) { publish_block(block); });
   _io_context_thread = std::thread([this]() { _io_context->run(); });
 
-  if (!_config.has_rest()) {
-    LOG_INFO << "Missing rest configuration, not loading module";
-  } else {
-    const auto rest_config = _config.rest();
-    _rest = std::make_shared<rest::Rest>(this, _ledger, _keys, _consensus,
-                                         rest_config);
-  }
+  // if (!_config.has_rest()) {
+  //   LOG_INFO << "Missing rest configuration, not loading module";
+  // } else {
+  //   const auto rest_config = _config.rest();
+  //   _rest = std::make_shared<rest::Rest>(this, _ledger, _keys, rest_config);
+  // }
 
   this->keep_max_connections();
   update_ledger();
@@ -333,7 +332,7 @@ void Bot::update_connection_graph() {
   }
   std::string uri = _config.connection_graph_uri();
   messages::ConnectionsGraph graph;
-  messages::Address own_address = messages::Hasher(_keys->public_key());
+  const auto own_address = messages::Address{_keys->public_key()};
   graph.mutable_own_address()->CopyFrom(own_address);
   messages::Peers peers;
   for (const auto &peer : _tcp_config->peers()) {
@@ -752,6 +751,15 @@ void Bot::publish_transaction(const messages::Transaction &transaction) const {
   messages::fill_header(message->mutable_header());
   auto body = message->add_bodies();
   body->mutable_transaction()->CopyFrom(transaction);
+  _networking->send(message, networking::ProtocolType::PROTOBUF2);
+}
+
+void Bot::publish_block(const messages::Block &block) const {
+  // Send the transaction on the network
+  auto message = std::make_shared<messages::Message>();
+  messages::fill_header(message->mutable_header());
+  auto body = message->add_bodies();
+  body->mutable_block()->CopyFrom(block);
   _networking->send(message, networking::ProtocolType::PROTOBUF2);
 }
 

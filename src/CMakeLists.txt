@@ -3,6 +3,7 @@ set(ProtoFiles
   "${CMAKE_CURRENT_SOURCE_DIR}/messages/config.proto"
   "${CMAKE_CURRENT_SOURCE_DIR}/messages/messages.proto"
   "${CMAKE_CURRENT_SOURCE_DIR}/messages/rest.proto"
+  "${CMAKE_CURRENT_SOURCE_DIR}/messages/consensus.proto"
   )
 
 PROTOBUF_GENERATE_CPP(ProtoSources ProtoHeaders ${ProtoFiles})
@@ -72,19 +73,14 @@ add_library(core
   ./ledger/LedgerMongodb.cpp
   ./ledger/Transaction.hpp
   ./Bot.hpp
-  ./rest/Rest.cpp
-  ./rest/Rest.hpp
+#  ./rest/Rest.cpp
+#  ./rest/Rest.hpp
   ./consensus/Consensus.hpp
-  ./consensus/ForkTree.hpp
-  ./consensus/ForkTree.cpp
-  ./consensus/ForkManager.hpp
-  ./consensus/ForkManager.cpp
+  ./consensus/Consensus.cpp
   ./consensus/Pii.hpp
   ./consensus/Pii.cpp
-  ./consensus/PiiConsensus.hpp
-  ./consensus/PiiConsensus.cpp
-  ./consensus/TransactionPool.hpp
-  ./consensus/TransactionPool.cpp
+  ./consensus/Integrities.hpp
+  ./consensus/Integrities.cpp
   )
 
 target_link_libraries(core
@@ -170,13 +166,13 @@ target_link_libraries(blockg
   Boost::program_options
   )
 
-add_executable(wallet
-  tooling/wallet.cpp
-  )
-target_link_libraries(wallet
-  core
-  Boost::program_options
-  )
+#add_executable(wallet
+#  tooling/wallet.cpp
+#  )
+#target_link_libraries(wallet
+#  core
+#  Boost::program_options
+#  )
 
 add_executable(transaction
   tooling/transaction.cpp

@@ -16,6 +16,10 @@ bool from_json(const std::string &json, Packet *packet) {
   auto r = google::protobuf::util::JsonStringToMessage(json, packet, options);
   if (!r.ok()) {
     LOG_ERROR << "Could not parse json " << r;
+    std::stringstream error;
+    error << "Could not parse json " << r;
+    std::cout << boost::stacktrace::stacktrace() << std::endl;
+    throw std::runtime_error(error.str());
   }
   return r.ok();
 }
@@ -86,9 +90,32 @@ bool operator==(const Packet &a, const Packet &b) {
   return res;
 }
 
+bool operator!=(const Packet &a, const Packet &b) { return !(a == b); }
+
 bool operator==(const messages::Peer &a, const messages::Peer &b) {
   LOG_TRACE << a.endpoint() << " " << b.endpoint();
   return a.endpoint() == b.endpoint() && a.port() == b.port();
+}
+
+bool operator!=(const messages::Peer &a, const messages::Peer &b) {
+  return !(a == b);
+}
+
+void sort_transactions(Block *block) {
+  // We use to_json to sort because the order need to be the same as in mongodb.
+  // If we sorted by the raw content of the data field it would give a different
+  // order.
+  std::sort(
+      block->mutable_transactions()->begin(),
+      block->mutable_transactions()->end(),
+      [](const Transaction &transaction0, const Transaction &transaction1) {
+        return to_json(transaction0.id()) < to_json(transaction1.id());
+      });
+  std::sort(
+      block->mutable_coinbases()->begin(), block->mutable_coinbases()->end(),
+      [](const Transaction &transaction0, const Transaction &transaction1) {
+        return to_json(transaction0.id()) < to_json(transaction1.id());
+      });
 }
 
 void set_transaction_hash(Transaction *transaction) {
@@ -101,6 +128,13 @@ void set_transaction_hash(Transaction *transaction) {
   transaction->mutable_id()->CopyFrom(id);
 }
 
+void set_default(messages::Signature *author) {
+  author->Clear();
+  author->mutable_key_pub()->set_raw_data("");
+  author->mutable_signature()->set_type(messages::Hash::SHA256);
+  author->mutable_signature()->set_data("");
+}
+
 void set_block_hash(Block *block) {
   auto header = block->mutable_header();
 
@@ -108,6 +142,11 @@ void set_block_hash(Block *block) {
   // serializable.
   header->mutable_id()->set_type(messages::Hash::SHA256);
   header->mutable_id()->set_data("");
+
+  // The author should always be filled after the hash is set because the author
+  // field contains the signature of a denunciation that contains the hash of
+  // the block
+  set_default(header->mutable_author());
 
   const auto id = messages::Hasher(*block);
   header->mutable_id()->CopyFrom(id);
