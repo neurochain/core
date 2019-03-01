@@ -33,14 +33,14 @@ class Consensus {
   std::vector<messages::Address> _addresses;
   PublishBlock _publish_block;
   std::atomic<bool> _stop_compute_pii;
-  std::optional<std::thread> _compute_pii_thread;
+  std::thread _compute_pii_thread;
   std::vector<std::pair<messages::BlockHeight, AddressIndex>> _heights_to_write;
   std::mutex _heights_to_write_mutex;
   std::optional<messages::AssemblyID> _previous_assembly_id;
   std::atomic<bool> _stop_update_heights;
-  std::optional<std::thread> _update_heights_thread;
+  std::thread _update_heights_thread;
   std::atomic<bool> _stop_miner;
-  std::optional<std::thread> _miner_thread;
+  std::thread _miner_thread;
 
   bool check_inputs(
       const messages::TaggedTransaction &tagged_transaction) const;
@@ -61,7 +61,7 @@ class Consensus {
 
   messages::NCCAmount block_reward(const messages::BlockHeight height) const;
 
-  bool check_block_id(messages::TaggedBlock *tagged_block) const;
+  bool check_block_id(const messages::TaggedBlock &tagged_block) const;
 
   bool check_block_transactions(
       const messages::TaggedBlock &tagged_block) const;
@@ -104,12 +104,11 @@ class Consensus {
 
   ~Consensus();
 
-  void halt_thread(std::optional<std::thread> *optional_thread,
-                   std::atomic<bool> *stop_thread);
+  void halt_thread(std::thread *thread_object, std::atomic<bool> *stop_thread);
 
   bool is_valid(const messages::TaggedTransaction &tagged_transaction) const;
 
-  bool is_valid(messages::TaggedBlock *tagged_block) const;
+  bool is_valid(const messages::TaggedBlock &tagged_block) const;
 
   /**
    * \brief Add transaction to transaction pool
@@ -123,7 +122,7 @@ class Consensus {
    * \brief Verify that a block is valid and insert it
    * \param [in] block block to add
    */
-  bool add_block(messages::Block *block);
+  bool add_block(const messages::Block &block);
 
   /**
    * \brief Check if there is any assembly to compute and if so starts the

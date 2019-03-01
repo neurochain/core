@@ -62,7 +62,7 @@ void block0(uint32_t bots, const std::string &pathdir,
   }
 
   auto tagged_block0 = gen_block0(keys, nccsdf);
-  ledger->insert_block(&tagged_block0);
+  ledger->insert_block(tagged_block0);
 
   std::ofstream blockfile0;
   blockfile0.open("block.0.bp");
@@ -213,7 +213,7 @@ void append_blocks(const int nb, std::shared_ptr<ledger::Ledger> ledger) {
     tagged_block.mutable_branch_path()->add_branch_ids(0);
     tagged_block.mutable_branch_path()->add_block_numbers(0);
     *tagged_block.mutable_block() = block;
-    ledger->insert_block(&tagged_block);
+    ledger->insert_block(tagged_block);
   }
 }
 
@@ -232,7 +232,7 @@ void append_fork_blocks(const int nb, std::shared_ptr<ledger::Ledger> ledger) {
     }
     tagged_block.mutable_branch_path()->CopyFrom(branch_path);
     tagged_block.mutable_branch_path()->add_block_numbers(0);
-    ledger->insert_block(&tagged_block);
+    ledger->insert_block(tagged_block);
     last_block.CopyFrom(tagged_block);
     tagged_block.Clear();
   }

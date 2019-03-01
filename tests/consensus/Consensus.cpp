@@ -84,16 +84,16 @@ class Consensus : public testing::Test {
     for (int i = 0; i <= 3; i++) {
       ASSERT_TRUE(ledger->get_block(i, &tagged_block));
       ASSERT_TRUE(consensus->check_transactions_order(tagged_block));
-      ASSERT_TRUE(consensus->check_block_id(&tagged_block));
+      ASSERT_TRUE(consensus->check_block_id(tagged_block));
       ASSERT_TRUE(consensus->check_block_size(tagged_block));
       ASSERT_TRUE(consensus->check_block_timestamp(tagged_block));
       if (i == 0) {
-        ASSERT_FALSE(consensus->is_valid(&tagged_block));
+        ASSERT_FALSE(consensus->is_valid(tagged_block));
       } else {
         ASSERT_TRUE(consensus->check_block_transactions(tagged_block));
         ASSERT_TRUE(consensus->check_block_height(tagged_block));
         ASSERT_TRUE(consensus->check_block_author(tagged_block));
-        ASSERT_TRUE(consensus->is_valid(&tagged_block));
+        ASSERT_TRUE(consensus->is_valid(tagged_block));
       }
     }
   }
@@ -125,8 +125,8 @@ class Consensus : public testing::Test {
 
     // Wait for the computation to be finished
     consensus->_stop_compute_pii = true;
-    if (consensus->_compute_pii_thread->joinable()) {
-      consensus->_compute_pii_thread->join();
+    if (consensus->_compute_pii_thread.joinable()) {
+      consensus->_compute_pii_thread.join();
     }
     ASSERT_FALSE(ledger->get_assemblies_to_compute(&assemblies));
     messages::Assembly assembly;
@@ -188,7 +188,7 @@ class Consensus : public testing::Test {
       // Since we changed the hash we also need to change the signature
       crypto::sign(keys, &block);
 
-      ASSERT_TRUE(consensus->add_block(&block));
+      ASSERT_TRUE(consensus->add_block(block));
     }
   }
 };
@@ -210,7 +210,7 @@ TEST_F(Consensus, add_block) {
   messages::TaggedBlock block0;
   ASSERT_TRUE(ledger->get_block(0, &block0));
   auto block = simulator.new_block(10, block0);
-  ASSERT_TRUE(consensus->add_block(&block));
+  ASSERT_TRUE(consensus->add_block(block));
 }
 
 TEST_F(Consensus, compute_assembly_pii) { test_compute_assembly_pii(); }
@@ -243,8 +243,8 @@ TEST_F(Consensus, add_denunciations) {
   // Let's make the first miner double mine
   auto block1 = simulator.new_block();
   auto block1_bis = simulator.new_block(1);
-  ASSERT_TRUE(simulator.consensus->add_block(&block1));
-  ASSERT_TRUE(simulator.consensus->add_block(&block1_bis));
+  ASSERT_TRUE(simulator.consensus->add_block(block1));
+  ASSERT_TRUE(simulator.consensus->add_block(block1_bis));
   messages::TaggedBlock tagged_block1;
   bool include_transactions = false;
   ASSERT_TRUE(ledger->get_last_block(&tagged_block1, include_transactions));

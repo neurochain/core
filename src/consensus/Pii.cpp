@@ -143,11 +143,19 @@ Double Addresses::get_entropy(const messages::Address &address) const {
   return fmax(1, entropy);
 }
 
+std::vector<messages::Address> Addresses::addresses() const {
+  std::vector<messages::Address> addresses;
+  for (const auto &[address, _] : _addresses) {
+    addresses.push_back(address);
+  }
+  return addresses;
+}
+
 std::vector<messages::Pii> Pii::get_addresses_pii(
     const messages::AssemblyHeight &assembly_height,
     const messages::BranchPath &branch_path) {
   std::vector<messages::Pii> piis;
-  for (const auto &[address, _] : _addresses._addresses) {
+  for (const auto &address : _addresses.addresses()) {
     auto &pii = piis.emplace_back();
     auto entropy = _addresses.get_entropy(address);
 

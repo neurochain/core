@@ -156,7 +156,7 @@ void Simulator::run(int nb_blocks, int transactions_per_block,
     bool include_transactions = false;
     ledger->get_last_block(&last_block, include_transactions);
     auto block = new_block(transactions_per_block, last_block);
-    if (!consensus->add_block(&block)) {
+    if (!consensus->add_block(block)) {
       throw std::runtime_error("Failed to add block in the simulator");
     }
     if (compute_pii && (i - 1) % consensus->config().blocks_per_assembly == 0) {
