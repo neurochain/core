@@ -1215,9 +1215,9 @@ bool LedgerMongodb::add_assembly(const messages::TaggedBlock &tagged_block,
   if (!tagged_block.has_previous_assembly_id()) {
     std::stringstream message;
     message << "Something is wrong here " << __FILE__ << ":" << __LINE__
-            << " , block " + to_json(tagged_block)
+            << " , block " << to_json(tagged_block)
             << "should have a previous_assembly_id";
-    throw(message);
+    throw(message.str());
   }
   assembly.mutable_previous_assembly_id()->CopyFrom(
       tagged_block.previous_assembly_id());
