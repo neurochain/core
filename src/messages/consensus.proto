@@ -20,7 +20,7 @@ message Pii {
 message Integrity {
   required _Address address = 1;
   required Hash assembly_id = 2;
-  required string score = 3; // int64 is useful to make overflow attacks harder
+  required string score = 3;
   required int32 assembly_height = 4;
   required BranchPath branch_path = 5;
 }

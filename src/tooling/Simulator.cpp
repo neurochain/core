@@ -47,9 +47,9 @@ Simulator Simulator::RealtimeSimulator(const std::string &db_url,
                                        const std::string &db_name,
                                        const int nb_keys,
                                        const messages::NCCAmount ncc_block0) {
-  // Put the block0 1 seconds in the future so that we have time to create the
+  // Put the block0 2 seconds in the future so that we have time to create the
   // database and still be ready to write block 1
-  return Simulator(db_url, db_name, nb_keys, ncc_block0, 1);
+  return Simulator(db_url, db_name, nb_keys, ncc_block0, 2);
 }
 
 Simulator Simulator::StaticSimulator(const std::string &db_url,

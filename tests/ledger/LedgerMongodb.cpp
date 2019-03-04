@@ -108,13 +108,13 @@ class LedgerMongodb : public ::testing::Test {
     ASSERT_TRUE(ledger->insert_block(&fork2));
 
     ledger->update_branch_tag(block0.header().id(), messages::Branch::MAIN);
-    ASSERT_TRUE(ledger->set_block_verified(block1.header().id(), 2,
+    ASSERT_TRUE(ledger->set_block_verified(block1.header().id(), 20,
                                            block0.header().id()));
-    ASSERT_TRUE(ledger->set_block_verified(block2.header().id(), 3,
+    ASSERT_TRUE(ledger->set_block_verified(block2.header().id(), 30,
                                            block0.header().id()));
-    ASSERT_TRUE(ledger->set_block_verified(fork1.header().id(), 2,
+    ASSERT_TRUE(ledger->set_block_verified(fork1.header().id(), 20,
                                            block0.header().id()));
-    ASSERT_TRUE(ledger->set_block_verified(fork2.header().id(), 2.5,
+    ASSERT_TRUE(ledger->set_block_verified(fork2.header().id(), 25,
                                            block0.header().id()));
 
     ASSERT_TRUE(ledger->update_main_branch());
@@ -133,7 +133,7 @@ class LedgerMongodb : public ::testing::Test {
 
     // Switch MAIN branch
     ASSERT_TRUE(ledger->insert_block(&fork3));
-    ASSERT_TRUE(ledger->set_block_verified(fork3.header().id(), 3.5,
+    ASSERT_TRUE(ledger->set_block_verified(fork3.header().id(), 35,
                                            block0.header().id()));
     tip.Clear();
     ASSERT_TRUE(ledger->update_main_branch());
@@ -385,13 +385,13 @@ TEST_F(LedgerMongodb, get_unverified_blocks) {
   ASSERT_TRUE(ledger->get_unverified_blocks(&unscored_forks));
   ASSERT_EQ(unscored_forks.size(), 2);
 
-  ASSERT_TRUE(ledger->set_block_verified(block1.header().id(), 1.17,
+  ASSERT_TRUE(ledger->set_block_verified(block1.header().id(), 1,
                                          block0.header().id()));
   unscored_forks.clear();
   ASSERT_TRUE(ledger->get_unverified_blocks(&unscored_forks));
   ASSERT_EQ(unscored_forks.size(), 1);
 
-  ASSERT_TRUE(ledger->set_block_verified(block2.header().id(), 2.17,
+  ASSERT_TRUE(ledger->set_block_verified(block2.header().id(), 2,
                                          block0.header().id()));
   unscored_forks.clear();
   ASSERT_TRUE(ledger->get_unverified_blocks(&unscored_forks));

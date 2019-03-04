@@ -53,7 +53,6 @@ const int32_t MAX_MESSAGE_SIZE = 256 * 1024;
 // using Peers = google::protobuf::RepeatedPtrField<neuro::messages::Peer>;
 
 // This is used both in the ledger and the consensus
-// we might change double implementation later
 using Double = mpfr::mpreal;
 
 // Useful debug utilities

@@ -17,7 +17,7 @@ Neurochain is a blockchain project: understand a decentralized system that write
 The "log" is:
 * Public.
 * It is not possible to change history.
-* Yes, there is no cryptocurrency here yet. 
+* Yes, there is no cryptocurrency here yet.
 
 
 ## The Bot

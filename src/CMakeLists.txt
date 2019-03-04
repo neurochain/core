@@ -170,6 +170,14 @@ target_link_libraries(blockg
   Boost::program_options
   )
 
+add_executable(show_block0
+  tooling/show_block0.cpp
+  )
+target_link_libraries(show_block0
+  core
+  Boost::program_options
+  )
+
 #add_executable(wallet
 #  tooling/wallet.cpp
 #  )

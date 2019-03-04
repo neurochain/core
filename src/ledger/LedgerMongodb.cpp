@@ -150,7 +150,8 @@ void LedgerMongodb::create_first_assemblies(
 
   messages::Block block0;
   assert(get_block(0, &block0));
-  assert(set_previous_assembly_id(block0.header().id(), assembly_minus_1.id()));
+  assert(set_block_verified(block0.header().id(), 0, assembly_minus_1.id()));
+  assert(update_branch_tag(block0.header().id(), messages::Branch::MAIN));
 }
 
 bool LedgerMongodb::load_block0(const messages::config::Database &config,

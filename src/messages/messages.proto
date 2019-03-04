@@ -129,7 +129,7 @@ message TaggedBlock {
   required Block block = 1;
   required Branch branch = 2;
   optional BranchPath branch_path = 3;
-  optional double score = 4;
+  optional int64 score = 4;
   optional Hash previous_assembly_id = 5;
 }
 

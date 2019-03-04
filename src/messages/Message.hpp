@@ -16,6 +16,7 @@ namespace messages {
 
 using NCCValue = decltype(((_NCCAmount *)nullptr)->value());
 using BlockHeight = decltype(((BlockHeader *)nullptr)->height());
+using BlockScore = decltype(((TaggedBlock *)nullptr)->score());
 using AssemblyHeight = decltype(((Assembly *)nullptr)->height());
 using BlockID = std::remove_reference<decltype(
     *(((BlockHeader *)nullptr)->mutable_id()))>::type;
@@ -27,7 +28,6 @@ using Packet = google::protobuf::Message;
 
 using Type = Body::BodyCase;
 using BranchID = int32_t;
-using BlockScore = double;
 using IntegrityScore = Double;
 
 Type get_type(const Body &body);
