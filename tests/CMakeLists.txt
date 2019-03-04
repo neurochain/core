@@ -21,12 +21,11 @@ configure_file("configs/bot_block0.json" "${CMAKE_CURRENT_BINARY_DIR}/bot_block0
 
 file(GLOB files "configs/integration_*.json.in")
 foreach(file ${files})
-  configure_file(${file} "${CMAKE_CURRENT_BINARY_DIR}/${file}" @ONLY)
+  get_filename_component(COIN ${file} NAME_WE)
+  configure_file("${file}" "${CMAKE_CURRENT_BINARY_DIR}/${COIN}.json" @ONLY)
 endforeach()
 
-configure_file("configs/integration_keepmax0.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_keepmax0.json" @ONLY)
-configure_file("configs/integration_keepmax1.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_keepmax1.json" @ONLY)
-configure_file("configs/integration_keepmax2.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_keepmax2.json" @ONLY)
+
 
 file(GLOB files "configs/key_integration*.*")
 foreach(file ${files})
