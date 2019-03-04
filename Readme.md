@@ -51,6 +51,7 @@ Coming:
 ## Requirements: 
 * cmake >=3.0
 * g++7/clang++6
+* libmpfrc++-dev >=3.6
 
 Nothing else is needed (\o/). The rest of the dependencies will be downloaded and compiled by [hunter](http://www.hunter.sh/). 
 It makes it easier to cover different platform by having the same version of the dependencies.
@@ -59,7 +60,7 @@ It makes it easier to cover different platform by having the same version of the
 
 ```bash
 
-sudo apt install -y git cmake build-essential libssl-dev mongodb-server
+sudo apt install -y git cmake build-essential libssl-dev mongodb-server libmpfrc++-dev
 
 git clone --branch feature/ledger https://gitlab.com/neurochaintech/core.git
 cd core
