@@ -88,8 +88,6 @@ class Bot {
   const messages::Peers &peers() const;
   void keep_max_connections();
   std::vector<messages::Peer *> connected_peers() const;
-  networking::Networking *networking();
-  messages::Queue *queue();
   void subscribe(const messages::Type type,
                  messages::Subscriber::Callback callback);
 

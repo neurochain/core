@@ -84,6 +84,16 @@ std::optional<Peer *> Peers::next(const Peer::Status status) {
   return std::nullopt;
 }
 
+std::optional<Peer *> Peers::find(const KeyPub &key_pub) {
+  auto got = _peers.find(key_pub);
+
+  if (got == _peers.end()) {
+    return std::nullopt;
+  }
+
+  return { got->second.get() };
+}
+
 std::vector<Peer *> Peers::by_status(const Peer::Status status) const {
   LOG_TRACE;
   std::shared_lock<std::shared_mutex> lock(_mutex);

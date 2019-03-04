@@ -67,9 +67,7 @@ void Queue::quit() {
   _quitting = true;
   _condition.notify_all();
   if (_main_thread.joinable()) {
-    std::cout << "joining" << std::endl;
     _main_thread.join();
-    std::cout << "joined" << std::endl;
   }
 }
 
@@ -77,8 +75,7 @@ void Queue::do_work() {
   do {
     while (!_quitting && this->is_empty()) {  // avoid spurious wakeups
       std::unique_lock<std::mutex> lock_queue(_queue_mutex);
-      LOG_TRACE << "waiting";
-      _condition.wait(lock_queue);
+      _condition.wait_for(lock_queue, 1s);
     }
     // we validate again that the woke up call was not because it is quitting
     if (_quitting) {

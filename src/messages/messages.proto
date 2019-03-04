@@ -123,7 +123,7 @@ message TaggedTransaction {
 }
 
 message ConnectionClosed {
-  required _Peer peer = 1;
+  optional _Peer peer = 1;
 }
 
 message ConnectionReady {
@@ -158,6 +158,8 @@ message Header {
   optional int32 connection_id = 10;
   optional int32 id = 11; 
   optional int32 request_id = 12;
+  optional KeyPub key_pub = 13;
+
 }
 
 message _Message {

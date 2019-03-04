@@ -114,6 +114,7 @@ void Connection::read_body(std::size_t body_size) {
           LOG_ERROR << "Bad signature, dropping message " << ecc_pub;
           return;
         }
+	message->mutable_header()->mutable_key_pub()->CopyFrom(_remote_peer.key_pub());
         _this->_queue->publish(message);
         _this->read_header();
       });

@@ -30,7 +30,7 @@ Bot::Bot(const messages::config::Config &config)
       _networking(&_queue, &_keys, &_peers, _config.mutable_networking()),
       _ledger(std::make_shared<ledger::LedgerMongodb>(_config.database())),
       _update_timer(std::ref(*_io_context)) {
-  LOG_DEBUG << this << " hello from bot " << _keys.public_key() << std::endl
+  LOG_DEBUG << this << " hello from bot " << &_queue << " " <<  _keys.public_key() << std::endl
 	    << _peers << std::endl;
   
   if (!init()) {
@@ -346,10 +346,18 @@ void Bot::handler_deconnection(const messages::Header &header,
 void Bot::handler_world(const messages::Header &header,
                         const messages::Body &body) {
   auto world = body.world();
+  auto remote_peer = _peers.find(header.key_pub());
+  if (!remote_peer) {
+    LOG_WARNING << "Received world message from uknown peer";
+    return;
+  }
 
   if (!world.accepted()) {
     LOG_DEBUG << this << " Not accepted, disconnecting ...";
     _networking.terminate(header.connection_id());
+    (*remote_peer)->set_status(messages::Peer::UNREACHABLE);
+  } else {
+    (*remote_peer)->set_status(messages::Peer::CONNECTED);
   }
 
   this->keep_max_connections();
@@ -451,9 +459,6 @@ void Bot::keep_max_connections() {
   _networking.connect(*peer);
 }
 
-networking::Networking *Bot::networking() { return &_networking; }
-
-messages::Queue *Bot::queue() { return &_queue; }
 const messages::Peers &Bot::peers() const { return _peers; }
 void Bot::subscribe(const messages::Type type,
                     messages::Subscriber::Callback callback) {

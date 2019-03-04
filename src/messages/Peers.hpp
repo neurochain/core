@@ -57,7 +57,7 @@ class Peers {
   void update_unreachable();
   bool update_peer_status(const Peer &peer, const Peer::Status status);
   std::optional<Peer *> next(const Peer::Status status);
-  Peer *find_random(const Peer::Status status, const Duration &duration);
+  std::optional<Peer *> find(const KeyPub &key_pub);
   std::vector<Peer *> by_status(const Peer::Status status) const;
   std::vector<Peer *> used_peers() const;
   std::vector<Peer *> connected_peers() const;
