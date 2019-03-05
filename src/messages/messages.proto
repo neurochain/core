@@ -94,7 +94,7 @@ message _Denunciation {
 message Block {
   required BlockHeader header = 1;
   repeated Transaction transactions = 20;
-  repeated Transaction coinbases = 30;
+  optional Transaction coinbase = 30;
   repeated _Denunciation denunciations = 40;
 }
 

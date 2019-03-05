@@ -84,7 +84,7 @@ class RealtimeSimulator : public testing::Test {
 
       ASSERT_EQ(tagged_block.block().header().height(), i);
       ASSERT_EQ(tagged_block.block().transactions_size(), nb_transactions);
-      ASSERT_EQ(tagged_block.block().coinbases_size(), 1);
+      ASSERT_EQ(tagged_block.block().coinbase().outputs_size(), 1);
     }
   }
 };
