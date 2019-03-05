@@ -34,7 +34,8 @@ class Addresses {
 
   Double get_entropy(const messages::Address &address) const;
 
-  friend class Pii;
+  std::vector<messages::Address> addresses() const;
+
   friend class tests::Pii;
 };
 

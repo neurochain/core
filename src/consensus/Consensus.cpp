@@ -21,6 +21,23 @@ class Consensus;
 class RealtimeConsensus;
 }  // namespace tests
 
+Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
+                     const std::vector<crypto::Ecc> &keys,
+                     PublishBlock publish_block, bool start_threads)
+    : _ledger(ledger), _keys(keys), _publish_block(publish_block) {
+  init(start_threads);
+}
+
+Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
+                     const std::vector<crypto::Ecc> &keys, const Config &config,
+                     PublishBlock publish_block, bool start_threads)
+    : _config(config),
+      _ledger(ledger),
+      _keys(keys),
+      _publish_block(publish_block) {
+  init(start_threads);
+}
+
 bool Consensus::check_inputs(
     const messages::TaggedTransaction &tagged_transaction) const {
   messages::TaggedBlock tip;
@@ -216,8 +233,10 @@ messages::NCCAmount Consensus::block_reward(
   return _config.block_reward;
 }
 
-bool Consensus::check_block_id(messages::TaggedBlock *tagged_block) const {
-  auto block = tagged_block->mutable_block();
+bool Consensus::check_block_id(
+    const messages::TaggedBlock &tagged_block) const {
+  auto mutable_tagged_block = tagged_block;
+  auto block = mutable_tagged_block.mutable_block();
   const auto block_id = block->header().id();
   const auto author = block->header().author();
   messages::set_block_hash(block);
@@ -227,17 +246,7 @@ bool Consensus::check_block_id(messages::TaggedBlock *tagged_block) const {
     return false;
   }
 
-  bool result = block->header().id() == block_id;
-  if (!result) {
-    // Restore the original block_id
-    block->mutable_header()->mutable_id()->CopyFrom(block_id);
-    LOG_INFO << "Failed check_block_id for block " << block->header().id();
-  }
-
-  // Restore the author field which was erased by the hash
-  block->mutable_header()->mutable_author()->CopyFrom(author);
-
-  return result;
+  return block->header().id() == block_id;
 }
 
 bool Consensus::check_block_transactions(
@@ -482,7 +491,7 @@ bool Consensus::verify_blocks() {
     // can work
     tagged_block.mutable_previous_assembly_id()->CopyFrom(assembly_id);
 
-    if (is_valid(&tagged_block)) {
+    if (is_valid(tagged_block)) {
       _ledger->set_block_verified(tagged_block.block().header().id(),
                                   get_block_score(tagged_block), assembly_id);
     } else if (!_ledger->delete_block_and_children(
@@ -511,23 +520,6 @@ bool Consensus::is_new_assembly(const messages::TaggedBlock &tagged_block,
   return block_assembly_height != previous_assembly_height;
 }
 
-Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
-                     const std::vector<crypto::Ecc> &keys,
-                     PublishBlock publish_block, bool start_threads)
-    : _ledger(ledger), _keys(keys), _publish_block(publish_block) {
-  init(start_threads);
-}
-
-Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
-                     const std::vector<crypto::Ecc> &keys, const Config &config,
-                     PublishBlock publish_block, bool start_threads)
-    : _config(config),
-      _ledger(ledger),
-      _keys(keys),
-      _publish_block(publish_block) {
-  init(start_threads);
-}
-
 Config Consensus::config() const { return _config; }
 
 void Consensus::init(bool start_threads) {
@@ -547,13 +539,11 @@ Consensus::~Consensus() {
   halt_thread(&_miner_thread, &_stop_miner);
 }
 
-void Consensus::halt_thread(std::optional<std::thread> *optional_thread,
+void Consensus::halt_thread(std::thread *thread_object,
                             std::atomic<bool> *stop_thread) {
-  if (*optional_thread) {
-    *stop_thread = true;
-    if ((*optional_thread)->joinable()) {
-      (*optional_thread)->join();
-    }
+  *stop_thread = true;
+  if (thread_object->joinable()) {
+    thread_object->join();
   }
 }
 
@@ -570,16 +560,16 @@ bool Consensus::is_valid(
   }
 }
 
-bool Consensus::is_valid(messages::TaggedBlock *tagged_block) const {
+bool Consensus::is_valid(const messages::TaggedBlock &tagged_block) const {
   // This method should be only be called after the block has been inserted
   return check_block_id(tagged_block) &&
-         check_block_transactions(*tagged_block) &&
-         check_block_size(*tagged_block) &&
-         check_transactions_order(*tagged_block) &&
-         check_block_height(*tagged_block) &&
-         check_block_timestamp(*tagged_block) &&
-         check_block_author(*tagged_block) &&
-         check_block_denunciations(*tagged_block);
+         check_block_transactions(tagged_block) &&
+         check_block_size(tagged_block) &&
+         check_transactions_order(tagged_block) &&
+         check_block_height(tagged_block) &&
+         check_block_timestamp(tagged_block) &&
+         check_block_author(tagged_block) &&
+         check_block_denunciations(tagged_block);
 }
 
 bool Consensus::add_transaction(const messages::Transaction &transaction) {
@@ -601,14 +591,14 @@ bool Consensus::add_double_mining(const messages::Block &block) {
   return true;
 }
 
-bool Consensus::add_block(messages::Block *block) {
+bool Consensus::add_block(const messages::Block &block) {
   return _ledger->insert_block(block) && verify_blocks() &&
-         _ledger->update_main_branch() && add_double_mining(*block);
+         _ledger->update_main_branch() && add_double_mining(block);
 }
 
 void Consensus::start_compute_pii_thread() {
   _stop_compute_pii = false;
-  if (!_compute_pii_thread) {
+  if (!_compute_pii_thread.joinable()) {
     _compute_pii_thread = std::thread([this]() {
       while (!_stop_compute_pii) {
         std::vector<messages::Assembly> assemblies;
@@ -843,7 +833,7 @@ bool Consensus::build_block(const crypto::Ecc &keys,
 
 void Consensus::start_update_heights_thread() {
   _stop_update_heights = false;
-  if (!_update_heights_thread) {
+  if (!_update_heights_thread.joinable()) {
     _update_heights_thread = std::thread([this]() {
       while (!_stop_update_heights) {
         update_heights_to_write();
@@ -884,7 +874,7 @@ void Consensus::update_heights_to_write() {
 
 void Consensus::start_miner_thread() {
   _stop_miner = false;
-  if (!_miner_thread) {
+  if (!_miner_thread.joinable()) {
     _miner_thread = std::thread([this]() { mine_blocks(); });
   }
 }
@@ -912,7 +902,7 @@ bool Consensus::mine_block(const messages::Block &block0) {
   messages::Block new_block;
   build_block(_keys[address_index], height, &new_block);
   _publish_block(new_block);
-  add_block(&new_block);
+  add_block(new_block);
   return true;
 }
 

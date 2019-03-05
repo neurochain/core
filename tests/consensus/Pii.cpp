@@ -39,7 +39,7 @@ class Pii : public testing::Test {
     simulator.consensus->add_transaction(transaction);
 
     auto block = simulator.new_block(last_block);
-    ASSERT_TRUE(simulator.consensus->add_block(&block));
+    ASSERT_TRUE(simulator.consensus->add_block(block));
     messages::TaggedBlock tagged_block;
     ASSERT_TRUE(ledger->get_last_block(&tagged_block));
     ASSERT_EQ(tagged_block.block().header().height(),
@@ -54,7 +54,7 @@ class Pii : public testing::Test {
                                         simulator.addresses[1], 0.5);
     simulator.consensus->add_transaction(transaction);
     auto block = simulator.new_block(last_block);
-    ASSERT_TRUE(simulator.consensus->add_block(&block));
+    ASSERT_TRUE(simulator.consensus->add_block(block));
     messages::TaggedBlock tagged_block;
     ASSERT_TRUE(ledger->get_last_block(&tagged_block));
     ASSERT_EQ(tagged_block.block().header().height(),

@@ -238,7 +238,7 @@ void LedgerMongodb::init_database(const messages::Block &block0) {
   tagged_block0.mutable_branch_path()->add_branch_ids(0);
   tagged_block0.mutable_branch_path()->add_block_numbers(0);
   tagged_block0.mutable_block()->CopyFrom(block0);
-  unsafe_insert_block(&tagged_block0);
+  unsafe_insert_block(tagged_block0);
 
   std::vector<messages::Address> addresses;
   for (const auto &transaction : block0.coinbases()) {
@@ -590,27 +590,30 @@ bool LedgerMongodb::get_block(const messages::BlockHeight height,
   return unsafe_get_block(height, tagged_block, include_transactions);
 }
 
-bool LedgerMongodb::unsafe_insert_block(messages::TaggedBlock *tagged_block) {
+bool LedgerMongodb::unsafe_insert_block(
+    const messages::TaggedBlock &tagged_block) {
   messages::TaggedBlock unused;
-  if (unsafe_get_block(tagged_block->block().header().id(), &unused)) {
+  bool include_transactions = false;
+  if (unsafe_get_block(tagged_block.block().header().id(), &unused,
+                       include_transactions)) {
     // The block already exists
-    LOG_INFO << "Failed to insert block " << tagged_block->block().header().id()
+    LOG_INFO << "Failed to insert block " << tagged_block.block().header().id()
              << " it already exists";
     return false;
   }
 
-  const auto &header = tagged_block->block().header();
+  const auto &header = tagged_block.block().header();
   auto bson_header = to_bson(header);
 
   std::vector<bsoncxx::document::value> bson_transactions;
 
-  for (const auto &transaction : tagged_block->block().transactions()) {
+  for (const auto &transaction : tagged_block.block().transactions()) {
     messages::TaggedTransaction tagged_transaction;
     tagged_transaction.set_is_coinbase(false);
     tagged_transaction.mutable_transaction()->CopyFrom(transaction);
     tagged_transaction.mutable_block_id()->CopyFrom(header.id());
     bson_transactions.push_back(to_bson(tagged_transaction));
-    if (tagged_block->branch() == messages::Branch::MAIN) {
+    if (tagged_block.branch() == messages::Branch::MAIN) {
       auto query = bss::document{} << TRANSACTION + "." + ID
                                    << to_bson(transaction.id()) << BLOCK_ID
                                    << bsoncxx::types::b_null{} << bss::finalize;
@@ -618,7 +621,7 @@ bool LedgerMongodb::unsafe_insert_block(messages::TaggedBlock *tagged_block) {
     }
   }
 
-  for (const auto &transaction : tagged_block->block().coinbases()) {
+  for (const auto &transaction : tagged_block.block().coinbases()) {
     messages::TaggedTransaction tagged_transaction;
     tagged_transaction.set_is_coinbase(true);
     tagged_transaction.mutable_transaction()->CopyFrom(transaction);
@@ -627,9 +630,10 @@ bool LedgerMongodb::unsafe_insert_block(messages::TaggedBlock *tagged_block) {
     bson_transactions.push_back(to_bson(tagged_transaction));
   }
 
-  tagged_block->mutable_block()->clear_transactions();
-  tagged_block->mutable_block()->clear_coinbases();
-  auto bson_block = to_bson(*tagged_block);
+  auto mutable_tagged_block = tagged_block;
+  mutable_tagged_block.mutable_block()->clear_transactions();
+  mutable_tagged_block.mutable_block()->clear_coinbases();
+  auto bson_block = to_bson(mutable_tagged_block);
   auto result = _blocks.insert_one(std::move(bson_block));
   if (!result) {
     return false;
@@ -641,7 +645,7 @@ bool LedgerMongodb::unsafe_insert_block(messages::TaggedBlock *tagged_block) {
   return true;
 }
 
-bool LedgerMongodb::insert_block(messages::TaggedBlock *tagged_block) {
+bool LedgerMongodb::insert_block(const messages::TaggedBlock &tagged_block) {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   return unsafe_insert_block(tagged_block);
 }
@@ -911,12 +915,12 @@ std::size_t LedgerMongodb::get_transaction_pool(messages::Block *block) {
   return num_transactions;
 }
 
-bool LedgerMongodb::insert_block(messages::Block *block) {
+bool LedgerMongodb::insert_block(const messages::Block &block) {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   messages::TaggedBlock tagged_block;
-  tagged_block.mutable_block()->CopyFrom(*block);
+  tagged_block.mutable_block()->CopyFrom(block);
   tagged_block.set_branch(messages::Branch::DETACHED);
-  return unsafe_insert_block(&tagged_block) &&
+  return unsafe_insert_block(tagged_block) &&
          set_branch_path(tagged_block.block().header());
 }
 
@@ -1196,7 +1200,7 @@ bool LedgerMongodb::get_next_assembly(const messages::AssemblyID &assembly_id,
 }
 
 bool LedgerMongodb::add_assembly(const messages::TaggedBlock &tagged_block,
-                                 const int32_t height) {
+                                 const messages::AssemblyHeight height) {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   if (tagged_block.branch() != messages::Branch::MAIN &&
       tagged_block.branch() != messages::Branch::FORK) {
@@ -1211,9 +1215,9 @@ bool LedgerMongodb::add_assembly(const messages::TaggedBlock &tagged_block,
   if (!tagged_block.has_previous_assembly_id()) {
     std::stringstream message;
     message << "Something is wrong here " << __FILE__ << ":" << __LINE__
-            << " , block " + to_json(tagged_block)
+            << " , block " << to_json(tagged_block)
             << "should have a previous_assembly_id";
-    throw(message);
+    throw(message.str());
   }
   assembly.mutable_previous_assembly_id()->CopyFrom(
       tagged_block.previous_assembly_id());

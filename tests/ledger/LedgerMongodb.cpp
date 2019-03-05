@@ -100,12 +100,12 @@ class LedgerMongodb : public ::testing::Test {
     tooling::blockgen::blockgen_from_block(&fork3, fork2, 4);
 
     // Insert the main branch
-    ASSERT_TRUE(ledger->insert_block(&block1));
-    ASSERT_TRUE(ledger->insert_block(&block2));
+    ASSERT_TRUE(ledger->insert_block(block1));
+    ASSERT_TRUE(ledger->insert_block(block2));
 
     // Insert the fork branch
-    ASSERT_TRUE(ledger->insert_block(&fork1));
-    ASSERT_TRUE(ledger->insert_block(&fork2));
+    ASSERT_TRUE(ledger->insert_block(fork1));
+    ASSERT_TRUE(ledger->insert_block(fork2));
 
     ledger->update_branch_tag(block0.header().id(), messages::Branch::MAIN);
     ASSERT_TRUE(ledger->set_block_verified(block1.header().id(), 20,
@@ -132,7 +132,7 @@ class LedgerMongodb : public ::testing::Test {
     ASSERT_EQ(tagged_block.branch(), messages::Branch::FORK);
 
     // Switch MAIN branch
-    ASSERT_TRUE(ledger->insert_block(&fork3));
+    ASSERT_TRUE(ledger->insert_block(fork3));
     ASSERT_TRUE(ledger->set_block_verified(fork3.header().id(), 35,
                                            block0.header().id()));
     tip.Clear();
@@ -251,8 +251,8 @@ TEST_F(LedgerMongodb, insert_tagged_block) {
   tagged_block.mutable_branch_path()->add_branch_ids(0);
   tagged_block.mutable_branch_path()->add_block_numbers(1);
   tagged_block.mutable_block()->CopyFrom(block);
-  ASSERT_TRUE(ledger->insert_block(&tagged_block));
-  ASSERT_FALSE(ledger->insert_block(&tagged_block));
+  ASSERT_TRUE(ledger->insert_block(tagged_block));
+  ASSERT_FALSE(ledger->insert_block(tagged_block));
   fake_block.Clear();
   ASSERT_TRUE(ledger->get_block(block.header().id(), &fake_block));
 }
@@ -263,8 +263,8 @@ TEST_F(LedgerMongodb, insert_block) {
   ASSERT_TRUE(ledger->get_block(ledger->height(), &block0));
   tooling::blockgen::blockgen_from_block(&block1, block0, 1);
   tooling::blockgen::blockgen_from_block(&block2, block1, 2);
-  ASSERT_TRUE(ledger->insert_block(&block1));
-  ASSERT_TRUE(ledger->insert_block(&block2));
+  ASSERT_TRUE(ledger->insert_block(block1));
+  ASSERT_TRUE(ledger->insert_block(block2));
   ASSERT_TRUE(ledger->get_block(block1.header().id(), &tagged_block));
   ASSERT_EQ(tagged_block.branch(), messages::Branch::UNVERIFIED);
   messages::BranchPath branch_path;
@@ -286,11 +286,11 @@ TEST_F(LedgerMongodb, insert_block_attach) {
   ASSERT_TRUE(ledger->get_block(ledger->height(), &block0));
   tooling::blockgen::blockgen_from_block(&block1, block0, 1);
   tooling::blockgen::blockgen_from_block(&block2, block1, 2);
-  ASSERT_TRUE(ledger->insert_block(&block2));
+  ASSERT_TRUE(ledger->insert_block(block2));
   ASSERT_TRUE(ledger->get_block(block2.header().id(), &tagged_block));
   ASSERT_EQ(tagged_block.branch(), messages::Branch::DETACHED);
   ASSERT_FALSE(tagged_block.has_branch_path());
-  ASSERT_TRUE(ledger->insert_block(&block1));
+  ASSERT_TRUE(ledger->insert_block(block1));
   tagged_block.Clear();
   ASSERT_TRUE(ledger->get_block(block1.header().id(), &tagged_block));
   ASSERT_EQ(tagged_block.branch(), messages::Branch::UNVERIFIED);
@@ -318,12 +318,12 @@ TEST_F(LedgerMongodb, branch_path) {
   tooling::blockgen::blockgen_from_block(&fork2, fork1, 3);
 
   // Insert the main branch
-  ASSERT_TRUE(ledger->insert_block(&block1));
-  ASSERT_TRUE(ledger->insert_block(&block2));
+  ASSERT_TRUE(ledger->insert_block(block1));
+  ASSERT_TRUE(ledger->insert_block(block2));
 
   // Insert the fork branch
-  ASSERT_TRUE(ledger->insert_block(&fork1));
-  ASSERT_TRUE(ledger->insert_block(&fork2));
+  ASSERT_TRUE(ledger->insert_block(fork1));
+  ASSERT_TRUE(ledger->insert_block(fork2));
 
   // Check the branch path
   messages::TaggedBlock tagged_block;
@@ -366,7 +366,7 @@ TEST_F(LedgerMongodb, get_unverified_blocks) {
   tooling::blockgen::blockgen_from_block(&fork2, fork1, 3);
 
   // Insert the block2 which should be detached
-  ASSERT_TRUE(ledger->insert_block(&block2));
+  ASSERT_TRUE(ledger->insert_block(block2));
   messages::TaggedBlock tagged_block;
   ASSERT_TRUE(ledger->get_block(block2.header().id(), &tagged_block));
   ASSERT_EQ(tagged_block.branch(), messages::Branch::DETACHED);
@@ -375,7 +375,7 @@ TEST_F(LedgerMongodb, get_unverified_blocks) {
   ASSERT_EQ(unscored_forks.size(), 0);
 
   // Insert the block1 which should attach the block2
-  ASSERT_TRUE(ledger->insert_block(&block1));
+  ASSERT_TRUE(ledger->insert_block(block1));
   tagged_block.Clear();
   ASSERT_TRUE(ledger->get_block(block1.header().id(), &tagged_block));
   ASSERT_EQ(tagged_block.branch(), messages::Branch::UNVERIFIED);
@@ -482,7 +482,7 @@ TEST_F(LedgerMongodb, integrity) {
   ASSERT_EQ(integrity_score, 17);
 
   auto block = simulator.new_block();
-  simulator.consensus->add_block(&block);
+  simulator.consensus->add_block(block);
   messages::TaggedBlock block1;
   ASSERT_TRUE(ledger->get_last_block(&block1));
   ASSERT_EQ(block1.block().header().height(), 1);
@@ -563,7 +563,7 @@ TEST_F(LedgerMongodb, list_transactions) {
   // Putting the transactions in a block should not change anything
   auto block = simulator.new_block();
   bool has_coinbase = block.coinbases(0).outputs(0).address() == address;
-  simulator.consensus->add_block(&block);
+  simulator.consensus->add_block(block);
   transactions = ledger->list_transactions(address).transactions();
   ASSERT_EQ(transactions.size(), has_coinbase ? 3 : 2);
 }
@@ -591,7 +591,7 @@ TEST_F(LedgerMongodb, is_unspent_output) {
 
   // Let's add a block with the transaction
   auto new_block = simulator.new_block();
-  simulator.consensus->add_block(&new_block);
+  simulator.consensus->add_block(new_block);
   include_transaction_pool = false;
   ASSERT_TRUE(ledger->is_unspent_output(coinbase.id(), 0, block0,
                                         include_transaction_pool));
@@ -630,7 +630,7 @@ TEST_F(LedgerMongodb, has_received_transaction) {
 TEST_F(LedgerMongodb, get_last_blocks) {
   for (int i = 0; i < 2; i++) {
     auto new_block = simulator.new_block();
-    simulator.consensus->add_block(&new_block);
+    simulator.consensus->add_block(new_block);
   }
   auto blocks = ledger->get_last_blocks(2);
   ASSERT_EQ(blocks.size(), 2);
@@ -669,7 +669,7 @@ TEST_F(LedgerMongodb, list_unspent_transactions) {
   // Putting the transactions in a block should not change anything
   auto block = simulator.new_block();
   bool has_coinbase = block.coinbases(0).outputs(0).address() == address;
-  simulator.consensus->add_block(&block);
+  simulator.consensus->add_block(block);
   transactions = ledger->list_unspent_transactions(address);
   ASSERT_EQ(transactions.size(), has_coinbase ? 2 : 1);
 }
@@ -708,7 +708,7 @@ TEST_F(LedgerMongodb, list_unspent_outputs) {
 
   // Putting the transactions in a block should not change anything
   auto block = simulator.new_block();
-  simulator.consensus->add_block(&block);
+  simulator.consensus->add_block(block);
   for (const auto &address : {address0, address1}) {
     bool has_coinbase = block.coinbases(0).outputs(0).address() == address;
     transactions = ledger->list_unspent_outputs(address);
@@ -735,8 +735,8 @@ TEST_F(LedgerMongodb, denunciation_exists) {
   // Let's make the first miner double mine
   auto block1 = simulator.new_block();
   auto block1_bis = simulator.new_block(1);
-  ASSERT_TRUE(simulator.consensus->add_block(&block1));
-  ASSERT_TRUE(simulator.consensus->add_block(&block1_bis));
+  ASSERT_TRUE(simulator.consensus->add_block(block1));
+  ASSERT_TRUE(simulator.consensus->add_block(block1_bis));
 
   // Let's denounce the vile double miner
   auto block2 = simulator.new_block();
@@ -758,8 +758,8 @@ TEST_F(LedgerMongodb, denunciation_exists) {
   messages::set_block_hash(&block2_bis);
   crypto::sign(simulator.keys[miner_index], &block2_bis);
 
-  ASSERT_TRUE(simulator.consensus->add_block(&block2));
-  ASSERT_TRUE(simulator.consensus->add_block(&block2_bis));
+  ASSERT_TRUE(simulator.consensus->add_block(block2));
+  ASSERT_TRUE(simulator.consensus->add_block(block2_bis));
 
   messages::TaggedBlock tagged_block2, tagged_block2_bis;
   ASSERT_TRUE(ledger->get_block(block2.header().id(), &tagged_block2));
@@ -772,7 +772,7 @@ TEST_F(LedgerMongodb, denunciation_exists) {
                                            tagged_block2_bis.branch_path()));
 
   auto block3 = simulator.new_block();
-  ASSERT_TRUE(simulator.consensus->add_block(&block3));
+  ASSERT_TRUE(simulator.consensus->add_block(block3));
   messages::TaggedBlock tagged_block3;
   ASSERT_TRUE(ledger->get_block(3, &tagged_block3));
   ASSERT_TRUE(ledger->denunciation_exists(*denunciation,
@@ -793,7 +793,7 @@ TEST_F(LedgerMongodb, denunciation_exists) {
   ASSERT_EQ(block3_bis.header().height(), 3);
   ASSERT_EQ(block3_bis.header().previous_block_hash(),
             block2_bis.header().id());
-  ASSERT_TRUE(simulator.consensus->add_block(&block3_bis));
+  ASSERT_TRUE(simulator.consensus->add_block(block3_bis));
   messages::TaggedBlock tagged_block3_bis;
   ASSERT_TRUE(ledger->get_block(block3_bis.header().id(), &tagged_block3_bis));
   ASSERT_FALSE(ledger->denunciation_exists(*denunciation,
@@ -805,7 +805,7 @@ TEST_F(LedgerMongodb, get_blocks) {
   // Let's make the first miner double mine
   auto block1 = simulator.new_block();
   auto block1_bis = simulator.new_block(1);
-  ASSERT_TRUE(simulator.consensus->add_block(&block1));
+  ASSERT_TRUE(simulator.consensus->add_block(block1));
 
   auto include_transactions = true;
   auto blocks = ledger->get_blocks(block1.header().height(),
@@ -814,7 +814,7 @@ TEST_F(LedgerMongodb, get_blocks) {
   ASSERT_EQ(blocks.size(), 1);
   ASSERT_EQ(blocks.at(0).block(), block1);
 
-  ASSERT_TRUE(simulator.consensus->add_block(&block1_bis));
+  ASSERT_TRUE(simulator.consensus->add_block(block1_bis));
   blocks = ledger->get_blocks(block1.header().height(),
                               block1.header().author().key_pub(),
                               include_transactions);
@@ -829,9 +829,9 @@ TEST_F(LedgerMongodb, double_minings) {
   // Let's make the first miner double mine
   auto block1 = simulator.new_block();
   auto block1_bis = simulator.new_block(1);
-  ASSERT_TRUE(simulator.consensus->add_block(&block1));
+  ASSERT_TRUE(simulator.consensus->add_block(block1));
 
-  ASSERT_TRUE(simulator.consensus->add_block(&block1_bis));
+  ASSERT_TRUE(simulator.consensus->add_block(block1_bis));
   bool include_transactions = false;
   auto blocks = ledger->get_blocks(block1.header().height(),
                                    block1.header().author().key_pub(),
@@ -863,9 +863,9 @@ TEST_F(LedgerMongodb, add_denunciations) {
   // Let's make the first miner double mine
   auto block1 = simulator.new_block();
   auto block1_bis = simulator.new_block(1);
-  ASSERT_TRUE(simulator.consensus->add_block(&block1));
+  ASSERT_TRUE(simulator.consensus->add_block(block1));
 
-  ASSERT_TRUE(simulator.consensus->add_block(&block1_bis));
+  ASSERT_TRUE(simulator.consensus->add_block(block1_bis));
   auto block = simulator.new_block();
   block.clear_denunciations();
   messages::TaggedBlock previous;

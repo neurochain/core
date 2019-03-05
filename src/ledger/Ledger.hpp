@@ -106,8 +106,8 @@ class Ledger {
   virtual std::vector<messages::TaggedBlock> get_blocks(
       const messages::BlockHeight height, const messages::KeyPub &author,
       bool include_transactions = true) const = 0;
-  virtual bool insert_block(messages::TaggedBlock *tagged_block) = 0;
-  virtual bool insert_block(messages::Block *block) = 0;
+  virtual bool insert_block(const messages::TaggedBlock &tagged_block) = 0;
+  virtual bool insert_block(const messages::Block &block) = 0;
   virtual bool delete_block(const messages::BlockID &id) = 0;
   virtual bool delete_block_and_children(const messages::BlockID &id) = 0;
   virtual bool for_each(const Filter &filter, const messages::TaggedBlock &tip,
@@ -160,7 +160,7 @@ class Ledger {
                             messages::Assembly *assembly) const = 0;
 
   virtual bool add_assembly(const messages::TaggedBlock &tagged_block,
-                            const int32_t height) = 0;
+                            const messages::AssemblyHeight height) = 0;
 
   virtual bool get_pii(const messages::Address &address,
                        const messages::AssemblyID &assembly_id,
@@ -360,25 +360,24 @@ class Ledger {
     std::vector<messages::Transaction> result_transactions;
 
     auto transactions = list_transactions(address);
-    for (int i = 0; i < transactions.transactions_size(); i++) {
-      auto transaction = transactions.mutable_transactions(i);
+    for (auto &transaction : *transactions.mutable_transactions()) {
       std::vector<messages::Output> outputs;
-      for (int j = 0; j < transaction->outputs_size(); j++) {
-        auto output = transaction->outputs(j);
+      for (int i = 0; i < transaction.outputs_size(); i++) {
+        auto output = transaction.outputs(i);
         if (output.address() == address &&
-            is_unspent_output(transaction->id(), j)) {
-          output.set_output_id(j);
+            is_unspent_output(transaction.id(), i)) {
+          output.set_output_id(i);
           outputs.push_back(output);
         }
       }
       if (outputs.size() == 0) {
         continue;
       }
-      transaction->mutable_outputs()->Clear();
+      transaction.mutable_outputs()->Clear();
       for (const auto output : outputs) {
-        transaction->add_outputs()->CopyFrom(output);
+        transaction.add_outputs()->CopyFrom(output);
       }
-      result_transactions.push_back(*transaction);
+      result_transactions.push_back(transaction);
     }
     return result_transactions;
   }

@@ -94,7 +94,7 @@ class LedgerMongodb : public Ledger {
 
   bool set_branch_path(const messages::BlockHeader &block_header);
 
-  bool unsafe_insert_block(messages::TaggedBlock *tagged_block);
+  bool unsafe_insert_block(const messages::TaggedBlock &tagged_block);
 
   messages::BranchPath unsafe_fork_from(
       const messages::BranchPath &branch_path) const;
@@ -178,9 +178,9 @@ class LedgerMongodb : public Ledger {
                  messages::TaggedBlock *tagged_block,
                  bool include_transaction = true) const;
 
-  bool insert_block(messages::TaggedBlock *tagged_block);
+  bool insert_block(const messages::TaggedBlock &tagged_block);
 
-  bool insert_block(messages::Block *block);
+  bool insert_block(const messages::Block &block);
 
   bool delete_block(const messages::BlockID &id);
 
@@ -243,7 +243,7 @@ class LedgerMongodb : public Ledger {
                     messages::Assembly *assembly) const;
 
   bool add_assembly(const messages::TaggedBlock &tagged_block,
-                    const int32_t height);
+                    const messages::AssemblyHeight height);
 
   bool set_pii(const messages::Pii &pii);
 
