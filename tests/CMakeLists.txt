@@ -69,6 +69,7 @@ add_executable(ut
   ./common/Buffer.cpp
   ./crypto/Hash.cpp
   ./crypto/Ecc.cpp
+  ./crypto/Sign.cpp
   ./messages/Config.cpp
 #  ./messages/Queue.cpp
   ./messages/Subscriber.cpp
@@ -132,6 +133,82 @@ target_link_libraries(Simulator
   libonion::onioncpp
   )
 add_test(Simulator Simulator)
+
+add_executable(Pii
+  consensus/Pii.cpp
+  )
+target_link_libraries(Pii
+  GTest::main
+  Boost::program_options
+  Boost::filesystem
+  Boost::system
+  Boost::thread
+  Boost::log
+  cpr::cpr
+  ${LIBMONGOCXX_STATIC_LIBRARIES}
+  core
+  protos
+  libonion::onion
+  libonion::onioncpp
+  )
+add_test(Pii Pii)
+
+add_executable(Consensus
+  consensus/Consensus.cpp
+  )
+target_link_libraries(Consensus
+  GTest::main
+  Boost::program_options
+  Boost::filesystem
+  Boost::system
+  Boost::thread
+  Boost::log
+  cpr::cpr
+  ${LIBMONGOCXX_STATIC_LIBRARIES}
+  core
+  protos
+  libonion::onion
+  libonion::onioncpp
+  )
+add_test(Consensus Consensus)
+
+add_executable(RealtimeConsensus
+  consensus/RealtimeConsensus.cpp
+  )
+target_link_libraries(RealtimeConsensus
+  GTest::main
+  Boost::program_options
+  Boost::filesystem
+  Boost::system
+  Boost::thread
+  Boost::log
+  cpr::cpr
+  ${LIBMONGOCXX_STATIC_LIBRARIES}
+  core
+  protos
+  libonion::onion
+  libonion::onioncpp
+  )
+add_test(RealtimeConsensus RealtimeConsensus)
+
+add_executable(RealtimeSimulator
+    tooling/RealtimeSimulator.cpp
+  )
+target_link_libraries(RealtimeSimulator
+  GTest::main
+  Boost::program_options
+  Boost::filesystem
+  Boost::system
+  Boost::thread
+  Boost::log
+  cpr::cpr
+  ${LIBMONGOCXX_STATIC_LIBRARIES}
+  core
+  protos
+  libonion::onion
+  libonion::onioncpp
+  )
+add_test(RealtimeSimulator RealtimeSimulator)
 
 add_executable(dbreset
     dbreset.cpp

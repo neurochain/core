@@ -1,6 +1,5 @@
 #include "common/types.hpp"
 #include "config.pb.h"
-#include "consensus/PiiConsensus.hpp"
 #include "crypto/Ecc.hpp"
 #include "crypto/Hash.hpp"
 #include "ledger/LedgerMongodb.hpp"

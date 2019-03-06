@@ -20,6 +20,8 @@ static std::random_device _rd;  // TODO make global
 
 using namespace std::chrono_literals;
 
+using namespace std::chrono_literals;
+
 namespace networking {
 class Peer;
 namespace bai = boost::asio::ip;
@@ -53,12 +55,16 @@ using Endpoint = std::string;
 using Port = uint16_t;
 using Ports = std::vector<Port>;
 const int32_t MessageVersion = 1;
-const int32_t BLOCK_PERIODE = 15;
-const int32_t ASSEMBLY_MEMBERS_COUNT = 557;
-const int32_t ASSEMBLY_BLOCKS_COUNT = 2000;
 const int32_t MESSAGE_TTL = 60;
 const int32_t MAX_MESSAGE_SIZE = 256 * 1024;
 // using Peers = google::protobuf::RepeatedPtrField<neuro::messages::Peer>;
+
+// This is used both in the ledger and the consensus
+// we might change double implementation later
+using Double = double;
+
+// Useful debug utilities
+using Timer = std::chrono::high_resolution_clock;
 
 namespace crypto {
 namespace keys {

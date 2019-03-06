@@ -47,12 +47,12 @@ message GetBlock {
 message Input {
   required Hash id = 1;
   required int32 output_id = 2;
-  required int32 signature_id = 3;
-  optional Hash block_id = 4;
+  required int32 signature_id = 4;
+  extensions 100 to 120;
 }
 
 message Output {
-  required Hash address = 1;
+  required _Address address = 1;
   required _NCCAmount value = 2;
   optional bytes data = 3;
   optional int32 output_id = 4;
@@ -69,24 +69,35 @@ message Transaction {
   repeated Output outputs = 3;
   repeated Signature signatures = 4;
   optional _NCCAmount fees = 5;
+  optional int32 coinbase_height = 6;
 }
 
 message BlockHeader {
   required Hash id = 1;
   required Timestamp timestamp = 2;
   required Hash previous_block_hash = 3;
-  required KeyPub author = 5;
-  optional int32 height = 6;
+  required Signature author = 4;
+  required int32 height = 6;
+}
+
+message _Denunciation {
+  required Hash block_id = 1;
+  required int32 block_height = 2;
+  required Signature block_author = 3;
+  optional BranchPath branch_path = 4;
 }
 
 message Block {
   required BlockHeader header = 1;
   repeated Transaction transactions = 20;
+  repeated Transaction coinbases = 30;
+  repeated _Denunciation denunciations = 40;
 }
 
 enum Branch {
   MAIN = 0;
   FORK = 1;
+  UNVERIFIED = 3;
   DETACHED = 2;
 }
 
@@ -115,11 +126,13 @@ message TaggedBlock {
   required Branch branch = 2;
   optional BranchPath branch_path = 3;
   optional double score = 4;
+  optional Hash previous_assembly_id = 5;
 }
 
 message TaggedTransaction {
   required Transaction transaction = 1;
-  optional Hash block_id = 2;
+  required bool is_coinbase = 2;
+  optional Hash block_id = 3;
 }
 
 message ConnectionClosed {
