@@ -163,6 +163,12 @@ TEST(INTEGRATION, neighbors_propagation) {
   auto peers_bot1 = vectorize(bot1->connected_peers());
   auto peers_bot2 = vectorize(bot2->connected_peers());
 
+  std::ofstream my_logs("my_logs_prop");
+  my_logs << "0 peerss " << std::endl << bot0->peers() << std::endl;
+  my_logs << "1 peerss " << std::endl << bot1->peers() << std::endl;
+  my_logs << "2 peerss " << std::endl << bot2->peers() << std::endl;
+  my_logs.close();
+  
   ASSERT_EQ(peers_bot0.size(), peers_bot1.size());
   ASSERT_EQ(peers_bot1.size(), peers_bot2.size());
   ASSERT_EQ(peers_bot2.size(), 2);

@@ -18,15 +18,61 @@ namespace neuro {
 namespace messages {
 
 class Peers {
- private:
+private:
   const int _used_status{(Peer::CONNECTING | Peer::CONNECTED)};
   const KeyPub &_own_key;
   mutable std::shared_mutex _mutex;
-
-  std::unordered_map<KeyPub, std::unique_ptr<Peer>,
-		     PacketHash<KeyPub>> _peers;
-
+  using PeersByKey = std::unordered_map<KeyPub, std::unique_ptr<Peer>,
+			     PacketHash<KeyPub>>;
+  PeersByKey _peers;
+  
  public:
+
+  class iterator {
+  private:
+    using Indexes = std::vector<Peer *>;
+    Peer::Status _status;
+    Indexes _peers;
+    Indexes::iterator _it;
+    
+  public:
+    iterator() : _peers(),
+		 _it(_peers.end()) {}
+
+    iterator(const PeersByKey &peers,
+	     const Peer::Status status) :_status(status) {
+      for(const auto &pair : peers) {
+	if(pair.second->status() & _status) {
+	  _peers.push_back(pair.second.get());
+	}
+      }
+
+      std::mt19937 g(_rd());
+      std::shuffle(_peers.begin(), _peers.end(), g);
+      _it = _peers.begin();
+    }
+
+    void operator++ () {
+      do {
+	++_it;
+      } while (_it != _peers.end() && !((*_it)->status() & _status));
+    }
+
+    bool operator== (const iterator &it) {
+      return (_it == it._it);
+    }
+    bool operator!= (const iterator &it) {
+      return (_it != it._it);
+    }
+
+    Peer *operator*() {
+      return *_it;
+    }
+    Peer *operator->() {
+      return *_it;
+    }
+  };
+  
   Peers(const KeyPub &own_key) : _own_key(own_key) {}
   // Peers(config::Peers *peers) {
   //   _Peers tmp;
@@ -56,12 +102,16 @@ class Peers {
   std::size_t used_peers_count() const;
   void update_unreachable();
   bool update_peer_status(const Peer &peer, const Peer::Status status);
-  std::optional<Peer *> next(const Peer::Status status);
   std::optional<Peer *> find(const KeyPub &key_pub);
   std::vector<Peer *> by_status(const Peer::Status status) const;
   std::vector<Peer *> used_peers() const;
   std::vector<Peer *> connected_peers() const;
   std::vector<Peer> peers_copy() const;
+  iterator begin(const Peer::Status);
+  iterator end();
+  
+
+
 };
 
 std::ostream &operator<<(std::ostream &os, const Peers &peers);

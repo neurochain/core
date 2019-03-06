@@ -448,15 +448,15 @@ void Bot::keep_max_connections() {
     return;
   }
 
-  auto peer = _peers.next(messages::Peer::DISCONNECTED);
-  if (!peer) {
+  auto peer_it = _peers.begin(messages::Peer::DISCONNECTED);
+  if (peer_it == _peers.end()) {
     LOG_WARNING << "Could not find peer to connect to";
     return;
   }
 
-  LOG_DEBUG << this << " Asking to connect to " << **peer;
-  (*peer)->set_status(messages::Peer::CONNECTING);
-  _networking.connect(*peer);
+  LOG_DEBUG << this << " Asking to connect to " << **peer_it;
+  (*peer_it)->set_status(messages::Peer::CONNECTING);
+  _networking.connect(*peer_it);
 }
 
 const messages::Peers &Bot::peers() const { return _peers; }

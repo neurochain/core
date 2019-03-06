@@ -105,6 +105,25 @@ TEST_F(PeersF, update_timestamp) {
   ASSERT_EQ(disconnected_peers.size(), 2);
 }
 
+TEST_F(PeersF, iterator) {
+  ::neuro::messages::Peers peers(peer0.key_pub());
+
+  peer1.set_status(Peer::CONNECTED);
+  peers.insert(peer0);
+  peers.insert(peer1);
+  peers.insert(peer2);
+  peers.insert(peer3);
+
+  int peer_cout = 0;
+  for(auto it = peers.begin(Peer::DISCONNECTED), e = peers.end(); it != e; ++it) {
+    peer_cout++;
+  }
+  ASSERT_EQ(disconnected_peers.size(), 3);
+
+  //TODO: operator* 
+  
+}
+
 }  // namespace test
 }  // namespace messages
 }  // namespace neuro

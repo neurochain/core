@@ -3,6 +3,16 @@
 namespace neuro {
 namespace messages {
 
+Peers::iterator Peers::begin(const Peer::Status status) {
+  return iterator{_peers, status};
+}
+
+Peers::iterator Peers::end() {
+  return iterator{};
+}
+
+
+  
 std::optional<Peer *>Peers::insert(const Peer &peer) {
   std::unique_lock<std::shared_mutex> lock(_mutex);
   // auto pair = std::make_pair(peer.key_pub(), );
@@ -70,20 +80,6 @@ bool Peers::update_peer_status(const Peer &peer, const Peer::Status status) {
   return true;
 }
 
-std::optional<Peer *> Peers::next(const Peer::Status status) {
-  LOG_TRACE;
-  std::shared_lock<std::shared_mutex> lock(_mutex);
-  for (const auto &pair : _peers) {
-    auto peer = pair.second.get();
-    
-    if (peer->has_status() && peer->status() & status) {
-      return {peer};
-    }
-  }
-
-  return std::nullopt;
-}
-
 std::optional<Peer *> Peers::find(const KeyPub &key_pub) {
   auto got = _peers.find(key_pub);
 
@@ -142,12 +138,14 @@ void Peers::update_unreachable() {
 
 bool Peers::fill(_Peers *peers) {
   const auto full_mask = _Peer_Status_Status_MAX * 2 - 1;
-  for (int i = 0; i < 10; i++) {
-    auto peer = next(static_cast<Peer::Status>(full_mask));
-    if (!peer) {
-      return false;
+
+  uint8_t peer_count = 10; // TODO conf
+  for (auto it = begin(static_cast<Peer::Status>(full_mask)), e = end() ;
+       it != e; ++it) {
+    if(!(peer_count --> 0)) {
+      break;
     }
-    peers->add_peers()->CopyFrom(**peer);
+    peers->add_peers()->CopyFrom(**it);
   }
   return true;
 }
