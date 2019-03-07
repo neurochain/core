@@ -59,6 +59,11 @@ bool Buffer::operator==(const Buffer &other) {
   return true;
 }
 
+void Buffer::append(const Buffer &buffer) {
+  resize(size() + buffer.size());
+  std::copy(buffer.begin(), buffer.end(), begin() + size());
+}
+
 std::string Buffer::str() const {
   std::stringstream ss;
   ss << this;

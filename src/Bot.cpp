@@ -8,8 +8,6 @@
 #include <random>
 #include "common/logger.hpp"
 #include "common/types.hpp"
-#include "consensus/PiiConsensus.hpp"
-#include "messages/Peer.hpp"
 #include "messages/Subscriber.hpp"
 
 namespace neuro {
@@ -23,16 +21,16 @@ Bot::Bot(const messages::config::Config &config)
       _keys(_config.networking().key_priv_path(),
             _config.networking().key_pub_path()),
       _me(_config.networking().tcp().endpoint(),
-          _config.networking().tcp().port(), _keys.public_key()),
-      _peers(_me.key_pub(),
-	     _config.networking().tcp().peers().begin(),
+          _config.networking().tcp().port(), _keys.at(0).public_key()),
+      _peers(_me.key_pub(), _config.networking().tcp().peers().begin(),
              _config.networking().tcp().peers().end()),
-      _networking(&_queue, &_keys, &_peers, _config.mutable_networking()),
+      _networking(&_queue, &_keys.at(0), &_peers, _config.mutable_networking()),
       _ledger(std::make_shared<ledger::LedgerMongodb>(_config.database())),
       _update_timer(std::ref(*_io_context)) {
-  LOG_DEBUG << this << " hello from bot " << &_queue << " " <<  _keys.public_key() << std::endl
-	    << _peers << std::endl;
-  
+  LOG_DEBUG << this << " hello from bot " << &_queue << " "
+            << _keys.at(0).public_key() << std::endl
+            << _peers << std::endl;
+
   if (!init()) {
     throw std::runtime_error("Could not create bot from configuration file");
   }
@@ -81,6 +79,8 @@ void Bot::handler_get_block(const messages::Header &header,
 void Bot::handler_block(const messages::Header &header,
                         const messages::Body &body) {
   // bool reply_message = header.has_request_id();
+  LOG_TRACE;
+  _consensus->add_block(body.block());
   update_ledger();
 
   if (header.has_request_id()) {
@@ -114,7 +114,8 @@ bool Bot::update_ledger() {
   }
 
   // TODO #consensus change by height by time function
-  if ((std::time(nullptr) - last_header.timestamp().data()) < BLOCK_PERIODE) {
+  if ((std::time(nullptr) - last_header.timestamp().data()) <
+      _consensus->config().block_period) {
     return true;
   }
 
@@ -216,34 +217,37 @@ bool Bot::init() {
   configure_networking(&_config);
   _update_timer.expires_after(1s);
   _update_timer.async_wait(boost::bind(&Bot::regular_update, this));
-  
+
+  _consensus = std::make_shared<consensus::Consensus>(
+      _ledger, _keys,
+      [this](const messages::Block &block) { publish_block(block); });
 
   _io_context_thread = std::thread([this]() { _io_context->run(); });
 
   while (_io_context->stopped()) {
-    std::cout << "is io context stopped "  << std::endl;
+    std::cout << "is io context stopped " << std::endl;
     std::this_thread::sleep_for(1s);
   }
-  std::cout << "is stopped??? " << std::boolalpha << _io_context->stopped() << std::endl;
-  
+  std::cout << "is stopped??? " << std::boolalpha << _io_context->stopped()
+            << std::endl;
 
   update_ledger();
   this->keep_max_connections();
-    
+
   return true;
 }
 
 void Bot::regular_update() {
-  std::cout << "##################################################" << std::endl;
+  std::cout << "##################################################"
+            << std::endl;
   _peers.update_unreachable();
   update_peerlist();
   keep_max_connections();
   update_ledger();
-  keep_max_connections();  
+  keep_max_connections();
   _update_timer.expires_at(_update_timer.expiry() +
                            boost::asio::chrono::seconds(_update_time));
   _update_timer.async_wait(boost::bind(&Bot::regular_update, this));
-  
 }
 
 void Bot::update_peerlist() {
@@ -260,7 +264,7 @@ void Bot::update_peerlist() {
 //   }
 //   std::string uri = _config.connection_graph_uri();
 //   messages::ConnectionsGraph graph;
-//   messages::Address own_address = messages::Hasher(keys.public_key());
+//   messages::Address own_address = messages::Address(_keys.public_key());
 //   graph.mutable_own_address()->CopyFrom(own_address);
 //   messages::Peers peers;
 //   for (const auto &peer : _tcp_config->peers()) {
@@ -270,7 +274,7 @@ void Bot::update_peerlist() {
 //     }
 //     crypto::EccPub ecc_pub;
 //     ecc_pub.load(peer.key_pub());
-//     graph.add_peers_addresses()->CopyFrom(messages::Hasher(ecc_pub));
+//     graph.add_peers_addresses()->CopyFrom(messages::Address(ecc_pub));
 //   }
 
 //   std::string json;
@@ -376,23 +380,24 @@ void Bot::handler_hello(const messages::Header &header,
   LOG_DEBUG << this << " Got a HELLO message in bot";
   auto remote_peer = _peers.insert(hello.peer());
 
-  if(!remote_peer) {
+  if (!remote_peer) {
     LOG_WARNING << "Received a message from ourself (from the futuru?)";
     return;
   }
-  
+
   // == Create world message for replying ==
   auto message = std::make_shared<messages::Message>();
   auto world = message->add_bodies()->mutable_world();
   auto peers = message->add_bodies()->mutable_peers();
   bool accepted = _networking.peer_count() < (2 * _max_connections);
 
-  
   // update peer status
   if (accepted) {
     (*remote_peer)->set_status(messages::Peer::CONNECTED);
-    LOG_DEBUG << this << " Accept status " << std::boolalpha << accepted << " " << **remote_peer << std::endl << _peers;
-    
+    LOG_DEBUG << this << " Accept status " << std::boolalpha << accepted << " "
+              << **remote_peer << std::endl
+              << _peers;
+
   } else {
     (*remote_peer)->set_status(messages::Peer::DISCONNECTED);
   }
@@ -473,6 +478,15 @@ void Bot::publish_transaction(const messages::Transaction &transaction) const {
   messages::fill_header(message->mutable_header());
   auto body = message->add_bodies();
   body->mutable_transaction()->CopyFrom(transaction);
+  _networking.send(message);
+}
+
+void Bot::publish_block(const messages::Block &block) const {
+  // Send the transaction on the network
+  auto message = std::make_shared<messages::Message>();
+  messages::fill_header(message->mutable_header());
+  auto body = message->add_bodies();
+  body->mutable_block()->CopyFrom(block);
   _networking.send(message);
 }
 

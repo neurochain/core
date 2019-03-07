@@ -5,7 +5,6 @@
 #include "Bot.hpp"
 #include "common/logger.hpp"
 #include "common/types.hpp"
-#include "consensus/PiiConsensus.hpp"
 #include "crypto/Sign.hpp"
 #include "ledger/LedgerMongodb.hpp"
 #include "messages/Subscriber.hpp"
@@ -57,7 +56,7 @@ class BotTest {
     messages::TaggedBlock new_block;
     neuro::tooling::blockgen::blockgen_from_last_db_block(
         new_block.mutable_block(), _bot._ledger, 1, 0);
-    _bot._ledger->insert_block(&new_block);
+    _bot._ledger->insert_block(new_block);
   }
 };
 
@@ -102,7 +101,6 @@ TEST(INTEGRATION, simple_interaction) {
   ASSERT_EQ(listener.received_deconnection(), 0);
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
-
   std::this_thread::sleep_for(1s);
   auto peers_bot0 = (bot0->connected_peers());
   auto peers_bot1 = (bot1->connected_peers());
@@ -136,7 +134,6 @@ TEST(INTEGRATION, simple_interaction) {
   ASSERT_TRUE(peers_bot2[1]->port() == 1337 || peers_bot2[1]->port() == 1338);
   ASSERT_NE(peers_bot2[0]->port(), peers_bot2[1]->port());
 
-  
   LOG_TRACE << "the end?" << std::endl;
   bot2.reset();
   LOG_TRACE << "the end?" << std::endl;

@@ -1,11 +1,8 @@
-
-
-
-#include "messages/Message.hpp"
 #include "tooling/Simulator.hpp"
 #include <boost/stacktrace.hpp>
 #include "common/types.hpp"
 #include "ledger/LedgerMongodb.hpp"
+#include "messages/Message.hpp"
 #include "messages/config/Config.hpp"
 #include "messages/config/Database.hpp"
 #include "tooling/blockgen.hpp"
@@ -16,19 +13,11 @@ namespace neuro {
 namespace tooling {
 namespace tests {
 
-  
-std::shared_ptr<ledger::LedgerMongodb> empty_ledger(
-    messages::config::Database config) {
-  tooling::blockgen::create_empty_db(config);
-  return std::make_shared<neuro::ledger::LedgerMongodb>(config);
-}
-
 class Simulator : public ::testing::Test {
  public:
-  const std::string url = "mongodb://mongo:27017";
+  const std::string db_url = "mongodb://mongo:27017";
   const std::string db_name = "test_simulator";
   const messages::NCCAmount ncc_block0 = messages::NCCAmount(1000000);
-  const messages::NCCAmount block_reward = messages::NCCAmount(100);
   const int nb_keys = 20;
 
  protected:
@@ -36,7 +25,8 @@ class Simulator : public ::testing::Test {
   std::shared_ptr<neuro::ledger::LedgerMongodb> ledger;
 
   Simulator()
-      : simulator(url, db_name, nb_keys, ncc_block0, block_reward),
+      : simulator(tooling::Simulator::Simulator::StaticSimulator(
+            db_url, db_name, nb_keys, ncc_block0)),
         ledger(simulator.ledger) {}
 };
 
@@ -44,7 +34,7 @@ TEST_F(Simulator, block0) {
   messages::Block block;
   ASSERT_TRUE(ledger->get_block(0, &block));
   ASSERT_EQ(ledger->height(), 0);
-  ASSERT_EQ(block.transactions_size(), nb_keys);
+  ASSERT_EQ(block.coinbases_size(), nb_keys);
   ASSERT_EQ(ledger->total_nb_transactions(), nb_keys);
 }
 
@@ -52,11 +42,44 @@ TEST_F(Simulator, send_ncc) {
   auto sender_private_key = simulator.keys[0].private_key();
   auto recipient_public_key = simulator.addresses[1];
   auto transaction0 =
-      simulator.send_ncc(sender_private_key, recipient_public_key, 0.5);
+      ledger->send_ncc(sender_private_key, recipient_public_key, 0.5);
+  ASSERT_EQ(transaction0.inputs_size(), 1);
+  ASSERT_EQ(transaction0.outputs_size(), 2);
+  ASSERT_EQ(transaction0.outputs(0).value().value(), ncc_block0.value() * 0.5);
+  ASSERT_EQ(transaction0.outputs(1).value().value(), ncc_block0.value() * 0.5);
   ledger->add_to_transaction_pool(transaction0);
+
   auto transaction1 =
-      simulator.send_ncc(sender_private_key, recipient_public_key, 0.5);
-  ASSERT_TRUE((transaction1.inputs(0).id() == transaction0.id()));
+      ledger->send_ncc(sender_private_key, recipient_public_key, 0.5);
+  ASSERT_EQ(transaction1.inputs(0).id(), transaction0.id());
+  ASSERT_EQ(transaction1.inputs_size(), 1);
+  ASSERT_EQ(transaction1.outputs_size(), 2);
+  ASSERT_EQ(transaction1.outputs(0).value().value(), ncc_block0.value() * 0.25);
+  ASSERT_EQ(transaction1.outputs(1).value().value(), ncc_block0.value() * 0.25);
+  ledger->add_to_transaction_pool(transaction1);
+
+  sender_private_key = simulator.keys[1].private_key();
+  recipient_public_key = simulator.addresses[1];
+  auto transaction2 =
+      ledger->send_ncc(sender_private_key, recipient_public_key, 0.5);
+  ASSERT_EQ(transaction2.inputs_size(), 3);
+  ASSERT_EQ(transaction2.outputs_size(), 2);
+  ASSERT_EQ(transaction2.outputs(0).value().value(),
+            ncc_block0.value() * 0.875);
+  ASSERT_EQ(transaction2.outputs(1).value().value(),
+            ncc_block0.value() * 0.875);
+  ledger->add_to_transaction_pool(transaction2);
+
+  sender_private_key = simulator.keys[1].private_key();
+  recipient_public_key = simulator.addresses[3];
+  auto transaction3 =
+      ledger->send_ncc(sender_private_key, recipient_public_key, 0.5);
+  ASSERT_EQ(transaction3.inputs_size(), 2);
+  ASSERT_EQ(transaction3.outputs_size(), 2);
+  ASSERT_EQ(transaction3.outputs(0).value().value(),
+            ncc_block0.value() * 0.875);
+  ASSERT_EQ(transaction3.outputs(1).value().value(),
+            ncc_block0.value() * 0.875);
 }
 
 TEST_F(Simulator, random_transaction) {
@@ -70,9 +93,12 @@ TEST_F(Simulator, run) {
   for (int i = 1; i <= 10; i++) {
     messages::Block block;
     ASSERT_TRUE(ledger->get_block(i, &block));
+    auto block_id = block.header().id();
+    messages::set_block_hash(&block);
+    ASSERT_EQ(block.header().id(), block_id);
 
-    // 7 transaction + coinbase
-    ASSERT_EQ(block.transactions_size(), 8);
+    ASSERT_EQ(block.transactions_size(), 7);
+    ASSERT_EQ(block.coinbases_size(), 1);
   }
 }
 

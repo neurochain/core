@@ -3,7 +3,6 @@
 
 #include <memory>
 #include "Bot.hpp"
-#include "consensus/Consensus.hpp"
 #include "crypto/Ecc.hpp"
 #include "ledger/LedgerMongodb.hpp"
 #include "messages/Message.hpp"
@@ -13,6 +12,9 @@
 #include "messages/config/Config.hpp"
 #include "networking/Networking.hpp"
 #include "networking/tcp/Tcp.hpp"
+//#include "rest/Rest.hpp"
+#include "consensus/Consensus.hpp"
+
 namespace neuro {
 
 namespace tests {
@@ -26,13 +28,14 @@ class Bot {
   std::shared_ptr<boost::asio::io_context> _io_context;
   messages::Queue _queue;
   messages::Subscriber _subscriber;
-  crypto::Ecc _keys;
+  crypto::Eccs _keys;
   messages::Peer _me;
   messages::Peers _peers;
   networking::Networking _networking;
   std::shared_ptr<ledger::Ledger> _ledger;
   boost::asio::steady_timer _update_timer;
   std::shared_ptr<consensus::Consensus> _consensus;
+  // std::shared_ptr<rest::Rest> _rest;
   std::unordered_set<int32_t> _request_ids;
   std::thread _io_context_thread;
 
@@ -92,6 +95,7 @@ class Bot {
                  messages::Subscriber::Callback callback);
 
   void publish_transaction(const messages::Transaction &transaction) const;
+  void publish_block(const messages::Block &block) const;
 
   friend class neuro::tests::BotTest;
 };
