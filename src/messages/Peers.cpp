@@ -137,11 +137,10 @@ void Peers::update_unreachable() {
 }
 
 bool Peers::fill(_Peers *peers) {
-  const auto full_mask = _Peer_Status_Status_MAX * 2 - 1;
+  const auto full_mask = static_cast<Peer::Status>(_Peer_Status_Status_MAX * 2 - 1);
 
   uint8_t peer_count = 10; // TODO conf
-  for (auto it = begin(static_cast<Peer::Status>(full_mask)), e = end() ;
-       it != e; ++it) {
+  for (auto it = begin(full_mask), e = end(); it != e; ++it) {
     if(!(peer_count --> 0)) {
       break;
     }

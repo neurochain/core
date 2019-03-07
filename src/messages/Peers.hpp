@@ -29,22 +29,20 @@ private:
  public:
 
   class iterator {
-  private:
+   private:
     using Indexes = std::vector<Peer *>;
     Peer::Status _status;
     Indexes _peers;
     Indexes::iterator _it;
-    
-  public:
-    iterator() : _peers(),
-		 _it(_peers.end()) {}
 
-    iterator(const PeersByKey &peers,
-	     const Peer::Status status) :_status(status) {
-      for(const auto &pair : peers) {
-	if(pair.second->status() & _status) {
-	  _peers.push_back(pair.second.get());
-	}
+   public:
+    iterator() = default;
+
+    iterator(const PeersByKey &peers, const Peer::Status status) : _status(status) {
+      for (const auto &pair : peers) {
+        if (pair.second->status() & _status) {
+          _peers.push_back(pair.second.get());
+        }
       }
 
       std::mt19937 g(_rd());
@@ -52,22 +50,24 @@ private:
       _it = _peers.begin();
     }
 
-    void operator++ () {
+    void operator++() {
       do {
-	++_it;
+        ++_it;
       } while (_it != _peers.end() && !((*_it)->status() & _status));
     }
 
-    bool operator== (const iterator &it) {
-      return (_it == it._it);
+    bool operator==(const iterator &) {
+      return _it == _peers.end();
     }
-    bool operator!= (const iterator &it) {
-      return (_it != it._it);
+
+    bool operator!=(const iterator &) {
+      return _it != _peers.end();
     }
 
     Peer *operator*() {
       return *_it;
     }
+
     Peer *operator->() {
       return *_it;
     }
@@ -109,7 +109,7 @@ private:
   std::vector<Peer> peers_copy() const;
   iterator begin(const Peer::Status);
   iterator end();
-  
+
 
 
 };

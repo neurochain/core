@@ -118,7 +118,7 @@ TEST_F(PeersF, iterator) {
   for(auto it = peers.begin(Peer::DISCONNECTED), e = peers.end(); it != e; ++it) {
     peer_cout++;
   }
-  ASSERT_EQ(disconnected_peers.size(), 3);
+  ASSERT_EQ(peers.size(), 3);
 
   //TODO: operator* 
   
