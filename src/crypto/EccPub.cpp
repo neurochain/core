@@ -1,6 +1,8 @@
 #include "crypto/EccPub.hpp"
+#include <cryptopp/hex.h>
 #include <iomanip>
 #include <iostream>
+#include "common/logger.hpp"
 #include "messages/Message.hpp"
 
 namespace neuro {
@@ -47,17 +49,63 @@ bool EccPub::load(const uint8_t *data, const std::size_t size) {
 }
 
 bool EccPub::load(const messages::KeyPub &keypub) {
+  CryptoPP::ECP::Point point;
   if (keypub.has_raw_data()) {
-    const auto &raw_data = keypub.raw_data();
-    load(reinterpret_cast<const uint8_t *>(raw_data.data()), raw_data.size());
+    // Compressed public key see
+    // https://www.cryptopp.com/wiki/Elliptic_Curve_Digital_Signature_Algorithm
+    LOG_TRACE;
+    // const auto &raw_data = keypub.raw_data();
+    const auto &raw_data = '\x03' + keypub.raw_data();
+    LOG_TRACE << "RAW KEY" << keypub;
+    LOG_DEBUG << "RAW DATA SIZE " << keypub.raw_data().size();
+    LOG_DEBUG << "RAW DATA SIZE " << raw_data.size();
+
+    std::stringstream ss;
+    ss << std::hex << raw_data;
+    std::string encoded = ss.str();
+
+    CryptoPP::HexEncoder encoder;
+    auto decoded = reinterpret_cast<const byte *>(raw_data.data());
+    encoder.Put(decoded, sizeof(decoded));
+    encoder.MessageEnd();
+
+    CryptoPP::word64 size = encoder.MaxRetrievable();
+
+    LOG_DEBUG << "SIZE " << size;
+    if (size) {
+      encoded.resize(size);
+      encoder.Get((byte *)&encoded[0], encoded.size());
+    }
+
+    LOG_DEBUG << "HEX DATA " << encoded;
+
+    // CryptoPP::StringSource ss(raw_data, true);
+
+    CryptoPP::HexDecoder decoder;
+    LOG_TRACE;
+    CryptoPP::StringSource source(encoded, true, &decoder);
+    LOG_TRACE;
+    _key.GetGroupParameters().GetCurve().DecodePoint(point, source,
+                                                     source.MaxRetrievable());
+    LOG_TRACE << std::endl;
   } else if (keypub.has_hex_data()) {
-    const auto &hex_data = keypub.hex_data();
-    Buffer tmp(hex_data, Buffer::InputType::HEX);
-    load(tmp);
+    // Compressed public key
+    LOG_TRACE;
+    const auto &hex_data = "03" + keypub.hex_data();
+    LOG_TRACE;
+
+    CryptoPP::HexDecoder decoder;
+    LOG_TRACE;
+    CryptoPP::StringSource ss(hex_data, true, &decoder);
+    LOG_TRACE;
+    _key.GetGroupParameters().GetCurve().DecodePoint(point, ss,
+                                                     ss.MaxRetrievable());
+    LOG_TRACE;
   } else {
     // not possible since we have a oneof
     return false;
   }
+  _key.Initialize(CryptoPP::ASN1::secp256r1(), point);
 
   return true;
 }
@@ -79,9 +127,12 @@ bool EccPub::save(Buffer *buffer) const {
 
 bool EccPub::save(messages::KeyPub *key_pub) const {
   key_pub->set_type(messages::KeyType::ECP256K1);
-  std::string s;
-  _key.Save(CryptoPP::StringSink(s).Ref());
-  key_pub->set_raw_data(s);
+  const auto x = _key.GetPublicElement().x;
+  const auto size = x.MinEncodedSize();
+  byte output[size];
+  x.Encode(output, size);
+  key_pub->set_raw_data(
+      std::string(reinterpret_cast<char const *>(output), size));
   return true;
 }
 

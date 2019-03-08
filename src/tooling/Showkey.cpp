@@ -11,7 +11,7 @@ int main(int argc, char *argv[]) {
   desc.add_options()("help,h", "Produce help message.")(
       "private,k", po::value<std::string>()->default_value("key.priv"),
       "File path for private keys")(
-      "public,p", po::value<std::string>()->default_value("key.priv"),
+      "public,p", po::value<std::string>()->default_value("key.pub"),
       "File path for private keys");
 
   po::variables_map vm;
