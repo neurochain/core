@@ -15,7 +15,6 @@ Peers::iterator Peers::end() {
   
 std::optional<Peer *>Peers::insert(const Peer &peer) {
   std::unique_lock<std::shared_mutex> lock(_mutex);
-  // auto pair = std::make_pair(peer.key_pub(), );
   if(peer.key_pub() == _own_key) {
     return {};
   }
@@ -25,6 +24,8 @@ std::optional<Peer *>Peers::insert(const Peer &peer) {
 			    std::forward_as_tuple(std::make_unique<Peer>(peer)));
 
   if(!got.second) {
+    // pub key already known, update peer
+    got.first->second->set_port(peer.port());
     return got.first->second.get();
   }
   auto found_peer = got.first->second.get();
@@ -62,9 +63,8 @@ std::size_t Peers::used_peers_count() const {
   return std::count_if(_peers.begin(), _peers.end(), [this](const auto &it) {
     const auto &peer = it.second;
     if (peer->has_status()) {
-      std::cout << "used " << *peer << " " << (_used_status & peer->status())
-                << std::endl;
-    };
+      LOG_DEBUG << "used " << *peer << " " << (_used_status & peer->status());
+    }
     return (peer->has_status() && _used_status & peer->status());
   });
 }

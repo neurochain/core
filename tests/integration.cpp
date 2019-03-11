@@ -231,15 +231,13 @@ TEST(INTEGRATION, neighbors_connections_with_delays) {
 }
 
 TEST(INTEGRATION, neighbors_update) {
-  Path config_path0("integration_update0.json");
+  Path config_path0("integration_propagation0.json");
   messages::config::Config config0(config_path0);
   auto bot0 = std::make_shared<Bot>(config0);
-  std::this_thread::sleep_for(5s);
-  Path config_path1("integration_update1.json");
+  Path config_path1("integration_propagation1.json");
   messages::config::Config config1(config_path1);
   auto bot1 = std::make_shared<Bot>(config1);
-  std::this_thread::sleep_for(5s);
-  Path config_path2("integration_update2.json");
+  Path config_path2("integration_propagation2.json");
   messages::config::Config config2(config_path2);
   auto bot2 = std::make_shared<Bot>(config2);
 
@@ -278,49 +276,58 @@ TEST(INTEGRATION, key_gen_connection) {
   messages::config::Config config0(config_path0);
   auto bot0 = std::make_shared<Bot>(config0);
 
-  Path config_path1("bot_outsider.50-37.json");
+  Path config_path1("integration_propagation50.json");
   messages::config::Config config1(config_path1);
-  auto bot1 = std::make_shared<Bot>(config1);
+  auto bot50 = std::make_shared<Bot>(config1);
 
   std::this_thread::sleep_for(5s);
 
   auto peers_bot0 = vectorize(bot0->connected_peers());
-  auto peers_bot1 = vectorize(bot1->connected_peers());
+  auto peers_bot50 = vectorize(bot50->connected_peers());
 
   ASSERT_EQ(peers_bot0.size(), 1);
-  ASSERT_EQ(peers_bot1.size(), 1);
+  ASSERT_EQ(peers_bot50.size(), 1);
+
+  std::ofstream my_logs("my_logs_gen_conn");
+  my_logs << "0  peerss \n" << bot0->peers() << std::endl;
+  my_logs << "50 peerss \n" << bot50->peers() << std::endl;
+  my_logs.close();
 
   ASSERT_EQ(peers_bot0[0]->endpoint(), "localhost");
-  ASSERT_TRUE(peers_bot0[0]->port() == 1350);
+  ASSERT_EQ(peers_bot0[0]->port(), 13350);
 
-  ASSERT_EQ(peers_bot1[0]->endpoint(), "localhost");
-  ASSERT_TRUE(peers_bot1[0]->port() == 1337);
+  ASSERT_EQ(peers_bot50[0]->endpoint(), "localhost");
+  ASSERT_EQ(peers_bot50[0]->port(), 1337);
 }
 
 TEST(INTEGRATION, key_gen_connection_reverse) {
-  // Check an unknown bot, set up first, with unknown signature can connect to
-  // bot0 when bot0 is set up.
-  Path config_path1("bot_outsider.50-37.json");
+  // bot0 try to connect to unavailable bot, then bot0 shouldn't send the unavailable bot's key
+  Path config_path1("bot0.json");
   messages::config::Config config1(config_path1);
-  auto bot1 = std::make_shared<Bot>(config1);
+  auto bot0 = std::make_shared<Bot>(config1);
 
-  Path config_path0("bot0.json");
+  Path config_path0("integration_key_gen_connection50.json");
   messages::config::Config config0(config_path0);
-  auto bot0 = std::make_shared<Bot>(config0);
+  auto bot50 = std::make_shared<Bot>(config0);
 
   std::this_thread::sleep_for(5s);
 
   auto peers_bot0 = vectorize(bot0->connected_peers());
-  auto peers_bot1 = vectorize(bot1->connected_peers());
+  auto peers_bot50 = vectorize(bot50->connected_peers());
+
+  std::ofstream my_logs("my_logs_gen");
+  my_logs << "0 peerss \n" << bot0->peers() << std::endl;
+  my_logs << "2 peerss \n" << bot50->peers() << std::endl;
+  my_logs.close();
 
   ASSERT_EQ(peers_bot0.size(), 1);
-  ASSERT_EQ(peers_bot1.size(), 1);
+  ASSERT_EQ(peers_bot50.size(), 1);
 
   ASSERT_EQ(peers_bot0[0]->endpoint(), "localhost");
   ASSERT_TRUE(peers_bot0[0]->port() == 1350);
 
-  ASSERT_EQ(peers_bot1[0]->endpoint(), "localhost");
-  ASSERT_TRUE(peers_bot1[0]->port() == 1337);
+  ASSERT_EQ(peers_bot50[0]->endpoint(), "localhost");
+  ASSERT_TRUE(peers_bot50[0]->port() == 1337);
 }
 
 TEST(INTEGRATION, fullfill_network) {

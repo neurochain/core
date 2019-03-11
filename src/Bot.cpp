@@ -225,11 +225,8 @@ bool Bot::init() {
   _io_context_thread = std::thread([this]() { _io_context->run(); });
 
   while (_io_context->stopped()) {
-    std::cout << "is io context stopped " << std::endl;
     std::this_thread::sleep_for(1s);
   }
-  std::cout << "is stopped??? " << std::boolalpha << _io_context->stopped()
-            << std::endl;
 
   update_ledger();
   this->keep_max_connections();
@@ -238,8 +235,6 @@ bool Bot::init() {
 }
 
 void Bot::regular_update() {
-  std::cout << "##################################################"
-            << std::endl;
   _peers.update_unreachable();
   update_peerlist();
   keep_max_connections();
