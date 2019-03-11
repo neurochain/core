@@ -2,6 +2,6 @@
 
 namespace neuro {
 
-std::time_t time = 0;
+std::time_t _time = 0;
 
 }  // neuro

@@ -205,7 +205,7 @@ TransportLayer::SendResult Tcp::send(
   LOG_DEBUG << "Sending message[" << this->listening_port() << "]: >>"
             << *message;
 
-  int res_count = 0;
+  uint16_t res_count = 0;
   for (auto &[_, connection] : _connections) {
     bool res_send = true;
     res_send &= connection->send(header_tcp);
