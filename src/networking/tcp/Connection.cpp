@@ -99,10 +99,9 @@ void Connection::read_body(std::size_t body_size) {
           _this->read_header();
           return;
         }
-        crypto::EccPub ecc_pub;
         const auto key_pub = _this->_remote_peer.key_pub();
 
-        ecc_pub.load(
+	crypto::EccPub ecc_pub(
             reinterpret_cast<const uint8_t *>(key_pub.raw_data().data()),
             key_pub.raw_data().size());
 

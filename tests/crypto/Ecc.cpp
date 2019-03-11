@@ -32,20 +32,6 @@ TEST(Ecc, check_key_value_expectations) {
   ASSERT_EQ(buffer1, buffer2);
 }
 
-TEST(Ecc, save_load_buffer) {
-  const crypto::Ecc keys0;
-  crypto::Ecc keys1;
-  Buffer buff;
-
-  keys0.private_key().save(&buff);
-  keys1.mutable_private_key()->load(buff);
-
-  keys0.public_key().save(&buff);
-  keys1.mutable_public_key()->load(buff);
-
-  ASSERT_EQ(keys0, keys1);
-}
-
 TEST(Ecc, sign_verify) {
   // echo -n "Hola mundo desde NeuroChainTech" |openssl dgst -sha256 -sign
   // test_sign.priv -keyform DER |hexdump

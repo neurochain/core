@@ -6,7 +6,11 @@
 namespace neuro {
 namespace crypto {
 
-EccPub::EccPub(const std::string &filepath) { load(filepath); }
+EccPub::EccPub(const std::string &filepath) {
+  if(!load(filepath)) {
+    throw std::runtime_error("Could not load key from file");
+  }
+}
 
 EccPub::EccPub(const Buffer &pub_key) {
   if (!load(pub_key)) {
@@ -15,6 +19,18 @@ EccPub::EccPub(const Buffer &pub_key) {
 }
 
 EccPub::EccPub(const Key &key) : _key(key) {}
+
+EccPub::EccPub(const uint8_t *data, const std::size_t size) {
+  if (!load(data, size)) {
+    throw std::runtime_error("Could not load key from raw buffer");
+  }
+}
+
+EccPub::EccPub(const messages::KeyPub &keypub) {
+  if (!load(keypub)) {
+    throw std::runtime_error("Could not load key from proto");
+  }
+}
 
 EccPub::Key *EccPub::key() { return &_key; }
 

@@ -20,10 +20,10 @@ class Tcp {
     auto keys0 = std::make_shared<crypto::Ecc>();
     auto keys1 = std::make_shared<crypto::Ecc>();
     auto keys2 = std::make_shared<crypto::Ecc>();
+    auto key_writer = std::make_shared<crypto::Ecc>();
 
-    crypto::EccPub key_writer;
     messages::KeyPub own_key;
-    key_writer.save(&own_key);
+    key_writer->public_key().save(&own_key);
     messages::Peers peers(own_key);
     Port port{31212};  // Maybe change this to the port to be used by the bot
     messages::Peer peer;
