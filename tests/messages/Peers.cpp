@@ -23,7 +23,7 @@ class PeersF : public ::testing::Test {
  public:
   PeersF() {
     Peer::_fake_time = true;
-  
+
     keys0.public_key().save(peer0.mutable_key_pub());
     keys1.public_key().save(peer1.mutable_key_pub());
     keys2.public_key().save(peer2.mutable_key_pub());
@@ -35,14 +35,11 @@ class PeersF : public ::testing::Test {
 };
 
 TEST_F(PeersF, insert_peer) {
-  Peer peer0;
-  Peer peer1;
-
   ::neuro::messages::Peers peers(peer0.key_pub());
 
   ASSERT_EQ(peers.size(), 0);
   peers.insert(peer0);
-  ASSERT_EQ(peers.size(), 1);
+  ASSERT_EQ(peers.size(), 0);
   peers.insert(peer0);
   peers.insert(peer1);
   ASSERT_EQ(peers.size(), 1);
@@ -115,13 +112,13 @@ TEST_F(PeersF, iterator) {
   peers.insert(peer3);
 
   int peer_cout = 0;
-  for(auto it = peers.begin(Peer::DISCONNECTED), e = peers.end(); it != e; ++it) {
+  for (auto it = peers.begin(Peer::DISCONNECTED), e = peers.end(); it != e;
+       ++it) {
     peer_cout++;
   }
   ASSERT_EQ(peers.size(), 3);
 
-  //TODO: operator* 
-  
+  // TODO: operator*
 }
 
 }  // namespace test

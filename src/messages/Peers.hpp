@@ -18,16 +18,15 @@ namespace neuro {
 namespace messages {
 
 class Peers {
-private:
+ private:
   const int _used_status{(Peer::CONNECTING | Peer::CONNECTED)};
   const KeyPub &_own_key;
   mutable std::shared_mutex _mutex;
-  using PeersByKey = std::unordered_map<KeyPub, std::unique_ptr<Peer>,
-			     PacketHash<KeyPub>>;
+  using PeersByKey =
+      std::unordered_map<KeyPub, std::unique_ptr<Peer>, PacketHash<KeyPub>>;
   PeersByKey _peers;
-  
- public:
 
+ public:
   class iterator {
    private:
     using Indexes = std::vector<Peer *>;
@@ -38,7 +37,8 @@ private:
    public:
     iterator() = default;
 
-    iterator(const PeersByKey &peers, const Peer::Status status) : _status(status) {
+    iterator(const PeersByKey &peers, const Peer::Status status)
+        : _status(status) {
       for (const auto &pair : peers) {
         if (pair.second->status() & _status) {
           _peers.push_back(pair.second.get());
@@ -56,23 +56,15 @@ private:
       } while (_it != _peers.end() && !((*_it)->status() & _status));
     }
 
-    bool operator==(const iterator &) {
-      return _it == _peers.end();
-    }
+    bool operator==(const iterator &) { return _it == _peers.end(); }
 
-    bool operator!=(const iterator &) {
-      return _it != _peers.end();
-    }
+    bool operator!=(const iterator &) { return _it != _peers.end(); }
 
-    Peer *operator*() {
-      return *_it;
-    }
+    Peer *operator*() { return *_it; }
 
-    Peer *operator->() {
-      return *_it;
-    }
+    Peer *operator->() { return *_it; }
   };
-  
+
   Peers(const KeyPub &own_key) : _own_key(own_key) {}
   // Peers(config::Peers *peers) {
   //   _Peers tmp;
@@ -83,7 +75,7 @@ private:
   // }
 
   template <typename It>
-  Peers(const KeyPub &own_key, It it, It end): Peers(own_key) {
+  Peers(const KeyPub &own_key, It it, It end) : Peers(own_key) {
     for (; it != end; ++it) {
       insert(*it);
     }
@@ -93,7 +85,7 @@ private:
   bool save(const std::string &path) { return false; }
   std::size_t size() const { return _peers.size(); }
 
-  std::optional<Peer *>insert(const Peer &peer);
+  std::optional<Peer *> insert(const Peer &peer);
   // Peer *insert(const messages::KeyPub &key_pub,
   //              const std::optional<Endpoint> &endpoint,
   //              const std::optional<Port> &listen_port);
@@ -109,9 +101,6 @@ private:
   std::vector<Peer> peers_copy() const;
   iterator begin(const Peer::Status);
   iterator end();
-
-
-
 };
 
 std::ostream &operator<<(std::ostream &os, const Peers &peers);

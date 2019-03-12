@@ -7,23 +7,19 @@ Peers::iterator Peers::begin(const Peer::Status status) {
   return iterator{_peers, status};
 }
 
-Peers::iterator Peers::end() {
-  return iterator{};
-}
+Peers::iterator Peers::end() { return iterator{}; }
 
-
-  
-std::optional<Peer *>Peers::insert(const Peer &peer) {
+std::optional<Peer *> Peers::insert(const Peer &peer) {
   std::unique_lock<std::shared_mutex> lock(_mutex);
-  if(peer.key_pub() == _own_key) {
+  if (peer.key_pub() == _own_key) {
     return {};
   }
 
   auto got = _peers.emplace(
-			    std::piecewise_construct, std::forward_as_tuple(peer.key_pub()),
-			    std::forward_as_tuple(std::make_unique<Peer>(peer)));
+      std::piecewise_construct, std::forward_as_tuple(peer.key_pub()),
+      std::forward_as_tuple(std::make_unique<Peer>(peer)));
 
-  if(!got.second) {
+  if (!got.second) {
     // pub key already known, update peer
     got.first->second->set_port(peer.port());
     return got.first->second.get();
@@ -87,7 +83,7 @@ std::optional<Peer *> Peers::find(const KeyPub &key_pub) {
     return std::nullopt;
   }
 
-  return { got->second.get() };
+  return {got->second.get()};
 }
 
 std::vector<Peer *> Peers::by_status(const Peer::Status status) const {
@@ -123,25 +119,26 @@ std::vector<Peer> Peers::peers_copy() const {
     const auto &peer = pair.second.get();
     res.push_back(*peer);
   }
-  
+
   return res;
 }
 
 void Peers::update_unreachable() {
   auto unreachables = by_status(Peer::UNREACHABLE);
   for (auto *peer : unreachables) {
-    if(peer->next_update().data() < std::time(nullptr)) {
+    if (peer->next_update().data() < std::time(nullptr)) {
       peer->set_status(Peer::DISCONNECTED);
     }
   }
 }
 
 bool Peers::fill(_Peers *peers) {
-  const auto full_mask = static_cast<Peer::Status>(_Peer_Status_Status_MAX * 2 - 1);
+  const auto full_mask =
+      static_cast<Peer::Status>(_Peer_Status_Status_MAX * 2 - 1);
 
-  uint8_t peer_count = 10; // TODO conf
+  uint8_t peer_count = 10;  // TODO conf
   for (auto it = begin(full_mask), e = end(); it != e; ++it) {
-    if(!(peer_count --> 0)) {
+    if (!(peer_count-- > 0)) {
       break;
     }
     peers->add_peers()->CopyFrom(**it);
