@@ -51,42 +51,28 @@ bool EccPub::load(const uint8_t *data, const std::size_t size) {
 bool EccPub::load(const messages::KeyPub &keypub) {
   CryptoPP::ECP::Point point;
   _key.AccessGroupParameters().Initialize(CryptoPP::ASN1::secp256k1());
+
   if (keypub.has_raw_data()) {
-    // Compressed public key see
+    // Load a compressed public key see
     // https://www.cryptopp.com/wiki/Elliptic_Curve_Digital_Signature_Algorithm
-    LOG_TRACE;
-    const auto &raw_data = '\x04' + keypub.raw_data();
-    LOG_TRACE << "KEY PUB " << keypub;
-    CryptoPP::StringSource source(raw_data, true);
-    LOG_TRACE;
+    CryptoPP::StringSource source(keypub.raw_data(), true);
     _key.GetGroupParameters().GetCurve().DecodePoint(point, source,
                                                      source.MaxRetrievable());
 
-    LOG_DEBUG << "LOAD X " << std::hex << point.x;
-    LOG_DEBUG << "LOAD Y " << std::hex << point.y;
-    LOG_TRACE << std::endl;
   } else if (keypub.has_hex_data()) {
     // Compressed public key
-    LOG_TRACE;
-    const std::string &hex_data = "04" + keypub.hex_data();
-    LOG_TRACE << "HEX DATA " << hex_data;
+    const std::string &hex_data = keypub.hex_data();
 
-    CryptoPP::HexDecoder decoder;
-    LOG_TRACE;
+    // We need to have a new here because cryptoPP will try to delete the
+    // decoder
     CryptoPP::StringSource ss(hex_data, true, new CryptoPP::HexDecoder);
-    LOG_TRACE;
     _key.GetGroupParameters().GetCurve().DecodePoint(point, ss,
                                                      ss.MaxRetrievable());
-    LOG_DEBUG << "LOAD X " << std::hex << point.x;
-    LOG_DEBUG << "LOAD Y " << std::hex << point.y;
-    LOG_TRACE << std::endl;
   } else {
     // not possible since we have a oneof
     return false;
   }
-  LOG_TRACE;
   _key.Initialize(CryptoPP::ASN1::secp256k1(), point);
-  LOG_TRACE;
 
   return true;
 }
@@ -110,22 +96,37 @@ bool EccPub::save(messages::KeyPub *key_pub) const {
   key_pub->set_type(messages::KeyType::ECP256K1);
   const auto x = _key.GetPublicElement().x;
   const auto y = _key.GetPublicElement().y;
-  LOG_DEBUG << "SAVE X " << std::hex << x;
-  LOG_DEBUG << "SAVE Y " << std::hex << y;
-  std::stringstream hex_data;
 
-  /*const auto size = x.MinEncodedSize();*/
-  // byte output[2 * size + 1];
-  // x.Encode(output, size);
-  //// output[size] = ' ';
-  // y.Encode(&output[size], size);
-  // output[2 * size] = '\0';
-  // key_pub->set_raw_data(
-  // std::string(reinterpret_cast<char const *>(output), 2 * size + 1));
+  const auto x_size = 32;
+  byte output[x_size + 1];
+  x.Encode(&output[1], x_size);
 
-  // hex_data << std::hex << x;  //  << ' ' << std::hex << y;
-  hex_data << std::hex << x << std::hex << y;
-  key_pub->set_hex_data(hex_data.str());
+  // Set compressed flag see
+  // https://www.cryptopp.com/wiki/Elliptic_Curve_Digital_Signature_Algorithm
+  // for more details
+  if (y.IsEven()) {
+    output[0] = 0x02;
+  } else {
+    output[0] = 0x03;
+  }
+
+  key_pub->set_raw_data(
+      std::string(reinterpret_cast<char *>(output), x_size + 1));
+  return true;
+}
+
+bool EccPub::save_as_hex(messages::KeyPub *key_pub) const {
+  key_pub->set_type(messages::KeyType::ECP256K1);
+  const auto x = _key.GetPublicElement().x;
+  const auto y = _key.GetPublicElement().y;
+
+  // Sadly I do need to use two stream variables...
+  std::stringstream hex_stream, padded_stream;
+  hex_stream << std::hex << x;
+  padded_stream << std::setfill('0') << std::setw(65) << hex_stream.str();
+
+  std::string compressed_flag = y.IsEven() ? "02" : "03";
+  key_pub->set_hex_data(compressed_flag + padded_stream.str());
   return true;
 }
 

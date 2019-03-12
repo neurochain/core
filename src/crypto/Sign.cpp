@@ -48,7 +48,6 @@ bool verify(const messages::Transaction &transaction) {
     const auto signature = transaction.signatures(input.signature_id());
 
     crypto::EccPub ecc_pub;
-    LOG_DEBUG << "signature key pub " << signature.key_pub();
     ecc_pub.load(signature.key_pub());
 
     const auto hash = signature.signature().data();
