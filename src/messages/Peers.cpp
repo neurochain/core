@@ -21,8 +21,8 @@ std::optional<Peer *> Peers::insert(const Peer &peer) {
 
   if (!got.second) {
     // pub key already known, update peer
-    got.first->second->set_port(peer.port());
-    return got.first->second.get();
+    got.first->second->CopyFrom(peer);
+    return {got.first->second.get()};
   }
   auto found_peer = got.first->second.get();
   found_peer->set_status(Peer::DISCONNECTED);
@@ -54,13 +54,9 @@ std::optional<Peer *> Peers::insert(const Peer &peer) {
 // }
 
 std::size_t Peers::used_peers_count() const {
-  LOG_TRACE;
   std::shared_lock<std::shared_mutex> lock(_mutex);
   return std::count_if(_peers.begin(), _peers.end(), [this](const auto &it) {
     const auto &peer = it.second;
-    if (peer->has_status()) {
-      LOG_DEBUG << "used " << *peer << " " << (_used_status & peer->status());
-    }
     return (peer->has_status() && _used_status & peer->status());
   });
 }
@@ -86,13 +82,16 @@ std::optional<Peer *> Peers::find(const KeyPub &key_pub) {
   return {got->second.get()};
 }
 
-std::vector<Peer *> Peers::by_status(const Peer::Status status) const {
+std::vector<Peer *> Peers::by_status(const Peer::Status status) {
   LOG_TRACE;
   std::shared_lock<std::shared_mutex> lock(_mutex);
   std::vector<Peer *> res;
 
-  for (const auto &pair : _peers) {
-    const auto &peer = pair.second.get();
+  const auto time = ::neuro::time();
+
+  for (auto &pair : _peers) {
+    auto *peer = pair.second.get();
+    peer->update_unreachable(time);
     if (peer->status() & status) {
       res.push_back(peer);
     }
@@ -101,12 +100,12 @@ std::vector<Peer *> Peers::by_status(const Peer::Status status) const {
   return res;
 }
 
-std::vector<Peer *> Peers::used_peers() const {
+std::vector<Peer *> Peers::used_peers() {
   LOG_TRACE;
   return by_status(Peer::Status(_used_status));
 }
 
-std::vector<Peer *> Peers::connected_peers() const {
+std::vector<Peer *> Peers::connected_peers() {
   LOG_TRACE;
   return by_status(Peer::CONNECTED);
 }
@@ -126,9 +125,7 @@ std::vector<Peer> Peers::peers_copy() const {
 void Peers::update_unreachable() {
   auto unreachables = by_status(Peer::UNREACHABLE);
   for (auto *peer : unreachables) {
-    if (peer->next_update().data() < std::time(nullptr)) {
-      peer->set_status(Peer::DISCONNECTED);
-    }
+    peer->update_unreachable(::neuro::time());
   }
 }
 

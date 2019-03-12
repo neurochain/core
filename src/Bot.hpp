@@ -90,7 +90,7 @@ class Bot {
 
   const messages::Peers &peers() const;
   void keep_max_connections();
-  std::vector<messages::Peer *> connected_peers() const;
+  std::vector<messages::Peer *> connected_peers();
   void subscribe(const messages::Type type,
                  messages::Subscriber::Callback callback);
 

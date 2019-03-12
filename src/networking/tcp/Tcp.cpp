@@ -239,8 +239,8 @@ bool Tcp::send_unicast(std::shared_ptr<messages::Message> message) const {
     return false;
   }
 
-  LOG_DEBUG << "Sending unicast [" << this->listening_port()  << " -> " << got->second->remote_port()
-            << "]: >>" << *message;
+  LOG_DEBUG << "Sending unicast [" << this->listening_port() << " -> "
+            << got->second->remote_port() << "]: >>" << *message;
 
   auto header_tcp =
       std::make_shared<Buffer>(sizeof(networking::tcp::HeaderPattern), 0);

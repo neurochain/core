@@ -1,5 +1,6 @@
 #include "networking/tcp/Tcp.hpp"
 #include <gtest/gtest.h>
+#include "common.pb.h"
 #include "crypto/Ecc.hpp"
 #include "messages/Message.hpp"
 #include "messages/Peers.hpp"

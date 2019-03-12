@@ -435,7 +435,7 @@ std::ostream &operator<<(std::ostream &os, const neuro::Bot &bot) {
 //   return status;
 // }
 
-std::vector<messages::Peer *> Bot::connected_peers() const {
+std::vector<messages::Peer *> Bot::connected_peers() {
   return _peers.connected_peers();
 }
 

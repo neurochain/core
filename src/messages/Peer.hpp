@@ -15,12 +15,8 @@ class PeersF;
 
 class Peer : public _Peer {
  private:
-  static bool _fake_time;
-
  public:
-  Peer() {
-      set_status(Peer::DISCONNECTED);
-  }
+  Peer() { set_status(Peer::DISCONNECTED); }
 
   Peer(const _Peer &peer) {
     CopyFrom(peer);
@@ -45,9 +41,16 @@ class Peer : public _Peer {
 
   void update_timestamp() {
     if (!_fake_time) {
-      mutable_next_update()->set_data(std::time(nullptr) + 10); // TODO: config
+      mutable_next_update()->set_data(std::time(nullptr) + 10);  // TODO: config
     } else {
-      mutable_next_update()->set_data(::neuro::_time + 1);
+      mutable_next_update()->set_data(::neuro::time() + 1);
+    }
+  }
+
+  void update_unreachable(const std::time_t t) {
+    if (next_update().data() < t &&
+        status() & (Peer::UNREACHABLE | Peer::CONNECTING)) {
+      set_status(Peer::DISCONNECTED);
     }
   }
 

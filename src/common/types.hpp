@@ -14,7 +14,9 @@
 #include "common.pb.h"
 
 namespace neuro {
-extern std::time_t _time;
+extern bool _fake_time;
+std::time_t time();
+std::time_t time(const std::time_t increment);
 
 static std::random_device _rd;  // TODO make global
 
