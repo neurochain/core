@@ -25,19 +25,19 @@ foreach(file ${files})
   configure_file("${file}" "${CMAKE_CURRENT_BINARY_DIR}/${COIN}.json" @ONLY)
 endforeach()
 
+#configure_file("configs/key_faucet.priv" "${CMAKE_CURRENT_BINARY_DIR}/key_faucet.priv" COPYONLY)
+#configure_file("configs/key_faucet.pub" "${CMAKE_CURRENT_BINARY_DIR}/key_faucet.pub" COPYONLY)
 
-
-file(GLOB files "configs/key_integration*.*")
+file(GLOB files "configs/key*.pub")
 foreach(file ${files})
-  configure_file(${file} "${CMAKE_CURRENT_BINARY_DIR}/${file}" COPYONLY)
+  get_filename_component(COIN ${file} NAME_WE)
+  configure_file(${file} "${CMAKE_CURRENT_BINARY_DIR}/${COIN}.pub" COPYONLY)
 endforeach()
 
-configure_file("configs/key_faucet.priv" "${CMAKE_CURRENT_BINARY_DIR}/key_faucet.priv" COPYONLY)
-configure_file("configs/key_faucet.pub" "${CMAKE_CURRENT_BINARY_DIR}/key_faucet.pub" COPYONLY)
-
-file(GLOB files "configs/key*.p*")
+file(GLOB files "configs/key*.priv")
 foreach(file ${files})
-  configure_file(${file} "${CMAKE_CURRENT_BINARY_DIR}/${file}" COPYONLY)
+  get_filename_component(COIN ${file} NAME_WE)
+  configure_file(${file} "${CMAKE_CURRENT_BINARY_DIR}/${COIN}.priv" COPYONLY)
 endforeach()
 
 configure_file("configs/data.0.testnet" "${CMAKE_CURRENT_BINARY_DIR}/data.0.testnet" COPYONLY)

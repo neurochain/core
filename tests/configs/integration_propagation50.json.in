@@ -4,8 +4,8 @@
         "to_stdout": true
     },
     "networking": {
-        "key_pub_path": "@CMAKE_CURRENT_BINARY_DIR@/key2.pub",
-        "key_priv_path": "@CMAKE_CURRENT_BINARY_DIR@/key2.priv",
+        "key_pub_path": "@CMAKE_CURRENT_BINARY_DIR@/key50.pub",
+        "key_priv_path": "@CMAKE_CURRENT_BINARY_DIR@/key50.priv",
         "max_connections": 3,
         "peers_update_time": 20,
         "tcp": {
