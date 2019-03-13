@@ -80,7 +80,8 @@ class Consensus {
   bool check_block_denunciations(
       const messages::TaggedBlock &tagged_block) const;
 
-  Double get_block_score(const messages::TaggedBlock &tagged_block) const;
+  messages::BlockScore get_block_score(
+      const messages::TaggedBlock &tagged_block) const;
 
   bool verify_blocks();
 

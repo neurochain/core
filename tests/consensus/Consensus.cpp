@@ -40,7 +40,7 @@ class Consensus : public testing::Test {
     ledger->get_assembly_piis(assembly.id(), &piis);
     ASSERT_EQ(piis.size(), assembly.nb_addresses());
     for (const auto pii : piis) {
-      ASSERT_GT(pii.score(), 1);
+      ASSERT_GT(Double(pii.score()), 1);
     }
   }
 

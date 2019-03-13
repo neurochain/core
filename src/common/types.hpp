@@ -1,6 +1,7 @@
 #ifndef NEURO_SRC_COMMON_TYPES_HPP
 #define NEURO_SRC_COMMON_TYPES_HPP
 
+#include <mpreal.h>
 #include <boost/asio.hpp>
 #include <boost/filesystem/path.hpp>
 #include <cassert>
@@ -48,11 +49,11 @@ using Ports = std::vector<Port>;
 const int32_t MessageVersion = 1;
 const int32_t MESSAGE_TTL = 60;
 const int32_t MAX_MESSAGE_SIZE = 256 * 1024;
+
 // using Peers = google::protobuf::RepeatedPtrField<neuro::messages::Peer>;
 
 // This is used both in the ledger and the consensus
-// we might change double implementation later
-using Double = double;
+using Double = mpfr::mpreal;
 
 // Useful debug utilities
 using Timer = std::chrono::high_resolution_clock;

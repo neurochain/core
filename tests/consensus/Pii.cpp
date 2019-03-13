@@ -86,7 +86,14 @@ class Pii : public testing::Test {
     new_block_3_transactions();
     ASSERT_TRUE(ledger->get_last_block(&last_block));
     ASSERT_TRUE(pii.add_block(last_block));
+    ASSERT_EQ(
+        pii._addresses._addresses.at(sender)._out.at(recipient).nb_transactions,
+        1);
+
     new_block_3_transactions();
+
+    LOG_DEBUG << "sender " << sender;
+    LOG_DEBUG << "recipient " << recipient;
     ASSERT_TRUE(ledger->get_last_block(&last_block));
     ASSERT_TRUE(pii.add_block(last_block));
     ASSERT_EQ(pii._addresses._addresses.count(recipient), 1);
@@ -116,12 +123,12 @@ class Pii : public testing::Test {
     auto &pii1 = addresses_pii[1];
     auto &pii2 = addresses_pii[2];
     ASSERT_EQ(pii2.address(), simulator.addresses[1]);
-    ASSERT_EQ(pii2.score(), 1);
+    ASSERT_EQ(pii2.score(), "1");
     ASSERT_NE(pii0.address(), pii1.address());
     for (const auto &pii : {pii0, pii1}) {
       ASSERT_TRUE(pii.address() == sender || pii.address() == recipient);
-      ASSERT_GT(pii.score(), 2);
-      ASSERT_LT(pii.score(), 50);
+      ASSERT_GT(Double(pii.score()), 2);
+      ASSERT_LT(Double(pii.score()), 50);
     }
   }
 };

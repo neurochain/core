@@ -16,6 +16,7 @@ namespace messages {
 
 using NCCValue = decltype(((_NCCAmount *)nullptr)->value());
 using BlockHeight = decltype(((BlockHeader *)nullptr)->height());
+using BlockScore = decltype(((TaggedBlock *)nullptr)->score());
 using AssemblyHeight = decltype(((Assembly *)nullptr)->height());
 using BlockID = std::remove_reference<decltype(
     *(((BlockHeader *)nullptr)->mutable_id()))>::type;
@@ -26,9 +27,8 @@ using TransactionID = std::remove_reference<decltype(
 using Packet = google::protobuf::Message;
 
 using Type = Body::BodyCase;
-using BranchID = uint32_t;
-using BlockScore = Double;
-using IntegrityScore = decltype(((Integrity *)nullptr)->score());
+using BranchID = int32_t;
+using IntegrityScore = Double;
 
 Type get_type(const Body &body);
 
@@ -79,7 +79,7 @@ class NCCAmount : public _NCCAmount {
  public:
   NCCAmount() {}
   NCCAmount(const _NCCAmount &nccsdf) : _NCCAmount(nccsdf) {}
-  NCCAmount(uint64_t amount) { set_value(amount); }
+  NCCAmount(int64_t amount) { set_value(amount); }
 };
 
 class Denunciation : public _Denunciation {

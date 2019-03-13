@@ -108,13 +108,13 @@ class LedgerMongodb : public ::testing::Test {
     ASSERT_TRUE(ledger->insert_block(fork2));
 
     ledger->update_branch_tag(block0.header().id(), messages::Branch::MAIN);
-    ASSERT_TRUE(ledger->set_block_verified(block1.header().id(), 2,
+    ASSERT_TRUE(ledger->set_block_verified(block1.header().id(), 20,
                                            block0.header().id()));
-    ASSERT_TRUE(ledger->set_block_verified(block2.header().id(), 3,
+    ASSERT_TRUE(ledger->set_block_verified(block2.header().id(), 30,
                                            block0.header().id()));
-    ASSERT_TRUE(ledger->set_block_verified(fork1.header().id(), 2,
+    ASSERT_TRUE(ledger->set_block_verified(fork1.header().id(), 20,
                                            block0.header().id()));
-    ASSERT_TRUE(ledger->set_block_verified(fork2.header().id(), 2.5,
+    ASSERT_TRUE(ledger->set_block_verified(fork2.header().id(), 25,
                                            block0.header().id()));
 
     ASSERT_TRUE(ledger->update_main_branch());
@@ -133,7 +133,7 @@ class LedgerMongodb : public ::testing::Test {
 
     // Switch MAIN branch
     ASSERT_TRUE(ledger->insert_block(fork3));
-    ASSERT_TRUE(ledger->set_block_verified(fork3.header().id(), 3.5,
+    ASSERT_TRUE(ledger->set_block_verified(fork3.header().id(), 35,
                                            block0.header().id()));
     tip.Clear();
     ASSERT_TRUE(ledger->update_main_branch());
@@ -385,13 +385,13 @@ TEST_F(LedgerMongodb, get_unverified_blocks) {
   ASSERT_TRUE(ledger->get_unverified_blocks(&unscored_forks));
   ASSERT_EQ(unscored_forks.size(), 2);
 
-  ASSERT_TRUE(ledger->set_block_verified(block1.header().id(), 1.17,
+  ASSERT_TRUE(ledger->set_block_verified(block1.header().id(), 1,
                                          block0.header().id()));
   unscored_forks.clear();
   ASSERT_TRUE(ledger->get_unverified_blocks(&unscored_forks));
   ASSERT_EQ(unscored_forks.size(), 1);
 
-  ASSERT_TRUE(ledger->set_block_verified(block2.header().id(), 2.17,
+  ASSERT_TRUE(ledger->set_block_verified(block2.header().id(), 2,
                                          block0.header().id()));
   unscored_forks.clear();
   ASSERT_TRUE(ledger->get_unverified_blocks(&unscored_forks));
@@ -451,7 +451,7 @@ TEST_F(LedgerMongodb, pii) {
     messages::Pii pii;
     pii.mutable_address()->CopyFrom(messages::Address(keys[i].public_key()));
     pii.mutable_assembly_id()->CopyFrom(assembly_id);
-    pii.set_score(10 - i);
+    pii.set_score(std::to_string(10 - i));
     pii.set_rank(i);
     ASSERT_TRUE(ledger->set_pii(pii));
   }
@@ -472,7 +472,7 @@ TEST_F(LedgerMongodb, integrity) {
   ASSERT_EQ(block0.block().header().height(), 0);
   integrity.mutable_assembly_id()->CopyFrom(block0.block().header().id());
   integrity.set_assembly_height(0);
-  integrity.set_score(17);
+  integrity.set_score("17");
   integrity.mutable_branch_path()->CopyFrom(block0.branch_path());
   ASSERT_TRUE(ledger->set_integrity(integrity));
 
@@ -493,7 +493,7 @@ TEST_F(LedgerMongodb, integrity) {
   ASSERT_EQ(integrity_score, 17);
 
   integrity.set_assembly_height(1);
-  integrity.set_score(18);
+  integrity.set_score("18");
   integrity.mutable_branch_path()->CopyFrom(block1.branch_path());
   ASSERT_TRUE(ledger->set_integrity(integrity));
 
