@@ -94,6 +94,10 @@ message _Denunciation {
 message Block {
   required BlockHeader header = 1;
   repeated Transaction transactions = 20;
+
+  // The coinbase field is optional because we empty the transactions before
+  // storing the blocks in mongoDB, and if the field was not optional the block
+  // would not be serializable
   optional Transaction coinbase = 30;
   repeated _Denunciation denunciations = 40;
 }
