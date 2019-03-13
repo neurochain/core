@@ -1,7 +1,7 @@
+#include "crypto/Ecc.hpp"
 #include <dsa.h>
 #include <gtest/gtest.h>
-
-#include "src/crypto/Ecc.hpp"
+#include "common/logger.hpp"
 
 namespace neuro {
 namespace crypto {
@@ -44,6 +44,28 @@ TEST(Ecc, save_load_buffer) {
   keys1.mutable_public_key()->load(buff);
 
   ASSERT_EQ(keys0, keys1);
+}
+
+TEST(Ecc, save_load_protobuf) {
+  const crypto::Ecc keys0;
+  crypto::Ecc ecc;
+  crypto::EccPub ecc_pub;
+  messages::KeyPub key_pub;
+
+  ASSERT_TRUE(ecc.public_key().save(&key_pub));
+  ASSERT_TRUE(ecc_pub.load(key_pub));
+  ASSERT_EQ(ecc.public_key(), ecc_pub);
+}
+
+TEST(Ecc, save_load_protobuf_as_hex) {
+  const crypto::Ecc keys0;
+  crypto::Ecc ecc;
+  crypto::EccPub ecc_pub;
+  messages::KeyPub key_pub;
+
+  ASSERT_TRUE(ecc.public_key().save_as_hex(&key_pub));
+  ASSERT_TRUE(ecc_pub.load(key_pub));
+  ASSERT_EQ(ecc.public_key(), ecc_pub);
 }
 
 TEST(Ecc, sign_verify) {
