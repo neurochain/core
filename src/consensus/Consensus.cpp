@@ -252,22 +252,20 @@ bool Consensus::check_block_id(
 bool Consensus::check_block_transactions(
     const messages::TaggedBlock &tagged_block) const {
   const auto &block = tagged_block.block();
-  if (block.coinbases_size() != 1) {
+  if (!block.has_coinbase()) {
     LOG_INFO << "Failed check_block_transactions for block "
              << block.header().id();
     return false;
   }
 
-  for (const auto transaction : block.coinbases()) {
-    messages::TaggedTransaction tagged_transaction;
-    tagged_transaction.set_is_coinbase(true);
-    tagged_transaction.mutable_block_id()->CopyFrom(block.header().id());
-    tagged_transaction.mutable_transaction()->CopyFrom(transaction);
-    if (!is_valid(tagged_transaction)) {
-      LOG_INFO << "Failed check_block_transactions for block "
-               << block.header().id();
-      return false;
-    }
+  messages::TaggedTransaction tagged_coinbase;
+  tagged_coinbase.set_is_coinbase(true);
+  tagged_coinbase.mutable_block_id()->CopyFrom(block.header().id());
+  tagged_coinbase.mutable_transaction()->CopyFrom(block.coinbase());
+  if (!is_valid(tagged_coinbase)) {
+    LOG_INFO << "Failed check_block_transactions for block "
+             << block.header().id();
+    return false;
   }
 
   for (const auto transaction : block.transactions()) {
@@ -816,9 +814,8 @@ bool Consensus::build_block(const crypto::Ecc &keys,
   header->mutable_timestamp()->set_data(std::time(nullptr));
 
   // Block reward
-  auto transaction = block->add_coinbases();
-  tooling::blockgen::coinbase(keys.public_key(), block_reward(height),
-                              transaction, height);
+  tooling::blockgen::coinbase({keys.public_key()}, block_reward(height),
+                              block->mutable_coinbase(), height);
 
   _ledger->get_transaction_pool(block);
   _ledger->add_denunciations(block, last_block.branch_path());

@@ -33,8 +33,8 @@ TEST_F(Simulator, block0) {
   messages::Block block;
   ASSERT_TRUE(ledger->get_block(0, &block));
   ASSERT_EQ(ledger->height(), 0);
-  ASSERT_EQ(block.coinbases_size(), nb_keys);
-  ASSERT_EQ(ledger->total_nb_transactions(), nb_keys);
+  ASSERT_EQ(block.coinbase().outputs_size(), nb_keys);
+  ASSERT_EQ(ledger->total_nb_transactions(), 1);
 }
 
 TEST_F(Simulator, send_ncc) {
@@ -97,7 +97,7 @@ TEST_F(Simulator, run) {
     ASSERT_EQ(block.header().id(), block_id);
 
     ASSERT_EQ(block.transactions_size(), 7);
-    ASSERT_EQ(block.coinbases_size(), 1);
+    ASSERT_EQ(block.coinbase().outputs_size(), 1);
   }
 }
 

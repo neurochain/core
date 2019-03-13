@@ -239,10 +239,8 @@ void LedgerMongodb::init_database(const messages::Block &block0) {
   unsafe_insert_block(tagged_block0);
 
   std::vector<messages::Address> addresses;
-  for (const auto &transaction : block0.coinbases()) {
-    for (const auto &output : transaction.outputs()) {
-      addresses.push_back(output.address());
-    }
+  for (const auto &output : block0.coinbase().outputs()) {
+    addresses.push_back(output.address());
   }
   create_first_assemblies(addresses);
 }
@@ -402,7 +400,7 @@ int LedgerMongodb::fill_block_transactions(messages::Block *block) const {
     from_bson(bson_transaction, &tagged_transaction);
 
     auto transaction = tagged_transaction.is_coinbase()
-                           ? block->add_coinbases()
+                           ? block->mutable_coinbase()
                            : block->add_transactions();
     transaction->CopyFrom(tagged_transaction.transaction());
   }
@@ -619,10 +617,11 @@ bool LedgerMongodb::unsafe_insert_block(
     }
   }
 
-  for (const auto &transaction : tagged_block.block().coinbases()) {
+  if (tagged_block.block().has_coinbase()) {
     messages::TaggedTransaction tagged_transaction;
     tagged_transaction.set_is_coinbase(true);
-    tagged_transaction.mutable_transaction()->CopyFrom(transaction);
+    tagged_transaction.mutable_transaction()->CopyFrom(
+        tagged_block.block().coinbase());
     tagged_transaction.mutable_block_id()->CopyFrom(header.id());
     tagged_transaction.mutable_block_id()->CopyFrom(header.id());
     bson_transactions.push_back(to_bson(tagged_transaction));
@@ -630,7 +629,7 @@ bool LedgerMongodb::unsafe_insert_block(
 
   auto mutable_tagged_block = tagged_block;
   mutable_tagged_block.mutable_block()->clear_transactions();
-  mutable_tagged_block.mutable_block()->clear_coinbases();
+  mutable_tagged_block.mutable_block()->clear_coinbase();
   auto bson_block = to_bson(mutable_tagged_block);
   auto result = _blocks.insert_one(std::move(bson_block));
   if (!result) {
