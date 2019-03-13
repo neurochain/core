@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
       "block0 format: protobuf, bson, json");
   po::variables_map options;
   po::store(po::parse_command_line(argc, argv, description), options);
-  std::string filename = options["filename"].as<std::string>();
+  const auto filename = options["filename"].as<std::string>();
   std::string format = options["format"].as<std::string>();
   try {
     po::notify(options);

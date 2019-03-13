@@ -48,8 +48,9 @@ bool Pii::get_enthalpy(const messages::Transaction &transaction,
 
 Config Pii::config() const { return _config; }
 
-bool Pii::get_recipients(const messages::Transaction &transaction,
-                         std::set<messages::Address> *recipients) const {
+bool Pii::get_recipients(
+    const messages::Transaction &transaction,
+    std::unordered_set<messages::Address> *recipients) const {
   for (const auto &output : transaction.outputs()) {
     recipients->insert(output.address());
   }
@@ -58,7 +59,7 @@ bool Pii::get_recipients(const messages::Transaction &transaction,
 
 bool Pii::get_senders(const messages::Transaction &transaction,
                       const messages::TaggedBlock &tagged_block,
-                      std::set<messages::Address> *senders) const {
+                      std::unordered_set<messages::Address> *senders) const {
   for (const auto &input : transaction.inputs()) {
     messages::TaggedTransaction tagged_transaction;
     bool include_transaction_pool = false;
@@ -77,8 +78,8 @@ bool Pii::get_senders(const messages::Transaction &transaction,
 
 bool Pii::add_transaction(const messages::Transaction &transaction,
                           const messages::TaggedBlock &tagged_block) {
-  std::set<messages::Address> senders;
-  std::set<messages::Address> recipients;
+  std::unordered_set<messages::Address> senders;
+  std::unordered_set<messages::Address> recipients;
   if (!get_senders(transaction, tagged_block, &senders) ||
       !get_recipients(transaction, &recipients)) {
     return false;

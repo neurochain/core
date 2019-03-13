@@ -51,11 +51,11 @@ class Pii {
                     const messages::Address &recipient, Double *enthalpy) const;
 
   bool get_recipients(const messages::Transaction &transaction,
-                      std::set<messages::Address> *recipients) const;
+                      std::unordered_set<messages::Address> *recipients) const;
 
   bool get_senders(const messages::Transaction &transaction,
                    const messages::TaggedBlock &tagged_block,
-                   std::set<messages::Address> *senders) const;
+                   std::unordered_set<messages::Address> *senders) const;
 
   bool add_transaction(const messages::Transaction &transaction,
                        const messages::TaggedBlock &tagged_block);
