@@ -21,7 +21,8 @@ std::optional<Peer *> Peers::insert(const Peer &peer) {
 
   if (!got.second) {
     // pub key already known, update peer
-    got.first->second->CopyFrom(peer);
+    got.first->second->set_port(peer.port());  // FIXME we want to copy all peer data
+//    got.first->second->CopyFrom(peer);  // FIXME copyFrom break integration
     return {got.first->second.get()};
   }
   auto found_peer = got.first->second.get();
