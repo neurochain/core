@@ -30,7 +30,7 @@ class Addresses {
 
  public:
   void add_enthalpy(const messages::Address &sender,
-                    const messages::Address &recipient, Double enthalpy);
+                    const messages::Address &recipient, const Double &enthalpy);
 
   Double get_entropy(const messages::Address &address) const;
 
@@ -51,11 +51,11 @@ class Pii {
                     const messages::Address &recipient, Double *enthalpy) const;
 
   bool get_recipients(const messages::Transaction &transaction,
-                      std::vector<messages::Address> *recipients) const;
+                      std::unordered_set<messages::Address> *recipients) const;
 
   bool get_senders(const messages::Transaction &transaction,
                    const messages::TaggedBlock &tagged_block,
-                   std::vector<messages::Address> *senders) const;
+                   std::unordered_set<messages::Address> *senders) const;
 
   bool add_transaction(const messages::Transaction &transaction,
                        const messages::TaggedBlock &tagged_block);
@@ -67,6 +67,8 @@ class Pii {
  public:
   Pii(std::shared_ptr<ledger::Ledger> ledger, const consensus::Config &config)
       : _ledger(ledger), _config(config) {}
+
+  ~Pii();
 
   Config config() const;
 

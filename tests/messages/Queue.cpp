@@ -83,28 +83,14 @@ class QueueTest {
     auto hello_kpub = hello->mutable_key_pub();
     ASSERT_NE(hello_kpub, nullptr);
     hello_kpub->set_type(messages::ECP256K1);
-    hello_kpub->set_raw_data(
-        "MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA//////////////////////"
-        "///////////////v///"
-        "C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAA"
-        "AAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/"
-        "NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP/////"
-        "///////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABOBPdJmNMRu7dZ0O4+b/"
-        "jG5CyuLeI870VKYu0DrtJ8I8VW3wt5NcbqfqIk7OI0+9cE7+xCPtKwF1vAHi730nMJ0=");
+    hello_kpub->set_raw_data("CYxS/kJB4nHdBfBREEtqRL2xFGbi7Hg4rQkTxv9OwJs=");
     auto message_world = std::make_shared<messages::Message>();
     messages::World *world = message_world->add_bodies()->mutable_world();
     ASSERT_NE(world, nullptr);
     auto world_kpub = world->mutable_key_pub();
     ASSERT_NE(world_kpub, nullptr);
     world_kpub->set_type(messages::ECP256K1);
-    world_kpub->set_raw_data(
-        "MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA//////////////////////"
-        "///////////////v///"
-        "C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAA"
-        "AAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/"
-        "NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP/////"
-        "///////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABOBPdJmNMRu7dZ0O4+b/"
-        "jG5CyuLeI870VKYu0DrtJ8I8VW3wt5NcbqfqIk7OI0+9cE7+xCPtKwF1vAHi730nMJ0=");
+    world_kpub->set_raw_data("CYxS/kJB4nHdBfBREEtqRL2xFGbi7Hg4rQkTxv9OwJs=");
     world->set_accepted(true);
     ASSERT_TRUE(tested_queue.publish(std::move(message_hello)));
     ASSERT_TRUE(tested_queue.publish(std::move(message_world)));
@@ -136,28 +122,14 @@ class QueueTest {
     auto hello_kpub = hello->mutable_key_pub();
     ASSERT_NE(hello_kpub, nullptr);
     hello_kpub->set_type(messages::ECP256K1);
-    hello_kpub->set_raw_data(
-        "MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA//////////////////////"
-        "///////////////v///"
-        "C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAA"
-        "AAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/"
-        "NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP/////"
-        "///////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABOBPdJmNMRu7dZ0O4+b/"
-        "jG5CyuLeI870VKYu0DrtJ8I8VW3wt5NcbqfqIk7OI0+9cE7+xCPtKwF1vAHi730nMJ0=");
+    hello_kpub->set_raw_data("CYxS/kJB4nHdBfBREEtqRL2xFGbi7Hg4rQkTxv9OwJs=");
     auto message_world = std::make_shared<messages::Message>();
     messages::World *world = message_world->add_bodies()->mutable_world();
     ASSERT_NE(world, nullptr);
     auto world_kpub = world->mutable_key_pub();
     ASSERT_NE(world_kpub, nullptr);
     world_kpub->set_type(messages::ECP256K1);
-    world_kpub->set_raw_data(
-        "MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA//////////////////////"
-        "///////////////v///"
-        "C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAA"
-        "AAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/"
-        "NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP/////"
-        "///////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABOBPdJmNMRu7dZ0O4+b/"
-        "jG5CyuLeI870VKYu0DrtJ8I8VW3wt5NcbqfqIk7OI0+9cE7+xCPtKwF1vAHi730nMJ0=");
+    world_kpub->set_raw_data("CYxS/kJB4nHdBfBREEtqRL2xFGbi7Hg4rQkTxv9OwJs=");
     world->set_accepted(true);
     ASSERT_TRUE(tested_queue.publish(std::move(message_hello)));
     ASSERT_TRUE(tested_queue.publish(std::move(message_world)));

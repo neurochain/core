@@ -1,6 +1,8 @@
 #include "crypto/EccPub.hpp"
+#include <cryptopp/hex.h>
 #include <iomanip>
 #include <iostream>
+#include "common/logger.hpp"
 #include "messages/Message.hpp"
 
 namespace neuro {
@@ -63,17 +65,30 @@ bool EccPub::load(const uint8_t *data, const std::size_t size) {
 }
 
 bool EccPub::load(const messages::KeyPub &keypub) {
+  CryptoPP::ECP::Point point;
+  _key.AccessGroupParameters().Initialize(CryptoPP::ASN1::secp256k1());
+
   if (keypub.has_raw_data()) {
-    const auto &raw_data = keypub.raw_data();
-    load(reinterpret_cast<const uint8_t *>(raw_data.data()), raw_data.size());
+    // Load a compressed public key see
+    // https://www.cryptopp.com/wiki/Elliptic_Curve_Digital_Signature_Algorithm
+    CryptoPP::StringSource source(keypub.raw_data(), true);
+    _key.GetGroupParameters().GetCurve().DecodePoint(point, source,
+                                                     source.MaxRetrievable());
+
   } else if (keypub.has_hex_data()) {
-    const auto &hex_data = keypub.hex_data();
-    Buffer tmp(hex_data, Buffer::InputType::HEX);
-    load(tmp);
+    // Compressed public key
+    const std::string &hex_data = keypub.hex_data();
+
+    // We need to have a new here because cryptoPP will try to delete the
+    // decoder
+    CryptoPP::StringSource ss(hex_data, true, new CryptoPP::HexDecoder);
+    _key.GetGroupParameters().GetCurve().DecodePoint(point, ss,
+                                                     ss.MaxRetrievable());
   } else {
     // not possible since we have a oneof
     return false;
   }
+  _key.Initialize(CryptoPP::ASN1::secp256k1(), point);
 
   return true;
 }
@@ -95,9 +110,39 @@ bool EccPub::save(Buffer *buffer) const {
 
 bool EccPub::save(messages::KeyPub *key_pub) const {
   key_pub->set_type(messages::KeyType::ECP256K1);
-  std::string s;
-  _key.Save(CryptoPP::StringSink(s).Ref());
-  key_pub->set_raw_data(s);
+  const auto x = _key.GetPublicElement().x;
+  const auto y = _key.GetPublicElement().y;
+
+  const auto x_size = 32;
+  byte output[x_size + 1];
+  x.Encode(&output[1], x_size);
+
+  // Set compressed flag see
+  // https://www.cryptopp.com/wiki/Elliptic_Curve_Digital_Signature_Algorithm
+  // for more details
+  if (y.IsEven()) {
+    output[0] = 0x02;
+  } else {
+    output[0] = 0x03;
+  }
+
+  key_pub->set_raw_data(
+      std::string(reinterpret_cast<char *>(output), x_size + 1));
+  return true;
+}
+
+bool EccPub::save_as_hex(messages::KeyPub *key_pub) const {
+  key_pub->set_type(messages::KeyType::ECP256K1);
+  const auto x = _key.GetPublicElement().x;
+  const auto y = _key.GetPublicElement().y;
+
+  // Sadly I do need to use two stream variables...
+  std::stringstream hex_stream, padded_stream;
+  hex_stream << std::hex << x;
+  padded_stream << std::setfill('0') << std::setw(65) << hex_stream.str();
+
+  std::string compressed_flag = y.IsEven() ? "02" : "03";
+  key_pub->set_hex_data(compressed_flag + padded_stream.str());
   return true;
 }
 

@@ -63,6 +63,7 @@ add_library(core
   ./messages/Message.hpp
   ./messages/Subscriber.hpp
   ./messages/Message.cpp
+  ./messages/Address.cpp
   ./messages/Hasher.hpp
   ./messages/Peers.hpp
   ./messages/Peers.cpp
@@ -101,6 +102,8 @@ target_link_libraries(core
 
   protobuf::libprotobuf
   ${LIBMONGOCXX_STATIC_LIBRARIES}
+
+  mpfr
 )
 
 add_executable(main
@@ -123,6 +126,8 @@ target_link_libraries(main
 
   protobuf::libprotobuf
   ${LIBMONGOCXX_STATIC_LIBRARIES}
+
+  mpfr
   )
 
 add_executable(keygen
@@ -165,6 +170,14 @@ add_executable(blockg
   tooling/blockg.cpp
   )
 target_link_libraries(blockg
+  core
+  Boost::program_options
+  )
+
+add_executable(show_block0
+  tooling/show_block0.cpp
+  )
+target_link_libraries(show_block0
   core
   Boost::program_options
   )

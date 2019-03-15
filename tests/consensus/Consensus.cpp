@@ -40,7 +40,7 @@ class Consensus : public testing::Test {
     ledger->get_assembly_piis(assembly.id(), &piis);
     ASSERT_EQ(piis.size(), assembly.nb_addresses());
     for (const auto pii : piis) {
-      ASSERT_GT(pii.score(), 1);
+      ASSERT_GT(Double(pii.score()), 1);
     }
   }
 
@@ -65,15 +65,13 @@ class Consensus : public testing::Test {
         ASSERT_TRUE(consensus->check_outputs(tagged_transaction));
         ASSERT_TRUE(consensus->is_valid(tagged_transaction));
       }
-      for (const auto &transaction : block.coinbases()) {
-        messages::TaggedTransaction tagged_transaction;
-        tagged_transaction.mutable_transaction()->CopyFrom(transaction);
-        tagged_transaction.mutable_block_id()->CopyFrom(block.header().id());
-        tagged_transaction.set_is_coinbase(true);
-        ASSERT_TRUE(consensus->check_id(tagged_transaction));
-        ASSERT_TRUE(consensus->check_coinbase(tagged_transaction));
-        ASSERT_TRUE(consensus->is_valid(tagged_transaction));
-      }
+      messages::TaggedTransaction tagged_coinbase;
+      tagged_coinbase.mutable_transaction()->CopyFrom(block.coinbase());
+      tagged_coinbase.mutable_block_id()->CopyFrom(block.header().id());
+      tagged_coinbase.set_is_coinbase(true);
+      ASSERT_TRUE(consensus->check_id(tagged_coinbase));
+      ASSERT_TRUE(consensus->check_coinbase(tagged_coinbase));
+      ASSERT_TRUE(consensus->is_valid(tagged_coinbase));
     }
   }
 
@@ -165,7 +163,7 @@ class Consensus : public testing::Test {
       messages::Block block;
       ASSERT_TRUE(consensus->build_block(keys, i, &block));
       ASSERT_EQ(block.header().height(), i);
-      ASSERT_EQ(block.coinbases_size(), 1);
+      ASSERT_EQ(block.coinbase().outputs_size(), 1);
       ASSERT_EQ(block.header().has_id(), 1);
       ASSERT_EQ(block.header().has_author(), 1);
       messages::TaggedBlock tagged_block;

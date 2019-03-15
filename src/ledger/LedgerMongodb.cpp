@@ -6,6 +6,7 @@
 namespace neuro {
 namespace ledger {
 
+// The PII is a floating point number stored as an int64
 const std::string MAIN_BRANCH_NAME =
     messages::Branch_Name(messages::Branch::MAIN);
 const std::string FORK_BRANCH_NAME =
@@ -141,7 +142,7 @@ void LedgerMongodb::create_first_assemblies(
       messages::Pii pii;
       pii.mutable_address()->CopyFrom(address);
       pii.mutable_assembly_id()->CopyFrom(assembly.id());
-      pii.set_score(1);
+      pii.set_score("1");
       pii.set_rank(i);
       assert(set_pii(pii));
     }
@@ -149,7 +150,8 @@ void LedgerMongodb::create_first_assemblies(
 
   messages::Block block0;
   assert(get_block(0, &block0));
-  assert(set_previous_assembly_id(block0.header().id(), assembly_minus_1.id()));
+  assert(set_block_verified(block0.header().id(), 0, assembly_minus_1.id()));
+  assert(update_branch_tag(block0.header().id(), messages::Branch::MAIN));
 }
 
 bool LedgerMongodb::load_block0(const messages::config::Database &config,
@@ -239,10 +241,8 @@ void LedgerMongodb::init_database(const messages::Block &block0) {
   unsafe_insert_block(tagged_block0);
 
   std::vector<messages::Address> addresses;
-  for (const auto &transaction : block0.coinbases()) {
-    for (const auto &output : transaction.outputs()) {
-      addresses.push_back(output.address());
-    }
+  for (const auto &output : block0.coinbase().outputs()) {
+    addresses.push_back(output.address());
   }
   create_first_assemblies(addresses);
 }
@@ -402,7 +402,7 @@ int LedgerMongodb::fill_block_transactions(messages::Block *block) const {
     from_bson(bson_transaction, &tagged_transaction);
 
     auto transaction = tagged_transaction.is_coinbase()
-                           ? block->add_coinbases()
+                           ? block->mutable_coinbase()
                            : block->add_transactions();
     transaction->CopyFrom(tagged_transaction.transaction());
   }
@@ -619,10 +619,11 @@ bool LedgerMongodb::unsafe_insert_block(
     }
   }
 
-  for (const auto &transaction : tagged_block.block().coinbases()) {
+  if (tagged_block.block().has_coinbase()) {
     messages::TaggedTransaction tagged_transaction;
     tagged_transaction.set_is_coinbase(true);
-    tagged_transaction.mutable_transaction()->CopyFrom(transaction);
+    tagged_transaction.mutable_transaction()->CopyFrom(
+        tagged_block.block().coinbase());
     tagged_transaction.mutable_block_id()->CopyFrom(header.id());
     tagged_transaction.mutable_block_id()->CopyFrom(header.id());
     bson_transactions.push_back(to_bson(tagged_transaction));
@@ -630,7 +631,7 @@ bool LedgerMongodb::unsafe_insert_block(
 
   auto mutable_tagged_block = tagged_block;
   mutable_tagged_block.mutable_block()->clear_transactions();
-  mutable_tagged_block.mutable_block()->clear_coinbases();
+  mutable_tagged_block.mutable_block()->clear_coinbase();
   auto bson_block = to_bson(mutable_tagged_block);
   auto result = _blocks.insert_one(std::move(bson_block));
   if (!result) {
@@ -1158,13 +1159,7 @@ bool LedgerMongodb::get_pii(const messages::Address &address,
   }
 
   auto score = result->view()[SCORE];
-  if (score.type() == bsoncxx::types::b_double::type_id) {
-    *pii = score.get_double();
-  } else if (score.type() == bsoncxx::types::b_int32::type_id) {
-    *pii = score.get_int32();
-  } else if (score.type() == bsoncxx::types::b_int64::type_id) {
-    *pii = score.get_int64();
-  }
+  *pii = score.get_utf8().value.to_string();
   return true;
 }
 
@@ -1292,7 +1287,7 @@ bool LedgerMongodb::add_integrity(
   messages::Integrity integrity;
   integrity.mutable_address()->CopyFrom(address);
   integrity.mutable_assembly_id()->CopyFrom(assembly_id);
-  integrity.set_score(previous_score + added_score);
+  integrity.set_score((previous_score + added_score).toString());
   integrity.set_assembly_height(assembly_height);
   integrity.mutable_branch_path()->CopyFrom(branch_path);
   return unsafe_set_integrity(integrity);

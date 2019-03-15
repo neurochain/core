@@ -6,27 +6,26 @@
   "networking": {
     "maxConnections": 3,
     "tcp": {
-      "port": 1337,
-      "endpoint": "localhost",
-      "peers": [
-        {
-          "endpoint": "localhost",
-          "keyPub": {
-            "type": "ECP256K1",
-            "rawData": "MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABOBPdJmNMRu7dZ0O4+b/jG5CyuLeI870VKYu0DrtJ8I8VW3wt5NcbqfqIk7OI0+9cE7+xCPtKwF1vAHi730nMJ0="
-          },
-          "port": 1338
-        },
-        {
-          "endpoint": "localhost",
-          "keyPub": {
-            "type": "ECP256K1",
-            "rawData": "MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABCMKGnZhazXAoXb0SJIqi4Ho+lk6bw0UttE34PDtDbyapLNy8lVNCKH9kkLP+iFo9CP0kZ3KYZJzHSL6Ab93Gts="
-          },
-          "port": 1339
-        }
-      ]
-    },
+	    "port": 1337,
+	    "peers": [
+		{
+		    "endpoint": "localhost",
+		    "port": 1338,
+		    "keyPub": {
+			"type": "ECP256K1",
+			"rawData":"A+BPdJmNMRu7dZ0O4+b/jG5CyuLeI870VKYu0DrtJ8I8"
+		    }
+		},
+		{
+		    "endpoint": "localhost",
+		    "port": 1339,
+		    "keyPub": {
+			"type": "ECP256K1",
+			"rawData":"AyMKGnZhazXAoXb0SJIqi4Ho+lk6bw0UttE34PDtDbya"
+		    }
+		}
+	    ]
+	},
     "keyPubPath": "key0.pub",
     "keyPrivPath": "key0.priv"
   },

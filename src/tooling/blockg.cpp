@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
   po::options_description desc("Allowed options");
   desc.add_options()("help,h", "Produce help message.")(
       "wallet,w", po::value<uint32_t>()->default_value(100),
-      "Nombre of Wallet in BLock 0")(
+      "Number of wallets in block 0")(
       "keyspath,k", po::value<std::string>()->default_value("keys"),
       "File path for keys (appending .pub or .priv)")(
       "ncc,n", po::value<uint64_t>()->default_value(1152921504606846976lu),

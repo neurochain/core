@@ -1,7 +1,7 @@
 #include <boost/program_options.hpp>
 #include "crypto/Ecc.hpp"
 #include "messages.pb.h"
-#include "messages/Hasher.hpp"
+#include "messages/Address.hpp"
 
 namespace neuro {
 namespace po = boost::program_options;
@@ -11,7 +11,7 @@ int main(int argc, char *argv[]) {
   desc.add_options()("help,h", "Produce help message.")(
       "private,k", po::value<std::string>()->default_value("key.priv"),
       "File path for private keys")(
-      "public,p", po::value<std::string>()->default_value("key.priv"),
+      "public,p", po::value<std::string>()->default_value("key.pub"),
       "File path for private keys");
 
   po::variables_map vm;
@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
   std::cout << "private: " << std::endl << ecc.private_key() << std::endl;
   Buffer buf;
   ecc.public_key().save(&buf);
-  messages::Hasher addr(buf);
+  messages::Address addr(buf);
   std::cout << "address : " << std::endl << addr << std::endl;
 
   return 0;

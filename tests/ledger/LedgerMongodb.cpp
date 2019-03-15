@@ -108,13 +108,13 @@ class LedgerMongodb : public ::testing::Test {
     ASSERT_TRUE(ledger->insert_block(fork2));
 
     ledger->update_branch_tag(block0.header().id(), messages::Branch::MAIN);
-    ASSERT_TRUE(ledger->set_block_verified(block1.header().id(), 2,
+    ASSERT_TRUE(ledger->set_block_verified(block1.header().id(), 20,
                                            block0.header().id()));
-    ASSERT_TRUE(ledger->set_block_verified(block2.header().id(), 3,
+    ASSERT_TRUE(ledger->set_block_verified(block2.header().id(), 30,
                                            block0.header().id()));
-    ASSERT_TRUE(ledger->set_block_verified(fork1.header().id(), 2,
+    ASSERT_TRUE(ledger->set_block_verified(fork1.header().id(), 20,
                                            block0.header().id()));
-    ASSERT_TRUE(ledger->set_block_verified(fork2.header().id(), 2.5,
+    ASSERT_TRUE(ledger->set_block_verified(fork2.header().id(), 25,
                                            block0.header().id()));
 
     ASSERT_TRUE(ledger->update_main_branch());
@@ -133,7 +133,7 @@ class LedgerMongodb : public ::testing::Test {
 
     // Switch MAIN branch
     ASSERT_TRUE(ledger->insert_block(fork3));
-    ASSERT_TRUE(ledger->set_block_verified(fork3.header().id(), 3.5,
+    ASSERT_TRUE(ledger->set_block_verified(fork3.header().id(), 35,
                                            block0.header().id()));
     tip.Clear();
     ASSERT_TRUE(ledger->update_main_branch());
@@ -210,10 +210,10 @@ TEST_F(LedgerMongodb, transactions) {
   messages::Block block0;
   ledger->get_block(0, &block0);
 
-  ASSERT_EQ(nb_keys, ledger->total_nb_transactions());
+  ASSERT_EQ(1, ledger->total_nb_transactions());
   ASSERT_EQ(0, block0.transactions().size());
-  ASSERT_EQ(nb_keys, block0.coinbases().size());
-  const auto transaction0 = block0.coinbases(0);
+  ASSERT_EQ(nb_keys, block0.coinbase().outputs_size());
+  const auto transaction0 = block0.coinbase();
 
   messages::Transaction transaction0bis;
   ASSERT_TRUE(ledger->get_transaction(transaction0.id(), &transaction0bis));
@@ -385,13 +385,13 @@ TEST_F(LedgerMongodb, get_unverified_blocks) {
   ASSERT_TRUE(ledger->get_unverified_blocks(&unscored_forks));
   ASSERT_EQ(unscored_forks.size(), 2);
 
-  ASSERT_TRUE(ledger->set_block_verified(block1.header().id(), 1.17,
+  ASSERT_TRUE(ledger->set_block_verified(block1.header().id(), 1,
                                          block0.header().id()));
   unscored_forks.clear();
   ASSERT_TRUE(ledger->get_unverified_blocks(&unscored_forks));
   ASSERT_EQ(unscored_forks.size(), 1);
 
-  ASSERT_TRUE(ledger->set_block_verified(block2.header().id(), 2.17,
+  ASSERT_TRUE(ledger->set_block_verified(block2.header().id(), 2,
                                          block0.header().id()));
   unscored_forks.clear();
   ASSERT_TRUE(ledger->get_unverified_blocks(&unscored_forks));
@@ -451,7 +451,7 @@ TEST_F(LedgerMongodb, pii) {
     messages::Pii pii;
     pii.mutable_address()->CopyFrom(messages::Address(keys[i].public_key()));
     pii.mutable_assembly_id()->CopyFrom(assembly_id);
-    pii.set_score(10 - i);
+    pii.set_score(std::to_string(10 - i));
     pii.set_rank(i);
     ASSERT_TRUE(ledger->set_pii(pii));
   }
@@ -472,7 +472,7 @@ TEST_F(LedgerMongodb, integrity) {
   ASSERT_EQ(block0.block().header().height(), 0);
   integrity.mutable_assembly_id()->CopyFrom(block0.block().header().id());
   integrity.set_assembly_height(0);
-  integrity.set_score(17);
+  integrity.set_score("17");
   integrity.mutable_branch_path()->CopyFrom(block0.branch_path());
   ASSERT_TRUE(ledger->set_integrity(integrity));
 
@@ -493,7 +493,7 @@ TEST_F(LedgerMongodb, integrity) {
   ASSERT_EQ(integrity_score, 17);
 
   integrity.set_assembly_height(1);
-  integrity.set_score(18);
+  integrity.set_score("18");
   integrity.mutable_branch_path()->CopyFrom(block1.branch_path());
   ASSERT_TRUE(ledger->set_integrity(integrity));
 
@@ -562,7 +562,7 @@ TEST_F(LedgerMongodb, list_transactions) {
 
   // Putting the transactions in a block should not change anything
   auto block = simulator.new_block();
-  bool has_coinbase = block.coinbases(0).outputs(0).address() == address;
+  bool has_coinbase = block.coinbase().outputs(0).address() == address;
   simulator.consensus->add_block(block);
   transactions = ledger->list_transactions(address).transactions();
   ASSERT_EQ(transactions.size(), has_coinbase ? 3 : 2);
@@ -571,34 +571,35 @@ TEST_F(LedgerMongodb, list_transactions) {
 TEST_F(LedgerMongodb, is_unspent_output) {
   messages::TaggedBlock block0;
   ASSERT_TRUE(ledger->get_last_block(&block0));
-  auto coinbase =
-      block0.block().coinbases(0).outputs(0).address() == simulator.addresses[0]
-          ? block0.block().coinbases(0)
-          : block0.block().coinbases(1);
-  ASSERT_TRUE(ledger->is_unspent_output(coinbase.id(), 0));
+  int output_index =
+      block0.block().coinbase().outputs(0).address() == simulator.addresses[0]
+          ? 0
+          : 1;
+  auto coinbase = block0.block().coinbase();
+  ASSERT_TRUE(ledger->is_unspent_output(coinbase.id(), output_index));
 
   // Spend the output
   auto transaction = ledger->send_ncc(simulator.keys[0].private_key(),
                                       simulator.addresses[1], 0.5);
   simulator.consensus->add_transaction(transaction);
-  ASSERT_FALSE(ledger->is_unspent_output(coinbase.id(), 0));
+  ASSERT_FALSE(ledger->is_unspent_output(coinbase.id(), output_index));
 
   // But it is not spent if I don't consider the transaction pool
   bool include_transaction_pool = false;
   auto &tip = block0;
-  ASSERT_TRUE(ledger->is_unspent_output(coinbase.id(), 0, tip,
+  ASSERT_TRUE(ledger->is_unspent_output(coinbase.id(), output_index, tip,
                                         include_transaction_pool));
 
   // Let's add a block with the transaction
   auto new_block = simulator.new_block();
   simulator.consensus->add_block(new_block);
   include_transaction_pool = false;
-  ASSERT_TRUE(ledger->is_unspent_output(coinbase.id(), 0, block0,
+  ASSERT_TRUE(ledger->is_unspent_output(coinbase.id(), output_index, block0,
                                         include_transaction_pool));
   include_transaction_pool = true;
-  ASSERT_TRUE(ledger->is_unspent_output(coinbase.id(), 0, block0,
+  ASSERT_TRUE(ledger->is_unspent_output(coinbase.id(), output_index, block0,
                                         include_transaction_pool));
-  ASSERT_FALSE(ledger->is_unspent_output(coinbase.id(), 0));
+  ASSERT_FALSE(ledger->is_unspent_output(coinbase.id(), output_index));
 }
 
 TEST_F(LedgerMongodb, get_outputs_for_address) {
@@ -668,7 +669,7 @@ TEST_F(LedgerMongodb, list_unspent_transactions) {
 
   // Putting the transactions in a block should not change anything
   auto block = simulator.new_block();
-  bool has_coinbase = block.coinbases(0).outputs(0).address() == address;
+  bool has_coinbase = block.coinbase().outputs(0).address() == address;
   simulator.consensus->add_block(block);
   transactions = ledger->list_unspent_transactions(address);
   ASSERT_EQ(transactions.size(), has_coinbase ? 2 : 1);
@@ -710,7 +711,7 @@ TEST_F(LedgerMongodb, list_unspent_outputs) {
   auto block = simulator.new_block();
   simulator.consensus->add_block(block);
   for (const auto &address : {address0, address1}) {
-    bool has_coinbase = block.coinbases(0).outputs(0).address() == address;
+    bool has_coinbase = block.coinbase().outputs(0).address() == address;
     transactions = ledger->list_unspent_outputs(address);
     ASSERT_EQ(transactions.size(), has_coinbase ? 2 : 1);
   }
