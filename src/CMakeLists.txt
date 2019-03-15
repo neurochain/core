@@ -64,6 +64,7 @@ add_library(core
   ./messages/Message.hpp
   ./messages/Subscriber.hpp
   ./messages/Message.cpp
+  ./messages/Address.cpp
   ./messages/Hasher.hpp
   ./ledger/Parser.hpp
   ./ledger/Filter.hpp

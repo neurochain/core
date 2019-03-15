@@ -74,6 +74,7 @@ add_executable(ut
   ./crypto/Hash.cpp
   ./crypto/Ecc.cpp
   ./crypto/Sign.cpp
+  ./messages/Address.cpp
   ./messages/Config.cpp
   ./messages/Queue.cpp
   ./messages/Subscriber.cpp
