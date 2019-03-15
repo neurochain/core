@@ -1,4 +1,3 @@
-#include <cryptopp/hex.h>
 #include <messages/Address.hpp>
 #include <sstream>
 
@@ -16,12 +15,12 @@ std::string encode_base58(const CryptoPP::Integer &num,
                           const std::string &version) {
   std::stringstream encoded_stream;
   CryptoPP::Integer div, mod, remainder(num);
-  while (remainder > 0) {
+  do {
     div = remainder / BASE;
     mod = (remainder - (BASE * div));
     encoded_stream << ALPHABET[mod.ConvertToLong()];
     remainder = div;
-  }
+  } while (remainder > 0);
   std::string encoded = encoded_stream.str();
   std::reverse(encoded.begin(), encoded.end());
   return version + encoded;
