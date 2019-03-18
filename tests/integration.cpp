@@ -165,7 +165,7 @@ TEST(INTEGRATION, neighbors_propagation) {
   my_logs << "1 peerss " << std::endl << bot1->peers() << std::endl;
   my_logs << "2 peerss " << std::endl << bot2->peers() << std::endl;
   my_logs.close();
-  
+
   ASSERT_EQ(peers_bot0.size(), peers_bot1.size());
   ASSERT_EQ(peers_bot1.size(), peers_bot2.size());
   ASSERT_EQ(peers_bot2.size(), 2);
@@ -301,7 +301,8 @@ TEST(INTEGRATION, key_gen_connection) {
 }
 
 TEST(INTEGRATION, key_gen_connection_reverse) {
-  // bot0 try to connect to unavailable bot, then bot0 shouldn't send the unavailable bot's key
+  // bot0 try to connect to unavailable bot, then bot0 shouldn't send the
+  // unavailable bot's key
   Path config_path1("bot0.json");
   messages::config::Config config1(config_path1);
   auto bot0 = std::make_shared<Bot>(config1);

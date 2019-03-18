@@ -101,9 +101,7 @@ void Connection::read_body(std::size_t body_size) {
         }
         const auto key_pub = _this->_remote_peer.key_pub();
 
-	crypto::EccPub ecc_pub(
-            reinterpret_cast<const uint8_t *>(key_pub.raw_data().data()),
-            key_pub.raw_data().size());
+        crypto::EccPub ecc_pub(key_pub);
 
         const auto check =
             ecc_pub.verify(_this->_buffer, header_pattern->signature,
@@ -113,7 +111,8 @@ void Connection::read_body(std::size_t body_size) {
           LOG_ERROR << "Bad signature, dropping message " << ecc_pub;
           return;
         }
-	message->mutable_header()->mutable_key_pub()->CopyFrom(_remote_peer.key_pub());
+        message->mutable_header()->mutable_key_pub()->CopyFrom(
+            _remote_peer.key_pub());
         _this->_queue->publish(message);
         _this->read_header();
       });
