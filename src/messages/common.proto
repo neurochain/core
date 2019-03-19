@@ -19,7 +19,7 @@ enum KeyType {
   ECP256R1 = 1;
 }
 
-message KeyPub {
+message _KeyPub {
   optional KeyType type = 1 [ default = ECP256K1 ];
   oneof data {
     bytes raw_data = 2;
@@ -27,7 +27,7 @@ message KeyPub {
   }
 }
 
-message KeyPriv {
+message _KeyPriv {
   required KeyType type = 1 [ default = ECP256K1 ];
   required bytes data = 2;
 }
@@ -54,7 +54,7 @@ message Peer {
 
   required string endpoint = 1;
   optional int32 port = 2;
-  optional KeyPub key_pub = 3;
+  optional _KeyPub key_pub = 3;
   optional Status status = 4;
   optional int32 transport_layer_id = 5;
   optional int32 connection_id = 6;

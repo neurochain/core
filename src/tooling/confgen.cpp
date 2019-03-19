@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
   auto itEndpoint = endpoints.cbegin();
 
   while (itKey != endKey) {
-    messages::KeyPub key_pub;
+    messages::_KeyPub key_pub;
     crypto::EccPub ecc_pub(*itKey);
     ecc_pub.save(&key_pub);
     auto peer = config.mutable_networking()->mutable_tcp()->add_peers();

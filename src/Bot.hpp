@@ -94,7 +94,7 @@ class Bot {
 
   std::optional<messages::Peer *> add_peer(const messages::Peer &peer) {
     std::optional<messages::Peer *> res;
-    messages::KeyPub my_key_pub;
+    messages::_KeyPub my_key_pub;
     auto peers = _tcp_config->mutable_peers();
     _keys->public_key().save(&my_key_pub);
 

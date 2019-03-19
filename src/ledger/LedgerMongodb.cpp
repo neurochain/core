@@ -1428,7 +1428,7 @@ bool LedgerMongodb::unsafe_denunciation_exists(
 }
 
 std::vector<messages::TaggedBlock> LedgerMongodb::get_blocks(
-    const messages::BlockHeight height, const messages::KeyPub &author,
+    const messages::BlockHeight height, const messages::_KeyPub &author,
     bool include_transactions) const {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   std::vector<messages::TaggedBlock> tagged_blocks;
@@ -1492,7 +1492,7 @@ void LedgerMongodb::add_denunciations(
   std::lock_guard<std::mutex> lock(_ledger_mutex);
 
   // Look for the authors who double mined in our branch
-  std::unordered_map<messages::BlockHeight, const messages::KeyPub *> authors;
+  std::unordered_map<messages::BlockHeight, const messages::_KeyPub *> authors;
   for (auto &denunciation : denunciations) {
     if (is_ancestor(denunciation.branch_path(), branch_path)) {
       authors[denunciation.block_height()] =

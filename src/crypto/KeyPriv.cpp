@@ -36,7 +36,7 @@ bool EccPriv::save(Buffer *buffer) const {
   return true;
 }
 
-bool EccPriv::save(messages::KeyPriv *key_priv) const {
+bool EccPriv::save(messages::_KeyPriv *key_priv) const {
   std::string s;
   key_priv->set_type(messages::KeyType::ECP256K1);
   _key.Save(CryptoPP::StringSink(s).Ref());
@@ -93,7 +93,7 @@ bool EccPriv::operator==(const EccPriv &key) const {
 }
 
 std::ostream &operator<<(std::ostream &os, const EccPriv &priv) {
-  messages::KeyPriv k;
+  messages::_KeyPriv k;
   priv.save(&k);
   os << k;
   return os;

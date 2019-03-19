@@ -115,7 +115,7 @@ void testnet_blockg(uint32_t bots, const std::string &pathdir,
 bool blockgen_from_block(messages::Block *block,
                          const messages::Block &last_block,
                          const int32_t height, const uint64_t seed,
-                         std::optional<neuro::messages::KeyPub> author) {
+                         std::optional<neuro::messages::_KeyPub> author) {
   /*uint32_t height = last_height;
   if (height == 0) {
     height = ledger->height();
@@ -182,7 +182,7 @@ bool blockgen_from_block(messages::Block *block,
 bool blockgen_from_last_db_block(messages::Block *block,
                                  std::shared_ptr<ledger::Ledger> ledger,
                                  const uint64_t seed, const int32_t new_height,
-                                 std::optional<neuro::messages::KeyPub> author,
+                                 std::optional<neuro::messages::_KeyPub> author,
                                  const int32_t last_height) {
   int32_t height = last_height;
   if (height == 0) {

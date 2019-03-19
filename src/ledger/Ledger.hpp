@@ -104,7 +104,7 @@ class Ledger {
                          messages::TaggedBlock *tagged_block,
                          bool include_transactions = true) const = 0;
   virtual std::vector<messages::TaggedBlock> get_blocks(
-      const messages::BlockHeight height, const messages::KeyPub &author,
+      const messages::BlockHeight height, const messages::_KeyPub &author,
       bool include_transactions = true) const = 0;
   virtual bool insert_block(const messages::TaggedBlock &tagged_block) = 0;
   virtual bool insert_block(const messages::Block &block) = 0;

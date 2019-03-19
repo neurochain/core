@@ -27,15 +27,15 @@ target_link_libraries(protos
 
 add_library(core
   ./crypto/Hash.hpp
-  ./crypto/EccPub.cpp
+  ./crypto/KeyPub.cpp
   ./crypto/Ecc.cpp
-  ./crypto/EccPub.hpp
+  ./crypto/KeyPub.hpp
   ./crypto/Sign.cpp
   ./crypto/Sign.hpp
-  ./crypto/EccPriv.hpp
+  ./crypto/KeyPriv.hpp
   ./crypto/Ecc.hpp
   ./crypto/Hash.cpp
-  ./crypto/EccPriv.cpp
+  ./crypto/KeyPriv.cpp
   ./common/Buffer.cpp
   ./common/Buffer.hpp
   ./common/logger.hpp

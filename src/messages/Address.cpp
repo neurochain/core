@@ -32,7 +32,7 @@ std::string encode_base58(const Buffer &buffer, const std::string &version) {
   return encode_base58(num, version);
 }
 
-void Address::init(const messages::KeyPub &key_pub) {
+void Address::init(const messages::_KeyPub &key_pub) {
   auto key = crypto::hash_sha3_256(key_pub);
   auto checksum = crypto::hash_sha3_256(key);
   checksum.resize(_checksum_size);
@@ -40,10 +40,10 @@ void Address::init(const messages::KeyPub &key_pub) {
   set_data(encode_base58(key, "N").substr(0, _address_size));
 }
 
-Address::Address(const messages::KeyPub &key_pub) { init(key_pub); }
+Address::Address(const messages::_KeyPub &key_pub) { init(key_pub); }
 
 Address::Address(const crypto::EccPub &ecc_pub) {
-  messages::KeyPub key_pub;
+  messages::_KeyPub key_pub;
   ecc_pub.save(&key_pub);
   init(key_pub);
 }

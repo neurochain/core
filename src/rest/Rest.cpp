@@ -223,9 +223,9 @@ messages::Transaction Rest::build_transaction(
 messages::GeneratedKeys Rest::generate_keys() const {
   messages::GeneratedKeys generated_keys;
   crypto::Ecc ecc;
-  messages::KeyPub key_pub;
+  messages::_KeyPub key_pub;
   ecc.public_key().save(&key_pub);
-  messages::KeyPriv key_priv;
+  messages::_KeyPriv key_priv;
   ecc.private_key().save(&key_priv);
   generated_keys.mutable_key_priv()->CopyFrom(key_priv);
   generated_keys.mutable_key_pub()->CopyFrom(key_pub);
