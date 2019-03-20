@@ -1,20 +1,23 @@
-#include "crypto/EccPriv.hpp"
+#include "crypto/KeyPriv.hpp"
 #include <iomanip>
 #include "messages/Message.hpp"
 
 namespace neuro {
 namespace crypto {
 
-EccPriv::EccPriv(std::shared_ptr<CryptoPP::AutoSeededRandomPool> prng)
+KeyPriv::KeyPriv(std::shared_ptr<CryptoPP::AutoSeededRandomPool> prng)
     : _prng(prng), _params(CryptoPP::ASN1::secp256k1()), _key() {
   _key.Initialize(*_prng, _params);
+
+  // Fill protobuf
+  save(this);
 
   if (!_key.Validate(*_prng, 3)) {
     throw std::runtime_error("Could not validate privated key");
   }
 }
 
-EccPriv::EccPriv(std::shared_ptr<CryptoPP::AutoSeededRandomPool> prng,
+KeyPriv::KeyPriv(std::shared_ptr<CryptoPP::AutoSeededRandomPool> prng,
                  const std::string &filepath)
     : _prng(prng) {
   if (!load(filepath)) {
@@ -22,21 +25,21 @@ EccPriv::EccPriv(std::shared_ptr<CryptoPP::AutoSeededRandomPool> prng,
   }
 }
 
-bool EccPriv::save(const std::string &filepath) const {
+bool KeyPriv::save(const std::string &filepath) const {
   CryptoPP::FileSink fs(filepath.c_str(), true);
   _key.Save(fs);
 
   return true;
 }
 
-bool EccPriv::save(Buffer *buffer) const {
+bool KeyPriv::save(Buffer *buffer) const {
   std::string s;
   _key.Save(CryptoPP::StringSink(s).Ref());
   buffer->copy(s);
   return true;
 }
 
-bool EccPriv::save(messages::_KeyPriv *key_priv) const {
+bool KeyPriv::save(messages::_KeyPriv *key_priv) const {
   std::string s;
   key_priv->set_type(messages::KeyType::ECP256K1);
   _key.Save(CryptoPP::StringSink(s).Ref());
@@ -44,29 +47,37 @@ bool EccPriv::save(messages::_KeyPriv *key_priv) const {
   return true;
 }
 
-bool EccPriv::load(const std::string &filepath) {
+bool KeyPriv::load(const std::string &filepath) {
   _params = CryptoPP::DL_GroupParameters_EC<CryptoPP::ECP>(
       CryptoPP::ASN1::secp256k1());
   _key.Initialize(*_prng, _params);
   CryptoPP::FileSource fs(filepath.c_str(), true);
   _key.Load(fs);
+
+  // Fill protobuf
+  save(this);
+
   return (_key.Validate(*_prng, 3));
 }
 
-bool EccPriv::load(const Buffer &buffer) {
+bool KeyPriv::load(const Buffer &buffer) {
   CryptoPP::StringSource array(reinterpret_cast<const byte *>(buffer.data()),
                                buffer.size(), true);
   _key.Load(array);
+
+  // Fill protobuf
+  save(this);
+
   return true;
 }
 
-void EccPriv::sign(const uint8_t *data, const std::size_t size,
+void KeyPriv::sign(const uint8_t *data, const std::size_t size,
                    uint8_t *signature) const {
   CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA256>::Signer signer(_key);
   signer.SignMessage(*_prng, data, size, signature);
 }
 
-Buffer EccPriv::sign(const uint8_t *data, const std::size_t size) const {
+Buffer KeyPriv::sign(const uint8_t *data, const std::size_t size) const {
   const auto siglen = sign_length();
   Buffer signature(siglen, 0);
   sign(data, size, signature.data());
@@ -74,17 +85,17 @@ Buffer EccPriv::sign(const uint8_t *data, const std::size_t size) const {
   return signature;
 }
 
-Buffer EccPriv::sign(const Buffer &input) const {
+Buffer KeyPriv::sign(const Buffer &input) const {
   return sign(input.data(), input.size());
 }
 
-EccPub EccPriv::make_public_key() const {
-  EccPub::Key pub_key;
+KeyPub KeyPriv::make_public_key() const {
+  KeyPub::Key pub_key;
   _key.MakePublicKey(pub_key);
-  return EccPub{pub_key};
+  return KeyPub{pub_key};
 }
 
-bool EccPriv::operator==(const EccPriv &key) const {
+bool KeyPriv::operator==(const KeyPriv &key) const {
   CryptoPP::ByteQueue queue0;
   CryptoPP::ByteQueue queue1;
   _key.Save(queue0);
@@ -92,7 +103,7 @@ bool EccPriv::operator==(const EccPriv &key) const {
   return (queue0 == queue1);
 }
 
-std::ostream &operator<<(std::ostream &os, const EccPriv &priv) {
+std::ostream &operator<<(std::ostream &os, const KeyPriv &priv) {
   messages::_KeyPriv k;
   priv.save(&k);
   os << k;

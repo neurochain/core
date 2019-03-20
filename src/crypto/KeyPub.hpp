@@ -1,5 +1,5 @@
-#ifndef NEURO_SRC_CRYPTO_ECCPUB_HPP
-#define NEURO_SRC_CRYPTO_ECCPUB_HPP
+#ifndef NEURO_SRC_CRYPTO_KEYPUB_HPP
+#define NEURO_SRC_CRYPTO_KEYPUB_HPP
 
 #include <eccrypto.h>
 #include <files.h>

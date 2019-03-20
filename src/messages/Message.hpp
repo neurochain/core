@@ -7,7 +7,7 @@
 #include <string>
 #include "common/types.hpp"
 #include "consensus.pb.h"
-#include "crypto/EccPriv.hpp"
+#include "crypto/KeyPriv.hpp"
 #include "ledger/mongo.hpp"
 #include "messages.pb.h"
 

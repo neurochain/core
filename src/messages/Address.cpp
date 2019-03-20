@@ -42,7 +42,7 @@ void Address::init(const messages::_KeyPub &key_pub) {
 
 Address::Address(const messages::_KeyPub &key_pub) { init(key_pub); }
 
-Address::Address(const crypto::EccPub &ecc_pub) {
+Address::Address(const crypto::KeyPub &ecc_pub) {
   messages::_KeyPub key_pub;
   ecc_pub.save(&key_pub);
   init(key_pub);

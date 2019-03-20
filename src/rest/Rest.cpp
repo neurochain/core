@@ -192,7 +192,7 @@ messages::Transaction Rest::build_transaction(
   // Load keys
   auto buffer = Buffer(transaction_to_publish.key_priv());
   const auto random_pool = std::make_shared<CryptoPP::AutoSeededRandomPool>();
-  auto key_priv = crypto::EccPriv(random_pool);
+  auto key_priv = crypto::KeyPriv(random_pool);
   key_priv.load(buffer);
 
   std::vector<messages::Output> outputs;
@@ -201,7 +201,7 @@ messages::Transaction Rest::build_transaction(
     outputs.push_back(output);
   }
 
-  const crypto::EccPub key_pub = key_priv.make_public_key();
+  const crypto::KeyPub key_pub = key_priv.make_public_key();
   const auto address = messages::Address(key_pub);
   const auto ecc = crypto::Ecc(key_priv, key_pub);
   std::vector<const crypto::Ecc *> keys = {&ecc};

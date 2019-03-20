@@ -26,7 +26,7 @@ class Address : public _Address {
  public:
   Address(const messages::_KeyPub &key_pub);
 
-  Address(const crypto::EccPub &ecc_pub);
+  Address(const crypto::KeyPub &ecc_pub);
 
   Address(const messages::_Address &address);
 

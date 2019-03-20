@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
   const auto type = vm["type"].as<std::string>();
   const auto ncc = vm["ncc"].as<uint64_t>();
 
-  crypto::EccPub ecc_pub(filepath);
+  crypto::KeyPub ecc_pub(filepath);
   messages::Hasher address(ecc_pub);
 
   messages::Transaction transaction;

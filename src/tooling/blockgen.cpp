@@ -10,7 +10,7 @@ namespace neuro {
 namespace tooling {
 namespace blockgen {
 
-void coinbase(const std::vector<crypto::EccPub> &pub_keys,
+void coinbase(const std::vector<crypto::KeyPub> &pub_keys,
               const messages::NCCAmount &ncc,
               messages::Transaction *transaction,
               const messages::BlockHeight &height,
@@ -37,7 +37,7 @@ messages::TaggedBlock gen_block0(std::vector<crypto::Ecc> keys,
   previons_block_hash->set_data("");
   previons_block_hash->set_type(messages::Hash::Type::Hash_Type_SHA256);
   header->set_height(0);
-  std::vector<crypto::EccPub> pub_keys;
+  std::vector<crypto::KeyPub> pub_keys;
   for (const auto &key : keys) {
     pub_keys.push_back(key.public_key());
   }

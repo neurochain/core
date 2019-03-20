@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
 
   while (itKey != endKey) {
     messages::_KeyPub key_pub;
-    crypto::EccPub ecc_pub(*itKey);
+    crypto::KeyPub ecc_pub(*itKey);
     ecc_pub.save(&key_pub);
     auto peer = config.mutable_networking()->mutable_tcp()->add_peers();
     peer->set_endpoint(*itEndpoint);

@@ -13,7 +13,7 @@ namespace neuro {
 namespace tooling {
 namespace blockgen {
 
-void coinbase(const std::vector<crypto::EccPub> &key_pub,
+void coinbase(const std::vector<crypto::KeyPub> &key_pub,
               const messages::NCCAmount &ncc,
               messages::Transaction *transaction,
               const messages::BlockHeight &height,

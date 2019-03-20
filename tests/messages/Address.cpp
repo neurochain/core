@@ -1,7 +1,7 @@
 #include "messages/Address.hpp"
 #include <cryptopp/hex.h>
 #include <gtest/gtest.h>
-#include "crypto/EccPub.hpp"
+#include "crypto/KeyPub.hpp"
 
 namespace neuro {
 namespace messages {
@@ -20,8 +20,9 @@ TEST(Address, encode_base58) {
 }
 
 TEST(Address, address) {
-  crypto::EccPub ecc_pub;
-  messages::KeyPub key_pub;
+  crypto::Ecc ecc;
+  crypto::KeyPub ecc_pub = ecc.public_key();
+  messages::_KeyPub key_pub;
   ecc_pub.save(&key_pub);
   Address address0(ecc_pub);
   Address address1(key_pub);

@@ -23,15 +23,15 @@ Ecc::Ecc(const std::string &filepath_private,
       _key_private(_prng, filepath_private),
       _key_public(filepath_public) {}
 
-Ecc::Ecc(const EccPriv &ecc_priv, const EccPub &ecc_pub)
+Ecc::Ecc(const KeyPriv &ecc_priv, const KeyPub &ecc_pub)
     : _prng(std::make_shared<CryptoPP::AutoSeededRandomPool>()),
       _key_private(ecc_priv),
       _key_public(ecc_pub) {}
 
-const EccPriv &Ecc::private_key() const { return _key_private; }
-const EccPub &Ecc::public_key() const { return _key_public; }
-EccPriv *Ecc::mutable_private_key() { return &_key_private; }
-EccPub *Ecc::mutable_public_key() { return &_key_public; }
+const KeyPriv &Ecc::private_key() const { return _key_private; }
+const KeyPub &Ecc::public_key() const { return _key_public; }
+KeyPriv *Ecc::mutable_private_key() { return &_key_private; }
+KeyPub *Ecc::mutable_public_key() { return &_key_public; }
 
 bool Ecc::save(const std::string &filepath_private,
                const std::string &filepath_public) const {

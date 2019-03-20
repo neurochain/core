@@ -10,7 +10,7 @@ namespace po = boost::program_options;
 
 namespace neuro {
 
-messages::Transaction coinbase(const crypto::EccPub &key_pub,
+messages::Transaction coinbase(const crypto::KeyPub &key_pub,
                                const messages::NCCAmount &ncc) {
   messages::Transaction transaction;
   Buffer key_pub_raw;
@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
 
   messages::NCCAmount nccsdf;
   nccsdf.set_value(ncc);  // std::to_string(ncc));
-  crypto::EccPub key_pub(keypath);
+  crypto::KeyPub key_pub(keypath);
   messages::Transaction transaction = coinbase(key_pub, nccsdf);
 
   if (type == "json") {

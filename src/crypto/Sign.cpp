@@ -47,13 +47,12 @@ bool verify(const messages::Transaction &transaction) {
   for (const auto &input : transaction.inputs()) {
     const auto signature = transaction.signatures(input.signature_id());
 
-    crypto::EccPub ecc_pub;
-    ecc_pub.load(signature.key_pub());
+    KeyPub key_pub(signature.key_pub());
 
     const auto hash = signature.signature().data();
     const Buffer sig(hash.data(), hash.size());
 
-    if (!ecc_pub.verify(buffer, sig)) {
+    if (!key_pub.verify(buffer, sig)) {
       LOG_WARNING << "Wrong signature in transaction " << transaction;
       return false;
     }
@@ -101,10 +100,9 @@ bool verify(const messages::Denunciation &denunciation) {
   const auto hash = author.signature().data();
   const Buffer sig(hash.data(), hash.size());
 
-  crypto::EccPub ecc_pub;
-  ecc_pub.load(author.key_pub());
+  KeyPub key_pub(author.key_pub());
 
-  if (!ecc_pub.verify(buffer, sig)) {
+  if (!key_pub.verify(buffer, sig)) {
     LOG_WARNING << "Wrong signature in denunciation with block id "
                 << denunciation.block_id();
     return false;

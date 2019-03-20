@@ -8,13 +8,13 @@ import "common.proto";
 // Handshake
 // =========
 message Hello {
-  required KeyPub key_pub = 1;
+  required _KeyPub key_pub = 1;
   optional int32 listen_port = 2;
 }
 
 message World {
   required bool accepted = 1;
-  required KeyPub key_pub = 2;
+  required _KeyPub key_pub = 2;
   repeated Peer peers = 3;
 }
 
@@ -64,7 +64,7 @@ message Output {
 
 message Signature {
   required Hash signature = 1;
-  required KeyPub key_pub = 2;
+  required _KeyPub key_pub = 2;
 }
 
 message Transaction {

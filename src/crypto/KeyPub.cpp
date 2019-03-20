@@ -16,7 +16,10 @@ KeyPub::KeyPub(const Buffer &key_pub) {
   }
 }
 
-KeyPub::KeyPub(const Key &key) : _key(key) {}
+KeyPub::KeyPub(const Key &key) : _key(key) {
+  // Fill the protobuf
+  save(this);
+}
 
 KeyPub::KeyPub(const messages::_KeyPub &key_pub) { load(key_pub); }
 
@@ -33,6 +36,9 @@ bool KeyPub::load(const std::string &filepath) {
   CryptoPP::FileSource fs(filepath.c_str(), true);
   _key.Load(fs);
 
+  // Fill the protobuf
+  save(this);
+
   return true;
 }
 
@@ -40,6 +46,10 @@ bool KeyPub::load(const Buffer &buffer) {
   CryptoPP::StringSource array(reinterpret_cast<const byte *>(buffer.data()),
                                buffer.size(), true);
   _key.Load(array);
+
+  // Fill the protobuf
+  save(this);
+
   return true;
 }
 
@@ -47,23 +57,27 @@ bool KeyPub::load(const uint8_t *data, const std::size_t size) {
   CryptoPP::StringSource array(reinterpret_cast<const byte *>(data), size,
                                true);
   _key.Load(array);
+
+  // Fill the protobuf
+  save(this);
+
   return true;
 }
 
-bool KeyPub::load(const messages::_KeyPub &keypub) {
+bool KeyPub::load(const messages::_KeyPub &key_pub) {
   CryptoPP::ECP::Point point;
   _key.AccessGroupParameters().Initialize(CryptoPP::ASN1::secp256k1());
 
-  if (keypub.has_raw_data()) {
+  if (key_pub.has_raw_data()) {
     // Load a compressed public key see
     // https://www.cryptopp.com/wiki/Elliptic_Curve_Digital_Signature_Algorithm
-    CryptoPP::StringSource source(keypub.raw_data(), true);
+    CryptoPP::StringSource source(key_pub.raw_data(), true);
     _key.GetGroupParameters().GetCurve().DecodePoint(point, source,
                                                      source.MaxRetrievable());
 
-  } else if (keypub.has_hex_data()) {
+  } else if (key_pub.has_hex_data()) {
     // Compressed public key
-    const std::string &hex_data = keypub.hex_data();
+    const std::string &hex_data = key_pub.hex_data();
 
     // We need to have a new here because cryptoPP will try to delete the
     // decoder
@@ -75,6 +89,7 @@ bool KeyPub::load(const messages::_KeyPub &keypub) {
     return false;
   }
   _key.Initialize(CryptoPP::ASN1::secp256k1(), point);
+  CopyFrom(key_pub);
 
   return true;
 }

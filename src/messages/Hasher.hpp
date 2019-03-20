@@ -3,7 +3,7 @@
 
 #include "common/Buffer.hpp"
 #include "crypto/Ecc.hpp"
-#include "crypto/EccPub.hpp"
+#include "crypto/KeyPub.hpp"
 #include "crypto/Hash.hpp"
 #include "messages/Message.hpp"
 
@@ -23,7 +23,7 @@ class Hasher : public messages::Hash {
 
   explicit Hasher(const Buffer &data) { from_buffer(data); }
 
-  explicit Hasher(const crypto::EccPub &ecc_pub) {
+  explicit Hasher(const crypto::KeyPub &ecc_pub) {
     Buffer data;
     ecc_pub.save(&data);
     const auto tmp = crypto::hash_sha3_256(data);

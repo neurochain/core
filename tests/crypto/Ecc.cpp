@@ -41,7 +41,7 @@ TEST(Ecc, save_load_buffer) {
   keys1.mutable_private_key()->load(buff);
 
   keys0.public_key().save(&buff);
-  keys1.mutable_public_key()->load(buff);
+  *keys1.mutable_public_key() = buff;
 
   ASSERT_EQ(keys0, keys1);
 }
@@ -49,22 +49,20 @@ TEST(Ecc, save_load_buffer) {
 TEST(Ecc, save_load_protobuf) {
   const crypto::Ecc keys0;
   crypto::Ecc ecc;
-  crypto::EccPub ecc_pub;
-  messages::KeyPub key_pub;
-
-  ASSERT_TRUE(ecc.public_key().save(&key_pub));
-  ASSERT_TRUE(ecc_pub.load(key_pub));
-  ASSERT_EQ(ecc.public_key(), ecc_pub);
+  crypto::KeyPub key_pub = ecc.public_key();
+  messages::_KeyPub key_pub_protobuf;
+  ASSERT_TRUE(key_pub.save(&key_pub_protobuf));
+  crypto::KeyPub key_pub_loaded(key_pub_protobuf);
+  ASSERT_EQ(key_pub, key_pub_loaded);
 }
 
 TEST(Ecc, save_load_protobuf_as_hex) {
   const crypto::Ecc keys0;
   crypto::Ecc ecc;
-  crypto::EccPub ecc_pub;
-  messages::KeyPub key_pub;
+  messages::_KeyPub key_pub;
 
   ASSERT_TRUE(ecc.public_key().save_as_hex(&key_pub));
-  ASSERT_TRUE(ecc_pub.load(key_pub));
+  crypto::KeyPub ecc_pub(key_pub);
   ASSERT_EQ(ecc.public_key(), ecc_pub);
 }
 
@@ -88,8 +86,17 @@ TEST(Ecc, sign_verify) {
   const Buffer buf_msg("Hola mundo desde NeuroChainTech");
 
   const crypto::Ecc keys("test_sign.priv", "test_sign.pub");
-  const EccPub pub_key = keys.public_key();
+  const KeyPub pub_key = keys.public_key();
   ASSERT_TRUE(pub_key.verify(buf_msg, signature));
+}
+
+TEST(Ecc, key_pub) {
+  crypto::Ecc ecc;
+  auto &key_pub = ecc.public_key();
+  auto &key_priv = ecc.private_key();
+  ASSERT_TRUE((key_pub.has_raw_data() && key_pub.raw_data().size() > 0) ||
+              (key_pub.has_hex_data() && key_pub.hex_data().size() > 0));
+  ASSERT_TRUE(key_priv.has_data() && key_priv.data().size() > 0);
 }
 
 }  // namespace test

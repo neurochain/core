@@ -340,8 +340,7 @@ void Bot::update_connection_graph() {
       LOG_ERROR << "Missing key on peer " << peer;
       continue;
     }
-    crypto::EccPub ecc_pub;
-    ecc_pub.load(peer.key_pub());
+    crypto::KeyPub ecc_pub(peer.key_pub());
     graph.add_peers_addresses()->CopyFrom(messages::Hasher(ecc_pub));
   }
 
