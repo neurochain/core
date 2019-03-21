@@ -158,7 +158,7 @@ bool Tcp::terminate(const Connection::ID id) {
     return false;
   }
   got->second->terminate();
-
+  _connections.erase(got);
   return true;
 }
 
