@@ -156,6 +156,22 @@ TEST(INTEGRATION, simple_interaction) {
   LOG_TRACE << "the end?" << std::endl;
 }
 
+TEST(INTEGRATION, disconnect) {
+  BotTest bot0("bot0.json");
+  BotTest bot1("bot1.json");
+
+  std::this_thread::sleep_for(1s);
+
+  ASSERT_EQ(bot0->connected_peers().size(), 1);
+  ASSERT_EQ(bot1->connected_peers().size(), 1);
+
+  bot1.operator->().reset();
+
+  std::this_thread::sleep_for(5s);
+
+  ASSERT_EQ(bot0->connected_peers().size(), 0);
+}
+
 TEST(INTEGRATION, neighbors_propagation) {
   Path config_path0("integration_propagation0.json");
   messages::config::Config config0(config_path0);
