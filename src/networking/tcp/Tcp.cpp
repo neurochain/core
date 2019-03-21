@@ -162,6 +162,17 @@ bool Tcp::terminate(const Connection::ID id) {
   return true;
 }
 
+std::optional<messages::Peer*> Tcp::find_peer(const Connection::ID id) {
+  auto got = _connections.find(id);
+  if (got == _connections.end()) {
+    return std::nullopt;
+  }
+
+  auto& connection = got->second;
+  auto remote_peer = connection->remote_peer();
+  return _peers->find(remote_peer.key_pub());
+}
+
 bool Tcp::serialize(std::shared_ptr<messages::Message> message,
                     Buffer *header_tcp, Buffer *body_tcp) const {
   // TODO: use 1 output buffer
@@ -256,6 +267,10 @@ bool Tcp::send_unicast(std::shared_ptr<messages::Message> message) const {
   return res;
 }
 
+/**
+ * count the number of active TCP connexion (either accepted one or attempting one)
+ * @return the number of active connexion
+ */
 std::size_t Tcp::peer_count() const { return _connections.size(); }
 
 void Tcp::stop() {

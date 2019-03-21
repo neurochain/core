@@ -42,6 +42,7 @@ class Bot {
   // for the peers
   messages::config::Tcp *_tcp_config;
   std::size_t _max_connections;
+  std::size_t _max_incoming_connections;  //!< number of connexion this bot can accept
 
   mutable std::mutex _mutex_connections;
   mutable std::mutex _mutex_quitting;

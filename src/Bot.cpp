@@ -195,6 +195,7 @@ void Bot::subscribe() {
 bool Bot::configure_networking(messages::config::Config *config) {
   const auto &networking_conf = config->networking();
   _max_connections = networking_conf.max_connections();
+  _max_incoming_connections = 2 * _max_connections;
 
   _update_time = networking_conf.peers_update_time();
 
@@ -333,8 +334,13 @@ void Bot::handler_connection(const messages::Header &header,
 void Bot::handler_deconnection(const messages::Header &header,
                                const messages::Body &body) {
   if (header.has_connection_id()) {
-    _networking.terminate(header.has_connection_id());
+    auto remote_peer = _networking.find_peer(header.connection_id());
+    if (remote_peer) {
+      (*remote_peer)->set_status(messages::Peer::DISCONNECTED);
+    }
+    _networking.terminate(header.connection_id());
   }
+
 
   LOG_DEBUG << this << " " << __LINE__
             << " _networking.peer_count(): " << _networking.peer_count();
@@ -347,10 +353,9 @@ void Bot::handler_world(const messages::Header &header,
   auto world = body.world();
   auto remote_peer = _peers.find(header.key_pub());
   if (!remote_peer) {
-    LOG_WARNING << "Received world message from uknown peer";
+    LOG_WARNING << "Received world message from unknown peer";
     return;
   }
-
   if (!world.accepted()) {
     LOG_DEBUG << this << " Not accepted, disconnecting ...";
     _networking.terminate(header.connection_id());
@@ -384,7 +389,7 @@ void Bot::handler_hello(const messages::Header &header,
   auto message = std::make_shared<messages::Message>();
   auto world = message->add_bodies()->mutable_world();
   auto peers = message->add_bodies()->mutable_peers();
-  bool accepted = _networking.peer_count() < (2 * _max_connections);
+  bool accepted = _peers.used_peers_count() < _max_incoming_connections;
 
   // update peer status
   if (accepted) {

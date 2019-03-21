@@ -54,6 +54,10 @@ std::optional<Peer *> Peers::insert(const Peer &peer) {
 //   return new_peer;
 // }
 
+/**
+ * count the number of bot communicating whith us (connecting or connected peers)
+ * @return number of connection | connected peers
+ */
 std::size_t Peers::used_peers_count() const {
   std::shared_lock<std::shared_mutex> lock(_mutex);
   return std::count_if(_peers.begin(), _peers.end(), [this](const auto &it) {

@@ -38,6 +38,7 @@ class TransportLayer {
       const std::shared_ptr<messages::Message> message) const = 0;
   virtual std::size_t peer_count() const = 0;
   virtual bool terminate(const Connection::ID id) = 0;
+  virtual std::optional<messages::Peer *> find_peer(const Connection::ID id) = 0;
   virtual Port listening_port() const = 0;
   virtual bool connect(messages::Peer* peer) = 0;
 
