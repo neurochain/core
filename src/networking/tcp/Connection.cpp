@@ -42,8 +42,12 @@ void Connection::read_header() {
       [_this = ptr()](const boost::system::error_code &error,
                       std::size_t bytes_read) {
         if (error) {
-          LOG_ERROR << _this << " " << __LINE__ << " Killing connection "
-                    << error;
+          if (error == boost::asio::error::eof) {
+            _this->terminate();
+          } else {
+            LOG_ERROR << _this << " " << __LINE__ << " Killing connection "
+                      << error;
+          }
           return;
         }
         const auto header_pattern =
@@ -59,8 +63,12 @@ void Connection::read_body(std::size_t body_size) {
       [_this = ptr(), this](const boost::system::error_code &error,
                             std::size_t bytes_read) {
         if (error) {
-          LOG_ERROR << _this << " " << __LINE__ << " Killing connection "
-                    << error;
+          if (error == boost::asio::error::eof) {
+            _this->terminate();
+          } else {
+            LOG_ERROR << _this << " " << __LINE__ << " Killing connection "
+                      << error;
+          }
           return;
         }
         const auto header_pattern =
