@@ -67,7 +67,6 @@ class Tcp : public TransportLayer {
   IP local_ip() const;
   bool terminate(const Connection::ID id);
   std::size_t peer_count() const;
-  std::optional<Port> connection_port(const Connection::ID id) const;
   void stop();
   void join();
   ~Tcp();

@@ -143,15 +143,6 @@ void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
   }
 }
 
-std::optional<Port> Tcp::connection_port(const Connection::ID id) const {
-  auto got = _connections.find(id);
-  if (got == _connections.end()) {
-    return std::nullopt;
-  }
-
-  return std::make_optional(got->second->remote_port());
-}
-
 bool Tcp::terminate(const Connection::ID id) {
   auto got = _connections.find(id);
   if (got == _connections.end()) {
@@ -239,8 +230,12 @@ bool Tcp::send_unicast(std::shared_ptr<messages::Message> message) const {
     return false;
   }
 
+  const auto port_opt = got->second->remote_port();
+  if(!port_opt) {
+    return false;
+  }
   LOG_DEBUG << "Sending unicast [" << this->listening_port() << " -> "
-            << got->second->remote_port() << "]: >>" << *message;
+            << *port_opt << "]: >>" << *message;
 
   auto header_tcp =
       std::make_shared<Buffer>(sizeof(networking::tcp::HeaderPattern), 0);

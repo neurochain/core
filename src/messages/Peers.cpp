@@ -21,11 +21,11 @@ std::optional<Peer *> Peers::insert(const Peer &peer) {
 
   if (!got.second) {
     // pub key already known, update peer
-    got.first->second->CopyFrom(peer);
+    //got.first->second->CopyFrom(peer);
     return {got.first->second.get()};
   }
   auto found_peer = got.first->second.get();
-  found_peer->set_status(Peer::DISCONNECTED);
+  got.first->second->set_status(Peer::DISCONNECTED);
   return found_peer;
 }
 

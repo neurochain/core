@@ -127,7 +127,7 @@ bool Connection::send(std::shared_ptr<Buffer> &message) {
           LOG_ERROR << "Could not send message" << _this << " " << __LINE__
                     << " Killing connection " << error;
 
-          _this->close();
+	  _this->close();
           return false;
         }
         return true;
@@ -138,7 +138,7 @@ bool Connection::send(std::shared_ptr<Buffer> &message) {
 void Connection::close() { _socket->close(); }
 
 void Connection::terminate() {
-  close();
+  _socket->close();
   auto message = std::make_shared<messages::Message>();
   auto header = message->mutable_header();
   header->set_connection_id(_id);
@@ -148,13 +148,21 @@ void Connection::terminate() {
   _queue->publish(message);
 }
 
-const IP Connection::remote_ip() const {
-  const auto endpoint = _socket->remote_endpoint();
-  return endpoint.address();
+const std::optional<IP> Connection::remote_ip() const {
+  boost::system::error_code ec;
+  const auto endpoint = _socket->remote_endpoint(ec);
+  if(ec) {
+    return {};
+  }
+  return std::make_optional(endpoint.address());
 }
 
-const Port Connection::remote_port() const {
-  const auto endpoint = _socket->remote_endpoint();
+const std::optional<Port> Connection::remote_port() const {
+  boost::system::error_code ec;
+  const auto endpoint = _socket->remote_endpoint(ec);
+  if(ec) {
+    return {};
+  }
   return static_cast<Port>(endpoint.port());
 }
 

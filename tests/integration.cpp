@@ -89,7 +89,7 @@ TEST(INTEGRATION, simple_interaction) {
         listener.handler_connection(header, body);
       });
 
-  std::this_thread::sleep_for(5s);
+  std::this_thread::sleep_for(1s);
 
   LOG_DEBUG << "listener.received_connection() = "
             << listener.received_connection();
@@ -134,11 +134,9 @@ TEST(INTEGRATION, simple_interaction) {
   ASSERT_TRUE(peers_bot2[1]->port() == 1337 || peers_bot2[1]->port() == 1338);
   ASSERT_NE(peers_bot2[0]->port(), peers_bot2[1]->port());
 
-  LOG_TRACE << "the end?" << std::endl;
   bot2.reset();
-  LOG_TRACE << "the end?" << std::endl;
+  std::this_thread::sleep_for(1s);
   bot1.reset();
-  LOG_TRACE << "the end?" << std::endl;
   bot0.reset();
   LOG_TRACE << "the end?" << std::endl;
 }

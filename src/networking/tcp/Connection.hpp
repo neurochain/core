@@ -30,6 +30,7 @@ class Connection : public networking::Connection,
   void read_header();
   void read_body(std::size_t body_size);
   std::shared_ptr<Connection> ptr() { return shared_from_this(); }
+  void close();
 
  public:
   Connection(const ID id, messages::Queue* queue,
@@ -45,9 +46,8 @@ class Connection : public networking::Connection,
 
   bool send(std::shared_ptr<Buffer>& message);
   const messages::Peer remote_peer() const;
-  const IP remote_ip() const;
-  const Port remote_port() const;
-  void close();
+  const std::optional<IP> remote_ip() const;
+  const std::optional<Port> remote_port() const;
   ~Connection();
 };
 }  // namespace tcp
