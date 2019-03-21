@@ -39,7 +39,7 @@ messages::TaggedBlock gen_block0(std::vector<crypto::Ecc> keys,
   header->set_height(0);
   std::vector<crypto::KeyPub> pub_keys;
   for (const auto &key : keys) {
-    pub_keys.push_back(key.public_key());
+    pub_keys.push_back(key.key_pub());
   }
   blockgen::coinbase(pub_keys, ncc_block0, block->mutable_coinbase(), 0);
   tagged_block.set_branch(messages::Branch::MAIN);
@@ -82,7 +82,7 @@ void testnet_blockg(uint32_t bots, const std::string &pathdir,
   ecc_save.save({pathdir + "/key_faucet_save.priv"},
                 {pathdir + "/key_faucet_save.pub"});
 
-  Buffer key_pub_raw_save = ecc_save.mutable_public_key()->save();
+  Buffer key_pub_raw_save = ecc_save.mutable_key_pub()->save();
 
   messages::BlockHeader *header = blockfaucet.mutable_header();
 
@@ -94,7 +94,7 @@ void testnet_blockg(uint32_t bots, const std::string &pathdir,
                                         3600);  // 1539640800);
   header->set_height(0);
 
-  coinbase({ecc.public_key(), ecc_save.public_key()}, nccsdf,
+  coinbase({ecc.key_pub(), ecc_save.key_pub()}, nccsdf,
            blockfaucet.mutable_coinbase(), 0, "trax killed me");
 
   neuro::Buffer t23("riados");

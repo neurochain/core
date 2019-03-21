@@ -15,7 +15,7 @@ namespace crypto {
 Ecc::Ecc()
     : _prng(std::make_shared<CryptoPP::AutoSeededRandomPool>()),
       _key_private(_prng),
-      _key_public(_key_private.make_public_key()) {}
+      _key_public(_key_private.make_key_pub()) {}
 
 Ecc::Ecc(const std::string &filepath_private,
          const std::string &filepath_public)
@@ -28,10 +28,10 @@ Ecc::Ecc(const KeyPriv &ecc_priv, const KeyPub &ecc_pub)
       _key_private(ecc_priv),
       _key_public(ecc_pub) {}
 
-const KeyPriv &Ecc::private_key() const { return _key_private; }
-const KeyPub &Ecc::public_key() const { return _key_public; }
-KeyPriv *Ecc::mutable_private_key() { return &_key_private; }
-KeyPub *Ecc::mutable_public_key() { return &_key_public; }
+const KeyPriv &Ecc::key_priv() const { return _key_private; }
+const KeyPub &Ecc::key_pub() const { return _key_public; }
+KeyPriv *Ecc::mutable_key_priv() { return &_key_private; }
+KeyPub *Ecc::mutable_key_pub() { return &_key_public; }
 
 bool Ecc::save(const std::string &filepath_private,
                const std::string &filepath_public) const {
@@ -59,7 +59,7 @@ void Ecc::sign(const uint8_t *data, const std::size_t size, uint8_t *dest) {
 }
 
 bool Ecc::operator==(const Ecc &ecc) const {
-  return (ecc.private_key() == _key_private && ecc.public_key() == _key_public);
+  return (ecc.key_priv() == _key_private && ecc.key_pub() == _key_public);
 }
 
 }  // namespace crypto

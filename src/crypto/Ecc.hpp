@@ -27,11 +27,11 @@ class Ecc {
 
   Ecc(const KeyPriv &ecc_priv, const KeyPub &ecc_pub);
 
-  const KeyPriv &private_key() const;
-  const KeyPub &public_key() const;
+  const KeyPriv &key_priv() const;
+  const KeyPub &key_pub() const;
 
-  KeyPriv *mutable_private_key();
-  KeyPub *mutable_public_key();
+  KeyPriv *mutable_key_priv();
+  KeyPub *mutable_key_pub();
 
   bool operator==(const Ecc &ecc) const;
 

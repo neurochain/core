@@ -118,9 +118,9 @@ void LedgerMongodb::create_first_assemblies(
   messages::Assembly assembly_minus_1, assembly_minus_2;
   crypto::Ecc key0, key1;
   assembly_minus_1.mutable_id()->CopyFrom(
-      messages::Hasher(key0.public_key()));  // Just a random hash
+      messages::Hasher(key0.key_pub()));  // Just a random hash
   assembly_minus_1.mutable_previous_assembly_id()->CopyFrom(
-      messages::Hasher(key1.public_key()));
+      messages::Hasher(key1.key_pub()));
   assembly_minus_1.set_finished_computation(true);
   assembly_minus_1.set_seed(0);
   assembly_minus_1.set_nb_addresses(addresses.size());

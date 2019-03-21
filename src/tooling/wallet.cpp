@@ -36,7 +36,7 @@ class Wallet {
     _ecc = std::make_unique<crypto::Ecc>(pathpriv, pathpub);
 
     Buffer key_pub_raw;
-    _ecc->mutable_public_key()->save(&key_pub_raw);
+    _ecc->mutable_key_pub()->save(&key_pub_raw);
 
     _address = std::make_unique<messages::Hasher>(key_pub_raw);
   }
@@ -79,7 +79,7 @@ messages::_KeyPub load_key_pub(int i) {
   crypto::Ecc _ecc({"../keys/key_" + std::to_string(i) + ".priv"},
                    {"../keys/key_" + std::to_string(i) + ".pub"});
   Buffer key_pub_raw;
-  _ecc.mutable_public_key()->save(&key_pub_raw);
+  _ecc.mutable_key_pub()->save(&key_pub_raw);
 
   messages::_KeyPub author;
   author.set_type(messages::KeyType::ECP256K1);
@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
   //       },{"../keys/key_" + std::to_string(i) + ".pub"});
   //
   //            Buffer buf;
-  //            ecc.public_key().save(&buf);
+  //            ecc.key_pub().save(&buf);
   //
   //            messages::Address addr(buf);
   //            std::string t;
@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
   //
   //
   //            Buffer bufp;
-  //            ecc.private_key().save(&bufp);
+  //            ecc.key_priv().save(&bufp);
   //
   //            messages::_KeyPriv keypriv;
   //            keypriv.set_type(messages::KeyType::ECP256K1);

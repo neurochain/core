@@ -216,9 +216,9 @@ TEST_F(Consensus, compute_assembly_pii) { test_compute_assembly_pii(); }
 TEST_F(Consensus, start_computations) { test_start_computations(); }
 
 TEST_F(Consensus, add_transaction) {
-  auto t0 = ledger->send_ncc(simulator.keys[0].private_key(),
+  auto t0 = ledger->send_ncc(simulator.keys[0].key_priv(),
                              simulator.addresses[1], 0.5);
-  auto t1 = ledger->send_ncc(simulator.keys[0].private_key(),
+  auto t1 = ledger->send_ncc(simulator.keys[0].key_priv(),
                              simulator.addresses[0], 0.5);
   ASSERT_TRUE(consensus->add_transaction(t0));
 
@@ -230,7 +230,7 @@ TEST_F(Consensus, add_transaction) {
 
   // Now that t1 has been added to the transaction pool. t2 should be build with
   // a different input so there should be no double spending
-  auto t2 = ledger->send_ncc(simulator.keys[0].private_key(),
+  auto t2 = ledger->send_ncc(simulator.keys[0].key_priv(),
                              simulator.addresses[0], 0.5);
   ASSERT_TRUE(consensus->add_transaction(t2));
 }

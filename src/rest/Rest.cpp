@@ -68,7 +68,7 @@ Rest::Rest(Bot *bot, std::shared_ptr<ledger::Ledger> ledger,
       messages::NCCAmount amount;
       amount.set_value(faucet_amount);
       messages::Transaction transaction =
-          _ledger->build_transaction(address, amount, _keys->private_key());
+          _ledger->build_transaction(address, amount, _keys->key_priv());
       _bot->publish_transaction(transaction);
       res << transaction;
       return OCS_PROCESSED;
@@ -201,7 +201,7 @@ messages::Transaction Rest::build_transaction(
     outputs.push_back(output);
   }
 
-  const crypto::KeyPub key_pub = key_priv.make_public_key();
+  const crypto::KeyPub key_pub = key_priv.make_key_pub();
   const auto address = messages::Address(key_pub);
   const auto ecc = crypto::Ecc(key_priv, key_pub);
   std::vector<const crypto::Ecc *> keys = {&ecc};
@@ -224,13 +224,13 @@ messages::GeneratedKeys Rest::generate_keys() const {
   messages::GeneratedKeys generated_keys;
   crypto::Ecc ecc;
   messages::_KeyPub key_pub;
-  ecc.public_key().save(&key_pub);
+  ecc.key_pub().save(&key_pub);
   messages::_KeyPriv key_priv;
-  ecc.private_key().save(&key_priv);
+  ecc.key_priv().save(&key_priv);
   generated_keys.mutable_key_priv()->CopyFrom(key_priv);
   generated_keys.mutable_key_pub()->CopyFrom(key_pub);
   generated_keys.mutable_address()->CopyFrom(
-      messages::Hasher(ecc.public_key()));
+      messages::Hasher(ecc.key_pub()));
   return generated_keys;
 }
 

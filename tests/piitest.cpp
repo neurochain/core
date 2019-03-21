@@ -52,7 +52,7 @@ TEST(PiiTest, Pii_rand) {
 
   crypto::Ecc _ecc({"../../keys/key_3.priv"}, {"../../keys/key_3.pub"});
   Buffer key_pub_raw;
-  _ecc.mutable_public_key()->save(&key_pub_raw);
+  _ecc.mutable_key_pub()->save(&key_pub_raw);
 
   messages::_KeyPub author;
   author.set_type(messages::KeyType::ECP256K1);
@@ -80,7 +80,7 @@ TEST(PiiTest, Pii_next_owner) {
 
   crypto::Ecc _ecc({"../../keys/key_3.priv"}, {"../../keys/key_3.pub"});
   Buffer key_pub_raw;
-  _ecc.mutable_public_key()->save(&key_pub_raw);
+  _ecc.mutable_key_pub()->save(&key_pub_raw);
 
   messages::_KeyPub author;
   author.set_type(messages::KeyType::ECP256K1);
@@ -116,7 +116,7 @@ TEST(PiiTest, Pii_first_fork) {
 
   crypto::Ecc _ecc({"../../keys/key_3.priv"}, {"../../keys/key_3.pub"});
   Buffer key_pub_raw;
-  _ecc.mutable_public_key()->save(&key_pub_raw);
+  _ecc.mutable_key_pub()->save(&key_pub_raw);
 
   messages::_KeyPub author;
   author.set_type(messages::KeyType::ECP256K1);

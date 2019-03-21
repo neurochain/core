@@ -25,10 +25,10 @@ TEST(Ecc, check_key_value_expectations) {
   std::vector<uint8_t> buffer1(std::istreambuf_iterator<char>(pub_key_file),
                                {});
   ASSERT_FALSE(buffer1.empty());
-  const auto raw_data = keys1.public_key().save();
+  const auto raw_data = keys1.key_pub().save();
   ASSERT_EQ(buffer1, raw_data);
   Buffer buffer2;
-  keys1.public_key().save(&buffer2);
+  keys1.key_pub().save(&buffer2);
   ASSERT_EQ(buffer1, buffer2);
 }
 
@@ -37,11 +37,11 @@ TEST(Ecc, save_load_buffer) {
   crypto::Ecc keys1;
   Buffer buff;
 
-  keys0.private_key().save(&buff);
-  keys1.mutable_private_key()->load(buff);
+  keys0.key_priv().save(&buff);
+  keys1.mutable_key_priv()->load(buff);
 
-  keys0.public_key().save(&buff);
-  *keys1.mutable_public_key() = buff;
+  keys0.key_pub().save(&buff);
+  *keys1.mutable_key_pub() = buff;
 
   ASSERT_EQ(keys0, keys1);
 }
@@ -49,7 +49,7 @@ TEST(Ecc, save_load_buffer) {
 TEST(Ecc, save_load_protobuf) {
   const crypto::Ecc keys0;
   crypto::Ecc ecc;
-  crypto::KeyPub key_pub = ecc.public_key();
+  crypto::KeyPub key_pub = ecc.key_pub();
   messages::_KeyPub key_pub_protobuf;
   ASSERT_TRUE(key_pub.save(&key_pub_protobuf));
   crypto::KeyPub key_pub_loaded(key_pub_protobuf);
@@ -61,9 +61,9 @@ TEST(Ecc, save_load_protobuf_as_hex) {
   crypto::Ecc ecc;
   messages::_KeyPub key_pub;
 
-  ASSERT_TRUE(ecc.public_key().save_as_hex(&key_pub));
+  ASSERT_TRUE(ecc.key_pub().save_as_hex(&key_pub));
   crypto::KeyPub ecc_pub(key_pub);
-  ASSERT_EQ(ecc.public_key(), ecc_pub);
+  ASSERT_EQ(ecc.key_pub(), ecc_pub);
 }
 
 TEST(Ecc, sign_verify) {
@@ -86,14 +86,14 @@ TEST(Ecc, sign_verify) {
   const Buffer buf_msg("Hola mundo desde NeuroChainTech");
 
   const crypto::Ecc keys("test_sign.priv", "test_sign.pub");
-  const KeyPub pub_key = keys.public_key();
+  const KeyPub pub_key = keys.key_pub();
   ASSERT_TRUE(pub_key.verify(buf_msg, signature));
 }
 
 TEST(Ecc, key_pub) {
   crypto::Ecc ecc;
-  auto &key_pub = ecc.public_key();
-  auto &key_priv = ecc.private_key();
+  auto &key_pub = ecc.key_pub();
+  auto &key_priv = ecc.key_priv();
   ASSERT_TRUE((key_pub.has_raw_data() && key_pub.raw_data().size() > 0) ||
               (key_pub.has_hex_data() && key_pub.hex_data().size() > 0));
   ASSERT_TRUE(key_priv.has_data() && key_priv.data().size() > 0);

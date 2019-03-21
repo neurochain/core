@@ -39,7 +39,7 @@ class Hasher : public messages::Hash {
 
   static Hasher random() {
     crypto::Ecc ecc;
-    return Hasher(ecc.public_key());
+    return Hasher(ecc.key_pub());
   }
 
   std::string raw() const { return this->data(); }

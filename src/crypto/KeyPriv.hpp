@@ -31,7 +31,7 @@ class KeyPriv : public messages::_KeyPriv {
   Buffer sign(const uint8_t *data, const std::size_t size) const;
   Buffer sign(const Buffer &input) const;
 
-  KeyPub make_public_key() const;
+  KeyPub make_key_pub() const;
   bool operator==(const KeyPriv &key) const;
   friend std::ostream &operator<<(std::ostream &os, const KeyPriv &priv);
 };

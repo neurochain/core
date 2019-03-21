@@ -54,7 +54,7 @@ Address::Address() : _Address() {}
 
 Address Address::random() {
   crypto::Ecc ecc;
-  return Address(ecc.public_key());
+  return Address(ecc.key_pub());
 }
 
 bool Address::verify() const {

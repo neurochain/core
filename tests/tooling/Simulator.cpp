@@ -38,7 +38,7 @@ TEST_F(Simulator, block0) {
 }
 
 TEST_F(Simulator, send_ncc) {
-  auto sender_private_key = simulator.keys[0].private_key();
+  auto sender_private_key = simulator.keys[0].key_priv();
   auto recipient_public_key = simulator.addresses[1];
   auto transaction0 =
       ledger->send_ncc(sender_private_key, recipient_public_key, 0.5);
@@ -57,7 +57,7 @@ TEST_F(Simulator, send_ncc) {
   ASSERT_EQ(transaction1.outputs(1).value().value(), ncc_block0.value() * 0.25);
   ledger->add_to_transaction_pool(transaction1);
 
-  sender_private_key = simulator.keys[1].private_key();
+  sender_private_key = simulator.keys[1].key_priv();
   recipient_public_key = simulator.addresses[1];
   auto transaction2 =
       ledger->send_ncc(sender_private_key, recipient_public_key, 0.5);
@@ -69,7 +69,7 @@ TEST_F(Simulator, send_ncc) {
             ncc_block0.value() * 0.875);
   ledger->add_to_transaction_pool(transaction2);
 
-  sender_private_key = simulator.keys[1].private_key();
+  sender_private_key = simulator.keys[1].key_priv();
   recipient_public_key = simulator.addresses[3];
   auto transaction3 =
       ledger->send_ncc(sender_private_key, recipient_public_key, 0.5);

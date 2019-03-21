@@ -19,14 +19,14 @@ bool sign(const std::vector<const crypto::Ecc *> keys,
 
   for (const auto &input : *transaction->mutable_inputs()) {
     const auto key = keys[input.signature_id()];
-    const auto signature = key->private_key().sign(serialized_transaction);
+    const auto signature = key->key_priv().sign(serialized_transaction);
     auto input_signature = transaction->add_signatures();
 
     input_signature->mutable_signature()->set_data(signature.data(),
                                                    signature.size());
     input_signature->mutable_signature()->set_type(messages::Hash::SHA256);
 
-    key->public_key().save(input_signature->mutable_key_pub());
+    key->key_pub().save(input_signature->mutable_key_pub());
   }
 
   return true;
@@ -81,10 +81,10 @@ bool sign(const crypto::Ecc &keys, messages::Denunciation *denunciation) {
   Buffer serialized;
   messages::to_buffer(*denunciation, &serialized);
 
-  const auto signature = keys.private_key().sign(serialized);
+  const auto signature = keys.key_priv().sign(serialized);
   author->mutable_signature()->set_data(signature.data(), signature.size());
   author->mutable_signature()->set_type(messages::Hash::SHA256);
-  keys.public_key().save(author->mutable_key_pub());
+  keys.key_pub().save(author->mutable_key_pub());
 
   return true;
 }

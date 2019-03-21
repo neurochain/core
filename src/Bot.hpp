@@ -96,7 +96,7 @@ class Bot {
     std::optional<messages::Peer *> res;
     messages::_KeyPub my_key_pub;
     auto peers = _tcp_config->mutable_peers();
-    _keys->public_key().save(&my_key_pub);
+    _keys->key_pub().save(&my_key_pub);
 
     if (peer.key_pub() == my_key_pub) {
       return res;

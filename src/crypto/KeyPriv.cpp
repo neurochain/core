@@ -89,7 +89,7 @@ Buffer KeyPriv::sign(const Buffer &input) const {
   return sign(input.data(), input.size());
 }
 
-KeyPub KeyPriv::make_public_key() const {
+KeyPub KeyPriv::make_key_pub() const {
   KeyPub::Key pub_key;
   _key.MakePublicKey(pub_key);
   return KeyPub{pub_key};
