@@ -336,11 +336,10 @@ void Bot::handler_deconnection(const messages::Header &header,
   if (header.has_connection_id()) {
     auto remote_peer = _networking.find_peer(header.connection_id());
     if (remote_peer) {
-      (*remote_peer)->set_status(messages::Peer::DISCONNECTED);
+      (*remote_peer)->set_status(messages::Peer::UNREACHABLE);
     }
     _networking.terminate(header.connection_id());
   }
-
 
   LOG_DEBUG << this << " " << __LINE__
             << " _networking.peer_count(): " << _networking.peer_count();
