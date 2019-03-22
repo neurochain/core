@@ -16,7 +16,7 @@
                     "endpoint": "localhost",
                     "keyPub": {
                         "type": "ECP256K1",
-                        "rawData": "MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABOBPdJmNMRu7dZ0O4+b/jG5CyuLeI870VKYu0DrtJ8I8VW3wt5NcbqfqIk7OI0+9cE7+xCPtKwF1vAHi730nMJ0="
+                        "rawData": "A+BPdJmNMRu7dZ0O4+b/jG5CyuLeI870VKYu0DrtJ8I8"
                     },
                     "port": 1338
                 },
@@ -24,7 +24,7 @@
                     "endpoint": "localhost",
                     "keyPub": {
                         "type": "ECP256K1",
-                        "rawData": "MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABCMKGnZhazXAoXb0SJIqi4Ho+lk6bw0UttE34PDtDbyapLNy8lVNCKH9kkLP+iFo9CP0kZ3KYZJzHSL6Ab93Gts="
+                        "rawData": "AyMKGnZhazXAoXb0SJIqi4Ho+lk6bw0UttE34PDtDbya"
                     },
                     "port": 1339
                 }

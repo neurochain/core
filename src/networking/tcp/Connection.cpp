@@ -110,6 +110,10 @@ void Connection::read_body(std::size_t body_size) {
         const auto key_pub = _this->_remote_peer.key_pub();
 
         crypto::EccPub ecc_pub(key_pub);
+        LOG_DEBUG << "KEY PUB " << ecc_pub << std::endl;
+        LOG_DEBUG << "BUFFER " << _this->_buffer << std::endl;
+        LOG_DEBUG << "SIGNATURE " << Buffer(header_pattern->signature, 64)
+                  << std::endl;
 
         const auto check =
             ecc_pub.verify(_this->_buffer, header_pattern->signature,
@@ -135,7 +139,7 @@ bool Connection::send(std::shared_ptr<Buffer> &message) {
           LOG_ERROR << "Could not send message" << _this << " " << __LINE__
                     << " Killing connection " << error;
 
-	  _this->close();
+          _this->close();
           return false;
         }
         return true;
@@ -159,7 +163,7 @@ void Connection::terminate() {
 const std::optional<IP> Connection::remote_ip() const {
   boost::system::error_code ec;
   const auto endpoint = _socket->remote_endpoint(ec);
-  if(ec) {
+  if (ec) {
     return {};
   }
   return std::make_optional(endpoint.address());
@@ -168,7 +172,7 @@ const std::optional<IP> Connection::remote_ip() const {
 const std::optional<Port> Connection::remote_port() const {
   boost::system::error_code ec;
   const auto endpoint = _socket->remote_endpoint(ec);
-  if(ec) {
+  if (ec) {
     return {};
   }
   return static_cast<Port>(endpoint.port());
