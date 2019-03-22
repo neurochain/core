@@ -1,9 +1,9 @@
 #ifndef NEURO_SRC_MESSAGES_PEER_HPP
 #define NEURO_SRC_MESSAGES_PEER_HPP
 
-#include <mutex>
 #include "common.pb.h"
 #include "common/types.hpp"
+#include "common/logger.hpp"
 #include "crypto/EccPub.hpp"
 
 namespace neuro {
@@ -50,7 +50,7 @@ class Peer : public _Peer {
   void update_unreachable(const std::time_t t) {
     if (next_update().data() < t &&
         status() & (Peer::UNREACHABLE | Peer::CONNECTING)) {
-      set_status(Peer::DISCONNECTED);
+      this->set_status(Peer::DISCONNECTED);
     }
   }
 

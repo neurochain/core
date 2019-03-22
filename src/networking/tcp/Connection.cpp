@@ -109,9 +109,7 @@ void Connection::read_body(std::size_t body_size) {
         }
         const auto key_pub = _this->_remote_peer.key_pub();
 
-	crypto::EccPub ecc_pub(
-            reinterpret_cast<const uint8_t *>(key_pub.raw_data().data()),
-            key_pub.raw_data().size());
+        crypto::EccPub ecc_pub(key_pub);
 
         const auto check =
             ecc_pub.verify(_this->_buffer, header_pattern->signature,
@@ -121,7 +119,8 @@ void Connection::read_body(std::size_t body_size) {
           LOG_ERROR << "Bad signature, dropping message " << ecc_pub;
           return;
         }
-	message->mutable_header()->mutable_key_pub()->CopyFrom(_remote_peer.key_pub());
+        message->mutable_header()->mutable_key_pub()->CopyFrom(
+            _remote_peer.key_pub());
         _this->_queue->publish(message);
         _this->read_header();
       });
@@ -136,7 +135,7 @@ bool Connection::send(std::shared_ptr<Buffer> &message) {
           LOG_ERROR << "Could not send message" << _this << " " << __LINE__
                     << " Killing connection " << error;
 
-          _this->close();
+	  _this->close();
           return false;
         }
         return true;
@@ -147,7 +146,7 @@ bool Connection::send(std::shared_ptr<Buffer> &message) {
 void Connection::close() { _socket->close(); }
 
 void Connection::terminate() {
-  close();
+  _socket->close();
   auto message = std::make_shared<messages::Message>();
   auto header = message->mutable_header();
   header->set_connection_id(_id);
@@ -157,13 +156,21 @@ void Connection::terminate() {
   _queue->publish(message);
 }
 
-const IP Connection::remote_ip() const {
-  const auto endpoint = _socket->remote_endpoint();
-  return endpoint.address();
+const std::optional<IP> Connection::remote_ip() const {
+  boost::system::error_code ec;
+  const auto endpoint = _socket->remote_endpoint(ec);
+  if(ec) {
+    return {};
+  }
+  return std::make_optional(endpoint.address());
 }
 
-const Port Connection::remote_port() const {
-  const auto endpoint = _socket->remote_endpoint();
+const std::optional<Port> Connection::remote_port() const {
+  boost::system::error_code ec;
+  const auto endpoint = _socket->remote_endpoint(ec);
+  if(ec) {
+    return {};
+  }
   return static_cast<Port>(endpoint.port());
 }
 

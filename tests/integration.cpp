@@ -53,7 +53,7 @@ class BotTest {
     Path configAsPath(configPath);
     messages::config::Config config(configAsPath);
     _bot = std::make_unique<Bot>(config);
-    _bot.get()->_max_incoming_connections = 3;
+    _bot->_max_incoming_connections = 3;
   }
 
   auto& operator->() {
@@ -61,15 +61,15 @@ class BotTest {
   }
 
   void update_unreachable() {
-    _bot.get()->_peers.update_unreachable();
+    _bot->_peers.update_unreachable();
   }
 
-//  int nb_blocks() { return _bot._ledger->total_nb_blocks(); }
+//  int nb_blocks() { return _bot->_ledger->total_nb_blocks(); }
 //  void add_block() {
 //    messages::TaggedBlock new_block;
 //    neuro::tooling::blockgen::blockgen_from_last_db_block(
-//        new_block.mutable_block(), _bot._ledger, 1, 0);
-//    _bot._ledger->insert_block(new_block);
+//        new_block.mutable_block(), _bot->_ledger, 1, 0);
+//    _bot->_ledger->insert_block(new_block);
 //  }
 };
 
@@ -102,7 +102,7 @@ TEST(INTEGRATION, simple_interaction) {
         listener.handler_connection(header, body);
       });
 
-  std::this_thread::sleep_for(5s);
+  std::this_thread::sleep_for(1s);
 
   LOG_DEBUG << "listener.received_connection() = "
             << listener.received_connection();
@@ -147,11 +147,9 @@ TEST(INTEGRATION, simple_interaction) {
   ASSERT_TRUE(peers_bot2[1]->port() == 1337 || peers_bot2[1]->port() == 1338);
   ASSERT_NE(peers_bot2[0]->port(), peers_bot2[1]->port());
 
-  LOG_TRACE << "the end?" << std::endl;
   bot2.reset();
-  LOG_TRACE << "the end?" << std::endl;
+  std::this_thread::sleep_for(1s);
   bot1.reset();
-  LOG_TRACE << "the end?" << std::endl;
   bot0.reset();
   LOG_TRACE << "the end?" << std::endl;
 }
@@ -194,7 +192,7 @@ TEST(INTEGRATION, neighbors_propagation) {
   my_logs << "1 peerss " << std::endl << bot1->peers() << std::endl;
   my_logs << "2 peerss " << std::endl << bot2->peers() << std::endl;
   my_logs.close();
-  
+
   ASSERT_EQ(peers_bot0.size(), peers_bot1.size());
   ASSERT_EQ(peers_bot1.size(), peers_bot2.size());
   ASSERT_EQ(peers_bot2.size(), 2);
@@ -572,7 +570,7 @@ TEST(INTEGRATION, connection_opportunity) {
 
   // Destroy a connected bot.
   bot3.operator->().reset();
-  std::this_thread::sleep_for(45s);
+  std::this_thread::sleep_for(5s);
 
 
   peers_bot0 = vectorize(bot0->connected_peers());
