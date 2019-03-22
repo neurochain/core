@@ -28,7 +28,8 @@ Ecc::Ecc(const std::string &filepath_private,
 }
 
 Ecc::Ecc(const EccPriv &ecc_priv, const EccPub &ecc_pub)
-    : _key_private(std::make_unique<EccPriv>(_prng)),
+    : _prng(std::make_shared<CryptoPP::AutoSeededRandomPool>()),
+      _key_private(std::make_unique<EccPriv>(_prng)),
       _key_public(std::make_unique<EccPub>(_key_private->make_public_key())) {}
 
 bool Ecc::load_keys(const std::string &keypath_priv,
