@@ -17,7 +17,7 @@ namespace tests {
 
 class LedgerMongodb : public ::testing::Test {
  public:
-  const std::string db_url = "mongodb://mongo:27017";
+  const std::string db_url = "mongodb://127.0.0.1:27017";
   const std::string db_name = "test_ledger";
   const messages::NCCAmount ncc_block0 = messages::NCCAmount(1000000);
   const int nb_keys = 2;
