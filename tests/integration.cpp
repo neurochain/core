@@ -73,8 +73,6 @@ class BotTest {
 //  }
 };
 
-static auto a = logging::core::get()->set_logging_enabled(false);
-
 TEST(INTEGRATION, simple_interaction) {
   Listener listener;
   Path config_path0("bot0.json");
