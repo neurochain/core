@@ -12,7 +12,6 @@
 #include "tooling/blockgen.hpp"
 
 namespace neuro {
-
 namespace tests {
 
 using namespace std::chrono_literals;
@@ -62,9 +61,13 @@ class BotTest {
 
   void keep_max_connections() { _bot->keep_max_connections(); }
 
+  auto me() { return _bot->_me; }
+
   auto &operator-> () { return _bot; }
 
   void update_unreachable() { _bot->_peers.update_unreachable(); }
+
+  messages::Peers &peers() { return _bot->_peers; }
 
   bool check_peers_ports(std::vector<int> ports) {
     std::sort(ports.begin(), ports.end());
@@ -85,6 +88,29 @@ class BotTest {
   //    _bot->_ledger->insert_block(new_block);
   //  }
 };
+
+TEST(INTEGRATION, full_node) {
+  // Try to connect to a bot that is full. The full node should me marked as
+  // UNREACHABLE and the node that initiated the connection should be marked as
+  // DISCONNECTED
+  BotTest bot0("bot0.json");
+  bot0.set_max_incoming_connections(0);
+  std::this_thread::sleep_for(5s);
+  BotTest bot1("bot1.json");
+
+  std::this_thread::sleep_for(5s);
+  ASSERT_EQ(bot0.peers().size(), 2);
+  ASSERT_EQ(bot0->connected_peers().size(), 0);
+  ASSERT_EQ(bot1.peers().size(), 2);
+  ASSERT_EQ(bot1->connected_peers().size(), 0);
+
+  auto peer0 = bot0.peers().find(bot1.me().key_pub());
+  auto peer1 = bot1.peers().find(bot0.me().key_pub());
+  ASSERT_TRUE(peer0);
+  ASSERT_TRUE(peer1);
+  ASSERT_EQ((*peer0)->status(), messages::Peer::DISCONNECTED);
+  ASSERT_EQ((*peer1)->status(), messages::Peer::UNREACHABLE);
+}
 
 TEST(INTEGRATION, simple_interaction) {
   Listener listener;
