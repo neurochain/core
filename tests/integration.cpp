@@ -92,7 +92,7 @@ class BotTest {
 TEST(INTEGRATION, full_node) {
   // Try to connect to a bot that is full. The full node should me marked as
   // UNREACHABLE and the node that initiated the connection should be marked as
-  // DISCONNECTED
+  // UNREACHABLE too
   BotTest bot0("bot0.json");
   bot0.set_max_incoming_connections(0);
   std::this_thread::sleep_for(5s);
@@ -108,7 +108,7 @@ TEST(INTEGRATION, full_node) {
   auto peer1 = bot1.peers().find(bot0.me().key_pub());
   ASSERT_TRUE(peer0);
   ASSERT_TRUE(peer1);
-  ASSERT_EQ((*peer0)->status(), messages::Peer::DISCONNECTED);
+  ASSERT_EQ((*peer0)->status(), messages::Peer::UNREACHABLE);
   ASSERT_EQ((*peer1)->status(), messages::Peer::UNREACHABLE);
 }
 
@@ -684,11 +684,14 @@ TEST(INTEGRATION, connection_opportunity_update) {
   // Check a node excluded from a connected graph can connect after a node of
   // the complete graph accept one more connection.
   BotTest bot0("bot0.json");
+  std::this_thread::sleep_for(1s);
   BotTest bot1("bot1.json");
+  std::this_thread::sleep_for(1s);
   BotTest bot2("bot2.json");
+  std::this_thread::sleep_for(1s);
   BotTest bot3("integration_propagation40.json");
 
-  std::this_thread::sleep_for(10s);
+  std::this_thread::sleep_for(2s);
 
   ASSERT_TRUE(bot0.check_peers_ports({1338, 1339, 13340}));
   ASSERT_TRUE(bot1.check_peers_ports({1337, 1339, 13340}));
@@ -697,7 +700,7 @@ TEST(INTEGRATION, connection_opportunity_update) {
 
   // Create additional node that cannot connect
   BotTest bot4("integration_propagation50.json");
-  std::this_thread::sleep_for(10s);
+  std::this_thread::sleep_for(2s);
 
   // Check no change on other nodes
   ASSERT_TRUE(bot0.check_peers_ports({1338, 1339, 13340}));
@@ -708,10 +711,8 @@ TEST(INTEGRATION, connection_opportunity_update) {
 
   // Make bot3 accept one more connection
   bot3.set_max_incoming_connections(4);
-  bot3.keep_max_connections();
-  bot4.keep_max_connections();
 
-  std::this_thread::sleep_for(10s);
+  std::this_thread::sleep_for(20s);
   ASSERT_TRUE(bot0.check_peers_ports({1338, 1339, 13340}));
   ASSERT_TRUE(bot1.check_peers_ports({1337, 1339, 13340}));
   ASSERT_TRUE(bot2.check_peers_ports({1337, 1338, 13340}));
