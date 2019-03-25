@@ -56,9 +56,26 @@ class BotTest {
     _bot->_max_incoming_connections = 3;
   }
 
+  void set_max_incoming_connections(int max_incoming_connections) {
+    _bot->_max_incoming_connections = max_incoming_connections;
+  }
+
+  void keep_max_connections() { _bot->keep_max_connections(); }
+
   auto &operator-> () { return _bot; }
 
   void update_unreachable() { _bot->_peers.update_unreachable(); }
+
+  bool check_peers_ports(std::vector<int> ports) {
+    std::sort(ports.begin(), ports.end());
+    std::vector<int> peers_ports;
+    for (const auto &peer : _bot->connected_peers()) {
+      peers_ports.push_back(peer->port());
+    }
+    std::sort(peers_ports.begin(), peers_ports.end());
+    EXPECT_EQ(peers_ports, ports);
+    return peers_ports == ports;
+  }
 
   //  int nb_blocks() { return _bot->_ledger->total_nb_blocks(); }
   //  void add_block() {
@@ -639,224 +656,41 @@ TEST(INTEGRATION, connection_opportunity) {
 
 TEST(INTEGRATION, connection_opportunity_update) {
   // Check a node excluded from a connected graph can connect after a node of
-  // the compleete graph is destroyed even if the only node it knows is full.
-  Path config_path0("bot0.json");
-  messages::config::Config config0(config_path0);
-  auto bot0 = std::make_shared<Bot>(config0);
-  Path config_path1("bot1.json");
-  messages::config::Config config1(config_path1);
-  auto bot1 = std::make_shared<Bot>(config1);
-  Path config_path2("bot2.json");
-  messages::config::Config config2(config_path2);
-  auto bot2 = std::make_shared<Bot>(config2);
-  Path config_path3("bot_outsider.40-38.39.json");
-  messages::config::Config config3(config_path3);
-  auto bot3 = std::make_shared<Bot>(config3);
+  // the complete graph accept one more connection.
+  BotTest bot0("bot0.json");
+  BotTest bot1("bot1.json");
+  BotTest bot2("bot2.json");
+  BotTest bot3("integration_propagation40.json");
 
   std::this_thread::sleep_for(10s);
 
-  auto peers_bot0 = vectorize(bot0->connected_peers());
-  auto peers_bot1 = vectorize(bot1->connected_peers());
-  auto peers_bot2 = vectorize(bot2->connected_peers());
-  auto peers_bot3 = vectorize(bot3->connected_peers());
-
-  ASSERT_EQ(peers_bot0.size(), peers_bot1.size());
-  ASSERT_EQ(peers_bot1.size(), peers_bot2.size());
-  ASSERT_EQ(peers_bot2.size(), peers_bot3.size());
-  ASSERT_EQ(peers_bot3.size(), 3);
-
-  ASSERT_EQ(peers_bot0[0]->endpoint(), "localhost");
-  ASSERT_EQ(peers_bot0[1]->endpoint(), "localhost");
-  ASSERT_EQ(peers_bot0[2]->endpoint(), "localhost");
-  ASSERT_TRUE(peers_bot0[0]->port() == 1338 || peers_bot0[0]->port() == 1339 ||
-              peers_bot0[0]->port() == 13340);
-  ASSERT_TRUE(peers_bot0[1]->port() == 1338 || peers_bot0[1]->port() == 1339 ||
-              peers_bot0[1]->port() == 13340);
-  ASSERT_TRUE(peers_bot0[2]->port() == 1338 || peers_bot0[2]->port() == 1339 ||
-              peers_bot0[2]->port() == 13340);
-  ASSERT_NE(peers_bot0[0]->port(), peers_bot0[1]->port());
-  ASSERT_NE(peers_bot0[1]->port(), peers_bot0[2]->port());
-  ASSERT_NE(peers_bot0[0]->port(), peers_bot0[2]->port());
-
-  ASSERT_EQ(peers_bot1[0]->endpoint(), "localhost");
-  ASSERT_EQ(peers_bot1[1]->endpoint(), "localhost");
-  ASSERT_EQ(peers_bot1[2]->endpoint(), "localhost");
-  ASSERT_TRUE(peers_bot1[0]->port() == 1337 || peers_bot1[0]->port() == 1339 ||
-              peers_bot1[0]->port() == 13340);
-  ASSERT_TRUE(peers_bot1[1]->port() == 1337 || peers_bot1[1]->port() == 1339 ||
-              peers_bot1[1]->port() == 13340);
-  ASSERT_TRUE(peers_bot1[2]->port() == 1337 || peers_bot1[2]->port() == 1339 ||
-              peers_bot1[2]->port() == 13340);
-  ASSERT_NE(peers_bot1[0]->port(), peers_bot1[1]->port());
-  ASSERT_NE(peers_bot1[1]->port(), peers_bot1[2]->port());
-  ASSERT_NE(peers_bot1[0]->port(), peers_bot1[2]->port());
-
-  ASSERT_EQ(peers_bot2[0]->endpoint(), "localhost");
-  ASSERT_EQ(peers_bot2[1]->endpoint(), "localhost");
-  ASSERT_EQ(peers_bot2[2]->endpoint(), "localhost");
-  ASSERT_TRUE(peers_bot2[0]->port() == 1337 || peers_bot2[0]->port() == 1338 ||
-              peers_bot2[0]->port() == 13340);
-  ASSERT_TRUE(peers_bot2[1]->port() == 1337 || peers_bot2[1]->port() == 1338 ||
-              peers_bot2[1]->port() == 13340);
-  ASSERT_TRUE(peers_bot2[2]->port() == 1337 || peers_bot2[2]->port() == 1338 ||
-              peers_bot2[2]->port() == 13340);
-  ASSERT_NE(peers_bot2[0]->port(), peers_bot2[1]->port());
-  ASSERT_NE(peers_bot2[1]->port(), peers_bot2[2]->port());
-  ASSERT_NE(peers_bot2[0]->port(), peers_bot2[2]->port());
-
-  ASSERT_EQ(peers_bot3[0]->endpoint(), "localhost");
-  ASSERT_EQ(peers_bot3[1]->endpoint(), "localhost");
-  ASSERT_EQ(peers_bot3[2]->endpoint(), "localhost");
-  ASSERT_TRUE(peers_bot3[0]->port() == 1337 || peers_bot3[0]->port() == 1338 ||
-              peers_bot3[0]->port() == 1339);
-  ASSERT_TRUE(peers_bot3[1]->port() == 1337 || peers_bot3[1]->port() == 1338 ||
-              peers_bot3[1]->port() == 1339);
-  ASSERT_TRUE(peers_bot3[2]->port() == 1337 || peers_bot3[2]->port() == 1338 ||
-              peers_bot3[2]->port() == 1339);
-  ASSERT_NE(peers_bot3[0]->port(), peers_bot3[1]->port());
-  ASSERT_NE(peers_bot3[1]->port(), peers_bot3[2]->port());
-  ASSERT_NE(peers_bot3[0]->port(), peers_bot3[2]->port());
+  ASSERT_TRUE(bot0.check_peers_ports({1338, 1339, 13340}));
+  ASSERT_TRUE(bot1.check_peers_ports({1337, 1339, 13340}));
+  ASSERT_TRUE(bot2.check_peers_ports({1337, 1338, 13340}));
+  ASSERT_TRUE(bot3.check_peers_ports({1337, 1338, 1339}));
 
   // Create additional node that cannot connect
-  Path config_path4("bot_outsider.50-37.json");
-  messages::config::Config config4(config_path4);
-  auto bot4 = std::make_shared<Bot>(config4);
-
+  BotTest bot4("integration_propagation50.json");
   std::this_thread::sleep_for(10s);
 
   // Check no change on other nodes
-  peers_bot0 = vectorize(bot0->connected_peers());
-  peers_bot1 = vectorize(bot1->connected_peers());
-  peers_bot2 = vectorize(bot2->connected_peers());
-  peers_bot3 = vectorize(bot3->connected_peers());
+  ASSERT_TRUE(bot0.check_peers_ports({1338, 1339, 13340}));
+  ASSERT_TRUE(bot1.check_peers_ports({1337, 1339, 13340}));
+  ASSERT_TRUE(bot2.check_peers_ports({1337, 1338, 13340}));
+  ASSERT_TRUE(bot3.check_peers_ports({1337, 1338, 1339}));
+  ASSERT_TRUE(bot4.check_peers_ports({}));
 
-  ASSERT_EQ(peers_bot0.size(), peers_bot1.size());
-  ASSERT_EQ(peers_bot1.size(), peers_bot2.size());
-  ASSERT_EQ(peers_bot2.size(), peers_bot3.size());
-  ASSERT_EQ(peers_bot3.size(), 3);
-
-  ASSERT_EQ(peers_bot0[0]->endpoint(), "localhost");
-  ASSERT_EQ(peers_bot0[1]->endpoint(), "localhost");
-  ASSERT_EQ(peers_bot0[2]->endpoint(), "localhost");
-  ASSERT_TRUE(peers_bot0[0]->port() == 1338 || peers_bot0[0]->port() == 1339 ||
-              peers_bot0[0]->port() == 13340);
-  ASSERT_TRUE(peers_bot0[1]->port() == 1338 || peers_bot0[1]->port() == 1339 ||
-              peers_bot0[1]->port() == 13340);
-  ASSERT_TRUE(peers_bot0[2]->port() == 1338 || peers_bot0[2]->port() == 1339 ||
-              peers_bot0[2]->port() == 13340);
-  ASSERT_NE(peers_bot0[0]->port(), peers_bot0[1]->port());
-  ASSERT_NE(peers_bot0[1]->port(), peers_bot0[2]->port());
-  ASSERT_NE(peers_bot0[0]->port(), peers_bot0[2]->port());
-
-  ASSERT_EQ(peers_bot1[0]->endpoint(), "localhost");
-  ASSERT_EQ(peers_bot1[1]->endpoint(), "localhost");
-  ASSERT_EQ(peers_bot1[2]->endpoint(), "localhost");
-  ASSERT_TRUE(peers_bot1[0]->port() == 1337 || peers_bot1[0]->port() == 1339 ||
-              peers_bot1[0]->port() == 13340);
-  ASSERT_TRUE(peers_bot1[1]->port() == 1337 || peers_bot1[1]->port() == 1339 ||
-              peers_bot1[1]->port() == 13340);
-  ASSERT_TRUE(peers_bot1[2]->port() == 1337 || peers_bot1[2]->port() == 1339 ||
-              peers_bot1[2]->port() == 13340);
-  ASSERT_NE(peers_bot1[0]->port(), peers_bot1[1]->port());
-  ASSERT_NE(peers_bot1[1]->port(), peers_bot1[2]->port());
-  ASSERT_NE(peers_bot1[0]->port(), peers_bot1[2]->port());
-
-  ASSERT_EQ(peers_bot2[0]->endpoint(), "localhost");
-  ASSERT_EQ(peers_bot2[1]->endpoint(), "localhost");
-  ASSERT_EQ(peers_bot2[2]->endpoint(), "localhost");
-  ASSERT_TRUE(peers_bot2[0]->port() == 1337 || peers_bot2[0]->port() == 1338 ||
-              peers_bot2[0]->port() == 13340);
-  ASSERT_TRUE(peers_bot2[1]->port() == 1337 || peers_bot2[1]->port() == 1338 ||
-              peers_bot2[1]->port() == 13340);
-  ASSERT_TRUE(peers_bot2[2]->port() == 1337 || peers_bot2[2]->port() == 1338 ||
-              peers_bot2[2]->port() == 13340);
-  ASSERT_NE(peers_bot2[0]->port(), peers_bot2[1]->port());
-  ASSERT_NE(peers_bot2[1]->port(), peers_bot2[2]->port());
-  ASSERT_NE(peers_bot2[0]->port(), peers_bot2[2]->port());
-
-  ASSERT_EQ(peers_bot3[0]->endpoint(), "localhost");
-  ASSERT_EQ(peers_bot3[1]->endpoint(), "localhost");
-  ASSERT_EQ(peers_bot3[2]->endpoint(), "localhost");
-  ASSERT_TRUE(peers_bot3[0]->port() == 1337 || peers_bot3[0]->port() == 1338 ||
-              peers_bot3[0]->port() == 1339);
-  ASSERT_TRUE(peers_bot3[1]->port() == 1337 || peers_bot3[1]->port() == 1338 ||
-              peers_bot3[1]->port() == 1339);
-  ASSERT_TRUE(peers_bot3[2]->port() == 1337 || peers_bot3[2]->port() == 1338 ||
-              peers_bot3[2]->port() == 1339);
-  ASSERT_NE(peers_bot3[0]->port(), peers_bot3[1]->port());
-  ASSERT_NE(peers_bot3[1]->port(), peers_bot3[2]->port());
-  ASSERT_NE(peers_bot3[0]->port(), peers_bot3[2]->port());
-
-  auto peers_bot4 = vectorize(bot4->connected_peers());
-
-  ASSERT_EQ(peers_bot4.size(), 0);
-
-  // Destroy a connected bot.
-  bot3.reset();
+  // Make bot3 accept one more connection
+  bot3.set_max_incoming_connections(4);
+  bot3.keep_max_connections();
+  bot4.keep_max_connections();
 
   std::this_thread::sleep_for(10s);
-
-  peers_bot0 = vectorize(bot0->connected_peers());
-  peers_bot1 = vectorize(bot1->connected_peers());
-  peers_bot2 = vectorize(bot2->connected_peers());
-  peers_bot4 = vectorize(bot4->connected_peers());
-
-  ASSERT_EQ(peers_bot0.size(), peers_bot1.size());
-  ASSERT_EQ(peers_bot1.size(), peers_bot2.size());
-  ASSERT_EQ(peers_bot2.size(), peers_bot4.size());
-  ASSERT_EQ(peers_bot4.size(), 3);
-
-  ASSERT_EQ(peers_bot0[0]->endpoint(), "localhost");
-  ASSERT_EQ(peers_bot0[1]->endpoint(), "localhost");
-  ASSERT_EQ(peers_bot0[2]->endpoint(), "localhost");
-  ASSERT_TRUE(peers_bot0[0]->port() == 1338 || peers_bot0[0]->port() == 1339 ||
-              peers_bot0[0]->port() == 1350);
-  ASSERT_TRUE(peers_bot0[1]->port() == 1338 || peers_bot0[1]->port() == 1339 ||
-              peers_bot0[1]->port() == 1350);
-  ASSERT_TRUE(peers_bot0[2]->port() == 1338 || peers_bot0[2]->port() == 1339 ||
-              peers_bot0[2]->port() == 1350);
-  ASSERT_NE(peers_bot0[0]->port(), peers_bot0[1]->port());
-  ASSERT_NE(peers_bot0[1]->port(), peers_bot0[2]->port());
-  ASSERT_NE(peers_bot0[0]->port(), peers_bot0[2]->port());
-
-  ASSERT_EQ(peers_bot1[0]->endpoint(), "localhost");
-  ASSERT_EQ(peers_bot1[1]->endpoint(), "localhost");
-  ASSERT_EQ(peers_bot1[2]->endpoint(), "localhost");
-  ASSERT_TRUE(peers_bot1[0]->port() == 1337 || peers_bot1[0]->port() == 1339 ||
-              peers_bot1[0]->port() == 1350);
-  ASSERT_TRUE(peers_bot1[1]->port() == 1337 || peers_bot1[1]->port() == 1339 ||
-              peers_bot1[1]->port() == 1350);
-  ASSERT_TRUE(peers_bot1[2]->port() == 1337 || peers_bot1[2]->port() == 1339 ||
-              peers_bot1[2]->port() == 1350);
-  ASSERT_NE(peers_bot1[0]->port(), peers_bot1[1]->port());
-  ASSERT_NE(peers_bot1[1]->port(), peers_bot1[2]->port());
-  ASSERT_NE(peers_bot1[0]->port(), peers_bot1[2]->port());
-
-  ASSERT_EQ(peers_bot2[0]->endpoint(), "localhost");
-  ASSERT_EQ(peers_bot2[1]->endpoint(), "localhost");
-  ASSERT_EQ(peers_bot2[2]->endpoint(), "localhost");
-  ASSERT_TRUE(peers_bot2[0]->port() == 1337 || peers_bot2[0]->port() == 1338 ||
-              peers_bot2[0]->port() == 1350);
-  ASSERT_TRUE(peers_bot2[1]->port() == 1337 || peers_bot2[1]->port() == 1338 ||
-              peers_bot2[1]->port() == 1350);
-  ASSERT_TRUE(peers_bot2[2]->port() == 1337 || peers_bot2[2]->port() == 1338 ||
-              peers_bot2[2]->port() == 1350);
-  ASSERT_NE(peers_bot2[0]->port(), peers_bot2[1]->port());
-  ASSERT_NE(peers_bot2[1]->port(), peers_bot2[2]->port());
-  ASSERT_NE(peers_bot2[0]->port(), peers_bot2[2]->port());
-
-  ASSERT_EQ(peers_bot4[0]->endpoint(), "localhost");
-  ASSERT_EQ(peers_bot4[1]->endpoint(), "localhost");
-  ASSERT_EQ(peers_bot4[2]->endpoint(), "localhost");
-  ASSERT_TRUE(peers_bot4[0]->port() == 1337 || peers_bot4[0]->port() == 1338 ||
-              peers_bot4[0]->port() == 1339);
-  ASSERT_TRUE(peers_bot4[1]->port() == 1337 || peers_bot4[1]->port() == 1338 ||
-              peers_bot4[1]->port() == 1339);
-  ASSERT_TRUE(peers_bot4[2]->port() == 1337 || peers_bot4[2]->port() == 1338 ||
-              peers_bot4[2]->port() == 1339);
-  ASSERT_NE(peers_bot4[0]->port(), peers_bot4[1]->port());
-  ASSERT_NE(peers_bot4[1]->port(), peers_bot4[2]->port());
-  ASSERT_NE(peers_bot4[0]->port(), peers_bot4[2]->port());
+  ASSERT_TRUE(bot0.check_peers_ports({1338, 1339, 13340}));
+  ASSERT_TRUE(bot1.check_peers_ports({1337, 1339, 13340}));
+  ASSERT_TRUE(bot2.check_peers_ports({1337, 1338, 13340}));
+  ASSERT_TRUE(bot3.check_peers_ports({1337, 1338, 1339, 13350}));
+  ASSERT_TRUE(bot4.check_peers_ports({13340}));
 }
 
 TEST(INTEGRATION, connection_reconfig) {
