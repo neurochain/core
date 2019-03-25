@@ -786,9 +786,8 @@ TEST(INTEGRATION, terminate_on_bad_version) {
 
     std::this_thread::sleep_for(5s);
 
-    subscriber0 = std::make_shared<messages::Subscriber>(bot0->queue());
 
-    subscriber0->subscribe(messages::Type::kConnectionClosed,
+    bot0->subscribe(messages::Type::kConnectionClosed,
                            [&listener](const messages::Header &header,
                                        const messages::Body &body) {
                              listener.handler_deconnection(header, body);
@@ -850,9 +849,7 @@ TEST(INTEGRATION, block_exchange) {
   ASSERT_TRUE(true);
 // TODO: implement relevant test
 
-  Path config_path0("integration_propagation0.json");
-  messages::config::Config config0(config_path0);
-  BotTest bot0(config0);
+  BotTest bot0("integration_propagation0.json");
   bot0.add_block();
 
   std::cout << std::endl << "AVANT" << std::endl << std::endl;
@@ -861,9 +858,7 @@ TEST(INTEGRATION, block_exchange) {
 
   std::this_thread::sleep_for(5s);
 
-  Path config_path1("integration_propagation1.json");
-  messages::config::Config config1(config_path1);
-  BotTest bot1(config1);
+  BotTest bot1("integration_propagation1.json");
 
   std::cout << std::endl << "AVANT SLEEP" << std::endl << std::endl;
   std::cout << __FILE__ << ":" << __LINE__
