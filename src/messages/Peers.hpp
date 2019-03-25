@@ -34,6 +34,12 @@ class Peers {
     Indexes _peers;
     Indexes::iterator _it;
 
+    void shuffle() {
+      std::mt19937 g(_rd());
+      std::shuffle(_peers.begin(), _peers.end(), g);
+      _it = _peers.begin();
+    }
+
    public:
     iterator() = default;
 
@@ -44,10 +50,14 @@ class Peers {
           _peers.push_back(pair.second.get());
         }
       }
+      shuffle();
+    }
 
-      std::mt19937 g(_rd());
-      std::shuffle(_peers.begin(), _peers.end(), g);
-      _it = _peers.begin();
+    iterator(const PeersByKey &peers) {
+      for (const auto &pair : peers) {
+        _peers.push_back(pair.second.get());
+      }
+      shuffle();
     }
 
     void operator++() {
@@ -86,6 +96,7 @@ class Peers {
   std::vector<Peer *> used_peers();
   std::vector<Peer *> connected_peers();
   std::vector<Peer> peers_copy() const;
+  iterator begin();
   iterator begin(const Peer::Status);
   iterator end();
 };
