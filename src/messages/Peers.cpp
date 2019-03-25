@@ -7,6 +7,10 @@ Peers::iterator Peers::begin(const Peer::Status status) {
   return iterator{_peers, status};
 }
 
+Peers::iterator Peers::begin() {
+  return iterator{_peers};
+}
+
 Peers::iterator Peers::end() { return iterator{}; }
 
 std::optional<Peer *> Peers::insert(const Peer &peer) {
