@@ -22,27 +22,6 @@ std::vector<typename C::value_type> vectorize(const C &container) {
   return ans;
 }
 
-class Listener {
- private:
-  std::size_t _received_connection{0};
-  std::size_t _received_deconnection{0};
-
- public:
-  Listener() {}
-  void handler_connection(const messages::Header &header,
-                          const messages::Body &body) {
-    LOG_DEBUG << this << " It entered the handler_connection !!";
-    ++_received_connection;
-  }
-  void handler_deconnection(const messages::Header &header,
-                            const messages::Body &body) {
-    ++_received_deconnection;
-  }
-
-  std::size_t received_connection() const { return _received_connection; };
-  std::size_t received_deconnection() const { return _received_deconnection; };
-};
-
 class BotTest {
  private:
   std::unique_ptr<neuro::Bot> _bot;
@@ -117,14 +96,15 @@ TEST(INTEGRATION, full_node) {
 }
 
 TEST(INTEGRATION, simple_interaction) {
-  Listener listener;
+  int received_connection = 0;
+  int received_deconnection = 0;
   Path config_path0("bot0.json");
   messages::config::Config config0(config_path0);
   auto bot0 = std::make_shared<Bot>(config0);
   bot0->subscribe(
       messages::Type::kConnectionReady,
-      [&listener](const messages::Header &header, const messages::Body &body) {
-        listener.handler_connection(header, body);
+      [&](const messages::Header &header, const messages::Body &body) {
+        received_connection++;
       });
 
   Path config_path1("bot1.json");
@@ -132,8 +112,8 @@ TEST(INTEGRATION, simple_interaction) {
   auto bot1 = std::make_shared<Bot>(config1);
   bot1->subscribe(
       messages::Type::kConnectionReady,
-      [&listener](const messages::Header &header, const messages::Body &body) {
-        listener.handler_connection(header, body);
+      [&](const messages::Header &header, const messages::Body &body) {
+        received_connection++;
       });
 
   Path config_path2("bot2.json");
@@ -141,20 +121,14 @@ TEST(INTEGRATION, simple_interaction) {
   auto bot2 = std::make_shared<Bot>(config2);
   bot2->subscribe(
       messages::Type::kConnectionReady,
-      [&listener](const messages::Header &header, const messages::Body &body) {
-        listener.handler_connection(header, body);
+      [&](const messages::Header &header, const messages::Body &body) {
+        received_connection++;
       });
 
   std::this_thread::sleep_for(1s);
 
-  LOG_DEBUG << "listener.received_connection() = "
-            << listener.received_connection();
-
-  LOG_DEBUG << "listener.received_deconnection() = "
-            << listener.received_deconnection();
-
-  ASSERT_GT(listener.received_connection(), 0);
-  ASSERT_EQ(listener.received_deconnection(), 0);
+  ASSERT_GT(received_connection, 0);
+  ASSERT_EQ(received_deconnection, 0);
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
   std::this_thread::sleep_for(1s);
@@ -732,7 +706,7 @@ TEST(INTEGRATION, connection_reconfig) {
   BotTest bot2("bot2.json");
   BotTest bot3("integration_propagation40.json");
 
-  std::this_thread::sleep_for(15s);
+  std::this_thread::sleep_for(21s);
 
   ASSERT_TRUE(bot0.check_peers_ports({1338, 1339, 13340}));
   ASSERT_TRUE(bot1.check_peers_ports({1337, 1339, 13340}));
@@ -759,7 +733,7 @@ TEST(INTEGRATION, connection_reconfig) {
   bot4.update_unreachable();
   bot5.update_unreachable();
   bot6.update_unreachable();
-  std::this_thread::sleep_for(15s);
+  std::this_thread::sleep_for(21s);
 
   std::ofstream my_logs("my_logs_reconfig");
   my_logs << "37 peerss " << std::endl << bot0->peers() << std::endl;
@@ -784,10 +758,11 @@ TEST(INTEGRATION, ignore_bad_message) {
   ASSERT_TRUE(bot0.check_peers_ports({1338}));
   ASSERT_TRUE(bot1.check_peers_ports({1337}));
 
-  bot1->subscribe(messages::Type::kGetPeers, [](const messages::Header &header,
-                                                const messages::Body &body) {
-    EXPECT_EQ(header.version(), neuro::MessageVersion);
-  });
+  bot1->subscribe(messages::Type::kGetPeers,
+                  [](const messages::Header &header,
+                     const messages::Body &body) {
+                    EXPECT_EQ(header.version(), neuro::MessageVersion);
+                  });
 
   auto msg = std::make_shared<messages::Message>();
   auto *header = msg->mutable_header();
@@ -812,36 +787,6 @@ TEST(INTEGRATION, keep_max_connections) {
   ASSERT_TRUE(bot1.check_peers_ports({1337, 1339}));
   ASSERT_TRUE(bot2.check_peers_ports({1338}));
 }
-
-TEST(INTEGRATION, block_exchange) {
-  ASSERT_TRUE(true);
-  // TODO: implement relevant test
-
-  BotTest bot0("integration_propagation0.json");
-  bot0.add_block();
-
-  //  std::cout << std::endl << "AVANT" << std::endl << std::endl;
-  //  std::cout << __FILE__ << ":" << __LINE__
-  //            << " Nb of blocks bot 0: " << bot0.nb_blocks() << std::endl;
-
-  std::this_thread::sleep_for(5s);
-
-  BotTest bot1("integration_propagation1.json");
-
-  std::cout << std::endl << "AVANT SLEEP" << std::endl << std::endl;
-  std::cout << __FILE__ << ":" << __LINE__
-            << " Nb of blocks bot 0: " << bot0.nb_blocks() << std::endl;
-
-  std::this_thread::sleep_for(5s);
-
-  std::cout << std::endl << "APRES" << std::endl << std::endl;
-  std::cout << __FILE__ << ":" << __LINE__
-            << " Nb of blocks bot 0: " << bot0.nb_blocks() << std::endl;
-
-  std::cout << __FILE__ << ":" << __LINE__
-            << " Nb of blocks: bot 1: " << bot1.nb_blocks() << std::endl;
-}
-
 }  // namespace tests
 
 }  // namespace neuro
