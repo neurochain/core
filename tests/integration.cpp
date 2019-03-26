@@ -89,6 +89,8 @@ class BotTest {
   }
 };
 
+static auto a = logging::core::get()->set_logging_enabled(false);
+
 TEST(INTEGRATION, full_node) {
   // Try to connect to a bot that is full. The full node should me marked as
   // UNREACHABLE and the node that initiated the connection should be marked as
@@ -773,44 +775,29 @@ TEST(INTEGRATION, connection_reconfig) {
   ASSERT_TRUE(bot6.check_peers_ports({1337, 13350, 13351}));
 }
 
-TEST(INTEGRATION, terminate_on_bad_version) {
-  Listener listener;
-  std::shared_ptr<messages::Subscriber> subscriber0;
-  {
-    Path config_path0("integration_propagation0.json");
-    messages::config::Config config0(config_path0);
-    auto bot0 = std::make_shared<Bot>(config0);
-    Path config_path1("integration_propagation1.json");
-    messages::config::Config config1(config_path1);
-    auto bot1 = std::make_shared<Bot>(config1);
+TEST(INTEGRATION, ignore_bad_message) {
+  BotTest bot0("bot0.json");
+  BotTest bot1("bot1.json");
 
-    std::this_thread::sleep_for(5s);
-
-
-    bot0->subscribe(messages::Type::kConnectionClosed,
-                           [&listener](const messages::Header &header,
-                                       const messages::Body &body) {
-                             listener.handler_deconnection(header, body);
-                           });
-
-    auto peers_bot0 = vectorize(bot0->connected_peers());
-
-    ASSERT_TRUE(peers_bot0[0]->endpoint() == "localhost" &&
-                peers_bot0[0]->port() == 1338);
-
-    auto msg = std::make_shared<messages::Message>();
-    msg->add_bodies()->mutable_get_peers();
-    auto header = msg->mutable_header();
-    messages::fill_header(header);
-// auto key_pub = header->mutable_key_pub();
-// key_pub->CopyFrom(bot0->get_key_pub());
-
-    header->set_version(neuro::MessageVersion + 100);
-//bot0->networking()->send(msg);
-  }
   std::this_thread::sleep_for(5s);
 
-  ASSERT_GT(listener.received_deconnection(), 0);
+  ASSERT_TRUE(bot0.check_peers_ports({1338}));
+  ASSERT_TRUE(bot1.check_peers_ports({1337}));
+
+  bot1->subscribe(messages::Type::kGetPeers,
+                  [](const messages::Header &header,
+                     const messages::Body &body) {
+                    EXPECT_EQ(header.version(), neuro::MessageVersion);
+                  });
+
+  auto msg = std::make_shared<messages::Message>();
+  auto *header = msg->mutable_header();
+  messages::fill_header(header);
+  msg->add_bodies()->mutable_get_peers();
+  header->set_version(neuro::MessageVersion + 100);
+  bot0.networking().send(msg);
+
+  std::this_thread::sleep_for(5s);
 }
 
 TEST(INTEGRATION, keep_max_connections) {
