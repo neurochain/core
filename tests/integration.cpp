@@ -68,6 +68,7 @@ class BotTest {
   void update_unreachable() { _bot->_peers.update_unreachable(); }
 
   messages::Peers &peers() { return _bot->_peers; }
+  auto& networking() { return _bot->_networking; }
 
   bool check_peers_ports(std::vector<int> ports) {
     std::sort(ports.begin(), ports.end());
@@ -88,8 +89,6 @@ class BotTest {
     _bot->_ledger->insert_block(new_block);
   }
 };
-
-static auto a = logging::core::get()->set_logging_enabled(false);
 
 TEST(INTEGRATION, full_node) {
   // Try to connect to a bot that is full. The full node should me marked as
@@ -839,9 +838,9 @@ TEST(INTEGRATION, block_exchange) {
   BotTest bot0("integration_propagation0.json");
   bot0.add_block();
 
-  std::cout << std::endl << "AVANT" << std::endl << std::endl;
-  std::cout << __FILE__ << ":" << __LINE__
-            << " Nb of blocks bot 0: " << bot0.nb_blocks() << std::endl;
+//  std::cout << std::endl << "AVANT" << std::endl << std::endl;
+//  std::cout << __FILE__ << ":" << __LINE__
+//            << " Nb of blocks bot 0: " << bot0.nb_blocks() << std::endl;
 
   std::this_thread::sleep_for(5s);
 
