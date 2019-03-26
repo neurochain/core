@@ -48,15 +48,18 @@ class BotTest {
   std::unique_ptr<neuro::Bot> _bot;
 
  public:
-  BotTest(const std::string configPath) {
+  BotTest(const std::string configPath,
+          const int max_incoming_connections = 3) {
     Path configAsPath(configPath);
     messages::config::Config config(configAsPath);
     _bot = std::make_unique<Bot>(config);
-    _bot->_max_incoming_connections = 3;
+    _bot->_max_incoming_connections = max_incoming_connections;
+    _bot->_max_connections = max_incoming_connections;
   }
 
   void set_max_incoming_connections(int max_incoming_connections) {
     _bot->_max_incoming_connections = max_incoming_connections;
+    _bot->_max_connections = max_incoming_connections;
   }
 
   void keep_max_connections() { _bot->keep_max_connections(); }
@@ -751,13 +754,11 @@ TEST(INTEGRATION, connection_reconfig) {
   bot2.operator->().reset();
   bot3.operator->().reset();
 
-
   bot0.update_unreachable();
   bot4.update_unreachable();
   bot5.update_unreachable();
   bot6.update_unreachable();
   std::this_thread::sleep_for(15s);
-
 
   std::ofstream my_logs("my_logs_reconfig");
   my_logs << "37 peerss " << std::endl << bot0->peers() << std::endl;
@@ -786,12 +787,11 @@ TEST(INTEGRATION, terminate_on_bad_version) {
 
     std::this_thread::sleep_for(5s);
 
-
     bot0->subscribe(messages::Type::kConnectionClosed,
-                           [&listener](const messages::Header &header,
-                                       const messages::Body &body) {
-                             listener.handler_deconnection(header, body);
-                           });
+                    [&listener](const messages::Header &header,
+                                const messages::Body &body) {
+                      listener.handler_deconnection(header, body);
+                    });
 
     auto peers_bot0 = vectorize(bot0->connected_peers());
 
@@ -802,11 +802,11 @@ TEST(INTEGRATION, terminate_on_bad_version) {
     msg->add_bodies()->mutable_get_peers();
     auto header = msg->mutable_header();
     messages::fill_header(header);
-// auto key_pub = header->mutable_key_pub();
-// key_pub->CopyFrom(bot0->get_key_pub());
+    // auto key_pub = header->mutable_key_pub();
+    // key_pub->CopyFrom(bot0->get_key_pub());
 
     header->set_version(neuro::MessageVersion + 100);
-//bot0->networking()->send(msg);
+    // bot0->networking()->send(msg);
   }
   std::this_thread::sleep_for(5s);
 
@@ -814,40 +814,22 @@ TEST(INTEGRATION, terminate_on_bad_version) {
 }
 
 TEST(INTEGRATION, keep_max_connections) {
-  Path config_path0("integration_keepmax0.json");
-  messages::config::Config config0(config_path0);
-  auto bot0 = std::make_shared<Bot>(config0);
-  std::this_thread::sleep_for(5s);
-  Path config_path1("integration_keepmax1.json");
-  messages::config::Config config1(config_path1);
-  auto bot1 = std::make_shared<Bot>(config1);
-  std::this_thread::sleep_for(5s);
-  Path config_path2("integration_keepmax2.json");
-  messages::config::Config config2(config_path2);
-  auto bot2 = std::make_shared<Bot>(config2);
-  std::this_thread::sleep_for(5s);
+  BotTest bot0("bot0.json");
+  bot0.set_max_incoming_connections(1);
+  std::this_thread::sleep_for(1s);
+  BotTest bot1("bot1.json");
+  std::this_thread::sleep_for(1s);
+  BotTest bot2("bot2.json");
+  std::this_thread::sleep_for(20s);
 
-  auto peers_bot0 = vectorize(bot0->connected_peers());
-  auto peers_bot1 = vectorize(bot1->connected_peers());
-  auto peers_bot2 = vectorize(bot2->connected_peers());
-
-  ASSERT_TRUE(peers_bot0.size() == 1);
-  ASSERT_TRUE(peers_bot1.size() == 2);
-  ASSERT_TRUE(peers_bot2.size() == 1);
-
-  ASSERT_TRUE(peers_bot0[0]->endpoint() == "localhost" &&
-              peers_bot0[0]->port() == 1338);
-
-  ASSERT_TRUE(peers_bot1[0]->endpoint() == "localhost" &&
-              peers_bot1[0]->port() == 1337);
-
-  ASSERT_TRUE(peers_bot2[0]->endpoint() == "localhost" &&
-              peers_bot2[0]->port() == 1338);
+  ASSERT_TRUE(bot0.check_peers_ports({1338}));
+  ASSERT_TRUE(bot1.check_peers_ports({1337, 1339}));
+  ASSERT_TRUE(bot2.check_peers_ports({1338}));
 }
 
 TEST(INTEGRATION, block_exchange) {
   ASSERT_TRUE(true);
-// TODO: implement relevant test
+  // TODO: implement relevant test
 
   BotTest bot0("integration_propagation0.json");
   bot0.add_block();
