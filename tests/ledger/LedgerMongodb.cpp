@@ -547,8 +547,8 @@ TEST_F(LedgerMongodb, list_transactions) {
 
   // Check that we only get incoming transactions
   // Send everything so that there is no change output going back to the address
-  auto transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
-                                      simulator.addresses[1], 1);
+  auto transaction =
+      ledger->send_ncc(simulator.keys[0].key_priv(), simulator.addresses[1], 1);
   simulator.consensus->add_transaction(transaction);
   transactions = ledger->list_transactions(address).transactions();
   ASSERT_EQ(transactions.size(), 1);
@@ -646,8 +646,8 @@ TEST_F(LedgerMongodb, list_unspent_transactions) {
 
   // Send everything so that there is no change output going back to the
   // address
-  auto transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
-                                      simulator.addresses[1], 1);
+  auto transaction =
+      ledger->send_ncc(simulator.keys[0].key_priv(), simulator.addresses[1], 1);
   ASSERT_EQ(transaction.outputs_size(), 1);
   simulator.consensus->add_transaction(transaction);
   transactions = ledger->list_unspent_transactions(address);

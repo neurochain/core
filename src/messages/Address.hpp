@@ -11,15 +11,18 @@ namespace neuro {
 namespace messages {
 
 std::string encode_base58(const CryptoPP::Integer &num,
-                          const std::string &version);
+                          const std::string &version = "");
 
-std::string encode_base58(const Buffer &buffer, const std::string &version);
+std::string encode_base58(const Buffer &buffer,
+                          const std::string &version = "");
+
+std::string encode_base58(const std::string &data,
+                          const std::string &version = "");
 
 class Address : public _Address {
  private:
-  std::size_t _hash_size = 10;
-  std::size_t _checksum_size = 2;
-  std::size_t _address_size = 34;
+  std::size_t _hash_size = 30;
+  std::size_t _checksum_size = 4;
 
   void init(const messages::_KeyPub &key_pub);
 

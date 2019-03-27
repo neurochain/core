@@ -32,12 +32,19 @@ std::string encode_base58(const Buffer &buffer, const std::string &version) {
   return encode_base58(num, version);
 }
 
+std::string encode_base58(const std::string &data, const std::string &version) {
+  CryptoPP::Integer num;
+  num.Decode(reinterpret_cast<const byte *>(data.data()), data.size());
+  return encode_base58(num, version);
+}
+
 void Address::init(const messages::_KeyPub &key_pub) {
-  auto key = crypto::hash_sha3_256(key_pub);
-  auto checksum = crypto::hash_sha3_256(key);
+  auto address = encode_base58(crypto::hash_sha3_256(key_pub), "N");
+  address.resize(_hash_size);
+  auto checksum = encode_base58(crypto::hash_sha3_256(address));
   checksum.resize(_checksum_size);
-  key.append(checksum);
-  set_data(encode_base58(key, "N").substr(0, _address_size));
+  address += checksum;
+  set_data(address);
 }
 
 Address::Address(const messages::_KeyPub &key_pub) { init(key_pub); }
@@ -62,13 +69,14 @@ bool Address::verify() const {
     return false;
   }
 
-  if (data().size() != (_hash_size + _checksum_size)) {
+  if (data().size() < _hash_size + _checksum_size) {
     return false;
   }
 
-  const Buffer key(data().substr(0, _hash_size));
-  const Buffer checksum_from_key(data().substr(_hash_size, _checksum_size));
-  auto checksum_computed = crypto::hash_sha3_256(key);
+  const auto address(data().substr(0, _hash_size));
+  const auto checksum_from_key(data().substr(_hash_size, _checksum_size));
+  auto checksum_computed = encode_base58(crypto::hash_sha3_256(address));
+  checksum_computed.resize(_checksum_size);
 
   if (checksum_computed != checksum_from_key) {
     LOG_INFO << "Key checksum error";
