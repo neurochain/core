@@ -19,20 +19,21 @@ class EccPub {
 
  private:
   Key _key;
-
- public:
-  EccPub() {}
-  EccPub(const EccPub &pub_key) = default;
-  EccPub(const std::string &filepath);
-  EccPub(const Buffer &pub_key);
-  EccPub(const Key &key);
-
-  Key *key();
-  bool save(const std::string &filepath) const;
   bool load(const Buffer &buffer);
   bool load(const std::string &filepath);
   bool load(const uint8_t *data, const std::size_t size);
   bool load(const messages::KeyPub &keypub);
+
+ public:
+  EccPub(const EccPub &pub_key) = default;
+  EccPub(const std::string &filepath);
+  EccPub(const Buffer &pub_key);
+  EccPub(const Key &key);
+  EccPub(const uint8_t *data, const std::size_t size);
+  EccPub(const messages::KeyPub &keypub);
+
+  Key *key();
+  bool save(const std::string &filepath) const;
   bool save(Buffer *buffer) const;
   Buffer save() const;
   bool save(messages::KeyPub *key_pub) const;

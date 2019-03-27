@@ -41,13 +41,12 @@ add_library(core
   ./common/logger.hpp
   ./common/logger.cpp
   ./common/types.hpp
+  ./common/types.cpp
   ./networking/tcp/HeaderPattern.hpp
   ./networking/tcp/Tcp.hpp
   ./networking/tcp/Connection.cpp
   ./networking/tcp/Connection.hpp
-  ./networking/tcp/client.hpp
   ./networking/tcp/Tcp.cpp
-  ./networking/tcp/Client.hpp
   ./networking/Networking.cpp
   ./networking/TransportLayer.hpp
   ./networking/Networking.hpp
@@ -66,6 +65,10 @@ add_library(core
   ./messages/Message.cpp
   ./messages/Address.cpp
   ./messages/Hasher.hpp
+  ./messages/Peers.hpp
+  ./messages/Peers.cpp
+  ./messages/Peer.hpp
+  ./messages/Peer.cpp
   ./ledger/Parser.hpp
   ./ledger/Filter.hpp
   ./ledger/mongo.hpp

@@ -22,7 +22,8 @@ TEST(Address, encode_base58) {
 }
 
 TEST(Address, address) {
-  crypto::EccPub ecc_pub;
+  crypto::Ecc ecc;
+  crypto::EccPub ecc_pub = ecc.public_key();
   messages::KeyPub key_pub;
   ecc_pub.save(&key_pub);
   Address address0(ecc_pub);

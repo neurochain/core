@@ -8,14 +8,11 @@ import "common.proto";
 // Handshake
 // =========
 message Hello {
-  required KeyPub key_pub = 1;
-  optional int32 listen_port = 2;
+  required _Peer peer = 1;
 }
 
 message World {
   required bool accepted = 1;
-  required KeyPub key_pub = 2;
-  repeated Peer peers = 3;
 }
 
 // Update 
@@ -24,10 +21,9 @@ message World {
 message GetPeers {
 }
 
-message Peers {
-  repeated Peer peers = 1;
+message _Peers {
+  repeated _Peer peers = 1;
 }
-
 
 // Ask for block hash
 // ------------------
@@ -144,6 +140,7 @@ message TaggedTransaction {
 }
 
 message ConnectionClosed {
+  optional _Peer peer = 1;
 }
 
 message ConnectionReady {
@@ -157,7 +154,7 @@ message Body {
     Hello hello = 1;
     World world = 2;
     GetPeers get_peers = 3;
-    Peers peers = 4;
+    _Peers peers = 4;
     GetRoots get_roots = 5;
     Roots roots = 6;
     Transaction transaction = 7;
@@ -173,9 +170,13 @@ message Header {
   required int32 version = 1;
   required Timestamp ts = 2;
   optional Hash signature = 3;
-  optional int32 id = 11;
+
+  // req/rep pattern 
+  optional int32 connection_id = 10;
+  optional int32 id = 11; 
   optional int32 request_id = 12;
-  optional Peer peer = 13;
+  optional KeyPub key_pub = 13;
+
 }
 
 message _Message {

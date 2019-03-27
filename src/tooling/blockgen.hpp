@@ -19,7 +19,7 @@ void coinbase(const std::vector<crypto::EccPub> &key_pub,
               const messages::BlockHeight &height,
               const std::string output_data = "");
 
-messages::TaggedBlock gen_block0(std::vector<crypto::Ecc> keys,
+messages::TaggedBlock gen_block0(const std::vector<crypto::Ecc> &keys,
                                  const messages::NCCAmount &ncc_block0,
                                  int32_t time_delta = -100000);
 

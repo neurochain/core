@@ -11,11 +11,10 @@ TEST(Connection, constructor) {
   // simply check it doesn't throw
   auto io_context_ptr = std::make_shared<boost::asio::io_context>();
   auto socket = std::make_shared<bai::tcp::socket>(*io_context_ptr);
-  auto queue = std::make_shared<messages::Queue>();
-  ASSERT_NE(queue, nullptr);
-  auto peer = std::make_shared<messages::Peer>();
-  tcp::Connection connection_0(0, 0, queue, socket, peer);
-  tcp::Connection connection_1(345, 6456, queue, socket, peer);
+  auto queue = messages::Queue{};
+  messages::Peer peer;
+  tcp::Connection connection_0(0, &queue, socket, peer);
+  tcp::Connection connection_1(345, &queue, socket, peer);
 }
 
 }  // namespace test

@@ -4,12 +4,18 @@
 #include <google/protobuf/message.h>
 #include <google/protobuf/util/json_util.h>
 #include <fstream>
+#include <functional>
 #include <string>
+#include <type_traits>
+
+#include "common/Buffer.hpp"
+#include "common/logger.hpp"
 #include "common/types.hpp"
 #include "consensus.pb.h"
 #include "crypto/EccPriv.hpp"
 #include "ledger/mongo.hpp"
 #include "messages.pb.h"
+#include "messages/Peer.hpp"
 
 namespace neuro {
 namespace messages {
@@ -53,11 +59,6 @@ std::ostream &operator<<(
   return os;
 }
 
-bool operator==(const Packet &a, const Packet &b);
-bool operator!=(const Packet &a, const Packet &b);
-bool operator==(const messages::Peer &a, const messages::Peer &b);
-bool operator!=(const messages::Peer &a, const messages::Peer &b);
-
 void sort_transactions(Block *block);
 void set_default(Signature *author);
 void set_transaction_hash(Transaction *transaction);
@@ -94,10 +95,48 @@ class Denunciation : public _Denunciation {
   }
 };
 
+template <typename TA, typename TB>
+typename std::enable_if<
+    std::is_base_of<::neuro::messages::Packet, TA>::value &&
+        std::is_base_of<::neuro::messages::Packet, TB>::value,
+    bool>::type
+operator==(const TA &a, const TB &b) {
+  std::string json_a, json_b;
+  to_json(a, &json_a);
+  to_json(b, &json_b);
+  bool res = json_a == json_b;
+  return res;
+}
+
+template <typename TA, typename TB>
+typename std::enable_if<
+    std::is_base_of<::neuro::messages::Packet, TA>::value &&
+        std::is_base_of<::neuro::messages::Packet, TB>::value,
+    bool>::type
+operator!=(const TA &a, const TB &b) {
+  return !(a == b);
+}
+
 }  // namespace messages
 }  // namespace neuro
 
-// TODO why doesn't this work with Packet instead of Input!?!
+template <typename T>
+struct PacketHash {
+  std::size_t operator()(typename std::enable_if<
+                         std::is_base_of<::neuro::messages::Packet, T>::value,
+                         T>::type const &s) const noexcept {
+    return std::hash<std::string>()(neuro::messages::to_json(s));
+  }
+};
+
+template<>
+struct PacketHash<neuro::messages::KeyPub> {
+  std::size_t operator()(neuro::messages::KeyPub const &s) const noexcept {
+    size_t key_as_bytes = *s.raw_data().data();
+    return key_as_bytes;
+  }
+};
+
 namespace std {
 template <>
 struct hash<neuro::messages::Input> {

@@ -7,6 +7,7 @@
 #include <cassert>
 #include <chrono>
 #include <cstdint>
+#include <random>
 #include <vector>
 
 #include "common/Buffer.hpp"
@@ -14,6 +15,13 @@
 #include "common.pb.h"
 
 namespace neuro {
+extern bool _fake_time;
+std::time_t time();
+std::time_t time(const std::time_t increment);
+
+static std::random_device _rd;  // TODO make global
+
+using namespace std::chrono_literals;
 
 using namespace std::chrono_literals;
 
@@ -44,6 +52,9 @@ using std::uint32_t;
 using std::uint64_t;
 using std::uint8_t;
 
+using Duration = std::chrono::seconds;
+
+using Endpoint = std::string;
 using Port = uint16_t;
 using Ports = std::vector<Port>;
 const int32_t MessageVersion = 1;

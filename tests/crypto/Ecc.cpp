@@ -9,7 +9,7 @@ namespace test {
 
 TEST(Ecc, save_load_file) {
   crypto::Ecc keys0;
-  keys0.save("test_keys.priv", "test_keys.pub");
+  ASSERT_TRUE(keys0.save("test_keys.priv", "test_keys.pub"));
 
   crypto::Ecc keys1("test_keys.priv", "test_keys.pub");
 
@@ -41,30 +41,27 @@ TEST(Ecc, save_load_buffer) {
   keys1.mutable_private_key()->load(buff);
 
   keys0.public_key().save(&buff);
-  keys1.mutable_public_key()->load(buff);
+  *keys1.mutable_public_key() = buff;
 
   ASSERT_EQ(keys0, keys1);
 }
 
 TEST(Ecc, save_load_protobuf) {
-  const crypto::Ecc keys0;
   crypto::Ecc ecc;
-  crypto::EccPub ecc_pub;
   messages::KeyPub key_pub;
 
   ASSERT_TRUE(ecc.public_key().save(&key_pub));
-  ASSERT_TRUE(ecc_pub.load(key_pub));
+  messages::KeyPub ecc_pub(key_pub);
   ASSERT_EQ(ecc.public_key(), ecc_pub);
 }
 
 TEST(Ecc, save_load_protobuf_as_hex) {
   const crypto::Ecc keys0;
   crypto::Ecc ecc;
-  crypto::EccPub ecc_pub;
   messages::KeyPub key_pub;
 
   ASSERT_TRUE(ecc.public_key().save_as_hex(&key_pub));
-  ASSERT_TRUE(ecc_pub.load(key_pub));
+  crypto::EccPub ecc_pub(key_pub);
   ASSERT_EQ(ecc.public_key(), ecc_pub);
 }
 

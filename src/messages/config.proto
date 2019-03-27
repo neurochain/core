@@ -40,13 +40,17 @@ message _Database {
 
 message Tcp {
   required int32 port = 1;
-  repeated Peer peers = 2;
+  required string endpoint = 2;
+  repeated _Peer peers = 3;
 }
 
 message Networking {
   optional int32 max_connections = 1;
   required Tcp tcp = 2;
-  optional int32 peers_update_time = 3;
+  optional int32 peers_update_time = 3 [default = 2];
+  required string key_pub_path = 4;
+  required string key_priv_path = 5;
+  
 }
 
 message _Config {
@@ -56,13 +60,11 @@ message _Config {
     RANDOM = 2;
   }
 
-  optional string key_pub_path = 1;
-  optional string key_priv_path = 2;
-  optional Logs logs = 3;
-  required Networking networking = 4;
-  optional _Database database = 5;
-  optional Peer.Status keep_status = 6 [default = CONNECTED]; 
-  optional SelectionMethod selection_method = 7 [default = RANDOM];
-  optional Rest rest = 8;
-  optional string connection_graph_uri = 9;
+  optional Logs logs = 1;
+  required Networking networking = 2;
+  optional _Database database = 3;
+  optional _Peer.Status keep_status = 4 [default = CONNECTED]; 
+  optional SelectionMethod selection_method = 5 [default = RANDOM];
+  optional Rest rest = 6;
+  optional string connection_graph_uri = 7;
 }
