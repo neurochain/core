@@ -15,10 +15,11 @@ bool from_json(const std::string &json, Packet *packet) {
   google::protobuf::util::JsonParseOptions options;
   auto r = google::protobuf::util::JsonStringToMessage(json, packet, options);
   if (!r.ok()) {
-    LOG_ERROR << "Could not parse json " << r;
+    LOG_ERROR << "Could not parse json " << std::endl
+              << r << std::endl
+              << boost::stacktrace::stacktrace() << std::endl;
     std::stringstream error;
     error << "Could not parse json " << r;
-    std::cout << boost::stacktrace::stacktrace() << std::endl;
     throw std::runtime_error(error.str());
   }
   return r.ok();
@@ -57,7 +58,8 @@ void to_json(const Packet &packet, std::string *output) {
   try {
     google::protobuf::util::MessageToJsonString(packet, output);
   } catch (...) {
-    std::cout << boost::stacktrace::stacktrace() << std::endl;
+    LOG_ERROR << "Could not to_json packet " << boost::stacktrace::stacktrace()
+              << std::endl;
     throw;
   }
 }
@@ -79,26 +81,6 @@ std::ostream &operator<<(std::ostream &os, const Packet &packet) {
   to_json(packet, &buff);
   os << buff;
   return os;
-}
-
-bool operator==(const Packet &a, const Packet &b) {
-  std::string json_a, json_b;
-  to_json(a, &json_a);
-  to_json(b, &json_b);
-  bool res = json_a == json_b;
-
-  return res;
-}
-
-bool operator!=(const Packet &a, const Packet &b) { return !(a == b); }
-
-bool operator==(const messages::Peer &a, const messages::Peer &b) {
-  LOG_TRACE << a.endpoint() << " " << b.endpoint();
-  return a.endpoint() == b.endpoint() && a.port() == b.port();
-}
-
-bool operator!=(const messages::Peer &a, const messages::Peer &b) {
-  return !(a == b);
 }
 
 void sort_transactions(Block *block) {
@@ -158,8 +140,8 @@ int32_t fill_header(messages::Header *header) {
 int32_t fill_header_reply(const messages::Header &header_request,
                           messages::Header *header_reply) {
   const auto id = fill_header(header_reply);
+  header_reply->set_connection_id(header_request.connection_id());
   header_reply->set_request_id(header_request.id());
-  header_reply->mutable_peer()->CopyFrom(header_request.peer());
   return id;
 }
 

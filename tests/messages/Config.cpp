@@ -17,12 +17,12 @@ TEST(Conf, load) {
   } catch (...) {
     did_throw = true;
   }
-  ASSERT_NE(did_throw, true);
+  ASSERT_FALSE(did_throw);
 
   auto conf = messages::config::Config{config_path};
 
-  boost::filesystem::path pub_path(conf.key_pub_path());
-  boost::filesystem::path priv_path(conf.key_priv_path());
+  boost::filesystem::path pub_path(conf.networking().key_pub_path());
+  boost::filesystem::path priv_path(conf.networking().key_priv_path());
   ASSERT_EQ(pub_path.filename(), "key2.pub");
   ASSERT_EQ(priv_path.filename(), "key2.priv");
 
@@ -36,7 +36,7 @@ TEST(Conf, load) {
   ASSERT_EQ(tcp.port(), 1339);
 
   ASSERT_EQ(tcp.peers_size(), 2);
-  const std::string endpoint("127.0.0.1");
+  const std::string endpoint("localhost");
 
   for (const auto& peer : tcp.peers()) {
     ASSERT_TRUE(peer.has_endpoint());

@@ -26,7 +26,7 @@ void coinbase(const std::vector<crypto::KeyPub> &pub_keys,
   messages::set_transaction_hash(transaction);
 }
 
-messages::TaggedBlock gen_block0(std::vector<crypto::Ecc> keys,
+messages::TaggedBlock gen_block0(const std::vector<crypto::Ecc> &keys,
                                  const messages::NCCAmount &ncc_block0,
                                  int32_t time_delta) {
   messages::TaggedBlock tagged_block;

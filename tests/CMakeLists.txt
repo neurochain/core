@@ -1,9 +1,9 @@
-#file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/crypto/test_sign.priv
-#  DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-#
-#file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/crypto/test_sign.pub
-#  DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-#
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/configs/test_sign.priv
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/configs/test_sign.pub
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
 #file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/config/bot.json
 #  DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 #
@@ -21,27 +21,23 @@ configure_file("configs/bot_block0.json" "${CMAKE_CURRENT_BINARY_DIR}/bot_block0
 
 file(GLOB files "configs/integration_*.json.in")
 foreach(file ${files})
-  configure_file(${file} "${CMAKE_CURRENT_BINARY_DIR}/${file}" @ONLY)
+  get_filename_component(COIN ${file} NAME_WE)
+  configure_file("${file}" "${CMAKE_CURRENT_BINARY_DIR}/${COIN}.json" @ONLY)
 endforeach()
 
-configure_file("configs/integration_keepmax0.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_keepmax0.json" @ONLY)
-configure_file("configs/integration_keepmax1.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_keepmax1.json" @ONLY)
-configure_file("configs/integration_keepmax2.json.in" "${CMAKE_CURRENT_BINARY_DIR}/integration_keepmax2.json" @ONLY)
+#configure_file("configs/key_faucet.priv" "${CMAKE_CURRENT_BINARY_DIR}/key_faucet.priv" COPYONLY)
+#configure_file("configs/key_faucet.pub" "${CMAKE_CURRENT_BINARY_DIR}/key_faucet.pub" COPYONLY)
 
-file(GLOB files "configs/key_integration*.*")
+file(GLOB files "configs/key*.pub")
 foreach(file ${files})
-  configure_file(${file} "${CMAKE_CURRENT_BINARY_DIR}/${file}" COPYONLY)
+  get_filename_component(COIN ${file} NAME_WE)
+  configure_file(${file} "${CMAKE_CURRENT_BINARY_DIR}/${COIN}.pub" COPYONLY)
 endforeach()
 
-configure_file("configs/test_sign.priv" "${CMAKE_CURRENT_BINARY_DIR}/test_sign.priv" COPYONLY)
-configure_file("configs/test_sign.pub" "${CMAKE_CURRENT_BINARY_DIR}/test_sign.pub" COPYONLY)
-
-configure_file("configs/key_faucet.priv" "${CMAKE_CURRENT_BINARY_DIR}/key_faucet.priv" COPYONLY)
-configure_file("configs/key_faucet.pub" "${CMAKE_CURRENT_BINARY_DIR}/key_faucet.pub" COPYONLY)
-
-file(GLOB files "configs/key*.p*")
+file(GLOB files "configs/key*.priv")
 foreach(file ${files})
-  configure_file(${file} "${CMAKE_CURRENT_BINARY_DIR}/${file}" COPYONLY)
+  get_filename_component(COIN ${file} NAME_WE)
+  configure_file(${file} "${CMAKE_CURRENT_BINARY_DIR}/${COIN}.priv" COPYONLY)
 endforeach()
 
 configure_file("configs/data.0.testnet" "${CMAKE_CURRENT_BINARY_DIR}/data.0.testnet" COPYONLY)
@@ -76,8 +72,9 @@ add_executable(ut
   ./crypto/Sign.cpp
   ./messages/Address.cpp
   ./messages/Config.cpp
-  ./messages/Queue.cpp
+#  ./messages/Queue.cpp
   ./messages/Subscriber.cpp
+  ./messages/Peers.cpp
   ./networking/TransportLayer.cpp
   ./networking/tcp/Tcp.cpp
   ./networking/tcp/Connection.cpp

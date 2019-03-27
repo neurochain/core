@@ -29,7 +29,7 @@ class Consensus {
  private:
   const Config _config;
   std::shared_ptr<ledger::Ledger> _ledger;
-  std::vector<crypto::Ecc> _keys;
+  const std::vector<crypto::Ecc> &_keys;
   std::vector<messages::Address> _addresses;
   PublishBlock _publish_block;
   std::atomic<bool> _stop_compute_pii;

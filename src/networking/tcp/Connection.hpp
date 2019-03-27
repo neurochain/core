@@ -25,31 +25,29 @@ class Connection : public networking::Connection,
   Buffer _header;
   Buffer _buffer;
   std::shared_ptr<tcp::socket> _socket;
-  std::shared_ptr<messages::Peer> _remote_peer;
-  Port _listen_port;
+  messages::Peer _remote_peer;
 
-  void terminate();
   void read_header();
   void read_body(std::size_t body_size);
   std::shared_ptr<Connection> ptr() { return shared_from_this(); }
+  void close();
 
  public:
-  Connection(const ID id,
-             const networking::TransportLayer::ID transport_layer_id,
-             const std::shared_ptr<messages::Queue>& queue,
+  Connection(const ID id, messages::Queue* queue,
+             const std::shared_ptr<tcp::socket>& socket);
+  Connection(const ID id, messages::Queue* queue,
              const std::shared_ptr<tcp::socket>& socket,
-             const std::shared_ptr<messages::Peer>& remote_peer);
+             const messages::Peer& remote_peer);
 
   std::shared_ptr<const tcp::socket> socket() const;
+  void terminate();
 
   void read();
 
   bool send(std::shared_ptr<Buffer>& message);
-  std::shared_ptr<const messages::Peer> remote_peer() const;
-  const IP remote_ip() const;
-  const Port remote_port() const;
-  const Port listen_port() const;
-  void close();
+  const messages::Peer remote_peer() const;
+  const std::optional<IP> remote_ip() const;
+  const std::optional<Port> remote_port() const;
   ~Connection();
 };
 }  // namespace tcp

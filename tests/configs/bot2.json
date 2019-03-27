@@ -1,41 +1,42 @@
 {
-    "key_pub_path": "key2.pub",
-    "key_priv_path": "key2.priv",
-    "logs": {
-	"severity": "debug",
-	"to_stdout": true
-    },
-    "networking": {
-	"max_connections": 3,
-	"tcp": {
-	    "port": 1339,
-	    "peers": [
+  "logs": {
+    "severity": "trace",
+    "toStdout": true
+  },
+  "networking": {
+    "maxConnections": 3,
+    "tcp": {
+      "port": 1339,
+      "endpoint": "localhost",
+      "peers": [
 		{
-		    "endpoint": "127.0.0.1",
+		    "endpoint": "localhost",
 		    "port": 1337,
 		    "keyPub": {
 			"type": "ECP256K1",
-			"rawData":"CqH8Zor7NcDJ07yHiwN/hqkU2ZbxIVoipGpeKhgNfLw="
+			"rawData":"Awqh/GaK+zXAydO8h4sDf4apFNmW8SFaIqRqXioYDXy8"
 		    }
 		},
 		{
-		    "endpoint": "127.0.0.1",
+		    "endpoint": "localhost",
 		    "port": 1338,
 		    "keyPub": {
 			"type": "ECP256K1",
-			"rawData":"CYxS/kJB4nHdBfBREEtqRL2xFGbi7Hg4rQkTxv9OwJs="
+			"rawData":"A+BPdJmNMRu7dZ0O4+b/jG5CyuLeI870VKYu0DrtJ8I8"
 		    }
 		}
 	    ]
-	}
     },
-    "database": {
-	"url": "mongodb://localhost:27017/neuro",
-	"db_name": "neuro1339",
-	"block0_format": "PROTO",
-	"block0_path": "data.0.testnet"
-    },
-    "rest": {
-	"port": 8082
-    }
+    "keyPubPath": "key2.pub",
+    "keyPrivPath": "key2.priv"
+  },
+  "database": {
+    "url": "mongodb://localhost:27017/neuro",
+    "dbName": "neuro1339",
+    "block0Format": "PROTO",
+    "block0Path": "data.0.testnet"
+  },
+  "rest": {
+    "port": 8082
+  }
 }

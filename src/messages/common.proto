@@ -43,20 +43,20 @@ message _Address {
   required string data = 1;
 }
 
-message Peer {
+message _Peer {
   enum Status {
-    CONNECTED = 0;
-    CONNECTING = 1;
-    REACHABLE = 2;
-    UNREACHABLE = 3;
-    FULL = 4;
+    CONNECTED = 1;
+    CONNECTING = 2;
+    DISCONNECTED = 4;
+    UNREACHABLE = 8;
+    FULL = 16;
   }
 
-  required string endpoint = 1;
-  optional int32 port = 2;
-  optional _KeyPub key_pub = 3;
+  optional string endpoint = 1;
+  optional _KeyPub key_pub = 2;
+  optional int32 port = 3;
   optional Status status = 4;
-  optional int32 transport_layer_id = 5;
+  optional Timestamp next_update = 5;
   optional int32 connection_id = 6;
 }
 

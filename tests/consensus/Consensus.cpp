@@ -159,7 +159,7 @@ class Consensus : public testing::Test {
       }
       ASSERT_NE(address_index, -1);
 
-      const auto keys = simulator.keys[address_index];
+      const auto &keys = simulator.keys[address_index];
       messages::Block block;
       ASSERT_TRUE(consensus->build_block(keys, i, &block));
       ASSERT_EQ(block.header().height(), i);

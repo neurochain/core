@@ -1,14 +1,15 @@
 {
-  "key_pub_path" : "key_faucet.pub",
-  "key_priv_path" : "key_faucet.priv",
   "logs": {
       "severity": "debug",
       "to_stdout": true
   },
   "networking" : {
+      "key_pub_path" : "key0.pub",
+      "key_priv_path" : "key0.priv",
       "max_connections" : 3,
       "tcp" : {
           "port" : 1337,
+            "endpoint": "localhost",
           "peers" : [
           ]
       }

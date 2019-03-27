@@ -30,6 +30,7 @@ class KeyPub : public messages::_KeyPub {
   KeyPub(const std::string &filepath);
   KeyPub(const Buffer &pub_key);
   KeyPub(const Key &key);
+  KeyPub(const uint8_t *data, const std::size_t size);
 
   Key *key();
   bool save(const std::string &filepath) const;

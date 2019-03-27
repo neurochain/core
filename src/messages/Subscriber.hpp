@@ -17,13 +17,13 @@ class Subscriber {
 
  private:
   mutable std::mutex _mutex_handler;
-  std::shared_ptr<Queue> _queue;
+  Queue *_queue;
   std::vector<std::vector<Callback>> _callbacks_by_type;
   std::unordered_set<Buffer> _seen_messages_hash;
   std::map<std::time_t, Buffer> _message_hash_by_ts;
 
  public:
-  Subscriber(std::shared_ptr<Queue> queue)
+  Subscriber(Queue *queue)
       : _queue(queue), _callbacks_by_type(Body::kBodyCount) {
     _queue->subscribe(this);
   }

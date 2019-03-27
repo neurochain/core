@@ -8,7 +8,11 @@
 namespace neuro {
 namespace crypto {
 
-KeyPub::KeyPub(const std::string &filepath) { load(filepath); }
+KeyPub::KeyPub(const std::string &filepath) {
+  if (!load(filepath)) {
+    throw std::runtime_error("Could not load key from file");
+  }
+}
 
 KeyPub::KeyPub(const Buffer &key_pub) {
   if (!load(key_pub)) {
@@ -21,9 +25,19 @@ KeyPub::KeyPub(const Key &key) : _key(key) {
   save(this);
 }
 
-KeyPub::KeyPub(const messages::_KeyPub &key_pub) { load(key_pub); }
-
 KeyPub::Key *KeyPub::key() { return &_key; }
+
+KeyPub::KeyPub(const uint8_t *data, const std::size_t size) {
+  if (!load(data, size)) {
+    throw std::runtime_error("Could not load key from raw buffer");
+  }
+}
+
+KeyPub::KeyPub(const messages::_KeyPub &key_pub) {
+  if (!load(key_pub)) {
+    throw std::runtime_error("Could not load key from proto");
+  }
+}
 
 bool KeyPub::save(const std::string &filepath) const {
   CryptoPP::FileSink fs(filepath.c_str(), true);
