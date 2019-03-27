@@ -65,9 +65,6 @@ void Connection::read_body(std::size_t body_size) {
         if (error) {
           if (error == boost::asio::error::eof) {
             _this->terminate();
-          } else {
-            LOG_ERROR << _this << " " << __LINE__ << " Killing connection "
-                      << error;
           }
           return;
         }
@@ -87,40 +84,29 @@ void Connection::read_body(std::size_t body_size) {
 
         // validate the MessageVersion from the header
         if (header->version() != neuro::MessageVersion) {
-          LOG_ERROR << " MessageVersion not corresponding: "
-                    << neuro::MessageVersion << " (mine) vs "
-                    << header->version() << " )";
           return;
         }
         for (const auto &body : message->bodies()) {
           const auto type = get_type(body);
-          LOG_DEBUG << _this << " read_body TYPE " << type;
           if (type == messages::Type::kHello) {
             const auto hello = body.hello();
             _remote_peer.CopyFrom(hello.peer());
           }
         }
-        LOG_DEBUG << "\033[1;32mMessage received: " << *message << "\033[0m";
 
         if (!_this->_remote_peer.has_key_pub()) {
-          LOG_ERROR << "Not Key pub set";
           _this->read_header();
           return;
         }
         const auto key_pub = _this->_remote_peer.key_pub();
 
         crypto::EccPub ecc_pub(key_pub);
-        LOG_DEBUG << "KEY PUB " << ecc_pub << std::endl;
-        LOG_DEBUG << "BUFFER " << _this->_buffer << std::endl;
-        LOG_DEBUG << "SIGNATURE " << Buffer(header_pattern->signature, 64)
-                  << std::endl;
 
         const auto check =
             ecc_pub.verify(_this->_buffer, header_pattern->signature,
                            sizeof(header_pattern->signature));
 
         if (!check) {
-          LOG_ERROR << "Bad signature, dropping message " << ecc_pub;
           return;
         }
         message->mutable_header()->mutable_key_pub()->CopyFrom(
@@ -136,9 +122,6 @@ bool Connection::send(std::shared_ptr<Buffer> &message) {
       [_this = ptr(), message](const boost::system::error_code &error,
                                std::size_t bytes_transferred) {
         if (error) {
-          LOG_ERROR << "Could not send message" << _this << " " << __LINE__
-                    << " Killing connection " << error;
-
           _this->close();
           return false;
         }
@@ -166,7 +149,7 @@ const std::optional<IP> Connection::remote_ip() const {
   if (ec) {
     return {};
   }
-  return std::make_optional(endpoint.address());
+  return endpoint.address();
 }
 
 const std::optional<Port> Connection::remote_port() const {
@@ -181,7 +164,6 @@ const std::optional<Port> Connection::remote_port() const {
 const messages::Peer Connection::remote_peer() const { return _remote_peer; }
 Connection::~Connection() {
   terminate();
-  LOG_DEBUG << this << " Connection killed";
 }
 }  // namespace tcp
 }  // namespace networking

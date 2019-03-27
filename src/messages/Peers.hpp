@@ -19,7 +19,6 @@ namespace messages {
 
 class Peers {
  private:
-  const int _used_status{(Peer::CONNECTING | Peer::CONNECTED)};
   const KeyPub _own_key;
   mutable std::shared_mutex _mutex;
   using PeersByKey =
@@ -87,7 +86,7 @@ class Peers {
 
   std::optional<Peer *> insert(const Peer &peer);
 
-  bool fill(_Peers *peers);
+  bool fill(_Peers *peers, uint8_t peer_count = 10);
   std::size_t used_peers_count() const;
   void update_unreachable();
   bool update_peer_status(const Peer &peer, const Peer::Status status);

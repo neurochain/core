@@ -125,7 +125,15 @@ struct PacketHash {
   std::size_t operator()(typename std::enable_if<
                          std::is_base_of<::neuro::messages::Packet, T>::value,
                          T>::type const &s) const noexcept {
-    return 42;
+    return std::hash<std::string>()(neuro::messages::to_json(s));
+  }
+};
+
+template<>
+struct PacketHash<neuro::messages::KeyPub> {
+  std::size_t operator()(neuro::messages::KeyPub const &s) const noexcept {
+    size_t key_as_bytes = *s.raw_data().data();
+    return key_as_bytes;
   }
 };
 
