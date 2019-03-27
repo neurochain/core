@@ -1,4 +1,4 @@
-#include "crypto/EccPub.hpp"
+#include "crypto/KeyPub.hpp"
 #include <cryptopp/hex.h>
 #include <iomanip>
 #include <iostream>
@@ -8,76 +8,90 @@
 namespace neuro {
 namespace crypto {
 
-EccPub::EccPub(const std::string &filepath) {
-  if(!load(filepath)) {
+KeyPub::KeyPub(const std::string &filepath) {
+  if (!load(filepath)) {
     throw std::runtime_error("Could not load key from file");
   }
 }
 
-EccPub::EccPub(const Buffer &pub_key) {
-  if (!load(pub_key)) {
+KeyPub::KeyPub(const Buffer &key_pub) {
+  if (!load(key_pub)) {
     throw std::runtime_error("Could not load key from buffer");
   }
 }
 
-EccPub::EccPub(const Key &key) : _key(key) {}
+KeyPub::KeyPub(const Key &key) : _key(key) {
+  // Fill the protobuf
+  save(this);
+}
 
-EccPub::EccPub(const uint8_t *data, const std::size_t size) {
+KeyPub::Key *KeyPub::key() { return &_key; }
+
+KeyPub::KeyPub(const uint8_t *data, const std::size_t size) {
   if (!load(data, size)) {
     throw std::runtime_error("Could not load key from raw buffer");
   }
 }
 
-EccPub::EccPub(const messages::KeyPub &keypub) {
-  if (!load(keypub)) {
+KeyPub::KeyPub(const messages::_KeyPub &key_pub) {
+  if (!load(key_pub)) {
     throw std::runtime_error("Could not load key from proto");
   }
 }
 
-EccPub::Key *EccPub::key() { return &_key; }
-
-bool EccPub::save(const std::string &filepath) const {
+bool KeyPub::save(const std::string &filepath) const {
   CryptoPP::FileSink fs(filepath.c_str(), true);
   _key.Save(fs);
 
   return true;
 }
 
-bool EccPub::load(const std::string &filepath) {
+bool KeyPub::load(const std::string &filepath) {
   CryptoPP::FileSource fs(filepath.c_str(), true);
   _key.Load(fs);
 
+  // Fill the protobuf
+  save(this);
+
   return true;
 }
 
-bool EccPub::load(const Buffer &buffer) {
+bool KeyPub::load(const Buffer &buffer) {
   CryptoPP::StringSource array(reinterpret_cast<const byte *>(buffer.data()),
                                buffer.size(), true);
   _key.Load(array);
+
+  // Fill the protobuf
+  save(this);
+
   return true;
 }
 
-bool EccPub::load(const uint8_t *data, const std::size_t size) {
+bool KeyPub::load(const uint8_t *data, const std::size_t size) {
   CryptoPP::StringSource array(reinterpret_cast<const byte *>(data), size,
                                true);
   _key.Load(array);
+
+  // Fill the protobuf
+  save(this);
+
   return true;
 }
 
-bool EccPub::load(const messages::KeyPub &keypub) {
+bool KeyPub::load(const messages::_KeyPub &key_pub) {
   CryptoPP::ECP::Point point;
   _key.AccessGroupParameters().Initialize(CryptoPP::ASN1::secp256k1());
 
-  if (keypub.has_raw_data()) {
+  if (key_pub.has_raw_data()) {
     // Load a compressed public key see
     // https://www.cryptopp.com/wiki/Elliptic_Curve_Digital_Signature_Algorithm
-    CryptoPP::StringSource source(keypub.raw_data(), true);
+    CryptoPP::StringSource source(key_pub.raw_data(), true);
     _key.GetGroupParameters().GetCurve().DecodePoint(point, source,
                                                      source.MaxRetrievable());
 
-  } else if (keypub.has_hex_data()) {
+  } else if (key_pub.has_hex_data()) {
     // Compressed public key
-    const std::string &hex_data = keypub.hex_data();
+    const std::string &hex_data = key_pub.hex_data();
 
     // We need to have a new here because cryptoPP will try to delete the
     // decoder
@@ -89,11 +103,12 @@ bool EccPub::load(const messages::KeyPub &keypub) {
     return false;
   }
   _key.Initialize(CryptoPP::ASN1::secp256k1(), point);
+  CopyFrom(key_pub);
 
   return true;
 }
 
-Buffer EccPub::save() const {
+Buffer KeyPub::save() const {
   Buffer tmp;
   std::string s;
   _key.Save(CryptoPP::StringSink(s).Ref());
@@ -101,14 +116,14 @@ Buffer EccPub::save() const {
   return tmp;
 }
 
-bool EccPub::save(Buffer *buffer) const {
+bool KeyPub::save(Buffer *buffer) const {
   std::string s;
   _key.Save(CryptoPP::StringSink(s).Ref());
   buffer->copy(s);
   return true;
 }
 
-bool EccPub::save(messages::KeyPub *key_pub) const {
+bool KeyPub::save(messages::_KeyPub *key_pub) const {
   key_pub->set_type(messages::KeyType::ECP256K1);
   const auto x = _key.GetPublicElement().x;
   const auto y = _key.GetPublicElement().y;
@@ -131,7 +146,7 @@ bool EccPub::save(messages::KeyPub *key_pub) const {
   return true;
 }
 
-bool EccPub::save_as_hex(messages::KeyPub *key_pub) const {
+bool KeyPub::save_as_hex(messages::_KeyPub *key_pub) const {
   key_pub->set_type(messages::KeyType::ECP256K1);
   const auto x = _key.GetPublicElement().x;
   const auto y = _key.GetPublicElement().y;
@@ -146,7 +161,7 @@ bool EccPub::save_as_hex(messages::KeyPub *key_pub) const {
   return true;
 }
 
-bool EccPub::verify(const Buffer &data, const uint8_t *signature,
+bool KeyPub::verify(const Buffer &data, const uint8_t *signature,
                     const std::size_t size) const {
   CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA256>::Verifier verifier(_key);
 
@@ -154,11 +169,11 @@ bool EccPub::verify(const Buffer &data, const uint8_t *signature,
                                 (const byte *)signature, size);
 }
 
-bool EccPub::verify(const Buffer &data, const Buffer &signature) const {
+bool KeyPub::verify(const Buffer &data, const Buffer &signature) const {
   return verify(data, signature.data(), signature.size());
 }
 
-bool EccPub::operator==(const EccPub &key) const {
+bool KeyPub::operator==(const KeyPub &key) const {
   CryptoPP::ByteQueue queue0;
   CryptoPP::ByteQueue queue1;
   _key.Save(queue0);
@@ -166,8 +181,8 @@ bool EccPub::operator==(const EccPub &key) const {
   return (queue0 == queue1);
 }
 
-std::ostream &operator<<(std::ostream &os, const EccPub &pub) {
-  messages::KeyPub k;
+std::ostream &operator<<(std::ostream &os, const KeyPub &pub) {
+  messages::_KeyPub k;
   pub.save(&k);
   os << k;
   return os;

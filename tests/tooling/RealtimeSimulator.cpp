@@ -40,7 +40,7 @@ class RealtimeSimulator : public testing::Test {
 
         auto t0 = Timer::now();
         auto transaction =
-            ledger->send_ncc(simulator.keys[sender_index].private_key(),
+            ledger->send_ncc(simulator.keys[sender_index].key_priv(),
                              simulator.addresses[recipient_index], 0.5);
         LOG_DEBUG << "SEND_NCC TOOK " << (Timer::now() - t0).count() / 1E6
                   << " MS";

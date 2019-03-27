@@ -16,8 +16,8 @@ namespace crypto {
 
 Ecc::Ecc()
     : _prng(std::make_shared<CryptoPP::AutoSeededRandomPool>()),
-      _key_private(std::make_unique<EccPriv>(_prng)),
-      _key_public(std::make_unique<EccPub>(_key_private->make_public_key())) {}
+      _key_private(std::make_unique<KeyPriv>(_prng)),
+      _key_public(std::make_unique<KeyPub>(_key_private->make_key_pub())) {}
 
 Ecc::Ecc(const std::string &filepath_private,
          const std::string &filepath_public)
@@ -27,10 +27,10 @@ Ecc::Ecc(const std::string &filepath_private,
   }
 }
 
-Ecc::Ecc(const EccPriv &ecc_priv, const EccPub &ecc_pub)
+Ecc::Ecc(const KeyPriv &ecc_priv, const KeyPub &ecc_pub)
     : _prng(std::make_shared<CryptoPP::AutoSeededRandomPool>()),
-      _key_private(std::make_unique<EccPriv>(_prng)),
-      _key_public(std::make_unique<EccPub>(_key_private->make_public_key())) {}
+      _key_private(std::make_unique<KeyPriv>(_prng)),
+      _key_public(std::make_unique<KeyPub>(_key_private->make_key_pub())) {}
 
 bool Ecc::load_keys(const std::string &keypath_priv,
                     const std::string &keypath_pub) {
@@ -46,14 +46,14 @@ bool Ecc::load_keys(const std::string &keypath_priv,
   if (!keys_create) {
     LOG_INFO << this << " Loading keys from " << keypath_priv << " and "
              << keypath_pub;
-    _key_private = std::make_unique<EccPriv>(_prng, keypath_priv);
-    _key_public = std::make_unique<EccPub>(keypath_pub);
+    _key_private = std::make_unique<KeyPriv>(_prng, keypath_priv);
+    _key_public = std::make_unique<KeyPub>(keypath_pub);
     return true;
   }
 
   LOG_INFO << this << " Generating new keys";
-  _key_private = std::make_unique<EccPriv>(_prng);
-  _key_public = std::make_unique<EccPub>(_key_private->make_public_key());
+  _key_private = std::make_unique<KeyPriv>(_prng);
+  _key_public = std::make_unique<KeyPub>(_key_private->make_key_pub());
 
   if (keys_save) {
     LOG_INFO << this << " Saving keys to " << keypath_priv << " and "
@@ -69,10 +69,10 @@ bool Ecc::load_keys(const std::string &keypath_priv,
 //       _key_private(ecc_priv),
 //       _key_public(ecc_pub) {}
 
-const EccPriv &Ecc::private_key() const { return *_key_private.get(); }
-const EccPub &Ecc::public_key() const { return *_key_public.get(); }
-EccPriv *Ecc::mutable_private_key() { return _key_private.get(); }
-EccPub *Ecc::mutable_public_key() { return _key_public.get(); }
+const KeyPriv &Ecc::key_priv() const { return *_key_private.get(); }
+const KeyPub &Ecc::key_pub() const { return *_key_public.get(); }
+KeyPriv *Ecc::mutable_key_priv() { return _key_private.get(); }
+KeyPub *Ecc::mutable_key_pub() { return _key_public.get(); }
 
 bool Ecc::save(const std::string &filepath_private,
                const std::string &filepath_public) const {
@@ -100,8 +100,8 @@ void Ecc::sign(const uint8_t *data, const std::size_t size, uint8_t *dest) {
 }
 
 bool Ecc::operator==(const Ecc &ecc) const {
-  return (ecc.private_key() == *_key_private.get() &&
-          ecc.public_key() == *_key_public.get());
+  return (ecc.key_priv() == *_key_private.get() &&
+          ecc.key_pub() == *_key_public.get());
 }
 
 }  // namespace crypto

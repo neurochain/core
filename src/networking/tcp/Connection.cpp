@@ -100,7 +100,7 @@ void Connection::read_body(std::size_t body_size) {
         }
         const auto key_pub = _this->_remote_peer.key_pub();
 
-        crypto::EccPub ecc_pub(key_pub);
+        crypto::KeyPub ecc_pub(key_pub);
 
         const auto check =
             ecc_pub.verify(_this->_buffer, header_pattern->signature,
@@ -162,9 +162,7 @@ const std::optional<Port> Connection::remote_port() const {
 }
 
 const messages::Peer Connection::remote_peer() const { return _remote_peer; }
-Connection::~Connection() {
-  terminate();
-}
+Connection::~Connection() { terminate(); }
 }  // namespace tcp
 }  // namespace networking
 }  // namespace neuro

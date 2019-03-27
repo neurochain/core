@@ -19,14 +19,14 @@ bool sign(const std::vector<const crypto::Ecc *> keys,
 
   for (const auto &input : *transaction->mutable_inputs()) {
     const auto key = keys[input.signature_id()];
-    const auto signature = key->private_key().sign(serialized_transaction);
+    const auto signature = key->key_priv().sign(serialized_transaction);
     auto input_signature = transaction->add_signatures();
 
     input_signature->mutable_signature()->set_data(signature.data(),
                                                    signature.size());
     input_signature->mutable_signature()->set_type(messages::Hash::SHA256);
 
-    key->public_key().save(input_signature->mutable_key_pub());
+    key->key_pub().save(input_signature->mutable_key_pub());
   }
 
   return true;
@@ -47,12 +47,12 @@ bool verify(const messages::Transaction &transaction) {
   for (const auto &input : transaction.inputs()) {
     const auto signature = transaction.signatures(input.signature_id());
 
-    crypto::EccPub ecc_pub(signature.key_pub());
+    KeyPub key_pub(signature.key_pub());
 
     const auto hash = signature.signature().data();
     const Buffer sig(hash.data(), hash.size());
 
-    if (!ecc_pub.verify(buffer, sig)) {
+    if (!key_pub.verify(buffer, sig)) {
       LOG_WARNING << "Wrong signature in transaction " << transaction;
       return false;
     }
@@ -81,10 +81,10 @@ bool sign(const crypto::Ecc &keys, messages::Denunciation *denunciation) {
   Buffer serialized;
   messages::to_buffer(*denunciation, &serialized);
 
-  const auto signature = keys.private_key().sign(serialized);
+  const auto signature = keys.key_priv().sign(serialized);
   author->mutable_signature()->set_data(signature.data(), signature.size());
   author->mutable_signature()->set_type(messages::Hash::SHA256);
-  keys.public_key().save(author->mutable_key_pub());
+  keys.key_pub().save(author->mutable_key_pub());
 
   return true;
 }
@@ -100,9 +100,9 @@ bool verify(const messages::Denunciation &denunciation) {
   const auto hash = author.signature().data();
   const Buffer sig(hash.data(), hash.size());
 
-  crypto::EccPub ecc_pub(author.key_pub());
+  KeyPub key_pub(author.key_pub());
 
-  if (!ecc_pub.verify(buffer, sig)) {
+  if (!key_pub.verify(buffer, sig)) {
     LOG_WARNING << "Wrong signature in denunciation with block id "
                 << denunciation.block_id();
     return false;

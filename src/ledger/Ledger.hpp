@@ -105,7 +105,7 @@ class Ledger {
                          messages::TaggedBlock *tagged_block,
                          bool include_transactions = true) const = 0;
   virtual std::vector<messages::TaggedBlock> get_blocks(
-      const messages::BlockHeight height, const messages::KeyPub &author,
+      const messages::BlockHeight height, const messages::_KeyPub &author,
       bool include_transactions = true) const = 0;
   virtual bool insert_block(const messages::TaggedBlock &tagged_block) = 0;
   virtual bool insert_block(const messages::Block &block) = 0;
@@ -467,9 +467,9 @@ class Ledger {
   messages::Transaction build_transaction(
       const std::vector<messages::TransactionID> &unspent_transactions_ids,
       const std::vector<messages::Output> &outputs,
-      const crypto::EccPriv &key_priv,
+      const crypto::KeyPriv &key_priv,
       const std::optional<const messages::NCCAmount> &fees = {}) const {
-    const crypto::EccPub key_pub = key_priv.make_public_key();
+    const crypto::KeyPub key_pub = key_priv.make_key_pub();
     const auto address = messages::Address(key_pub);
 
     auto inputs = build_inputs(unspent_transactions_ids, address);
@@ -480,13 +480,13 @@ class Ledger {
   messages::Transaction build_transaction(
       const std::vector<messages::Input> &inputs,
       const std::vector<messages::Output> &outputs,
-      const crypto::EccPriv &key_priv,
+      const crypto::KeyPriv &key_priv,
       const std::optional<messages::NCCAmount> &fees = {},
       bool add_change_output = true) const {
     messages::Transaction transaction;
 
     // Build keys
-    const crypto::EccPub key_pub = key_priv.make_public_key();
+    const crypto::KeyPub key_pub = key_priv.make_key_pub();
     const auto address = messages::Address(key_pub);
     const auto ecc = crypto::Ecc(key_priv, key_pub);
     std::vector<const crypto::Ecc *> keys = {&ecc};
@@ -518,9 +518,9 @@ class Ledger {
 
   messages::Transaction build_transaction(
       const messages::Address &address, const messages::NCCAmount &amount,
-      const crypto::EccPriv &key_priv,
+      const crypto::KeyPriv &key_priv,
       const std::optional<messages::NCCAmount> &fees = {}) const {
-    auto bot_address = messages::Address(key_priv.make_public_key());
+    auto bot_address = messages::Address(key_priv.make_key_pub());
     std::vector<messages::UnspentTransaction> unspent_transactions =
         list_unspent_transactions(bot_address);
 
@@ -543,10 +543,10 @@ class Ledger {
    * sending a ratio of all those coin to the recipient
    */
   messages::Transaction send_ncc(
-      const crypto::EccPriv &sender_key_priv,
+      const crypto::KeyPriv &sender_key_priv,
       const messages::Address &recipient_address, const float ratio_to_send,
       const std::optional<messages::NCCAmount> &fees = {}) const {
-    auto sender_address = messages::Address(sender_key_priv.make_public_key());
+    auto sender_address = messages::Address(sender_key_priv.make_key_pub());
 
     std::vector<messages::Transaction> unspent_outputs =
         list_unspent_outputs(sender_address);

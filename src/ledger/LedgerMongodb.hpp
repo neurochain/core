@@ -285,7 +285,7 @@ class LedgerMongodb : public Ledger {
                            const messages::BranchPath &branch_path) const;
 
   std::vector<messages::TaggedBlock> get_blocks(
-      const messages::BlockHeight height, const messages::KeyPub &author,
+      const messages::BlockHeight height, const messages::_KeyPub &author,
       bool include_transactions = true) const;
 
   void add_double_mining(

@@ -21,14 +21,14 @@ Bot::Bot(const messages::config::Config &config)
       _keys(_config.networking().key_priv_path(),
             _config.networking().key_pub_path()),
       _me(_config.networking().tcp().endpoint(),
-          _config.networking().tcp().port(), _keys.at(0).public_key()),
+          _config.networking().tcp().port(), _keys.at(0).key_pub()),
       _peers(_me.key_pub(), _config.networking().tcp().peers().begin(),
              _config.networking().tcp().peers().end()),
       _networking(&_queue, &_keys.at(0), &_peers, _config.mutable_networking()),
       _ledger(std::make_shared<ledger::LedgerMongodb>(_config.database())),
       _update_timer(std::ref(*_io_context)) {
   LOG_DEBUG << this << " hello from bot " << &_queue << " "
-            << _keys.at(0).public_key() << std::endl
+            << _keys.at(0).key_pub() << std::endl
             << _peers << std::endl;
 
   if (!init()) {

@@ -10,7 +10,7 @@
 #include <string>
 #include "common/types.hpp"
 #include "config.pb.h"
-#include "crypto/EccPriv.hpp"
+#include "crypto/KeyPriv.hpp"
 #include "messages/Message.hpp"
 
 namespace neuro {

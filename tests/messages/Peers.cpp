@@ -24,9 +24,9 @@ class PeersF : public ::testing::Test {
   PeersF() {
     ::neuro::_fake_time = true;
 
-    keys0.public_key().save(peer0.mutable_key_pub());
-    keys1.public_key().save(peer1.mutable_key_pub());
-    keys2.public_key().save(peer2.mutable_key_pub());
+    keys0.key_pub().save(peer0.mutable_key_pub());
+    keys1.key_pub().save(peer1.mutable_key_pub());
+    keys2.key_pub().save(peer2.mutable_key_pub());
 
     peer0.set_status(Peer::CONNECTING);
     peer1.set_status(Peer::DISCONNECTED);
@@ -46,7 +46,7 @@ TEST_F(PeersF, insert_peer) {
 
   crypto::Ecc new_keys;
 
-  new_keys.public_key().save(peer0.mutable_key_pub());
+  new_keys.key_pub().save(peer0.mutable_key_pub());
 
   ASSERT_TRUE(peers.insert(peer0));
   ASSERT_EQ(peers.size(), 2);

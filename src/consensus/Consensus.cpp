@@ -527,7 +527,7 @@ void Consensus::init(bool start_threads) {
     start_miner_thread();
   }
   for (const auto &key : _keys) {
-    _addresses.push_back(messages::Address(key.public_key()));
+    _addresses.push_back(messages::Address(key.key_pub()));
   }
 }
 
@@ -815,7 +815,7 @@ bool Consensus::build_block(const crypto::Ecc &keys,
   header->mutable_timestamp()->set_data(std::time(nullptr));
 
   // Block reward
-  tooling::blockgen::coinbase({keys.public_key()}, block_reward(height),
+  tooling::blockgen::coinbase({keys.key_pub()}, block_reward(height),
                               block->mutable_coinbase(), height);
 
   _ledger->get_transaction_pool(block);

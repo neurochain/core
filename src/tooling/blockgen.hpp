@@ -13,7 +13,7 @@ namespace neuro {
 namespace tooling {
 namespace blockgen {
 
-void coinbase(const std::vector<crypto::EccPub> &key_pub,
+void coinbase(const std::vector<crypto::KeyPub> &key_pub,
               const messages::NCCAmount &ncc,
               messages::Transaction *transaction,
               const messages::BlockHeight &height,
@@ -32,12 +32,12 @@ void testnet_blockg(uint32_t bots, const std::string &pathdir,
 bool blockgen_from_block(
     messages::Block *block, const messages::Block &last_block,
     const int32_t height, const uint64_t seed = 1,
-    std::optional<neuro::messages::KeyPub> author = std::nullopt);
+    std::optional<neuro::messages::_KeyPub> author = std::nullopt);
 
 bool blockgen_from_last_db_block(
     messages::Block *block, std::shared_ptr<ledger::Ledger> ledger,
     const uint64_t seed, const int32_t new_height,
-    std::optional<neuro::messages::KeyPub> author = std::nullopt,
+    std::optional<neuro::messages::_KeyPub> author = std::nullopt,
     const int32_t last_height = 0);
 
 void append_blocks(const int nb, std::shared_ptr<ledger::Ledger> ledger);
