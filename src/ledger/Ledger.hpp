@@ -6,9 +6,9 @@
 #include "crypto/Hash.hpp"
 #include "crypto/Sign.hpp"
 #include "ledger/Filter.hpp"
-#include "messages/Message.hpp"
 #include "messages.pb.h"
 #include "messages/Address.hpp"
+#include "messages/Message.hpp"
 #include "rest.pb.h"
 
 namespace neuro {

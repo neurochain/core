@@ -8,6 +8,7 @@ namespace neuro {
 namespace tests {
 
 std::vector<Bot> simulate(int nb_bots) {
+  std::vector<Bot> bots;
   for (int i = 0; i < nb_bots; i++) {
     messages::config::Config config;
     auto networking = config.mutable_networking();
@@ -15,8 +16,10 @@ std::vector<Bot> simulate(int nb_bots) {
     auto tcp = networking->mutable_tcp();
     tcp->set_port(1337 + i);
     tcp->set_endpoint("localhost");
-    auto database = config.mutable_database();
+
+    // auto database = config.mutable_database();
   }
+  return bots;
 }
 
 TEST(FULL_SIMULATOR, full_simulator) {}

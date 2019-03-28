@@ -176,7 +176,6 @@ message Header {
   optional int32 id = 11; 
   optional int32 request_id = 12;
   optional _KeyPub key_pub = 13;
-
 }
 
 message _Message {

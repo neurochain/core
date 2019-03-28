@@ -4,8 +4,10 @@
       "to_stdout": true
   },
   "networking" : {
-      "key_pub_path" : "key0.pub",
-      "key_priv_path" : "key0.priv",
+      "keys_paths": [{
+          "key_pub_path" : "key0.pub",
+          "key_priv_path" : "key0.priv"
+      }],
       "max_connections" : 3,
       "tcp" : {
           "port" : 1337,

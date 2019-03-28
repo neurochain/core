@@ -25,6 +25,14 @@ KeyPriv::KeyPriv(std::shared_ptr<CryptoPP::AutoSeededRandomPool> prng,
   }
 }
 
+KeyPriv::KeyPriv(std::shared_ptr<CryptoPP::AutoSeededRandomPool> prng,
+                 const messages::_KeyPriv &key_priv)
+    : _prng(prng) {
+  if (!load(Buffer(key_priv.data()))) {
+    throw std::runtime_error("Public key validation failed");
+  }
+}
+
 bool KeyPriv::save(const std::string &filepath) const {
   CryptoPP::FileSink fs(filepath.c_str(), true);
   _key.Save(fs);

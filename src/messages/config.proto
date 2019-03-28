@@ -44,13 +44,22 @@ message Tcp {
   repeated _Peer peers = 3;
 }
 
+message KeysPaths {
+  required string key_pub_path = 1;
+  required string key_priv_path = 2;
+}
+
+message Keys {
+  required _KeyPriv key_priv = 1;
+  required _KeyPub key_pub = 2;
+}
+
 message Networking {
   optional int32 max_connections = 1;
   required Tcp tcp = 2;
   optional int32 peers_update_time = 3 [default = 2];
-  required string key_pub_path = 4;
-  required string key_priv_path = 5;
-  
+  repeated KeysPaths keys_paths = 4;
+  repeated Keys keys = 5;
 }
 
 message _Config {

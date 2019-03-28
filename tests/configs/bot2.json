@@ -27,8 +27,10 @@
 		}
 	    ]
     },
-    "keyPubPath": "key2.pub",
-    "keyPrivPath": "key2.priv"
+    "keysPaths": [{
+        "keyPubPath": "key2.pub",
+        "keyPrivPath": "key2.priv"
+    }]
   },
   "database": {
     "url": "mongodb://localhost:27017/neuro",

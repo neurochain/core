@@ -65,6 +65,26 @@ target_link_libraries(integration
   )
 add_test(integration integration)
 
+add_executable(full_simulator
+    FullSimulator.cpp
+  )
+
+target_link_libraries(full_simulator
+  GTest::main
+  core
+  protos
+  Boost::program_options
+  Boost::system
+  Boost::filesystem
+  Boost::thread
+  Boost::log
+  libonion::onion
+  cpr::cpr
+  libonion::onioncpp
+  ${LIBMONGOCXX_STATIC_LIBRARIES}
+  )
+add_test(full_simulator full_simulator)
+
 add_executable(ut
   ./common/Buffer.cpp
   ./crypto/Hash.cpp
