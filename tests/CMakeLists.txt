@@ -66,7 +66,7 @@ target_link_libraries(integration
 add_test(integration integration)
 
 add_executable(full_simulator
-    FullSimulator.cpp
+    tooling/FullSimulator.cpp
   )
 
 target_link_libraries(full_simulator

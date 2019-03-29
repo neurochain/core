@@ -84,7 +84,6 @@ class Bot {
   Bot(const messages::config::Config &config);
   Bot(const std::string &config_path);
   Bot(const Bot &) = delete;
-  Bot(Bot &&) = delete;
 
   void join();
 
