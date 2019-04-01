@@ -9,7 +9,7 @@ class FullSimulator : public ::testing::Test {
  public:
   const std::string db_url = "mongodb://mongo:27017";
   const std::string db_name = "test_simulator";
-  const int nb_bots = 10;
+  const int nb_bots = 5;
   const messages::NCCAmount ncc_block0 = messages::NCCAmount(1000000);
 
  protected:
@@ -19,7 +19,13 @@ class FullSimulator : public ::testing::Test {
   FullSimulator() : simulator(db_url, db_name, nb_bots, ncc_block0) {}
 };
 
-TEST_F(FullSimulator, full_simulator) { ASSERT_EQ(simulator.bots.size(), 10); }
+TEST_F(FullSimulator, full_simulator) {
+  ASSERT_EQ(simulator.bots.size(), 5);
+  std::this_thread::sleep_for(1s);
+  for (const auto &bot : simulator.bots) {
+    ASSERT_GT(bot->connected_peers().size(), 2);
+  }
+}
 
 }  // namespace tests
 }  // namespace tooling

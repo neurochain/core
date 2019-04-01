@@ -62,6 +62,8 @@ const std::string TRANSACTIONS = "transactions";
 
 mongocxx::instance LedgerMongodb::_instance{};
 
+std::mutex LedgerMongodb::_ledger_mutex{};
+
 LedgerMongodb::LedgerMongodb(const std::string &url, const std::string &db_name)
     : _uri(url),
       _client(_uri),

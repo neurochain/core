@@ -21,6 +21,10 @@ namespace tests {
 class BotTest;
 }
 
+namespace tooling {
+class FullSimulator;
+}
+
 class Bot {
  public:
  private:
@@ -99,6 +103,7 @@ class Bot {
   void publish_block(const messages::Block &block) const;
 
   friend class neuro::tests::BotTest;
+  friend class neuro::tooling::FullSimulator;
 };
 
 std::ostream &operator<<(std::ostream &os, const neuro::Bot &b);

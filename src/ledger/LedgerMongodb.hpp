@@ -36,7 +36,7 @@ class LedgerMongodb : public Ledger {
   mutable mongocxx::collection _assemblies;
   mutable mongocxx::collection _double_mining;
 
-  mutable std::mutex _ledger_mutex;
+  static std::mutex _ledger_mutex;
 
   messages::TaggedBlock _main_branch_tip;
 
@@ -51,8 +51,6 @@ class LedgerMongodb : public Ledger {
 
   bool load_block0(const messages::config::Database &config,
                    messages::Block *block0);
-
-  void init_database(const messages::Block &block0);
 
   bool is_ancestor(const messages::BranchPath &ancestor_path,
                    const messages::BranchPath &block_path) const;
@@ -238,6 +236,8 @@ class LedgerMongodb : public Ledger {
                          std::vector<messages::Pii> *piis);
 
   void empty_database();
+
+  void init_database(const messages::Block &block0);
 
   bool get_assembly(const messages::AssemblyID &assembly_id,
                     messages::Assembly *assembly) const;

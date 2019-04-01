@@ -145,6 +145,8 @@ class Ledger {
 
   virtual void empty_database() = 0;
 
+  virtual void init_database(const messages::Block &block0) = 0;
+
   virtual bool get_unverified_blocks(
       std::vector<messages::TaggedBlock> *tagged_blocks) const = 0;
 
