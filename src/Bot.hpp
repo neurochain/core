@@ -23,7 +23,10 @@ class BotTest;
 
 namespace tooling {
 class FullSimulator;
+namespace tests {
+class FullSimulator;
 }
+}  // namespace tooling
 
 class Bot {
  public:
@@ -38,6 +41,7 @@ class Bot {
   networking::Networking _networking;
   std::shared_ptr<ledger::Ledger> _ledger;
   boost::asio::steady_timer _update_timer;
+  consensus::Config _consensus_config;
   std::shared_ptr<consensus::Consensus> _consensus;
   // std::shared_ptr<rest::Rest> _rest;
   std::unordered_set<int32_t> _request_ids;
@@ -85,7 +89,8 @@ class Bot {
   void update_peerlist();
 
  public:
-  Bot(const messages::config::Config &config);
+  Bot(const messages::config::Config &config,
+      const consensus::Config &consensus_config = consensus::Config());
   Bot(const std::string &config_path);
   Bot(const Bot &) = delete;
 
@@ -104,6 +109,7 @@ class Bot {
 
   friend class neuro::tests::BotTest;
   friend class neuro::tooling::FullSimulator;
+  friend class neuro::tooling::tests::FullSimulator;
 };
 
 std::ostream &operator<<(std::ostream &os, const neuro::Bot &b);

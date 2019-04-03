@@ -9,6 +9,20 @@
 namespace neuro {
 namespace tooling {
 
+consensus::Config consensus_config{
+    5,       // blocks_per_assembly
+    10,      // members_per_assembly
+    1,       // block_period
+    100,     // block_reward
+    128000,  // max_block_size
+    1s,      // update_heights_sleep
+    1s,      // compute_pii_sleep
+    100ms,   // miner_sleep
+    1,       // integrity_block_reward
+    -40,     // integrity_double_mining
+    1        // integrity_denunciation_reward
+};
+
 class FullSimulator {
  public:
   const std::string db_url;
@@ -60,7 +74,8 @@ class FullSimulator {
     }
     for (int i = 0; i < nb_bots; i++) {
       LOG_DEBUG << "CREATING BOT " << i << std::endl;
-      bots.push_back(std::make_unique<Bot>(bot_config(i, nb_bots)));
+      bots.push_back(
+          std::make_unique<Bot>(bot_config(i, nb_bots), consensus_config));
       auto &bot = bots[i];
       bot->_ledger->empty_database();
       bot->_ledger->init_database(block0);

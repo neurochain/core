@@ -532,16 +532,17 @@ void Consensus::init(bool start_threads) {
 }
 
 Consensus::~Consensus() {
-  halt_thread(&_compute_pii_thread, &_stop_compute_pii);
-  halt_thread(&_update_heights_thread, &_stop_update_heights);
-  halt_thread(&_miner_thread, &_stop_miner);
-}
-
-void Consensus::halt_thread(std::thread *thread_object,
-                            std::atomic<bool> *stop_thread) {
-  *stop_thread = true;
-  if (thread_object->joinable()) {
-    thread_object->join();
+  _stop_compute_pii = true;
+  _stop_update_heights = true;
+  _stop_miner = true;
+  if (_compute_pii_thread.joinable()) {
+    _compute_pii_thread.join();
+  }
+  if (_update_heights_thread.joinable()) {
+    _update_heights_thread.join();
+  }
+  if (_miner_thread.joinable()) {
+    _miner_thread.join();
   }
 }
 

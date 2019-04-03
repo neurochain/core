@@ -13,7 +13,8 @@
 namespace neuro {
 using namespace std::chrono_literals;
 
-Bot::Bot(const messages::config::Config &config)
+Bot::Bot(const messages::config::Config &config,
+         const consensus::Config &consensus_config)
     : _config(config),
       _io_context(std::make_shared<boost::asio::io_context>()),
       _queue(),

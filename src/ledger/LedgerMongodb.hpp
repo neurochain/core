@@ -36,7 +36,7 @@ class LedgerMongodb : public Ledger {
   mutable mongocxx::collection _assemblies;
   mutable mongocxx::collection _double_mining;
 
-  static std::mutex _ledger_mutex;
+  static std::recursive_mutex _ledger_mutex;
 
   messages::TaggedBlock _main_branch_tip;
 
@@ -129,6 +129,10 @@ class LedgerMongodb : public Ledger {
       const messages::Denunciation &denunciation,
       const messages::BlockHeight &max_block_height,
       const messages::BranchPath &branch_path) const;
+
+  void unsafe_empty_database();
+
+  void unsafe_init_database(const messages::Block &block0);
 
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);

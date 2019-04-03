@@ -105,8 +105,6 @@ class Consensus {
 
   ~Consensus();
 
-  void halt_thread(std::thread *thread_object, std::atomic<bool> *stop_thread);
-
   bool is_valid(const messages::TaggedTransaction &tagged_transaction) const;
 
   bool is_valid(const messages::TaggedBlock &tagged_block) const;
