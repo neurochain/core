@@ -326,6 +326,11 @@ void Bot::handler_connection(const messages::Header &header,
   auto hello = message->add_bodies()->mutable_hello();
   hello->mutable_peer()->CopyFrom(_me);
 
+  if (_me.port() == 13350)
+  std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": "
+            << _me.status()
+            << std::endl;
+
   _networking.send_unicast(message);
   LOG_DEBUG << this << __LINE__
             << " _networking.peer_count(): " << _networking.peer_count();
@@ -362,7 +367,10 @@ void Bot::handler_world(const messages::Header &header,
   } else {
     (*remote_peer)->set_status(messages::Peer::CONNECTED);
   }
-
+  if (_me.port() == 13350)
+  std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": "
+            << (*remote_peer)->port() << ":" << (*remote_peer)->status() << " " << std::boolalpha << world.accepted()
+            << std::endl;
   this->keep_max_connections();
 }
 
@@ -400,7 +408,10 @@ void Bot::handler_hello(const messages::Header &header,
   } else {
     (*remote_peer)->set_status(messages::Peer::DISCONNECTED);
   }
-
+  if (_me.port() == 13350)
+  std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": "
+            << (*remote_peer)->port() << ":" << (*remote_peer)->status() << " " << std::boolalpha << accepted
+            << std::endl;
   auto header_reply = message->mutable_header();
   messages::fill_header_reply(header, header_reply);
   world->set_accepted(accepted);
@@ -461,6 +472,11 @@ void Bot::keep_max_connections() {
   LOG_DEBUG << this << " Asking to connect to " << **peer_it;
   (*peer_it)->set_status(messages::Peer::CONNECTING);
   _networking.connect(*peer_it);
+//  while(peer_it != _peers.end()) {
+//  (*peer_it)->set_status(messages::Peer::CONNECTING);
+//  _networking.connect(*peer_it);
+//    ++peer_it;
+//  }
 }
 
 const messages::Peers &Bot::peers() const { return _peers; }

@@ -60,6 +60,7 @@ bool Peers::update_peer_status(const Peer &peer, const Peer::Status status) {
 }
 
 std::optional<Peer *> Peers::find(const KeyPub &key_pub) {
+  std::shared_lock<std::shared_mutex> lock(_mutex);
   auto got = _peers.find(key_pub);
 
   if (got == _peers.end()) {

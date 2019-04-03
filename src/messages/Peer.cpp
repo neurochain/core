@@ -39,9 +39,13 @@ void Peer::update_timestamp(std::time_t tick) {
 }
 
 void Peer::update_unreachable(const std::time_t t) {
-  if (next_update().data() < t &&
-      status() & (Peer::UNREACHABLE | Peer::CONNECTING)) {
-    this->set_status(Peer::DISCONNECTED);
+  if (next_update().data() < t) {
+    const auto peer_status = status();
+    if (peer_status & Peer::UNREACHABLE) {
+      this->set_status(Peer::DISCONNECTED);
+    } else if (peer_status & Peer::CONNECTING) {
+      this->set_status(Peer::UNREACHABLE);
+    }
   }
 }
 
