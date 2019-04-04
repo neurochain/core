@@ -60,6 +60,9 @@ std::shared_ptr<const messages::Message> Queue::next_message() {
   return message;
 }
 
+std::size_t Queue::size() const { return _queue.size(); }
+
+  
 void Queue::quit() {
   if (!_started) {
     return;
@@ -94,7 +97,10 @@ void Queue::do_work() {
   } while (!_quitting);
 }
 
-Queue::~Queue() { quit(); }
+Queue::~Queue() {
+  quit();
+  std::cout << this << " ~Queue" << std::endl;
+}
 
 }  // namespace messages
 }  // namespace neuro

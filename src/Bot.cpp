@@ -12,9 +12,11 @@
 
 namespace neuro {
 using namespace std::chrono_literals;
-
+  
 Bot::Bot(const messages::config::Config &config)
-    : _config(config),
+    : 
+  _dest_final(this, "the end"),
+  _config(config),
       _io_context(std::make_shared<boost::asio::io_context>()),
       _queue(),
       _subscriber(&_queue),
@@ -27,7 +29,7 @@ Bot::Bot(const messages::config::Config &config)
       _networking(&_queue, &_keys.at(0), &_peers, _config.mutable_networking()),
       _ledger(std::make_shared<ledger::LedgerMongodb>(_config.database())),
       _update_timer(std::ref(*_io_context)) {
-  LOG_DEBUG << this << " hello from bot " << &_queue << " "
+  LOG_DEBUG << this << " " << _me.port() << " hello from bot " << &_queue << " " << &_networking << " " 
             << _keys.at(0).public_key() << std::endl
             << _peers << std::endl;
 
@@ -41,7 +43,7 @@ Bot::Bot(const std::string &config_path)
 
 void Bot::handler_get_block(const messages::Header &header,
                             const messages::Body &body) {
-  LOG_DEBUG << this << " Got a get_block message";
+  LOG_DEBUG << _me.port() << " Got a get_block message";
   const auto get_block = body.get_block();
 
   auto message = std::make_shared<messages::Message>();
@@ -54,7 +56,7 @@ void Bot::handler_get_block(const messages::Header &header,
     if (!_ledger->get_block_by_previd(previd, block)) {
       std::stringstream sstr;  // TODO operator <<
       sstr << previd;
-      LOG_ERROR << this << " get_block by prev id not found " << sstr.str();
+      LOG_ERROR << _me.port() << " get_block by prev id not found " << sstr.str();
       return;
     }
 
@@ -63,12 +65,12 @@ void Bot::handler_get_block(const messages::Header &header,
     for (auto i = 0u; i < get_block.count(); ++i) {
       auto block = message->add_bodies()->mutable_block();
       if (!_ledger->get_block(height + i, block)) {
-        LOG_ERROR << this << " get_block by height not found";
+        LOG_ERROR << _me.port() << " get_block by height not found";
         return;
       }
     }
   } else {
-    LOG_ERROR << this << " get_block message ill-formed";
+    LOG_ERROR << _me.port() << " get_block message ill-formed";
     return;
   }
 
@@ -240,7 +242,6 @@ void Bot::regular_update() {
   update_peerlist();
   keep_max_connections();
   update_ledger();
-  keep_max_connections();
   _update_timer.expires_at(_update_timer.expiry() +
                            boost::asio::chrono::seconds(_update_time));
   _update_timer.async_wait(boost::bind(&Bot::regular_update, this));
@@ -281,7 +282,7 @@ void Bot::update_peerlist() {
 
 void Bot::handler_get_peers(const messages::Header &header,
                             const messages::Body &body) {
-  LOG_DEBUG << this << " Got a Get_Peers message";
+  LOG_DEBUG << _me.port() << " Got a Get_Peers message";
   // build list of peers reachabe && connected to send
   auto msg = std::make_shared<messages::Message>();
   auto header_reply = msg->mutable_header();
@@ -301,7 +302,7 @@ void Bot::handler_get_peers(const messages::Header &header,
 
 void Bot::handler_peers(const messages::Header &header,
                         const messages::Body &body) {
-  LOG_DEBUG << this << " Got a Peers message";
+  LOG_DEBUG << _me.port() << " Got a Peers message";
   const auto &peers = body.peers().peers();
   for (const auto &peer : peers) {
     _peers.insert(peer);
@@ -310,7 +311,7 @@ void Bot::handler_peers(const messages::Header &header,
 
 void Bot::handler_connection(const messages::Header &header,
                              const messages::Body &body) {
-  LOG_DEBUG << this << " It entered in handler_connection in bot " << body;
+  LOG_DEBUG << _me.port() << " It entered in handler_connection in bot " << body;
 
   auto connection_ready = body.connection_ready();
 
@@ -326,28 +327,32 @@ void Bot::handler_connection(const messages::Header &header,
   auto hello = message->add_bodies()->mutable_hello();
   hello->mutable_peer()->CopyFrom(_me);
 
-  if (_me.port() == 13350)
   std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": "
             << _me.status()
             << std::endl;
 
-  _networking.send_unicast(message);
-  LOG_DEBUG << this << __LINE__
+  const auto sent = _networking.send_unicast(message);
+    
+  
+  LOG_DEBUG << _me.port() << __LINE__ << " " << sent 
             << " _networking.peer_count(): " << _networking.peer_count();
+  keep_max_connections();
 }
 
 void Bot::handler_deconnection(const messages::Header &header,
                                const messages::Body &body) {
   if (header.has_connection_id()) {
     auto remote_peer = _networking.find_peer(header.connection_id());
-    if (remote_peer) {
+    if (remote_peer // && (*remote_peer)->status() != messages::Peer::DISCONNECTED
+        ) {
       (*remote_peer)->set_status(messages::Peer::UNREACHABLE);
+      std::cout << _me.port() << " deco of " << (*remote_peer)->port() << std::endl;
     }
     _networking.terminate(header.connection_id());
   }
 
-  LOG_DEBUG << this << " " << __LINE__
-            << " _networking.peer_count(): " << _networking.peer_count();
+  std::cout << _me.port() << " " << __LINE__
+            << " _networking.peer_count(): " << _networking.peer_count() << " " << messages::to_json(body) << std::endl;
 
   this->keep_max_connections();
 }
@@ -361,7 +366,7 @@ void Bot::handler_world(const messages::Header &header,
     return;
   }
   if (!world.accepted()) {
-    LOG_DEBUG << this << " Not accepted, disconnecting ...";
+    LOG_DEBUG << _me.port() << " Not accepted, disconnecting ...";
     _networking.terminate(header.connection_id());
     (*remote_peer)->set_status(messages::Peer::UNREACHABLE);
   } else {
@@ -377,14 +382,14 @@ void Bot::handler_world(const messages::Header &header,
 void Bot::handler_hello(const messages::Header &header,
                         const messages::Body &body) {
   if (!body.has_hello()) {
-    LOG_WARNING << this
+    LOG_WARNING << _me.port()
                 << " SomeThing wrong. Got a call to handler_hello with "
                    "different type of body on the msg";
     return;
   }
   auto hello = body.hello();
 
-  LOG_DEBUG << this << " Got a HELLO message in bot";
+  LOG_DEBUG << _me.port() << " Got a HELLO message in bot";
   auto remote_peer = _peers.insert(hello.peer());
 
   if (!remote_peer) {
@@ -401,12 +406,12 @@ void Bot::handler_hello(const messages::Header &header,
   // update peer status
   if (accepted) {
     (*remote_peer)->set_status(messages::Peer::CONNECTED);
-    LOG_DEBUG << this << " Accept status " << std::boolalpha << accepted << " "
+    LOG_DEBUG << _me.port() << " Accept status " << std::boolalpha << accepted << " "
               << **remote_peer << std::endl
               << _peers;
 
   } else {
-    (*remote_peer)->set_status(messages::Peer::DISCONNECTED);
+    (*remote_peer)->set_status(messages::Peer::UNREACHABLE);
   }
   if (_me.port() == 13350)
   std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": "
@@ -419,7 +424,7 @@ void Bot::handler_hello(const messages::Header &header,
   _peers.fill(peers);
 
   if (!_networking.send_unicast(message)) {
-    LOG_ERROR << this << " Failed to send world message.";
+    LOG_ERROR << _me.port() << " Failed to send world message.";
   }
 }
 
@@ -457,7 +462,7 @@ std::vector<messages::Peer *> Bot::connected_peers() {
 void Bot::keep_max_connections() {
   if (const auto peer_count = _peers.used_peers_count();
       peer_count >= _max_connections) {
-    LOG_INFO << this << " Already connected to " << peer_count << " / "
+    LOG_INFO << _me.port() << " Already connected to " << peer_count << " / "
              << _max_connections << std::endl
              << _peers;
     return;
@@ -469,7 +474,7 @@ void Bot::keep_max_connections() {
     return;
   }
 
-  LOG_DEBUG << this << " Asking to connect to " << **peer_it;
+  LOG_DEBUG << _me.port() << " Asking to connect to " << **peer_it;
   (*peer_it)->set_status(messages::Peer::CONNECTING);
   _networking.connect(*peer_it);
 //  while(peer_it != _peers.end()) {
@@ -512,14 +517,14 @@ Bot::~Bot() {
   _io_context->stop();
 
   while (!_io_context->stopped()) {
-    LOG_INFO << this << " waiting ...";
+    LOG_INFO << _me.port() << " waiting ...";
     std::this_thread::sleep_for(10ms);
   }
   _subscriber.unsubscribe();
   if (_io_context_thread.joinable()) {
     _io_context_thread.join();
   }
-  LOG_DEBUG << this << " From Bot destructor " << &_subscriber;
+  LOG_DEBUG << _me.port() << " From Bot destructor " << &_subscriber;
 }
 
 }  // namespace neuro

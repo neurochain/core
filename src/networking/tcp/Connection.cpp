@@ -111,6 +111,8 @@ void Connection::read_body(std::size_t body_size) {
         }
         message->mutable_header()->mutable_key_pub()->CopyFrom(
             _remote_peer.key_pub());
+        std::cout << "received " << _this->_queue << " "
+                  <<  messages::to_json(*message) << " " << _remote_peer << std::endl;
         _this->_queue->publish(message);
         _this->read_header();
       });
@@ -122,7 +124,7 @@ bool Connection::send(std::shared_ptr<Buffer> &message) {
       [_this = ptr(), message](const boost::system::error_code &error,
                                std::size_t bytes_transferred) {
         if (error) {
-          _this->close();
+          _this->terminate();
           return false;
         }
         return true;

@@ -18,6 +18,7 @@ Networking::Networking(messages::Queue *queue, crypto::Ecc *keys,
   _queue->run();
   _transport_layer =
       std::make_unique<Tcp>(config->tcp().port(), queue, peers, _keys);
+  LOG_DEBUG << this << " Networking born";
 }
 
 TransportLayer::SendResult Networking::send(
@@ -62,7 +63,7 @@ std::optional<messages::Peer*> Networking::find_peer(Connection::ID id) {
   return _transport_layer->find_peer(id);
 }
 
-Networking::~Networking() { LOG_DEBUG << this << " Networking killed"; }
+  Networking::~Networking() { std::cout << this << " Networking killed" << std::endl; }
 
 }  // namespace networking
 }  // namespace neuro

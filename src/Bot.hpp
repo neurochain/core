@@ -21,9 +21,26 @@ namespace tests {
 class BotTest;
 }
 
+template <typename T>
+class Destructor {
+private:
+  T *_p;
+  std::string _m;
+  
+public:
+  Destructor(T *p, const std::string &m): _p(p), _m(m) {
+    std::cout << this << " Destructor " << _p << " " << _m << std::endl;
+  }
+  virtual ~Destructor() {
+    std::cout << this << " ~Destructor " << _p << " " << _m << std::endl;
+  }
+};
+
+  
 class Bot {
  public:
  private:
+  Destructor<Bot> _dest_final;
   messages::config::Config _config;
   std::shared_ptr<boost::asio::io_context> _io_context;
   messages::Queue _queue;
