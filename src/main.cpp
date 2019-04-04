@@ -45,9 +45,10 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  const auto configuration_filepath = vm["configuration"].as<std::string>();
+  const Path configuration_filepath = vm["configuration"].as<std::string>();
 
   auto configuration = messages::config::Config{configuration_filepath};
+
   if (vm.count("port")) {
     const auto port = vm["port"].as<Port>();
     configuration.mutable_networking()->mutable_tcp()->set_port(port);
