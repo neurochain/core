@@ -112,6 +112,16 @@ void Peers::update_unreachable() {
   }
 }
 
+std::optional<Peer* > Peers::peer_by_port(const Port port) const {
+  for (auto &[_, peer] : _peers) {
+    if (peer->port() == port) {
+      return std::make_optional(peer.get());
+    }
+  }
+
+  return std::nullopt;
+}
+
 bool Peers::fill(_Peers *peers, uint8_t peer_count) {
   const auto full_mask =
       static_cast<Peer::Status>(_Peer_Status_Status_MAX * 2 - 1);

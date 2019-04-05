@@ -316,7 +316,8 @@ void Bot::handler_connection(const messages::Header &header,
   auto connection_ready = body.connection_ready();
 
   if (connection_ready.from_remote()) {
-    // Nothing to do; just wait for the hello message from remote peer
+
+  // Nothing to do; just wait for the hello message from remote peer
     return;
   }
 
@@ -334,7 +335,7 @@ void Bot::handler_connection(const messages::Header &header,
   const auto sent = _networking.send_unicast(message);
     
   
-  LOG_DEBUG << _me.port() << __LINE__ << " " << sent 
+  LOG_DEBUG << _me.port() << " " << __LINE__ << " " << sent 
             << " _networking.peer_count(): " << _networking.peer_count();
   keep_max_connections();
 }
@@ -346,7 +347,7 @@ void Bot::handler_deconnection(const messages::Header &header,
     if (remote_peer // && (*remote_peer)->status() != messages::Peer::DISCONNECTED
         ) {
       (*remote_peer)->set_status(messages::Peer::UNREACHABLE);
-      std::cout << _me.port() << " deco of " << (*remote_peer)->port() << std::endl;
+      LOG_DEBUG << _me.port() << " deco of " << (*remote_peer)->port() << std::endl;
     }
     _networking.terminate(header.connection_id());
   }
@@ -413,7 +414,6 @@ void Bot::handler_hello(const messages::Header &header,
   } else {
     (*remote_peer)->set_status(messages::Peer::UNREACHABLE);
   }
-  if (_me.port() == 13350)
   std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": "
             << (*remote_peer)->port() << ":" << (*remote_peer)->status() << " " << std::boolalpha << accepted
             << std::endl;
@@ -477,11 +477,6 @@ void Bot::keep_max_connections() {
   LOG_DEBUG << _me.port() << " Asking to connect to " << **peer_it;
   (*peer_it)->set_status(messages::Peer::CONNECTING);
   _networking.connect(*peer_it);
-//  while(peer_it != _peers.end()) {
-//  (*peer_it)->set_status(messages::Peer::CONNECTING);
-//  _networking.connect(*peer_it);
-//    ++peer_it;
-//  }
 }
 
 const messages::Peers &Bot::peers() const { return _peers; }

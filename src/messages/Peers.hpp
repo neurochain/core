@@ -95,6 +95,7 @@ class Peers {
   std::vector<Peer *> used_peers();
   std::vector<Peer *> connected_peers();
   std::vector<Peer> peers_copy() const;
+  std::optional<Peer* >peer_by_port(const Port port) const;
   iterator begin();
   iterator begin(const Peer::Status);
   iterator end();
