@@ -104,8 +104,8 @@ void Tcp::new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
     _queue->publish(message);
     connection->read();
   } else {
-    LOG_WARNING << "Could not create new connection to "
-                << " due to " << error.message();
+    // LOG_WARNING << "Could not create new connection to "
+    //<< " due to " << error.message();
 
     msg_body->mutable_connection_closed();
     _queue->publish(message);
@@ -134,8 +134,9 @@ void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
     _queue->publish(message);
     connection->read();
   } else {
-    LOG_WARNING << "Could not create new connection to " << *peer << " due to "
-                << error.message();
+    // LOG_WARNING << "Could not create new connection to " << *peer << " due to
+    // "
+    //<< error.message();
 
     auto connection_closed = msg_body->mutable_connection_closed();
     connection_closed->mutable_peer()->CopyFrom(*peer);
@@ -153,13 +154,13 @@ bool Tcp::terminate(const Connection::ID id) {
   return true;
 }
 
-std::optional<messages::Peer*> Tcp::find_peer(const Connection::ID id) {
+std::optional<messages::Peer *> Tcp::find_peer(const Connection::ID id) {
   auto got = _connections.find(id);
   if (got == _connections.end()) {
     return std::nullopt;
   }
 
-  auto& connection = got->second;
+  auto &connection = got->second;
   auto remote_peer = connection->remote_peer();
   return _peers->find(remote_peer.key_pub());
 }
@@ -187,8 +188,8 @@ bool Tcp::serialize(std::shared_ptr<messages::Message> message,
 TransportLayer::SendResult Tcp::send(
     std::shared_ptr<messages::Message> message) const {
   if (_connections.size() == 0) {
-    LOG_ERROR << "Could not send message because there is no connection "
-              << message;
+    // LOG_ERROR << "Could not send message because there is no connection "
+    //<< message;
     return SendResult::FAILED;
   }
 
@@ -242,7 +243,7 @@ bool Tcp::send_unicast(std::shared_ptr<messages::Message> message) const {
   }
 
   const auto port_opt = got->second->remote_port();
-  if(!port_opt) {
+  if (!port_opt) {
     return false;
   }
   LOG_DEBUG << "Sending unicast [" << this->listening_port() << " -> "
@@ -263,7 +264,8 @@ bool Tcp::send_unicast(std::shared_ptr<messages::Message> message) const {
 }
 
 /**
- * count the number of active TCP connexion (either accepted one or attempting one)
+ * count the number of active TCP connexion (either accepted one or attempting
+ * one)
  * @return the number of active connexion
  */
 std::size_t Tcp::peer_count() const { return _connections.size(); }

@@ -612,6 +612,7 @@ void Consensus::start_compute_pii_thread() {
 }
 
 bool Consensus::compute_assembly_pii(const messages::Assembly &assembly) {
+  LOG_DEBUG << "COMPUTE_ASSEMBLY_PII " << assembly << std::endl;
   auto pii = Pii(_ledger, _config);
   auto integrities = Integrities(_config);
   messages::TaggedBlock tagged_block;
@@ -702,8 +703,7 @@ bool Consensus::get_block_writer(const messages::Assembly &assembly,
 
   if (!assembly.has_nb_addresses()) {
     LOG_INFO << "Failed get_block_writer assembly " << assembly.id()
-             << " is missing the number of "
-                "addresses";
+             << " is missing the number of addresses";
     return false;
   }
   std::mt19937 rng;
@@ -726,6 +726,10 @@ messages::BlockHeight Consensus::get_current_height() const {
   _ledger->get_block(0, &block0);
   return (std::time(nullptr) - block0.header().timestamp().data()) /
          _config.block_period;
+}
+
+messages::BlockHeight Consensus::get_current_assembly_height() const {
+  return get_current_height() / _config.blocks_per_assembly;
 }
 
 bool Consensus::get_heights_to_write(
@@ -755,6 +759,7 @@ bool Consensus::get_heights_to_write(
   }
   std::unordered_map<messages::Address, AddressIndex> addresses_map;
   for (uint32_t i = 0; i < addresses.size(); i++) {
+    LOG_DEBUG << "MY ADDRESS " << addresses[i] << std::endl;
     addresses_map[addresses[i]] = i;
   }
 
@@ -779,10 +784,15 @@ bool Consensus::get_heights_to_write(
   }
 
   if (previous_assembly.finished_computation()) {
-    first_height =
-        (previous_assembly.height() + 2) * _config.blocks_per_assembly;
-    last_height =
-        (previous_assembly.height() + 3) * _config.blocks_per_assembly - 1;
+    // If an assembly does not have any block then the assembly is repeated
+    // until it does get a block
+    LOG_DEBUG << "CHECKING PREVIOUS ASSEMBLY" << std::endl;
+    int32_t assembly_height = current_height / _config.blocks_per_assembly;
+    first_height = assembly_height * _config.blocks_per_assembly;
+    last_height = (assembly_height + 1) * _config.blocks_per_assembly - 1;
+    LOG_DEBUG << "FIRST HEIGHT" << first_height << std::endl;
+    LOG_DEBUG << "LAST HEIGHT" << last_height << std::endl;
+    LOG_DEBUG << "CURRENT_HEIGHT" << current_height << std::endl;
 
     for (auto i = std::max(current_height, first_height); i <= last_height;
          i++) {
@@ -791,6 +801,7 @@ bool Consensus::get_heights_to_write(
         LOG_WARNING << "Did not manage to get the block writer for assembly "
                     << previous_assembly.id() << " at height " << i;
       }
+      LOG_DEBUG << "WRITER FOR BLOCK " << i << " IS " << writer;
       if (addresses_map.count(writer) > 0) {
         heights->push_back({i, addresses_map[writer]});
       }
@@ -841,6 +852,7 @@ void Consensus::start_update_heights_thread() {
 }
 
 void Consensus::update_heights_to_write() {
+  LOG_DEBUG << "UPDATE_HEIGHTS_TO_WRITE" << std::endl;
   messages::TaggedBlock tagged_block;
   bool include_transactions = false;
   if (!_ledger->get_last_block(&tagged_block, include_transactions)) {
@@ -855,18 +867,29 @@ void Consensus::update_heights_to_write() {
     return;
   }
   if (!assembly.finished_computation()) {
+    LOG_DEBUG << "UPDATE_HEIGHTS_TO_WRITE ASSEMBLY COMPUTATION NOT FINISHED"
+              << std::endl;
     return;
   }
-  if (_previous_assembly_id &&
-      _previous_assembly_id.value() == tagged_block.previous_assembly_id()) {
+
+  // If thet previous assembly has not changed there is no need to recompute the
+  // heights
+  auto current_assembly_height = get_current_assembly_height();
+  if (_previous_assembly_id && _current_assembly_height &&
+      _previous_assembly_id.value() == tagged_block.previous_assembly_id() &&
+      _current_assembly_height == current_assembly_height) {
+    LOG_DEBUG << "UPDATE_HEIGHTS_TO_WRITE TOTORO";
     return;
   }
+
   std::vector<std::pair<messages::BlockHeight, AddressIndex>> heights;
   get_heights_to_write(_addresses, &heights);
   _heights_to_write_mutex.lock();
   _heights_to_write = heights;
+  LOG_DEBUG << "NEW HEIGHTS SIZE " << heights.size();
   _heights_to_write_mutex.unlock();
   _previous_assembly_id = tagged_block.previous_assembly_id();
+  _current_assembly_height = current_assembly_height;
 }
 
 void Consensus::start_miner_thread() {

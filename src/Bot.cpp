@@ -125,7 +125,7 @@ bool Bot::update_ledger() {
 
   const auto id = last_header.id();
 
-  LOG_DEBUG << "Search Block -" << id;
+  // LOG_DEBUG << "Search Block -" << id;
 
   auto get_block = message->add_bodies()->mutable_get_block();
   get_block->mutable_hash()->CopyFrom(id);
@@ -327,8 +327,8 @@ void Bot::handler_connection(const messages::Header &header,
   hello->mutable_peer()->CopyFrom(_me);
 
   _networking.send_unicast(message);
-  LOG_DEBUG << this << __LINE__
-            << " _networking.peer_count(): " << _networking.peer_count();
+  // LOG_DEBUG << this << __LINE__
+  //<< " _networking.peer_count(): " << _networking.peer_count();
 }
 
 void Bot::handler_deconnection(const messages::Header &header,
@@ -341,8 +341,8 @@ void Bot::handler_deconnection(const messages::Header &header,
     _networking.terminate(header.connection_id());
   }
 
-  LOG_DEBUG << this << " " << __LINE__
-            << " _networking.peer_count(): " << _networking.peer_count();
+  // LOG_DEBUG << this << " " << __LINE__
+  //<< " _networking.peer_count(): " << _networking.peer_count();
 
   this->keep_max_connections();
 }
@@ -454,11 +454,11 @@ void Bot::keep_max_connections() {
 
   auto peer_it = _peers.begin(messages::Peer::DISCONNECTED);
   if (peer_it == _peers.end()) {
-    LOG_WARNING << "Could not find peer to connect to";
+    // LOG_WARNING << "Could not find peer to connect to";
     return;
   }
 
-  LOG_DEBUG << this << " Asking to connect to " << **peer_it;
+  // LOG_DEBUG << this << " Asking to connect to " << **peer_it;
   (*peer_it)->set_status(messages::Peer::CONNECTING);
   _networking.connect(*peer_it);
 }

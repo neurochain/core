@@ -75,14 +75,13 @@ void testnet_blockg(uint32_t bots, const std::string &pathdir,
                     messages::NCCAmount &nccsdf) {
   messages::Block blockfaucet;
 
-  crypto::Ecc ecc;
-  ecc.save({pathdir + "/key_faucet.priv"}, {pathdir + "/key_faucet.pub"});
-
-  crypto::Ecc ecc_save;
-  ecc_save.save({pathdir + "/key_faucet_save.priv"},
-                {pathdir + "/key_faucet_save.pub"});
-
-  Buffer key_pub_raw_save = ecc_save.mutable_key_pub()->save();
+  std::vector<crypto::Ecc> eccs;
+  std::vector<crypto::KeyPub> keys_pubs;
+  for (uint32_t i = 0; i < bots; i++) {
+    eccs.emplace_back(pathdir + "key" + std::to_string(i) + ".priv",
+                      pathdir + "key" + std::to_string(i) + ".pub");
+    keys_pubs.push_back(eccs[i].key_pub());
+  }
 
   messages::BlockHeader *header = blockfaucet.mutable_header();
 
@@ -90,19 +89,18 @@ void testnet_blockg(uint32_t bots, const std::string &pathdir,
   previons_block_hash->set_data("");  ///!< load 0
   previons_block_hash->set_type(messages::Hash::Type::Hash_Type_SHA256);
 
-  header->mutable_timestamp()->set_data(std::time(nullptr) +
-                                        3600);  // 1539640800);
+  header->mutable_timestamp()->set_data(std::time(nullptr));  // 1539640800);
   header->set_height(0);
 
-  coinbase({ecc.key_pub(), ecc_save.key_pub()}, nccsdf,
-           blockfaucet.mutable_coinbase(), 0, "trax killed me");
+  coinbase(keys_pubs, nccsdf, blockfaucet.mutable_coinbase(), 0,
+           "trax killed me");
 
   neuro::Buffer t23("riados");
   messages::Hasher hash_id_tmp(t23);
   header->mutable_id()->CopyFrom(hash_id_tmp);
 
   messages::sort_transactions(&blockfaucet);
-  crypto::sign(ecc, &blockfaucet);
+  crypto::sign(eccs[0], &blockfaucet);
   messages::set_block_hash(&blockfaucet);
 
   std::cout << "block0 " << blockfaucet << std::endl;
