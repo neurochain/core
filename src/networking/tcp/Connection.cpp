@@ -135,17 +135,22 @@ bool Connection::send(std::shared_ptr<Buffer> &message) {
   return true;
 }
 
-void Connection::close() { _socket->close(); }
+void Connection::close() {
+  _socket->close();
+}
 
 void Connection::terminate() {
   LOG_INFO << this << " " << _id << " Killing connection";
-  _socket->close();
+  boost::system::error_code ec;
+  _socket->shutdown(tcp::socket::shutdown_both, ec);
+  if (ec) {
+    LOG_DEBUG << "double termination : " << ec.message();
+  }
   auto message = std::make_shared<messages::Message>();
   auto header = message->mutable_header();
   header->set_connection_id(_id);
   auto body = message->add_bodies();
   body->mutable_connection_closed();
-
   _queue->publish(message);
 }
 
@@ -168,8 +173,9 @@ const std::optional<Port> Connection::remote_port() const {
 }
 
 const messages::Peer Connection::remote_peer() const { return _remote_peer; }
+
 Connection::~Connection() {
-  terminate();
+  close();
 }
 }  // namespace tcp
 }  // namespace networking
