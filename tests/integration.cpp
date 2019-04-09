@@ -23,6 +23,18 @@ std::vector<typename C::value_type> vectorize(const C &container) {
 }
 
 
+template<typename A, typename B>
+bool TRAXERT_EQ(const A &a, const B &b, int retry = 10) {
+  while (retry --> 0) {
+    if (a == b) {
+      return true;
+    }
+
+    LOG_TRACE << "needed to retry";
+    std::this_thread::sleep_for(1s);
+  }
+  return false;
+}
   
 class BotTest {
  private:
@@ -184,7 +196,7 @@ TEST(INTEGRATION, connection_reconfig) {
     my_logs << "52 peerss " << std::endl << bot6->peers() << std::endl;
     my_logs.close();
   }
-  ASSERT_TRUE(bot0.check_peers_ports({13350, 13351, 13352})) << std::time(nullptr);
+  ASSERT_TRUE(TRAXERT_EQ(bot0.check_peers_ports({13350, 13351, 13352}), true)) << std::time(nullptr);
 
   std::cout << __LINE__ << "trax"  << std::endl;
   {

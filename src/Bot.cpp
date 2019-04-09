@@ -371,9 +371,9 @@ void Bot::handler_world(const messages::Header &header,
     _networking.terminate(header.connection_id());
     (*remote_peer)->set_status(messages::Peer::UNREACHABLE);
   } else {
+    LOG_TRACE << "asked by nepta ";
     (*remote_peer)->set_status(messages::Peer::CONNECTED);
   }
-  if (_me.port() == 13350)
   std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": "
             << (*remote_peer)->port() << ":" << (*remote_peer)->status() << " " << std::boolalpha << world.accepted()
             << std::endl;

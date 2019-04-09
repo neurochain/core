@@ -42,12 +42,7 @@ void Connection::read_header() {
       [_this = ptr()](const boost::system::error_code &error,
                       std::size_t bytes_read) {
         if (error) {
-          if (error == boost::asio::error::eof) {
-            _this->terminate();
-          } else {
-            LOG_ERROR << _this << " " << __LINE__ << " Killing connection "
-                      << error;
-          }
+          _this->terminate();
           return;
         }
         const auto header_pattern =
@@ -84,6 +79,8 @@ void Connection::read_body(std::size_t body_size) {
 
         // validate the MessageVersion from the header
         if (header->version() != neuro::MessageVersion) {
+          LOG_INFO << "Killing connection because received message from wrong version";
+          _this->terminate();
           return;
         }
         for (const auto &body : message->bodies()) {
@@ -95,7 +92,8 @@ void Connection::read_body(std::size_t body_size) {
         }
 
         if (!_this->_remote_peer.has_key_pub()) {
-          _this->read_header();
+          LOG_INFO << "Killing connection because received message without key pub";
+          _this->terminate();
           return;
         }
         const auto key_pub = _this->_remote_peer.key_pub();
@@ -107,6 +105,11 @@ void Connection::read_body(std::size_t body_size) {
                            sizeof(header_pattern->signature));
 
         if (!check) {
+          LOG_INFO << "Killing connection because received message with wrong signature";
+          std::cout << "SHIT HAS HIT THE FAN!!!! " << _this->_queue << " "
+                    <<  messages::to_json(*message) << " " << _remote_peer << std::endl;
+            _this->terminate();
+            
           return;
         }
         message->mutable_header()->mutable_key_pub()->CopyFrom(
@@ -135,6 +138,7 @@ bool Connection::send(std::shared_ptr<Buffer> &message) {
 void Connection::close() { _socket->close(); }
 
 void Connection::terminate() {
+  LOG_INFO << this << " " << _id << " Killing connection";
   _socket->close();
   auto message = std::make_shared<messages::Message>();
   auto header = message->mutable_header();
