@@ -26,6 +26,22 @@ void coinbase(const std::vector<crypto::KeyPub> &pub_keys,
   messages::set_transaction_hash(transaction);
 }
 
+void coinbase(const std::vector<crypto::Ecc> &eccs,
+              const messages::NCCAmount &ncc,
+              messages::Transaction *transaction,
+              const messages::BlockHeight &height,
+              const std::string output_data) {
+  for (const crypto::Ecc &ecc : eccs) {
+    auto output = transaction->add_outputs();
+    output->mutable_address()->CopyFrom(messages::Address(ecc.key_pub()));
+    output->mutable_value()->CopyFrom(ncc);
+    output->set_data(output_data);
+  }
+  transaction->set_coinbase_height(height);
+
+  messages::set_transaction_hash(transaction);
+}
+
 messages::TaggedBlock gen_block0(const std::vector<crypto::Ecc> &keys,
                                  const messages::NCCAmount &ncc_block0,
                                  int32_t time_delta) {
@@ -76,11 +92,11 @@ void testnet_blockg(uint32_t bots, const std::string &pathdir,
   messages::Block blockfaucet;
 
   std::vector<crypto::Ecc> eccs;
-  std::vector<crypto::KeyPub> keys_pubs;
   for (uint32_t i = 0; i < bots; i++) {
     eccs.emplace_back(pathdir + "key" + std::to_string(i) + ".priv",
                       pathdir + "key" + std::to_string(i) + ".pub");
-    keys_pubs.push_back(eccs[i].key_pub());
+    LOG_DEBUG << "KEY PRIV " << eccs[i].key_priv() << std::endl;
+    LOG_DEBUG << "KEY PUB " << eccs[i].key_pub() << std::endl;
   }
 
   messages::BlockHeader *header = blockfaucet.mutable_header();
@@ -92,16 +108,15 @@ void testnet_blockg(uint32_t bots, const std::string &pathdir,
   header->mutable_timestamp()->set_data(std::time(nullptr));  // 1539640800);
   header->set_height(0);
 
-  coinbase(keys_pubs, nccsdf, blockfaucet.mutable_coinbase(), 0,
-           "trax killed me");
+  coinbase(eccs, nccsdf, blockfaucet.mutable_coinbase(), 0, "trax killed me");
 
   neuro::Buffer t23("riados");
   messages::Hasher hash_id_tmp(t23);
   header->mutable_id()->CopyFrom(hash_id_tmp);
 
   messages::sort_transactions(&blockfaucet);
-  crypto::sign(eccs[0], &blockfaucet);
   messages::set_block_hash(&blockfaucet);
+  crypto::sign(eccs[0], &blockfaucet);
 
   std::cout << "block0 " << blockfaucet << std::endl;
   std::ofstream blockfile0;
