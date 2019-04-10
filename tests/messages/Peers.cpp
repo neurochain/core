@@ -60,8 +60,7 @@ TEST_F(PeersF, pick) {
   auto new_peer2 = peers.insert(peer2);
   peers.insert(peer3);
 
-  ASSERT_EQ(peers.size(), 3);
-  std::cout << peers << std::endl;
+  ASSERT_EQ(peers.size(), 3) << peers;
 
   (*new_peer1)->set_status(Peer::CONNECTED);
   (*new_peer2)->set_status(Peer::CONNECTING);
@@ -82,8 +81,7 @@ TEST_F(PeersF, update_timestamp) {
   auto new_peer2 = peers.insert(peer2);
   auto new_peer3 = peers.insert(peer3);
 
-  ASSERT_EQ(peers.size(), 3);
-  std::cout << peers << std::endl;
+  ASSERT_EQ(peers.size(), 3) << peers;
 
   (*new_peer1)->set_status(Peer::UNREACHABLE);
   (*new_peer2)->set_status(Peer::CONNECTING);

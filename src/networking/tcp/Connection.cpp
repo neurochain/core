@@ -105,17 +105,15 @@ void Connection::read_body(std::size_t body_size) {
                            sizeof(header_pattern->signature));
 
         if (!check) {
-          LOG_INFO << "Killing connection because received message with wrong signature";
-          std::cout << "SHIT HAS HIT THE FAN!!!! " << _this->_queue << " "
-                    <<  messages::to_json(*message) << " " << _remote_peer << std::endl;
-            _this->terminate();
-            
+          LOG_INFO
+            << "Killing connection because received message with wrong signature"
+            << _this->_queue << " " << messages::to_json(*message) << " "
+            << _remote_peer << std::endl;
+          _this->terminate();
           return;
         }
         message->mutable_header()->mutable_key_pub()->CopyFrom(
             _remote_peer.key_pub());
-        std::cout << "received " << _this->_queue << " "
-                  <<  messages::to_json(*message) << " " << _remote_peer << std::endl;
         _this->_queue->publish(message);
         _this->read_header();
       });

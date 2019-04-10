@@ -15,7 +15,6 @@ using namespace std::chrono_literals;
   
 Bot::Bot(const messages::config::Config &config)
     : 
-  _dest_final(this, "the end"),
   _config(config),
       _io_context(std::make_shared<boost::asio::io_context>()),
       _queue(),
@@ -282,8 +281,7 @@ void Bot::update_peerlist() {
 
 void Bot::handler_get_peers(const messages::Header &header,
                             const messages::Body &body) {
-  LOG_DEBUG << _me.port() << " Got a Get_Peers message";
-  // build list of peers reachabe && connected to send
+  // build list of peers reachable && connected to send
   auto msg = std::make_shared<messages::Message>();
   auto header_reply = msg->mutable_header();
   messages::fill_header_reply(header, header_reply);
@@ -296,14 +294,14 @@ void Bot::handler_get_peers(const messages::Header &header,
     tmp_peer->set_endpoint(peer_conn.endpoint());
     tmp_peer->set_port(peer_conn.port());
   }
-
+  LOG_DEBUG << _me.port() << " got a get_peers message, sending : " << peers;
   _networking.send_unicast(msg);
 }
 
 void Bot::handler_peers(const messages::Header &header,
                         const messages::Body &body) {
-  LOG_DEBUG << _me.port() << " Got a Peers message";
   const auto &peers = body.peers().peers();
+  LOG_DEBUG << _me.port() << " got a peers message, receiving : " << peers;
   for (const auto &peer : peers) {
     _peers.insert(peer);
   }
@@ -311,12 +309,8 @@ void Bot::handler_peers(const messages::Header &header,
 
 void Bot::handler_connection(const messages::Header &header,
                              const messages::Body &body) {
-  LOG_DEBUG << _me.port() << " It entered in handler_connection in bot " << body;
-
   auto connection_ready = body.connection_ready();
-
   if (connection_ready.from_remote()) {
-
   // Nothing to do; just wait for the hello message from remote peer
     return;
   }
@@ -328,15 +322,9 @@ void Bot::handler_connection(const messages::Header &header,
   auto hello = message->add_bodies()->mutable_hello();
   hello->mutable_peer()->CopyFrom(_me);
 
-  std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": "
-            << _me.status()
-            << std::endl;
-
-  const auto sent = _networking.send_unicast(message);
-    
-  
-  LOG_DEBUG << _me.port() << " " << __LINE__ << " " << sent 
-            << " _networking.peer_count(): " << _networking.peer_count();
+  if (!_networking.send_unicast(message)) {
+    LOG_DEBUG << "can't respond to connection message " << _me;
+  }
   keep_max_connections();
 }
 
@@ -346,13 +334,9 @@ void Bot::handler_deconnection(const messages::Header &header,
     auto remote_peer = _networking.find_peer(header.connection_id());
     if (remote_peer) {
       (*remote_peer)->set_status(messages::Peer::UNREACHABLE);
-      LOG_DEBUG << _me.port() << " deco of " << (*remote_peer)->port() << std::endl;
+      LOG_DEBUG << _me.port() << " disconnected from " << (*remote_peer)->port() << std::endl;
     }
-    _networking.terminate(header.connection_id());
   }
-
-  std::cout << _me.port() << " " << __LINE__
-            << " _networking.peer_count(): " << _networking.peer_count() << " " << messages::to_json(body) << std::endl;
 
   this->keep_max_connections();
 }
@@ -362,7 +346,7 @@ void Bot::handler_world(const messages::Header &header,
   auto world = body.world();
   auto remote_peer = _peers.find(header.key_pub());
   if (!remote_peer) {
-    LOG_WARNING << "Received world message from unknown peer";
+    LOG_WARNING << "Received world message from unknown peer" << messages::to_json(body);
     return;
   }
   if (!world.accepted()) {
@@ -370,12 +354,8 @@ void Bot::handler_world(const messages::Header &header,
     _networking.terminate(header.connection_id());
     (*remote_peer)->set_status(messages::Peer::UNREACHABLE);
   } else {
-    LOG_TRACE << "asked by nepta ";
     (*remote_peer)->set_status(messages::Peer::CONNECTED);
   }
-  std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": "
-            << (*remote_peer)->port() << ":" << (*remote_peer)->status() << " " << std::boolalpha << world.accepted()
-            << std::endl;
   this->keep_max_connections();
 }
 
@@ -388,8 +368,6 @@ void Bot::handler_hello(const messages::Header &header,
     return;
   }
   auto hello = body.hello();
-
-  LOG_DEBUG << _me.port() << " Got a HELLO message in bot";
   auto remote_peer = _peers.insert(hello.peer());
 
   if (!remote_peer) {
@@ -409,13 +387,10 @@ void Bot::handler_hello(const messages::Header &header,
     LOG_DEBUG << _me.port() << " Accept status " << std::boolalpha << accepted << " "
               << **remote_peer << std::endl
               << _peers;
-
   } else {
     (*remote_peer)->set_status(messages::Peer::UNREACHABLE);
   }
-  std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": "
-            << (*remote_peer)->port() << ":" << (*remote_peer)->status() << " " << std::boolalpha << accepted
-            << std::endl;
+
   auto header_reply = message->mutable_header();
   messages::fill_header_reply(header, header_reply);
   world->set_accepted(accepted);
@@ -423,7 +398,7 @@ void Bot::handler_hello(const messages::Header &header,
   _peers.fill(peers);
 
   if (!_networking.send_unicast(message)) {
-    LOG_ERROR << _me.port() << " Failed to send world message.";
+    LOG_ERROR << _me.port() << " Failed to send world message: " << messages::to_json(*message);
   }
 }
 

@@ -99,7 +99,6 @@ void Queue::do_work() {
 
 Queue::~Queue() {
   quit();
-  std::cout << this << " ~Queue" << std::endl;
 }
 
 }  // namespace messages

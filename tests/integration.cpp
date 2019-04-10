@@ -732,13 +732,13 @@ TEST(INTEGRATION, connection_reconfig) {
   BotTest bot2("bot2.json");
   std::this_thread::sleep_for(200ms);
   BotTest bot3("integration_propagation40.json");
-
   std::this_thread::sleep_for(200ms);
+  std::this_thread::sleep_for(10s);
 
-  ASSERT_TRUE(bot0.check_peers_ports({1338, 1339, 13340}));
-  ASSERT_TRUE(bot1.check_peers_ports({1337, 1339, 13340}));
-  ASSERT_TRUE(bot2.check_peers_ports({1337, 1338, 13340}));
-  ASSERT_TRUE(bot3.check_peers_ports({1337, 1338, 1339}));
+  ASSERT_TRUE(bot0.check_peers_ports({1338, 1339, 13340})) << bot0->peers();
+  ASSERT_TRUE(bot1.check_peers_ports({1337, 1339, 13340})) << bot1->peers();
+  ASSERT_TRUE(bot2.check_peers_ports({1337, 1338, 13340})) << bot2->peers();
+  ASSERT_TRUE(bot3.check_peers_ports({1337, 1338, 1339})) << bot3->peers();
 
   // Now adding peers that know only onebot of the network.
   BotTest bot4("integration_propagation50.json");
@@ -772,10 +772,10 @@ TEST(INTEGRATION, connection_reconfig) {
   
   std::this_thread::sleep_for(10s);
 
-  ASSERT_TRUE(bot0.check_peers_ports({13350, 13351, 13352}));
-  ASSERT_TRUE(bot4.check_peers_ports({1337, 13351, 13352}));
-  ASSERT_TRUE(bot5.check_peers_ports({1337, 13350, 13352}));
-  ASSERT_TRUE(bot6.check_peers_ports({1337, 13350, 13351}));
+  ASSERT_TRUE(bot0.check_peers_ports({13350, 13351, 13352})) << bot0->peers();
+  ASSERT_TRUE(bot4.check_peers_ports({1337, 13351, 13352})) << bot4->peers();
+  ASSERT_TRUE(bot5.check_peers_ports({1337, 13350, 13352})) << bot5->peers();
+  ASSERT_TRUE(bot6.check_peers_ports({1337, 13350, 13351})) << bot6->peers();
 }
 
 TEST(INTEGRATION, ignore_bad_message) {
