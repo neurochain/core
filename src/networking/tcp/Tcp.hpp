@@ -38,7 +38,6 @@ class Tcp : public TransportLayer {
   std::thread _io_context_thread;
   messages::Peers *_peers;
   ConnectionById _connections;
-  mutable std::mutex _connections_mutex;
 
   void new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
                                   const boost::system::error_code &error);

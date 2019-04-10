@@ -25,7 +25,14 @@ Peer::Peer(const std::string &endpoint,
 
 void Peer::set_status(::neuro::messages::_Peer_Status value) {
   _Peer::set_status(value);
-  update_timestamp();
+  switch(value) {
+    case _Peer_Status_CONNECTING:
+      update_timestamp(1);
+      break;
+    default:
+      update_timestamp();
+      break;
+  }
 }
 
 void Peer::update_timestamp(std::time_t tick) {
