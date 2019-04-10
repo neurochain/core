@@ -58,9 +58,7 @@ void Connection::read_body(std::size_t body_size) {
       [_this = ptr(), this](const boost::system::error_code &error,
                             std::size_t bytes_read) {
         if (error) {
-          if (error == boost::asio::error::eof) {
-            _this->terminate();
-          }
+          _this->terminate();
           return;
         }
         const auto header_pattern =

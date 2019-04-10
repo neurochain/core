@@ -85,6 +85,7 @@ Port Tcp::listening_port() const { return _listening_port; }
 
 void Tcp::new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
                                      const boost::system::error_code &error) {
+  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   auto message = std::make_shared<messages::Message>();
   auto msg_header = message->mutable_header();
   auto msg_body = message->add_bodies();
@@ -115,6 +116,7 @@ void Tcp::new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
 void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
                                const boost::system::error_code &error,
                                messages::Peer *peer) {
+  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   auto message = std::make_shared<messages::Message>();
   auto msg_header = message->mutable_header();
   auto msg_body = message->add_bodies();
@@ -144,6 +146,7 @@ void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
 }
 
 bool Tcp::terminate(const Connection::ID id) {
+  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   auto got = _connections.find(id);
   if (got == _connections.end()) {
     return false;
@@ -154,6 +157,7 @@ bool Tcp::terminate(const Connection::ID id) {
 }
 
 std::optional<messages::Peer*> Tcp::find_peer(const Connection::ID id) {
+  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   auto got = _connections.find(id);
   if (got == _connections.end()) {
     return std::nullopt;
@@ -186,6 +190,7 @@ bool Tcp::serialize(std::shared_ptr<messages::Message> message,
 
 TransportLayer::SendResult Tcp::send(
     std::shared_ptr<messages::Message> message) const {
+  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   if (_connections.size() == 0) {
     LOG_ERROR << "Could not send message because there is no connection "
               << message;
@@ -230,6 +235,7 @@ TransportLayer::SendResult Tcp::send(
 }
 
 bool Tcp::send_unicast(std::shared_ptr<messages::Message> message) const {
+  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   if (_stopped || !message->header().has_connection_id()) {
     LOG_WARNING << "not sending message " << _stopped;
     return false;
@@ -269,6 +275,7 @@ bool Tcp::send_unicast(std::shared_ptr<messages::Message> message) const {
 std::size_t Tcp::peer_count() const { return _connections.size(); }
 
 void Tcp::stop() {
+  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   if (!_stopped) {
     _stopped = true;
     _io_context.post([this]() { _acceptor.close(); });

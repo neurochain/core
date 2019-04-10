@@ -334,8 +334,9 @@ void Bot::handler_deconnection(const messages::Header &header,
     auto remote_peer = _networking.find_peer(header.connection_id());
     if (remote_peer) {
       (*remote_peer)->set_status(messages::Peer::UNREACHABLE);
-      LOG_DEBUG << _me.port() << " disconnected from " << (*remote_peer)->port() << std::endl;
+      LOG_DEBUG << _me.port() << " disconnected from " << (*remote_peer)->port();
     }
+    _networking.terminate(header.connection_id());
   }
 
   this->keep_max_connections();
