@@ -28,10 +28,24 @@ class RealtimeSimulator : public testing::Test {
         ledger(simulator.ledger),
         consensus(simulator.consensus) {}
 
-  void test_simulation() {
+  void test_simulation(bool empty_assemblies = false) {
     messages::Block block0;
+    const auto &config = consensus->config();
     ASSERT_TRUE(ledger->get_block(0, &block0));
     uint64_t block0_timestamp = block0.header().timestamp().data();
+    uint64_t begin_timestamp = block0_timestamp;
+    if (empty_assemblies) {
+      // Sleep for 2 assemblies
+      consensus->_stop_miner = true;
+      begin_timestamp += 2 * config.blocks_per_assembly * config.block_period;
+      milliseconds sleep_time =
+          (milliseconds)(1000 * begin_timestamp + 500 * config.block_period) -
+          duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+      LOG_DEBUG << "WAITING " << sleep_time.count() << " MS BEFORE STARTING "
+                << std::endl;
+      std::this_thread::sleep_for(sleep_time);
+      consensus->start_miner_thread();
+    }
     const auto nb_transactions = 2;
     for (uint32_t i = 1; i < 3 * consensus->config().blocks_per_assembly; i++) {
       for (auto j = 0; j < nb_transactions; j++) {
@@ -51,9 +65,8 @@ class RealtimeSimulator : public testing::Test {
                   << (Timer::now() - t1).count() / 1E6 << " MS";
       }
       milliseconds sleep_time =
-          (milliseconds)(
-              1000 * (block0_timestamp + i * consensus->config().block_period) +
-              500 * consensus->config().block_period) -
+          (milliseconds)(1000 * (begin_timestamp + i * config.block_period) +
+                         500 * config.block_period) -
           duration_cast<milliseconds>(system_clock::now().time_since_epoch());
       LOG_DEBUG << "WAITING " << sleep_time.count() << " MS FOR BLOCK " << i
                 << std::endl;
@@ -82,14 +95,25 @@ class RealtimeSimulator : public testing::Test {
         consensus->_heights_to_write_mutex.unlock();
       }
 
-      ASSERT_EQ(tagged_block.block().header().height(), i);
+      if (empty_assemblies) {
+        ASSERT_EQ(tagged_block.block().header().height(),
+                  i - 1 + 2 * config.blocks_per_assembly);
+      } else {
+        ASSERT_EQ(tagged_block.block().header().height(), i);
+      }
+
       ASSERT_EQ(tagged_block.block().transactions_size(), nb_transactions);
       ASSERT_EQ(tagged_block.block().coinbase().outputs_size(), 1);
     }
   }
 };
 
-TEST_F(RealtimeSimulator, simulation) { test_simulation(); }
+// TEST_F(RealtimeSimulator, simulation) { test_simulation(); }
+
+TEST_F(RealtimeSimulator, empty_assemblies) {
+  bool empty_assemblies = true;
+  test_simulation(empty_assemblies);
+}
 
 }  // namespace tests
 }  // namespace tooling

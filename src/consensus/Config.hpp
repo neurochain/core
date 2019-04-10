@@ -8,7 +8,7 @@ namespace neuro {
 namespace consensus {
 
 struct Config {
-  uint32_t blocks_per_assembly{12000};
+  uint32_t blocks_per_assembly{5760};
   uint32_t members_per_assembly{500};
   uint32_t block_period{15};
   messages::NCCAmount block_reward{100};

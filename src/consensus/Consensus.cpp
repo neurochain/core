@@ -320,13 +320,17 @@ bool Consensus::check_block_height(
   messages::Block previous;
   if (!_ledger->get_block(block.header().previous_block_hash(), &previous,
                           false)) {
-    LOG_INFO << "Failed check_block_height for block " << block.header().id();
+    LOG_INFO << "Failed check_block_height for block " << block.header().id()
+             << " failed to get the previous_block";
     return false;
   }
 
   bool result = block.header().height() > previous.header().height();
   if (!result) {
-    LOG_INFO << "Failed check_block_height for block " << block.header().id();
+    LOG_INFO << "Failed check_block_height for block " << block.header().id()
+             << " height " << block.header().height()
+             << " is lower than the height of the previous block "
+             << previous.header().height();
   }
   return result;
 }
@@ -612,7 +616,6 @@ void Consensus::start_compute_pii_thread() {
 }
 
 bool Consensus::compute_assembly_pii(const messages::Assembly &assembly) {
-  LOG_DEBUG << "COMPUTE_ASSEMBLY_PII " << assembly << std::endl;
   auto pii = Pii(_ledger, _config);
   auto integrities = Integrities(_config);
   messages::TaggedBlock tagged_block;
@@ -736,6 +739,7 @@ bool Consensus::get_heights_to_write(
     const std::vector<messages::Address> &addresses,
     std::vector<std::pair<messages::BlockHeight, AddressIndex>> *heights)
     const {
+  LOG_DEBUG << "GET HEIGHTS TO WRITE" << std::endl;
   messages::TaggedBlock tagged_block;
   _ledger->get_block(_ledger->height(), &tagged_block);
   messages::Assembly previous_assembly, previous_previous_assembly;
@@ -759,7 +763,6 @@ bool Consensus::get_heights_to_write(
   }
   std::unordered_map<messages::Address, AddressIndex> addresses_map;
   for (uint32_t i = 0; i < addresses.size(); i++) {
-    LOG_DEBUG << "MY ADDRESS " << addresses[i] << std::endl;
     addresses_map[addresses[i]] = i;
   }
 
@@ -786,13 +789,9 @@ bool Consensus::get_heights_to_write(
   if (previous_assembly.finished_computation()) {
     // If an assembly does not have any block then the assembly is repeated
     // until it does get a block
-    LOG_DEBUG << "CHECKING PREVIOUS ASSEMBLY" << std::endl;
     int32_t assembly_height = current_height / _config.blocks_per_assembly;
     first_height = assembly_height * _config.blocks_per_assembly;
     last_height = (assembly_height + 1) * _config.blocks_per_assembly - 1;
-    LOG_DEBUG << "FIRST HEIGHT" << first_height << std::endl;
-    LOG_DEBUG << "LAST HEIGHT" << last_height << std::endl;
-    LOG_DEBUG << "CURRENT_HEIGHT" << current_height << std::endl;
 
     for (auto i = std::max(current_height, first_height); i <= last_height;
          i++) {
@@ -801,12 +800,13 @@ bool Consensus::get_heights_to_write(
         LOG_WARNING << "Did not manage to get the block writer for assembly "
                     << previous_assembly.id() << " at height " << i;
       }
-      LOG_DEBUG << "WRITER FOR BLOCK " << i << " IS " << writer;
       if (addresses_map.count(writer) > 0) {
         heights->push_back({i, addresses_map[writer]});
       }
     }
   }
+
+  LOG_DEBUG << "FOUND " << heights->size() << " HEIGHTS " << std::endl;
 
   return true;
 }
@@ -852,7 +852,6 @@ void Consensus::start_update_heights_thread() {
 }
 
 void Consensus::update_heights_to_write() {
-  LOG_DEBUG << "UPDATE_HEIGHTS_TO_WRITE" << std::endl;
   messages::TaggedBlock tagged_block;
   bool include_transactions = false;
   if (!_ledger->get_last_block(&tagged_block, include_transactions)) {
@@ -867,8 +866,6 @@ void Consensus::update_heights_to_write() {
     return;
   }
   if (!assembly.finished_computation()) {
-    LOG_DEBUG << "UPDATE_HEIGHTS_TO_WRITE ASSEMBLY COMPUTATION NOT FINISHED"
-              << std::endl;
     return;
   }
 
@@ -878,7 +875,6 @@ void Consensus::update_heights_to_write() {
   if (_previous_assembly_id && _current_assembly_height &&
       _previous_assembly_id.value() == tagged_block.previous_assembly_id() &&
       _current_assembly_height == current_assembly_height) {
-    LOG_DEBUG << "UPDATE_HEIGHTS_TO_WRITE TOTORO";
     return;
   }
 
@@ -886,7 +882,6 @@ void Consensus::update_heights_to_write() {
   get_heights_to_write(_addresses, &heights);
   _heights_to_write_mutex.lock();
   _heights_to_write = heights;
-  LOG_DEBUG << "NEW HEIGHTS SIZE " << heights.size();
   _heights_to_write_mutex.unlock();
   _previous_assembly_id = tagged_block.previous_assembly_id();
   _current_assembly_height = current_assembly_height;
@@ -901,7 +896,9 @@ void Consensus::start_miner_thread() {
 
 bool Consensus::mine_block(const messages::Block &block0) {
   std::lock_guard<std::mutex> lock(_heights_to_write_mutex);
+  LOG_DEBUG << "MINE BLOCK ";
   if (_heights_to_write.size() == 0) {
+    LOG_TRACE << "NO HEIGHTS TO WRITE ";
     return false;
   }
   const auto height = _heights_to_write[0].first;
@@ -911,11 +908,13 @@ bool Consensus::mine_block(const messages::Block &block0) {
   const auto block_end = block_start + _config.block_period;
   const auto current_time = std::time(nullptr);
   if (current_time < block_start) {
+    LOG_TRACE << "MINE BLOCK TOO EARLY";
     return false;
   }
   _heights_to_write.erase(_heights_to_write.begin());
 
   if (current_time > block_end) {
+    LOG_TRACE << "MINE BLOCK TOO LATE";
     return false;
   }
 
@@ -923,6 +922,7 @@ bool Consensus::mine_block(const messages::Block &block0) {
   build_block(_keys[address_index], height, &new_block);
   _publish_block(new_block);
   add_block(new_block);
+  LOG_TRACE << "MINED BLOCK SUCCESSFULLY";
   return true;
 }
 
