@@ -73,7 +73,7 @@ TEST_F(PeersF, pick) {
   ASSERT_EQ(disconnected_peers.size(), 1);
 }
 
-TEST_F(PeersF, update_timestamp) {
+TEST_F(PeersF, update_unreachable) {
   ::neuro::messages::Peers peers(peer0.key_pub());
 
   peers.insert(peer0);
@@ -89,9 +89,12 @@ TEST_F(PeersF, update_timestamp) {
 
   ASSERT_EQ(peers.by_status(Peer::DISCONNECTED).size(), 0);
   ASSERT_EQ(peers.by_status(Peer::UNREACHABLE).size(), 1);
+  ASSERT_EQ(peers.by_status(Peer::CONNECTING).size(), 1);
   ::neuro::time(10u);
-  ASSERT_EQ(peers.by_status(Peer::DISCONNECTED).size(), 2);
-  ASSERT_EQ(peers.by_status(Peer::UNREACHABLE).size(), 0);
+
+  ASSERT_EQ(peers.by_status(Peer::DISCONNECTED).size(), 1);
+  ASSERT_EQ(peers.by_status(Peer::UNREACHABLE).size(), 1);
+  ASSERT_EQ(peers.by_status(Peer::CONNECTING).size(), 0);
 }
 
 TEST_F(PeersF, iterator) {
