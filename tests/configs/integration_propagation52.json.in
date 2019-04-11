@@ -1,6 +1,6 @@
 {
     "logs": {
-        "severity": "fatal",
+        "severity": "trace",
         "to_stdout": true
     },
     "networking": {
