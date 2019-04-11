@@ -18,17 +18,31 @@ class RealtimeSimulator : public testing::Test {
   const int nb_keys = 100;
 
  public:
-  Simulator simulator;
-  std::shared_ptr<neuro::ledger::LedgerMongodb> ledger;
-  std::shared_ptr<consensus::Consensus> consensus;
-
-  RealtimeSimulator()
-      : simulator(tooling::Simulator::Simulator::RealtimeSimulator(
-            db_url, db_name, nb_keys, ncc_block0)),
-        ledger(simulator.ledger),
-        consensus(simulator.consensus) {}
+  RealtimeSimulator(){};
 
   void test_simulation(bool empty_assemblies = false) {
+    int time_delta;
+    if (empty_assemblies) {
+      // Lets put it in the past so that there are some empty assemblies
+      time_delta = -8;
+    } else {
+      // Lets put it in the future sa that we have time to prepare ourselves for
+      // block1
+      time_delta = 2;
+    }
+
+    Simulator simulator(db_url, db_name, nb_keys, ncc_block0, time_delta);
+    std::shared_ptr<neuro::ledger::LedgerMongodb> ledger(simulator.ledger);
+    std::shared_ptr<consensus::Consensus> consensus(simulator.consensus);
+
+    if (empty_assemblies) {
+      // When the timedelta is in the past the threads are not started because
+      // it is assumed we are not trying to do a realtime simulation though in
+      // our case we are.
+      simulator.consensus->start_compute_pii_thread();
+      simulator.consensus->start_update_heights_thread();
+    }
+
     messages::Block block0;
     const auto &config = consensus->config();
     ASSERT_TRUE(ledger->get_block(0, &block0));
@@ -36,7 +50,6 @@ class RealtimeSimulator : public testing::Test {
     uint64_t begin_timestamp = block0_timestamp;
     if (empty_assemblies) {
       // Sleep for 2 assemblies
-      consensus->_stop_miner = true;
       begin_timestamp += 2 * config.blocks_per_assembly * config.block_period;
       milliseconds sleep_time =
           (milliseconds)(1000 * begin_timestamp + 500 * config.block_period) -

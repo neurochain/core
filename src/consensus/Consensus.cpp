@@ -922,7 +922,8 @@ bool Consensus::mine_block(const messages::Block &block0) {
   build_block(_keys[address_index], height, &new_block);
   _publish_block(new_block);
   add_block(new_block);
-  LOG_TRACE << "MINED BLOCK SUCCESSFULLY";
+  LOG_TRACE << "MINED BLOCK SUCCESSFULLY WITH HEIGHT "
+            << new_block.header().height();
   return true;
 }
 
@@ -932,10 +933,12 @@ void Consensus::mine_blocks() {
     throw std::runtime_error("Failed to get block0 in start_miner_thread");
   }
   while (!_stop_miner) {
+    LOG_DEBUG << "TRYING TO MINE BLOCK" << std::endl;
     if (!mine_block(block0)) {
       std::this_thread::sleep_for(_config.miner_sleep);
     }
   }
+  LOG_DEBUG << "EXITING MINE_BLOCKS" << std::endl;
 }
 
 }  // namespace consensus
