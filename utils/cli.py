@@ -51,7 +51,9 @@ class RemoteExec:
 
     def execute(self, command):
         result = fabric.ThreadingGroup(
-            *self.ips, user=self.user, connect_kwargs={"key_filename": self.key_path}
+            *self.ips,
+            user=self.user,
+            connect_kwargs={"key_filename": self.key_path},
         ).run(command, hide="both", warn=True)
         for connection, result in result.items():
             print(connection.host.strip(), result.stdout.strip(), result.stderr)
@@ -69,7 +71,9 @@ class Cli:
         print(self.ec2.bots())
 
     def execute(self, role, command):
-        instances = self.ec2.filter_instance_tags(self.ec2.list_vm_by_role(role))
+        instances = self.ec2.filter_instance_tags(
+            self.ec2.list_vm_by_role(role)
+        )
         pprint(instances)
         remote = RemoteExec(
             [instance["PublicIpAddress"] for instance in instances],
