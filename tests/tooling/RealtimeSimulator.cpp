@@ -110,7 +110,7 @@ class RealtimeSimulator : public testing::Test {
 
       if (empty_assemblies) {
         ASSERT_EQ(tagged_block.block().header().height(),
-                  i - 1 + 2 * config.blocks_per_assembly);
+                  i + 2 * config.blocks_per_assembly);
       } else {
         ASSERT_EQ(tagged_block.block().header().height(), i);
       }

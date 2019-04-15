@@ -721,6 +721,9 @@ bool Consensus::get_block_writer(const messages::Assembly &assembly,
                 << " in assembly " << assembly.id();
     return false;
   }
+
+  LOG_DEBUG << "GET BLOCK WRITER " << assembly.height() << " " << height << " "
+            << *address;
   return true;
 }
 
@@ -740,11 +743,12 @@ bool Consensus::get_heights_to_write(
     std::vector<std::pair<messages::BlockHeight, AddressIndex>> *heights)
     const {
   LOG_DEBUG << "GET HEIGHTS TO WRITE" << std::endl;
-  messages::TaggedBlock tagged_block;
-  _ledger->get_block(_ledger->height(), &tagged_block);
+  const auto last_block_height = _ledger->height();
+  messages::TaggedBlock last_block;
+  _ledger->get_block(last_block_height, &last_block);
   messages::Assembly previous_assembly, previous_previous_assembly;
 
-  if (!_ledger->get_assembly(tagged_block.previous_assembly_id(),
+  if (!_ledger->get_assembly(last_block.previous_assembly_id(),
                              &previous_assembly)) {
     LOG_WARNING
         << "Could not find the previous assembly in get_heights_to_write";
@@ -768,12 +772,12 @@ bool Consensus::get_heights_to_write(
 
   // I never want anyone to mine the block 0
   const int32_t current_height = std::max(get_current_height(), 1);
+  const auto last_block_assembly_height =
+      last_block_height / _config.blocks_per_assembly;
 
-  int32_t first_height =
-      (previous_previous_assembly.height() + 2) * _config.blocks_per_assembly;
+  int32_t first_height = last_block_height + 1;
   int32_t last_height =
-      (previous_previous_assembly.height() + 3) * _config.blocks_per_assembly -
-      1;
+      (last_block_assembly_height + 1) * _config.blocks_per_assembly - 1;
   for (int32_t i = std::max(current_height, first_height); i <= last_height;
        i++) {
     messages::Address writer;
@@ -789,9 +793,13 @@ bool Consensus::get_heights_to_write(
   if (previous_assembly.finished_computation()) {
     // If an assembly does not have any block then the assembly is repeated
     // until it does get a block
-    int32_t assembly_height = current_height / _config.blocks_per_assembly;
-    first_height = assembly_height * _config.blocks_per_assembly;
-    last_height = (assembly_height + 1) * _config.blocks_per_assembly - 1;
+    int32_t current_assembly_height =
+        current_height / _config.blocks_per_assembly;
+    int32_t assembly_height_to_mine =
+        std::max(current_assembly_height, previous_assembly.height() + 2);
+    first_height = assembly_height_to_mine * _config.blocks_per_assembly;
+    last_height =
+        (assembly_height_to_mine + 1) * _config.blocks_per_assembly - 1;
 
     for (auto i = std::max(current_height, first_height); i <= last_height;
          i++) {
@@ -894,6 +902,13 @@ void Consensus::start_miner_thread() {
   }
 }
 
+void print_heights_to_write(
+    std::vector<std::pair<messages::BlockHeight, AddressIndex>> heights) {
+  for (const auto &[height, address] : heights) {
+    LOG_DEBUG << "HEIGHT TO MINE " << height << address;
+  }
+}
+
 bool Consensus::mine_block(const messages::Block &block0) {
   std::lock_guard<std::mutex> lock(_heights_to_write_mutex);
   LOG_DEBUG << "MINE BLOCK ";
@@ -907,13 +922,20 @@ bool Consensus::mine_block(const messages::Block &block0) {
       block0.header().timestamp().data() + height * _config.block_period;
   const auto block_end = block_start + _config.block_period;
   const auto current_time = std::time(nullptr);
+
+  LOG_DEBUG << "BLOCK HEIGHT " << height;
+  LOG_DEBUG << "BLOCK START " << block_start;
+  LOG_DEBUG << "BLOCK END " << block_end;
+  LOG_DEBUG << "CURRENT TIME " << current_time;
+
   if (current_time < block_start) {
     LOG_TRACE << "MINE BLOCK TOO EARLY";
     return false;
   }
   _heights_to_write.erase(_heights_to_write.begin());
+  print_heights_to_write(_heights_to_write);
 
-  if (current_time > block_end) {
+  if (current_time >= block_end) {
     LOG_TRACE << "MINE BLOCK TOO LATE";
     return false;
   }
