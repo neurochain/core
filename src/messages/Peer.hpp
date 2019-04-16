@@ -2,9 +2,9 @@
 #define NEURO_SRC_MESSAGES_PEER_HPP
 
 #include "common.pb.h"
-#include "common/types.hpp"
 #include "common/logger.hpp"
-#include "crypto/EccPub.hpp"
+#include "common/types.hpp"
+#include "crypto/KeyPub.hpp"
 
 namespace neuro {
 namespace messages {
@@ -20,7 +20,7 @@ class Peer : public _Peer {
 
   Peer(const _Peer &peer);
   Peer(const std::string &endpoint, const Port port,
-       const crypto::EccPub &ecc_pub);
+       const crypto::KeyPub &ecc_pub);
 
   void set_status(::neuro::messages::_Peer_Status value);
   void update_timestamp(std::time_t tick = 10);

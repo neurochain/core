@@ -38,7 +38,7 @@ Simulator::Simulator(const std::string &db_url, const std::string &db_name,
           ledger, keys, config, [](const messages::Block &block) {},
           time_delta >= 0)) {
   for (size_t i = 0; i < keys.size(); i++) {
-    auto &address = addresses.emplace_back(keys[i].public_key());
+    auto &address = addresses.emplace_back(keys[i].key_pub());
     addresses_indexes.insert({address, i});
   }
 }
@@ -62,7 +62,7 @@ Simulator Simulator::StaticSimulator(const std::string &db_url,
 messages::Transaction Simulator::random_transaction() const {
   int sender_index = rand() % keys.size();
   int recipient_index = rand() % keys.size();
-  return ledger->send_ncc(keys[sender_index].private_key(),
+  return ledger->send_ncc(keys[sender_index].key_priv(),
                           addresses[recipient_index], RATIO_TO_SEND);
 }
 
@@ -106,7 +106,7 @@ messages::Block Simulator::new_block(
   header->set_height(height);
 
   // Block reward
-  blockgen::coinbase({keys[miner_index].public_key()},
+  blockgen::coinbase({keys[miner_index].key_pub()},
                      consensus->config().block_reward, block.mutable_coinbase(),
                      height);
 

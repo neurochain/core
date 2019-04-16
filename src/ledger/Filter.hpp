@@ -15,8 +15,8 @@ class Filter {
  public:
   void lower_bound(const messages::BlockHeight);
   void upper_bound(const messages::BlockHeight);
-  void input_key(const crypto::EccPub &key);
-  void output_key_id(const messages::KeyPub &key_pub);
+  void input_key(const crypto::KeyPub &key);
+  void output_key_id(const messages::_KeyPub &key_pub);
 };
 
 }  // namespace ledger

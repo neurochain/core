@@ -96,7 +96,7 @@ void Connection::read_body(std::size_t body_size) {
         }
         const auto key_pub = _this->_remote_peer.key_pub();
 
-        crypto::EccPub ecc_pub(key_pub);
+        crypto::KeyPub ecc_pub(key_pub);
 
         const auto check =
             ecc_pub.verify(_this->_buffer, header_pattern->signature,
@@ -131,9 +131,7 @@ bool Connection::send(std::shared_ptr<Buffer> &message) {
   return true;
 }
 
-void Connection::close() {
-  _socket->close();
-}
+void Connection::close() { _socket->close(); }
 
 void Connection::terminate() {
   LOG_INFO << this << " " << _id << " Killing connection";
@@ -147,6 +145,7 @@ void Connection::terminate() {
   header->set_connection_id(_id);
   auto body = message->add_bodies();
   body->mutable_connection_closed();
+
   _queue->publish(message);
 }
 

@@ -28,13 +28,13 @@ class Pii : public testing::Test {
     ledger->get_last_block(&last_block);
 
     // Create 3 transactions so that addresses 0 and 2 have entropy
-    auto transaction = ledger->send_ncc(simulator.keys[0].private_key(),
+    auto transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
                                         simulator.addresses[2], 0.5);
     simulator.consensus->add_transaction(transaction);
-    transaction = ledger->send_ncc(simulator.keys[1].private_key(),
+    transaction = ledger->send_ncc(simulator.keys[1].key_priv(),
                                    simulator.addresses[2], 0.5);
     simulator.consensus->add_transaction(transaction);
-    transaction = ledger->send_ncc(simulator.keys[0].private_key(),
+    transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
                                    simulator.addresses[1], 0.5);
     simulator.consensus->add_transaction(transaction);
 
@@ -50,7 +50,7 @@ class Pii : public testing::Test {
   void new_block_1_transaction() {
     messages::TaggedBlock last_block;
     ledger->get_last_block(&last_block);
-    auto transaction = ledger->send_ncc(simulator.keys[0].private_key(),
+    auto transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
                                         simulator.addresses[1], 0.5);
     simulator.consensus->add_transaction(transaction);
     auto block = simulator.new_block(last_block);

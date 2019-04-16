@@ -12,7 +12,7 @@
 #include "common/logger.hpp"
 #include "common/types.hpp"
 #include "consensus.pb.h"
-#include "crypto/EccPriv.hpp"
+#include "crypto/KeyPriv.hpp"
 #include "ledger/mongo.hpp"
 #include "messages.pb.h"
 #include "messages/Peer.hpp"
@@ -129,9 +129,9 @@ struct PacketHash {
   }
 };
 
-template<>
-struct PacketHash<neuro::messages::KeyPub> {
-  std::size_t operator()(neuro::messages::KeyPub const &s) const noexcept {
+template <>
+struct PacketHash<neuro::messages::_KeyPub> {
+  std::size_t operator()(neuro::messages::_KeyPub const &s) const noexcept {
     size_t key_as_bytes = *s.raw_data().data();
     return key_as_bytes;
   }

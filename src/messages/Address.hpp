@@ -24,12 +24,12 @@ class Address : public _Address {
   std::size_t _hash_size = 30;
   std::size_t _checksum_size = 4;
 
-  void init(const messages::KeyPub &key_pub);
+  void init(const messages::_KeyPub &key_pub);
 
  public:
-  Address(const messages::KeyPub &key_pub);
+  Address(const messages::_KeyPub &key_pub);
 
-  Address(const crypto::EccPub &ecc_pub);
+  Address(const crypto::KeyPub &ecc_pub);
 
   Address(const messages::_Address &address);
 

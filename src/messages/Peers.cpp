@@ -7,9 +7,7 @@ Peers::iterator Peers::begin(const Peer::Status status) {
   return iterator{_peers, status};
 }
 
-Peers::iterator Peers::begin() {
-  return iterator{_peers};
-}
+Peers::iterator Peers::begin() { return iterator{_peers}; }
 
 Peers::iterator Peers::end() { return iterator{}; }
 
@@ -23,7 +21,7 @@ std::optional<Peer *> Peers::insert(const Peer &peer) {
       std::piecewise_construct, std::forward_as_tuple(peer.key_pub()),
       std::forward_as_tuple(std::make_unique<Peer>(peer)));
 
-  auto& found_peer = found_element->second;
+  auto &found_peer = found_element->second;
 
   if (!is_inserted) {
     // pub key already known, update peer
@@ -41,11 +39,13 @@ std::optional<Peer *> Peers::insert(const Peer &peer) {
  */
 std::size_t Peers::used_peers_count() const {
   std::shared_lock<std::shared_mutex> lock(_mutex);
-  long used_peers_count = std::count_if(_peers.begin(), _peers.end(), [](const auto &it) {
-    const auto &peer = it.second;
-    auto connection_status = peer->status() & (Peer::CONNECTING | Peer::CONNECTED);
-    return peer->has_status() && connection_status;
-  });
+  long used_peers_count =
+      std::count_if(_peers.begin(), _peers.end(), [](const auto &it) {
+        const auto &peer = it.second;
+        auto connection_status =
+            peer->status() & (Peer::CONNECTING | Peer::CONNECTED);
+        return peer->has_status() && connection_status;
+      });
   return used_peers_count;
 }
 
@@ -59,7 +59,7 @@ bool Peers::update_peer_status(const Peer &peer, const Peer::Status status) {
   return true;
 }
 
-std::optional<Peer *> Peers::find(const KeyPub &key_pub) {
+std::optional<Peer *> Peers::find(const _KeyPub &key_pub) {
   std::shared_lock<std::shared_mutex> lock(_mutex);
   auto got = _peers.find(key_pub);
 
@@ -76,7 +76,7 @@ std::vector<Peer *> Peers::by_status(const Peer::Status status) {
 
   const auto time = ::neuro::time();
 
-  for (auto& [_, peer] : _peers) {
+  for (auto &[_, peer] : _peers) {
     peer->update_unreachable(time);
     if (peer->status() & status) {
       res.push_back(peer.get());
@@ -87,7 +87,8 @@ std::vector<Peer *> Peers::by_status(const Peer::Status status) {
 }
 
 std::vector<Peer *> Peers::used_peers() {
-  return by_status(static_cast<Peer::Status>(Peer::CONNECTING | Peer::CONNECTED));
+  return by_status(
+      static_cast<Peer::Status>(Peer::CONNECTING | Peer::CONNECTED));
 }
 
 std::vector<Peer *> Peers::connected_peers() {

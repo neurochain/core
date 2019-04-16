@@ -26,8 +26,8 @@ message TransactionToPublish {
 }
 
 message GeneratedKeys {
-  required KeyPriv key_priv = 1;
-  required KeyPub key_pub = 2;
+  required _KeyPriv key_priv = 1;
+  required _KeyPub key_pub = 2;
   required Hash address = 3;
 }
 

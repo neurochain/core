@@ -118,9 +118,9 @@ void LedgerMongodb::create_first_assemblies(
   messages::Assembly assembly_minus_1, assembly_minus_2;
   crypto::Ecc key0, key1;
   assembly_minus_1.mutable_id()->CopyFrom(
-      messages::Hasher(key0.public_key()));  // Just a random hash
+      messages::Hasher(key0.key_pub()));  // Just a random hash
   assembly_minus_1.mutable_previous_assembly_id()->CopyFrom(
-      messages::Hasher(key1.public_key()));
+      messages::Hasher(key1.key_pub()));
   assembly_minus_1.set_finished_computation(true);
   assembly_minus_1.set_seed(0);
   assembly_minus_1.set_nb_addresses(addresses.size());
@@ -1428,7 +1428,7 @@ bool LedgerMongodb::unsafe_denunciation_exists(
 }
 
 std::vector<messages::TaggedBlock> LedgerMongodb::get_blocks(
-    const messages::BlockHeight height, const messages::KeyPub &author,
+    const messages::BlockHeight height, const messages::_KeyPub &author,
     bool include_transactions) const {
   std::lock_guard<std::mutex> lock(_ledger_mutex);
   std::vector<messages::TaggedBlock> tagged_blocks;
@@ -1492,7 +1492,7 @@ void LedgerMongodb::add_denunciations(
   std::lock_guard<std::mutex> lock(_ledger_mutex);
 
   // Look for the authors who double mined in our branch
-  std::unordered_map<messages::BlockHeight, const messages::KeyPub *> authors;
+  std::unordered_map<messages::BlockHeight, const messages::_KeyPub *> authors;
   for (auto &denunciation : denunciations) {
     if (is_ancestor(denunciation.branch_path(), branch_path)) {
       authors[denunciation.block_height()] =

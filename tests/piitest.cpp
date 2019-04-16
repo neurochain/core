@@ -52,21 +52,21 @@ TEST(PiiTest, Pii_rand) {
 
   crypto::Ecc _ecc({"../../keys/key_3.priv"}, {"../../keys/key_3.pub"});
   Buffer key_pub_raw;
-  _ecc.mutable_public_key()->save(&key_pub_raw);
+  _ecc.mutable_key_pub()->save(&key_pub_raw);
 
-  messages::KeyPub author;
+  messages::_KeyPub author;
   author.set_type(messages::KeyType::ECP256K1);
   author.set_raw_data(key_pub_raw.data(), key_pub_raw.size());
 
   neuro::tooling::blockgen::blockgen_from_last_db_block(
       block11, _ledger, 0, 5,
-      std::make_optional<neuro::messages::KeyPub>(author));
+      std::make_optional<neuro::messages::_KeyPub>(author));
 
   neuro::messages::Block block12;
 
   neuro::tooling::blockgen::blockgen_from_last_db_block(
       block12, _ledger, 0, 5,
-      std::make_optional<neuro::messages::KeyPub>(author));
+      std::make_optional<neuro::messages::_KeyPub>(author));
 
   ASSERT_EQ(block11, block12);
 }
@@ -80,15 +80,15 @@ TEST(PiiTest, Pii_next_owner) {
 
   crypto::Ecc _ecc({"../../keys/key_3.priv"}, {"../../keys/key_3.pub"});
   Buffer key_pub_raw;
-  _ecc.mutable_public_key()->save(&key_pub_raw);
+  _ecc.mutable_key_pub()->save(&key_pub_raw);
 
-  messages::KeyPub author;
+  messages::_KeyPub author;
   author.set_type(messages::KeyType::ECP256K1);
   author.set_raw_data(key_pub_raw.data(), key_pub_raw.size());
 
   neuro::tooling::blockgen::blockgen_from_last_db_block(
       block11, _ledger, 0, 10,
-      std::make_optional<neuro::messages::KeyPub>(author));
+      std::make_optional<neuro::messages::_KeyPub>(author));
 
   _piisus.add_block(block11);
 
@@ -116,15 +116,15 @@ TEST(PiiTest, Pii_first_fork) {
 
   crypto::Ecc _ecc({"../../keys/key_3.priv"}, {"../../keys/key_3.pub"});
   Buffer key_pub_raw;
-  _ecc.mutable_public_key()->save(&key_pub_raw);
+  _ecc.mutable_key_pub()->save(&key_pub_raw);
 
-  messages::KeyPub author;
+  messages::_KeyPub author;
   author.set_type(messages::KeyType::ECP256K1);
   author.set_raw_data(key_pub_raw.data(), key_pub_raw.size());
 
   neuro::tooling::blockgen::blockgen_from_last_db_block(
       block11, _ledger, 0, 10,
-      std::make_optional<neuro::messages::KeyPub>(author), 9);
+      std::make_optional<neuro::messages::_KeyPub>(author), 9);
 
   messages::Block blockfork;
   ASSERT_TRUE(_ledger->get_block(10, &blockfork));

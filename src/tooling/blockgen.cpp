@@ -10,7 +10,7 @@ namespace neuro {
 namespace tooling {
 namespace blockgen {
 
-void coinbase(const std::vector<crypto::EccPub> &pub_keys,
+void coinbase(const std::vector<crypto::KeyPub> &pub_keys,
               const messages::NCCAmount &ncc,
               messages::Transaction *transaction,
               const messages::BlockHeight &height,
@@ -37,9 +37,9 @@ messages::TaggedBlock gen_block0(const std::vector<crypto::Ecc> &keys,
   previons_block_hash->set_data("");
   previons_block_hash->set_type(messages::Hash::Type::Hash_Type_SHA256);
   header->set_height(0);
-  std::vector<crypto::EccPub> pub_keys;
+  std::vector<crypto::KeyPub> pub_keys;
   for (const auto &key : keys) {
-    pub_keys.push_back(key.public_key());
+    pub_keys.push_back(key.key_pub());
   }
   blockgen::coinbase(pub_keys, ncc_block0, block->mutable_coinbase(), 0);
   tagged_block.set_branch(messages::Branch::MAIN);
@@ -82,7 +82,7 @@ void testnet_blockg(uint32_t bots, const std::string &pathdir,
   ecc_save.save({pathdir + "/key_faucet_save.priv"},
                 {pathdir + "/key_faucet_save.pub"});
 
-  Buffer key_pub_raw_save = ecc_save.mutable_public_key()->save();
+  Buffer key_pub_raw_save = ecc_save.mutable_key_pub()->save();
 
   messages::BlockHeader *header = blockfaucet.mutable_header();
 
@@ -94,7 +94,7 @@ void testnet_blockg(uint32_t bots, const std::string &pathdir,
                                         3600);  // 1539640800);
   header->set_height(0);
 
-  coinbase({ecc.public_key(), ecc_save.public_key()}, nccsdf,
+  coinbase({ecc.key_pub(), ecc_save.key_pub()}, nccsdf,
            blockfaucet.mutable_coinbase(), 0, "trax killed me");
 
   neuro::Buffer t23("riados");
@@ -115,7 +115,7 @@ void testnet_blockg(uint32_t bots, const std::string &pathdir,
 bool blockgen_from_block(messages::Block *block,
                          const messages::Block &last_block,
                          const int32_t height, const uint64_t seed,
-                         std::optional<neuro::messages::KeyPub> author) {
+                         std::optional<neuro::messages::_KeyPub> author) {
   /*uint32_t height = last_height;
   if (height == 0) {
     height = ledger->height();
@@ -182,7 +182,7 @@ bool blockgen_from_block(messages::Block *block,
 bool blockgen_from_last_db_block(messages::Block *block,
                                  std::shared_ptr<ledger::Ledger> ledger,
                                  const uint64_t seed, const int32_t new_height,
-                                 std::optional<neuro::messages::KeyPub> author,
+                                 std::optional<neuro::messages::_KeyPub> author,
                                  const int32_t last_height) {
   int32_t height = last_height;
   if (height == 0) {

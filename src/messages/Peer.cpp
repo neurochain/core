@@ -12,9 +12,8 @@ Peer::Peer(const _Peer &peer) {
   }
 }
 
-Peer::Peer(const std::string &endpoint,
-           const Port port,
-           const crypto::EccPub &ecc_pub) {
+Peer::Peer(const std::string &endpoint, const Port port,
+           const crypto::KeyPub &ecc_pub) {
   set_endpoint(endpoint);
   set_port(port);
   ecc_pub.save(mutable_key_pub());

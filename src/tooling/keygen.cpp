@@ -29,8 +29,8 @@ int main(int argc, char *argv[]) {
 
   crypto::Ecc ecc;
   const auto res = ecc.save({filepath + ".priv"}, {filepath + ".pub"});
-  std::cout << "public:  " << ecc.public_key() << std::endl;
-  std::cout << "private: " << ecc.private_key() << std::endl;
+  std::cout << "public:  " << ecc.key_pub() << std::endl;
+  std::cout << "private: " << ecc.key_priv() << std::endl;
 
   return ((res) ? 0 : 1);
 }

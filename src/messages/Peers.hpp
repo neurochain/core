@@ -19,10 +19,10 @@ namespace messages {
 
 class Peers {
  private:
-  const KeyPub _own_key;
+  const _KeyPub _own_key;
   mutable std::shared_mutex _mutex;
   using PeersByKey =
-      std::unordered_map<KeyPub, std::unique_ptr<Peer>, PacketHash<KeyPub>>;
+      std::unordered_map<_KeyPub, std::unique_ptr<Peer>, PacketHash<_KeyPub>>;
   PeersByKey _peers;
 
  public:
@@ -71,10 +71,10 @@ class Peers {
     Peer *operator->() { return *_it; }
   };
 
-  Peers(const KeyPub &own_key) : _own_key(own_key) {}
+  Peers(const _KeyPub &own_key) : _own_key(own_key) {}
 
   template <typename It>
-  Peers(const KeyPub &own_key, It it, It end) : Peers(own_key) {
+  Peers(const _KeyPub &own_key, It it, It end) : Peers(own_key) {
     for (; it != end; ++it) {
       insert(*it);
     }
@@ -90,7 +90,7 @@ class Peers {
   std::size_t used_peers_count() const;
   void update_unreachable();
   bool update_peer_status(const Peer &peer, const Peer::Status status);
-  std::optional<Peer *> find(const KeyPub &key_pub);
+  std::optional<Peer *> find(const _KeyPub &key_pub);
   std::vector<Peer *> by_status(const Peer::Status status);
   std::vector<Peer *> used_peers();
   std::vector<Peer *> connected_peers();

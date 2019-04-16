@@ -449,7 +449,7 @@ TEST_F(LedgerMongodb, pii) {
   std::vector<crypto::Ecc> keys{5};
   for (int i = 0; i < 5; i++) {
     messages::Pii pii;
-    pii.mutable_address()->CopyFrom(messages::Address(keys[i].public_key()));
+    pii.mutable_address()->CopyFrom(messages::Address(keys[i].key_pub()));
     pii.mutable_assembly_id()->CopyFrom(assembly_id);
     pii.set_score(std::to_string(10 - i));
     pii.set_rank(i);
@@ -458,7 +458,7 @@ TEST_F(LedgerMongodb, pii) {
   for (int i = 0; i < 5; i++) {
     messages::Address address;
     ASSERT_TRUE(ledger->get_block_writer(assembly_id, i, &address));
-    ASSERT_EQ(address, messages::Address(keys[i].public_key()));
+    ASSERT_EQ(address, messages::Address(keys[i].key_pub()));
   }
 }
 
@@ -547,14 +547,14 @@ TEST_F(LedgerMongodb, list_transactions) {
 
   // Check that we only get incoming transactions
   // Send everything so that there is no change output going back to the address
-  auto transaction = ledger->send_ncc(simulator.keys[0].private_key(),
-                                      simulator.addresses[1], 1);
+  auto transaction =
+      ledger->send_ncc(simulator.keys[0].key_priv(), simulator.addresses[1], 1);
   simulator.consensus->add_transaction(transaction);
   transactions = ledger->list_transactions(address).transactions();
   ASSERT_EQ(transactions.size(), 1);
 
   // Check that we do get transactions from the transaction pool
-  transaction = ledger->send_ncc(simulator.keys[1].private_key(),
+  transaction = ledger->send_ncc(simulator.keys[1].key_priv(),
                                  simulator.addresses[0], 0.5);
   simulator.consensus->add_transaction(transaction);
   transactions = ledger->list_transactions(address).transactions();
@@ -579,7 +579,7 @@ TEST_F(LedgerMongodb, is_unspent_output) {
   ASSERT_TRUE(ledger->is_unspent_output(coinbase.id(), output_index));
 
   // Spend the output
-  auto transaction = ledger->send_ncc(simulator.keys[0].private_key(),
+  auto transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
                                       simulator.addresses[1], 0.5);
   simulator.consensus->add_transaction(transaction);
   ASSERT_FALSE(ledger->is_unspent_output(coinbase.id(), output_index));
@@ -603,7 +603,7 @@ TEST_F(LedgerMongodb, is_unspent_output) {
 }
 
 TEST_F(LedgerMongodb, get_outputs_for_address) {
-  auto transaction = ledger->send_ncc(simulator.keys[0].private_key(),
+  auto transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
                                       simulator.addresses[1], 0.5);
   simulator.consensus->add_transaction(transaction);
   auto outputs =
@@ -623,7 +623,7 @@ TEST_F(LedgerMongodb, has_received_transaction) {
   auto address = messages::Address::random();
   ASSERT_FALSE(ledger->has_received_transaction(address));
   auto transaction =
-      ledger->send_ncc(simulator.keys[0].private_key(), address, 0.5);
+      ledger->send_ncc(simulator.keys[0].key_priv(), address, 0.5);
   simulator.consensus->add_transaction(transaction);
   ASSERT_TRUE(ledger->has_received_transaction(address));
 }
@@ -646,8 +646,8 @@ TEST_F(LedgerMongodb, list_unspent_transactions) {
 
   // Send everything so that there is no change output going back to the
   // address
-  auto transaction = ledger->send_ncc(simulator.keys[0].private_key(),
-                                      simulator.addresses[1], 1);
+  auto transaction =
+      ledger->send_ncc(simulator.keys[0].key_priv(), simulator.addresses[1], 1);
   ASSERT_EQ(transaction.outputs_size(), 1);
   simulator.consensus->add_transaction(transaction);
   transactions = ledger->list_unspent_transactions(address);
@@ -656,7 +656,7 @@ TEST_F(LedgerMongodb, list_unspent_transactions) {
   ASSERT_EQ(transactions.size(), 2);
 
   // Send back the money
-  transaction = ledger->send_ncc(simulator.keys[1].private_key(),
+  transaction = ledger->send_ncc(simulator.keys[1].key_priv(),
                                  simulator.addresses[0], 0.5);
   ASSERT_EQ(transaction.outputs_size(), 2);
   simulator.consensus->add_transaction(transaction);
@@ -685,7 +685,7 @@ TEST_F(LedgerMongodb, list_unspent_outputs) {
   // Send everything so that there is no change output going back to the
   // address
   auto transaction =
-      ledger->send_ncc(simulator.keys[0].private_key(), address1, 1);
+      ledger->send_ncc(simulator.keys[0].key_priv(), address1, 1);
   ASSERT_EQ(transaction.outputs_size(), 1);
   simulator.consensus->add_transaction(transaction);
   transactions = ledger->list_unspent_outputs(address0);
@@ -696,7 +696,7 @@ TEST_F(LedgerMongodb, list_unspent_outputs) {
   ASSERT_EQ(transactions.at(1).outputs_size(), 1);
 
   // Send back the money
-  transaction = ledger->send_ncc(simulator.keys[1].private_key(),
+  transaction = ledger->send_ncc(simulator.keys[1].key_priv(),
                                  simulator.addresses[0], 0.5);
   ASSERT_EQ(transaction.outputs_size(), 2);
   simulator.consensus->add_transaction(transaction);
@@ -723,11 +723,11 @@ TEST_F(LedgerMongodb, balance) {
   ASSERT_EQ(ledger->balance(address0), ncc_block0);
   ASSERT_EQ(ledger->balance(address1), ncc_block0);
   simulator.consensus->add_transaction(
-      ledger->send_ncc(simulator.keys[0].private_key(), address1, 1));
+      ledger->send_ncc(simulator.keys[0].key_priv(), address1, 1));
   ASSERT_EQ(ledger->balance(address0).value(), 0);
   ASSERT_EQ(ledger->balance(address1).value(), 2 * ncc_block0.value());
   simulator.consensus->add_transaction(
-      ledger->send_ncc(simulator.keys[1].private_key(), address0, 0.5));
+      ledger->send_ncc(simulator.keys[1].key_priv(), address0, 0.5));
   ASSERT_EQ(ledger->balance(address0), ncc_block0);
   ASSERT_EQ(ledger->balance(address1), ncc_block0);
 }

@@ -29,10 +29,10 @@ int main(int argc, char *argv[]) {
 
   crypto::Ecc ecc(vm["private"].as<std::string>(),
                   vm["public"].as<std::string>());
-  std::cout << "public:  " << std::endl << ecc.public_key() << std::endl;
-  std::cout << "private: " << std::endl << ecc.private_key() << std::endl;
+  std::cout << "public:  " << std::endl << ecc.key_pub() << std::endl;
+  std::cout << "private: " << std::endl << ecc.key_priv() << std::endl;
   Buffer buf;
-  ecc.public_key().save(&buf);
+  ecc.key_pub().save(&buf);
   messages::Address addr(buf);
   std::cout << "address : " << std::endl << addr << std::endl;
 

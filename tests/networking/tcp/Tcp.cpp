@@ -4,7 +4,6 @@
 #include "crypto/Ecc.hpp"
 #include "messages/Message.hpp"
 #include "messages/Peers.hpp"
-#include "common.pb.h"
 #include "networking/Networking.hpp"
 #include "networking/TransportLayer.hpp"
 
@@ -23,14 +22,14 @@ class Tcp {
     auto keys2 = std::make_shared<crypto::Ecc>();
     auto key_writer = std::make_shared<crypto::Ecc>();
 
-    messages::KeyPub own_key;
-    key_writer->public_key().save(&own_key);
+    messages::_KeyPub own_key;
+    key_writer->key_pub().save(&own_key);
     messages::Peers peers(own_key);
     Port port{31212};  // Maybe change this to the port to be used by the bot
     messages::Peer peer;
     peer.set_endpoint("127.0.0.1");
     peer.set_port(port);
-    keys2->public_key().save(peer.mutable_key_pub());
+    keys2->key_pub().save(peer.mutable_key_pub());
     networking::Tcp tcp1(port, &queue, &peers, keys1.get());
     networking::Tcp tcp2(port + 1, &queue, &peers, keys2.get());
     std::this_thread::sleep_for(std::chrono::milliseconds(5000));
