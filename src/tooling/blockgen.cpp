@@ -31,7 +31,7 @@ void coinbase(const std::vector<crypto::Ecc> &eccs,
               messages::Transaction *transaction,
               const messages::BlockHeight &height,
               const std::string output_data) {
-  for (int i = 0; i < eccs.size(); i++) {
+  for (size_t i = 0; i < eccs.size(); i++) {
     auto output = transaction->add_outputs();
     output->mutable_address()->CopyFrom(messages::Address(eccs[i].key_pub()));
     output->mutable_value()->CopyFrom(ncc);
