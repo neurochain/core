@@ -454,7 +454,7 @@ void Bot::keep_max_connections() {
 
   auto peer_it = _peers.begin(messages::Peer::DISCONNECTED);
   if (peer_it == _peers.end()) {
-    // LOG_WARNING << "Could not find peer to connect to";
+    LOG_WARNING << "Could not find peer to connect to";
     return;
   }
 

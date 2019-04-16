@@ -121,7 +121,7 @@ class RealtimeSimulator : public testing::Test {
   }
 };
 
-// TEST_F(RealtimeSimulator, simulation) { test_simulation(); }
+TEST_F(RealtimeSimulator, simulation) { test_simulation(); }
 
 TEST_F(RealtimeSimulator, empty_assemblies) {
   bool empty_assemblies = true;

@@ -104,8 +104,8 @@ void Tcp::new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
     _queue->publish(message);
     connection->read();
   } else {
-    // LOG_WARNING << "Could not create new connection to "
-    //<< " due to " << error.message();
+    LOG_WARNING << "Could not create new connection to "
+                << " due to " << error.message();
 
     msg_body->mutable_connection_closed();
     _queue->publish(message);
@@ -134,9 +134,8 @@ void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
     _queue->publish(message);
     connection->read();
   } else {
-    // LOG_WARNING << "Could not create new connection to " << *peer << " due to
-    // "
-    //<< error.message();
+    LOG_WARNING << "Could not create new connection to " << *peer << " due to "
+                << error.message();
 
     auto connection_closed = msg_body->mutable_connection_closed();
     connection_closed->mutable_peer()->CopyFrom(*peer);
@@ -188,8 +187,8 @@ bool Tcp::serialize(std::shared_ptr<messages::Message> message,
 TransportLayer::SendResult Tcp::send(
     std::shared_ptr<messages::Message> message) const {
   if (_connections.size() == 0) {
-    // LOG_ERROR << "Could not send message because there is no connection "
-    //<< message;
+    LOG_ERROR << "Could not send message because there is no connection "
+              << message;
     return SendResult::FAILED;
   }
 
