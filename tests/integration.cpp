@@ -535,14 +535,6 @@ TEST(INTEGRATION, connection_reconfig) {
   bot1.operator->().reset();
   bot2.operator->().reset();
   bot3.operator->().reset();
-  std::this_thread::sleep_for(1s);
-
-  ASSERT_TRUE(bot0.check_peer_status_by_port(13350, messages::Peer::UNREACHABLE));
-  ASSERT_TRUE(bot0.check_peer_status_by_port(13351, messages::Peer::UNREACHABLE));
-  ASSERT_TRUE(bot0.check_peer_status_by_port(13352, messages::Peer::UNREACHABLE));
-  ASSERT_TRUE(bot0.check_peers_ports({}));
-
-  
   std::this_thread::sleep_for(10s);
 
   ASSERT_TRUE(bot0.check_peers_ports({13350, 13351, 13352})) << bot0->peers();
