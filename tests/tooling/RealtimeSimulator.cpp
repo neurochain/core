@@ -22,9 +22,10 @@ class RealtimeSimulator : public testing::Test {
 
   void test_simulation(bool empty_assemblies = false) {
     int time_delta;
+    const int nb_empty_assemblies = 5;
     if (empty_assemblies) {
       // Lets put it in the past so that there are some empty assemblies
-      time_delta = -8;
+      time_delta = -nb_empty_assemblies * 5 + 4;
     } else {
       // Lets put it in the future sa that we have time to prepare ourselves for
       // block1
@@ -50,14 +51,22 @@ class RealtimeSimulator : public testing::Test {
     uint64_t begin_timestamp = block0_timestamp;
     if (empty_assemblies) {
       // Sleep for 2 assemblies
-      begin_timestamp += 2 * config.blocks_per_assembly * config.block_period;
+      begin_timestamp += nb_empty_assemblies * config.blocks_per_assembly *
+                         config.block_period;
       milliseconds sleep_time =
-          (milliseconds)(1000 * begin_timestamp + 500 * config.block_period) -
+          (milliseconds)(1000 * (begin_timestamp - config.block_period)) -
           duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+      LOG_DEBUG << "WAITING " << sleep_time.count()
+                << " MS BEFORE STARTING MINER THREAD " << std::endl;
+      std::this_thread::sleep_for(sleep_time);
+      consensus->start_miner_thread();
+      sleep_time =
+          (milliseconds)(1000 * begin_timestamp + 700 * config.block_period) -
+          duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+
       LOG_DEBUG << "WAITING " << sleep_time.count() << " MS BEFORE STARTING "
                 << std::endl;
       std::this_thread::sleep_for(sleep_time);
-      consensus->start_miner_thread();
     }
     const auto nb_transactions = 2;
     for (uint32_t i = 1; i < 3 * consensus->config().blocks_per_assembly; i++) {
@@ -110,7 +119,7 @@ class RealtimeSimulator : public testing::Test {
 
       if (empty_assemblies) {
         ASSERT_EQ(tagged_block.block().header().height(),
-                  i + 2 * config.blocks_per_assembly);
+                  i + nb_empty_assemblies * config.blocks_per_assembly);
       } else {
         ASSERT_EQ(tagged_block.block().header().height(), i);
       }
