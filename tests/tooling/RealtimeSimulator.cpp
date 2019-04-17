@@ -49,24 +49,12 @@ class RealtimeSimulator : public testing::Test {
     ASSERT_TRUE(ledger->get_block(0, &block0));
     uint64_t block0_timestamp = block0.header().timestamp().data();
     uint64_t begin_timestamp = block0_timestamp;
+    bool started_miner = true;
     if (empty_assemblies) {
-      // Sleep for 2 assemblies
+      // Sleep for n assemblies
+      started_miner = false;
       begin_timestamp += nb_empty_assemblies * config.blocks_per_assembly *
                          config.block_period;
-      milliseconds sleep_time =
-          (milliseconds)(1000 * (begin_timestamp - config.block_period)) -
-          duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-      LOG_DEBUG << "WAITING " << sleep_time.count()
-                << " MS BEFORE STARTING MINER THREAD " << std::endl;
-      std::this_thread::sleep_for(sleep_time);
-      consensus->start_miner_thread();
-      sleep_time =
-          (milliseconds)(1000 * begin_timestamp + 700 * config.block_period) -
-          duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-
-      LOG_DEBUG << "WAITING " << sleep_time.count() << " MS BEFORE STARTING "
-                << std::endl;
-      std::this_thread::sleep_for(sleep_time);
     }
     const auto nb_transactions = 2;
     for (uint32_t i = 1; i < 3 * consensus->config().blocks_per_assembly; i++) {
@@ -86,6 +74,19 @@ class RealtimeSimulator : public testing::Test {
         LOG_DEBUG << "ADD_TRANSACTION TOOK "
                   << (Timer::now() - t1).count() / 1E6 << " MS";
       }
+
+      if (!started_miner) {
+        milliseconds sleep_time =
+            (milliseconds)(1000 * (begin_timestamp + config.block_period)) -
+            duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+        LOG_DEBUG << "WAITING " << sleep_time.count()
+                  << " MS BEFORE STARTING MINER THREAD " << std::endl;
+        std::this_thread::sleep_for(sleep_time);
+
+        started_miner = true;
+        consensus->start_miner_thread();
+      }
+
       milliseconds sleep_time =
           (milliseconds)(1000 * (begin_timestamp + i * config.block_period) +
                          500 * config.block_period) -
