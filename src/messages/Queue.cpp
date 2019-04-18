@@ -81,7 +81,6 @@ void Queue::do_work() {
     if (_quitting) {
       break;
     }
-    // LOG_TRACE << "getting next message";
     auto message = this->next_message();
     // for every body in the message we get the type
     {

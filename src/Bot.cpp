@@ -125,8 +125,6 @@ bool Bot::update_ledger() {
 
   const auto id = last_header.id();
 
-  // LOG_DEBUG << "Search Block -" << id;
-
   auto get_block = message->add_bodies()->mutable_get_block();
   get_block->mutable_hash()->CopyFrom(id);
   get_block->set_count(1);
@@ -458,7 +456,7 @@ void Bot::keep_max_connections() {
     return;
   }
 
-  // LOG_DEBUG << this << " Asking to connect to " << **peer_it;
+  LOG_DEBUG << this << " Asking to connect to " << **peer_it;
   (*peer_it)->set_status(messages::Peer::CONNECTING);
   _networking.connect(*peer_it);
 }
