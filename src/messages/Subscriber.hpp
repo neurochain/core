@@ -60,7 +60,6 @@ class Subscriber {
   }
 
   void handler(std::shared_ptr<const Message> message) {
-    // LOG_TRACE << *message;
     std::lock_guard<std::mutex> lock_handler(_mutex_handler);
     const auto time = std::time(nullptr);
     for (const auto &body : message->bodies()) {

@@ -85,7 +85,6 @@ void Queue::do_work() {
     // for every body in the message we get the type
     {
       std::lock_guard<std::mutex> lock_callbacks(_callbacks_mutex);
-      // LOG_TRACE << "sending to subscribers";
       for (auto &subscriber : _subscribers) {
         subscriber->handler(message);
       }

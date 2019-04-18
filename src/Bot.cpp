@@ -325,8 +325,6 @@ void Bot::handler_connection(const messages::Header &header,
   hello->mutable_peer()->CopyFrom(_me);
 
   _networking.send_unicast(message);
-  // LOG_DEBUG << this << __LINE__
-  //<< " _networking.peer_count(): " << _networking.peer_count();
 }
 
 void Bot::handler_deconnection(const messages::Header &header,
@@ -338,9 +336,6 @@ void Bot::handler_deconnection(const messages::Header &header,
     }
     _networking.terminate(header.connection_id());
   }
-
-  // LOG_DEBUG << this << " " << __LINE__
-  //<< " _networking.peer_count(): " << _networking.peer_count();
 
   this->keep_max_connections();
 }
