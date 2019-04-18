@@ -22,13 +22,15 @@ class RealtimeSimulator : public testing::Test {
 
   void test_simulation(bool empty_assemblies = false) {
     int time_delta;
-    const int nb_empty_assemblies = 5;
+    int nb_empty_assemblies;
     if (empty_assemblies) {
       // Lets put it in the past so that there are some empty assemblies
+      nb_empty_assemblies = 5;
       time_delta = -nb_empty_assemblies * 5 + 4;
     } else {
       // Lets put it in the future sa that we have time to prepare ourselves for
       // block1
+      nb_empty_assemblies = 0;
       time_delta = 2;
     }
 
@@ -77,7 +79,8 @@ class RealtimeSimulator : public testing::Test {
 
       if (!started_miner) {
         milliseconds sleep_time =
-            (milliseconds)(1000 * (begin_timestamp + config.block_period)) -
+            (milliseconds)(1000 * (begin_timestamp + config.block_period) +
+                           100) -
             duration_cast<milliseconds>(system_clock::now().time_since_epoch());
         LOG_DEBUG << "WAITING " << sleep_time.count()
                   << " MS BEFORE STARTING MINER THREAD " << std::endl;
@@ -91,7 +94,8 @@ class RealtimeSimulator : public testing::Test {
           (milliseconds)(1000 * (begin_timestamp + i * config.block_period) +
                          500 * config.block_period) -
           duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-      LOG_DEBUG << "WAITING " << sleep_time.count() << " MS FOR BLOCK " << i
+      LOG_DEBUG << "WAITING " << sleep_time.count() << " MS FOR BLOCK "
+                << i + config.blocks_per_assembly * nb_empty_assemblies
                 << std::endl;
       std::this_thread::sleep_for(sleep_time);
       messages::TaggedBlock tagged_block;
