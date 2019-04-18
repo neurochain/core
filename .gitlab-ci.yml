@@ -75,6 +75,7 @@ prod_image_build:ubuntu_18_10:
     - build_job:ubuntu_18_10
   only:
     - feature/ledger
+    - build_core
   script:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
     - docker build -f utils/dockers/Dockerfile.core -t $DOCKER_PROD_IMAGE:latest -t $DOCKER_PROD_IMAGE:$CI_COMMIT_SHA  .
@@ -103,6 +104,7 @@ prod_image_build:ubuntu_18_10_release:
     - build_job:ubuntu_18_10_release
   only:
     - feature/ledger
+    - build_core
   script:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
     - docker build -f utils/dockers/Dockerfile.core -t $DOCKER_PROD_IMAGE_RELEASE:latest -t $DOCKER_PROD_IMAGE_RELEASE:$CI_COMMIT_SHA  .
@@ -129,6 +131,7 @@ pages:
 
   only:
     - feaeture/109/documentation
+    - build_doc
   artifacts:
     paths:
       - public

@@ -125,8 +125,6 @@ bool Bot::update_ledger() {
 
   const auto id = last_header.id();
 
-  LOG_DEBUG << "Search Block -" << id;
-
   auto get_block = message->add_bodies()->mutable_get_block();
   get_block->mutable_hash()->CopyFrom(id);
   get_block->set_count(1);
@@ -327,8 +325,6 @@ void Bot::handler_connection(const messages::Header &header,
   hello->mutable_peer()->CopyFrom(_me);
 
   _networking.send_unicast(message);
-  LOG_DEBUG << this << __LINE__
-            << " _networking.peer_count(): " << _networking.peer_count();
 }
 
 void Bot::handler_deconnection(const messages::Header &header,
@@ -340,9 +336,6 @@ void Bot::handler_deconnection(const messages::Header &header,
     }
     _networking.terminate(header.connection_id());
   }
-
-  LOG_DEBUG << this << " " << __LINE__
-            << " _networking.peer_count(): " << _networking.peer_count();
 
   this->keep_max_connections();
 }
