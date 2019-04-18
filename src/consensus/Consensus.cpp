@@ -531,7 +531,7 @@ void Consensus::init(bool start_threads) {
     start_miner_thread();
   }
   for (const auto &key : _keys) {
-    _addresses.push_back(messages::Address(key.key_pub()));
+    _addresses.emplace_back(key.key_pub());
   }
 }
 
