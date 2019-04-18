@@ -320,13 +320,17 @@ bool Consensus::check_block_height(
   messages::Block previous;
   if (!_ledger->get_block(block.header().previous_block_hash(), &previous,
                           false)) {
-    LOG_INFO << "Failed check_block_height for block " << block.header().id();
+    LOG_INFO << "Failed check_block_height for block " << block.header().id()
+             << " failed to get the previous_block";
     return false;
   }
 
   bool result = block.header().height() > previous.header().height();
   if (!result) {
-    LOG_INFO << "Failed check_block_height for block " << block.header().id();
+    LOG_INFO << "Failed check_block_height for block " << block.header().id()
+             << " height " << block.header().height()
+             << " is lower than the height of the previous block "
+             << previous.header().height();
   }
   return result;
 }
@@ -527,7 +531,7 @@ void Consensus::init(bool start_threads) {
     start_miner_thread();
   }
   for (const auto &key : _keys) {
-    _addresses.push_back(messages::Address(key.key_pub()));
+    _addresses.emplace_back(key.key_pub());
   }
 }
 
@@ -702,8 +706,7 @@ bool Consensus::get_block_writer(const messages::Assembly &assembly,
 
   if (!assembly.has_nb_addresses()) {
     LOG_INFO << "Failed get_block_writer assembly " << assembly.id()
-             << " is missing the number of "
-                "addresses";
+             << " is missing the number of addresses";
     return false;
   }
   std::mt19937 rng;
@@ -718,6 +721,7 @@ bool Consensus::get_block_writer(const messages::Assembly &assembly,
                 << " in assembly " << assembly.id();
     return false;
   }
+
   return true;
 }
 
@@ -728,15 +732,20 @@ messages::BlockHeight Consensus::get_current_height() const {
          _config.block_period;
 }
 
+messages::BlockHeight Consensus::get_current_assembly_height() const {
+  return get_current_height() / _config.blocks_per_assembly;
+}
+
 bool Consensus::get_heights_to_write(
     const std::vector<messages::Address> &addresses,
     std::vector<std::pair<messages::BlockHeight, AddressIndex>> *heights)
     const {
-  messages::TaggedBlock tagged_block;
-  _ledger->get_block(_ledger->height(), &tagged_block);
+  const auto last_block_height = _ledger->height();
+  messages::TaggedBlock last_block;
+  _ledger->get_block(last_block_height, &last_block);
   messages::Assembly previous_assembly, previous_previous_assembly;
 
-  if (!_ledger->get_assembly(tagged_block.previous_assembly_id(),
+  if (!_ledger->get_assembly(last_block.previous_assembly_id(),
                              &previous_assembly)) {
     LOG_WARNING
         << "Could not find the previous assembly in get_heights_to_write";
@@ -760,12 +769,12 @@ bool Consensus::get_heights_to_write(
 
   // I never want anyone to mine the block 0
   const int32_t current_height = std::max(get_current_height(), 1);
+  const int32_t last_block_assembly_height =
+      last_block_height / _config.blocks_per_assembly;
 
-  int32_t first_height =
-      (previous_previous_assembly.height() + 2) * _config.blocks_per_assembly;
+  int32_t first_height = last_block_height + 1;
   int32_t last_height =
-      (previous_previous_assembly.height() + 3) * _config.blocks_per_assembly -
-      1;
+      (last_block_assembly_height + 1) * _config.blocks_per_assembly - 1;
   for (int32_t i = std::max(current_height, first_height); i <= last_height;
        i++) {
     messages::Address writer;
@@ -779,10 +788,15 @@ bool Consensus::get_heights_to_write(
   }
 
   if (previous_assembly.finished_computation()) {
-    first_height =
-        (previous_assembly.height() + 2) * _config.blocks_per_assembly;
+    // If an assembly does not have any block then the assembly is repeated
+    // until it does get a block
+    int32_t current_assembly_height =
+        current_height / _config.blocks_per_assembly;
+    int32_t assembly_height_to_mine =
+        std::max(current_assembly_height, last_block_assembly_height + 1);
+    first_height = assembly_height_to_mine * _config.blocks_per_assembly;
     last_height =
-        (previous_assembly.height() + 3) * _config.blocks_per_assembly - 1;
+        (assembly_height_to_mine + 1) * _config.blocks_per_assembly - 1;
 
     for (auto i = std::max(current_height, first_height); i <= last_height;
          i++) {
@@ -857,16 +871,23 @@ void Consensus::update_heights_to_write() {
   if (!assembly.finished_computation()) {
     return;
   }
-  if (_previous_assembly_id &&
-      _previous_assembly_id.value() == tagged_block.previous_assembly_id()) {
+
+  // If thet previous assembly has not changed there is no need to recompute the
+  // heights
+  auto current_assembly_height = get_current_assembly_height();
+  if (_previous_assembly_id && _current_assembly_height &&
+      _previous_assembly_id.value() == tagged_block.previous_assembly_id() &&
+      _current_assembly_height == current_assembly_height) {
     return;
   }
+
   std::vector<std::pair<messages::BlockHeight, AddressIndex>> heights;
   get_heights_to_write(_addresses, &heights);
   _heights_to_write_mutex.lock();
   _heights_to_write = heights;
   _heights_to_write_mutex.unlock();
   _previous_assembly_id = tagged_block.previous_assembly_id();
+  _current_assembly_height = current_assembly_height;
 }
 
 void Consensus::start_miner_thread() {
@@ -887,12 +908,13 @@ bool Consensus::mine_block(const messages::Block &block0) {
       block0.header().timestamp().data() + height * _config.block_period;
   const auto block_end = block_start + _config.block_period;
   const auto current_time = std::time(nullptr);
+
   if (current_time < block_start) {
     return false;
   }
   _heights_to_write.erase(_heights_to_write.begin());
 
-  if (current_time > block_end) {
+  if (current_time >= block_end) {
     return false;
   }
 
@@ -900,6 +922,8 @@ bool Consensus::mine_block(const messages::Block &block0) {
   build_block(_keys[address_index], height, &new_block);
   _publish_block(new_block);
   add_block(new_block);
+  LOG_INFO << "Mined block successfully with height "
+           << new_block.header().height();
   return true;
 }
 

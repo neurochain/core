@@ -153,13 +153,13 @@ bool Tcp::terminate(const Connection::ID id) {
   return true;
 }
 
-std::optional<messages::Peer*> Tcp::find_peer(const Connection::ID id) {
+std::optional<messages::Peer *> Tcp::find_peer(const Connection::ID id) {
   auto got = _connections.find(id);
   if (got == _connections.end()) {
     return std::nullopt;
   }
 
-  auto& connection = got->second;
+  auto &connection = got->second;
   auto remote_peer = connection->remote_peer();
   return _peers->find(remote_peer.key_pub());
 }
@@ -242,7 +242,7 @@ bool Tcp::send_unicast(std::shared_ptr<messages::Message> message) const {
   }
 
   const auto port_opt = got->second->remote_port();
-  if(!port_opt) {
+  if (!port_opt) {
     return false;
   }
   LOG_DEBUG << "Sending unicast [" << this->listening_port() << " -> "
@@ -263,7 +263,8 @@ bool Tcp::send_unicast(std::shared_ptr<messages::Message> message) const {
 }
 
 /**
- * count the number of active TCP connexion (either accepted one or attempting one)
+ * count the number of active TCP connexion (either accepted one or attempting
+ * one)
  * @return the number of active connexion
  */
 std::size_t Tcp::peer_count() const { return _connections.size(); }

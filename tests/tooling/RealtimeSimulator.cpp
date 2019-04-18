@@ -18,20 +18,46 @@ class RealtimeSimulator : public testing::Test {
   const int nb_keys = 100;
 
  public:
-  Simulator simulator;
-  std::shared_ptr<neuro::ledger::LedgerMongodb> ledger;
-  std::shared_ptr<consensus::Consensus> consensus;
+  RealtimeSimulator(){};
 
-  RealtimeSimulator()
-      : simulator(tooling::Simulator::Simulator::RealtimeSimulator(
-            db_url, db_name, nb_keys, ncc_block0)),
-        ledger(simulator.ledger),
-        consensus(simulator.consensus) {}
+  void test_simulation(bool empty_assemblies = false) {
+    int time_delta;
+    int nb_empty_assemblies;
+    if (empty_assemblies) {
+      // Lets put it in the past so that there are some empty assemblies
+      nb_empty_assemblies = 5;
+      time_delta = -nb_empty_assemblies * 5 + 4;
+    } else {
+      // Lets put it in the future sa that we have time to prepare ourselves for
+      // block1
+      nb_empty_assemblies = 0;
+      time_delta = 2;
+    }
 
-  void test_simulation() {
+    Simulator simulator(db_url, db_name, nb_keys, ncc_block0, time_delta);
+    std::shared_ptr<neuro::ledger::LedgerMongodb> ledger(simulator.ledger);
+    std::shared_ptr<consensus::Consensus> consensus(simulator.consensus);
+
+    if (empty_assemblies) {
+      // When the timedelta is in the past the threads are not started because
+      // it is assumed we are not trying to do a realtime simulation though in
+      // our case we are.
+      simulator.consensus->start_compute_pii_thread();
+      simulator.consensus->start_update_heights_thread();
+    }
+
     messages::Block block0;
+    const auto &config = consensus->config();
     ASSERT_TRUE(ledger->get_block(0, &block0));
     uint64_t block0_timestamp = block0.header().timestamp().data();
+    uint64_t begin_timestamp = block0_timestamp;
+    bool started_miner = true;
+    if (empty_assemblies) {
+      // Sleep for n assemblies
+      started_miner = false;
+      begin_timestamp += nb_empty_assemblies * config.blocks_per_assembly *
+                         config.block_period;
+    }
     const auto nb_transactions = 2;
     for (uint32_t i = 1; i < 3 * consensus->config().blocks_per_assembly; i++) {
       for (auto j = 0; j < nb_transactions; j++) {
@@ -50,12 +76,26 @@ class RealtimeSimulator : public testing::Test {
         LOG_DEBUG << "ADD_TRANSACTION TOOK "
                   << (Timer::now() - t1).count() / 1E6 << " MS";
       }
+
+      if (!started_miner) {
+        milliseconds sleep_time =
+            (milliseconds)(1000 * (begin_timestamp + config.block_period) +
+                           100) -
+            duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+        LOG_DEBUG << "WAITING " << sleep_time.count()
+                  << " MS BEFORE STARTING MINER THREAD " << std::endl;
+        std::this_thread::sleep_for(sleep_time);
+
+        started_miner = true;
+        consensus->start_miner_thread();
+      }
+
       milliseconds sleep_time =
-          (milliseconds)(
-              1000 * (block0_timestamp + i * consensus->config().block_period) +
-              500 * consensus->config().block_period) -
+          (milliseconds)(1000 * (begin_timestamp + i * config.block_period) +
+                         500 * config.block_period) -
           duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-      LOG_DEBUG << "WAITING " << sleep_time.count() << " MS FOR BLOCK " << i
+      LOG_DEBUG << "WAITING " << sleep_time.count() << " MS FOR BLOCK "
+                << i + config.blocks_per_assembly * nb_empty_assemblies
                 << std::endl;
       std::this_thread::sleep_for(sleep_time);
       messages::TaggedBlock tagged_block;
@@ -82,7 +122,13 @@ class RealtimeSimulator : public testing::Test {
         consensus->_heights_to_write_mutex.unlock();
       }
 
-      ASSERT_EQ(tagged_block.block().header().height(), i);
+      if (empty_assemblies) {
+        ASSERT_EQ(tagged_block.block().header().height(),
+                  i + nb_empty_assemblies * config.blocks_per_assembly);
+      } else {
+        ASSERT_EQ(tagged_block.block().header().height(), i);
+      }
+
       ASSERT_EQ(tagged_block.block().transactions_size(), nb_transactions);
       ASSERT_EQ(tagged_block.block().coinbase().outputs_size(), 1);
     }
@@ -90,6 +136,11 @@ class RealtimeSimulator : public testing::Test {
 };
 
 TEST_F(RealtimeSimulator, simulation) { test_simulation(); }
+
+TEST_F(RealtimeSimulator, empty_assemblies) {
+  bool empty_assemblies = true;
+  test_simulation(empty_assemblies);
+}
 
 }  // namespace tests
 }  // namespace tooling

@@ -37,6 +37,7 @@ class Consensus {
   std::vector<std::pair<messages::BlockHeight, AddressIndex>> _heights_to_write;
   std::mutex _heights_to_write_mutex;
   std::optional<messages::AssemblyID> _previous_assembly_id;
+  std::optional<messages::AssemblyHeight> _current_assembly_height;
   std::atomic<bool> _stop_update_heights;
   std::thread _update_heights_thread;
   std::atomic<bool> _stop_miner;
@@ -138,6 +139,7 @@ class Consensus {
                         messages::Address *address) const;
 
   messages::BlockHeight get_current_height() const;
+  messages::AssemblyHeight get_current_assembly_height() const;
 
   bool get_heights_to_write(
       const std::vector<messages::Address> &addresses,
