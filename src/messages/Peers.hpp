@@ -35,8 +35,7 @@ class Peers {
 
     void shuffle() {
       std::mt19937 g(_rd());
-//      std::shuffle(_peers.begin(), _peers.end(), g);
-      std::sort(_peers.begin(), _peers.end());
+      std::shuffle(_peers.begin(), _peers.end(), g);
       _it = _peers.begin();
     }
 
