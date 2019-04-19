@@ -263,43 +263,15 @@ TEST(INTEGRATION, neighbors_connections_with_delays) {
 }
 
 TEST(INTEGRATION, neighbors_update) {
-  Path config_path0("integration_propagation0.json");
-  messages::config::Config config0(config_path0);
-  auto bot0 = std::make_shared<Bot>(config0);
-  Path config_path1("integration_propagation1.json");
-  messages::config::Config config1(config_path1);
-  auto bot1 = std::make_shared<Bot>(config1);
-  Path config_path2("integration_propagation2.json");
-  messages::config::Config config2(config_path2);
-  auto bot2 = std::make_shared<Bot>(config2);
+  BotTest bot0("integration_propagation0.json");
+  BotTest bot1("integration_propagation1.json");
+  BotTest bot2("integration_propagation2.json");
 
-  std::this_thread::sleep_for(5s);
+  std::this_thread::sleep_for(12s);
 
-  auto peers_bot0 = vectorize(bot0->connected_peers());
-  auto peers_bot1 = vectorize(bot1->connected_peers());
-  auto peers_bot2 = vectorize(bot2->connected_peers());
-
-  ASSERT_EQ(peers_bot0.size(), peers_bot1.size());
-  ASSERT_EQ(peers_bot1.size(), peers_bot2.size());
-  ASSERT_EQ(peers_bot2.size(), 2);
-
-  ASSERT_EQ(peers_bot0[0]->endpoint(), "localhost");
-  ASSERT_EQ(peers_bot0[1]->endpoint(), "localhost");
-  ASSERT_TRUE(peers_bot0[0]->port() == 1338 || peers_bot0[0]->port() == 1339);
-  ASSERT_TRUE(peers_bot0[1]->port() == 1338 || peers_bot0[1]->port() == 1339);
-  ASSERT_NE(peers_bot0[0]->port(), peers_bot0[1]->port());
-
-  ASSERT_EQ(peers_bot1[0]->endpoint(), "localhost");
-  ASSERT_EQ(peers_bot1[1]->endpoint(), "localhost");
-  ASSERT_TRUE(peers_bot1[0]->port() == 1337 || peers_bot1[0]->port() == 1339);
-  ASSERT_TRUE(peers_bot1[1]->port() == 1337 || peers_bot1[1]->port() == 1339);
-  ASSERT_NE(peers_bot1[0]->port(), peers_bot1[1]->port());
-
-  ASSERT_EQ(peers_bot2[0]->endpoint(), "localhost");
-  ASSERT_EQ(peers_bot2[1]->endpoint(), "localhost");
-  ASSERT_TRUE(peers_bot2[0]->port() == 1337 || peers_bot2[0]->port() == 1338);
-  ASSERT_TRUE(peers_bot2[1]->port() == 1337 || peers_bot2[1]->port() == 1338);
-  ASSERT_NE(peers_bot2[0]->port(), peers_bot2[1]->port());
+  ASSERT_TRUE(bot0.check_peers_ports({1338, 1339})) << bot0->peers();
+  ASSERT_TRUE(bot1.check_peers_ports({1337, 1339})) << bot1->peers();
+  ASSERT_TRUE(bot2.check_peers_ports({1337, 1338})) << bot2->peers();
 }
 
 TEST(INTEGRATION, key_gen_connection) {
