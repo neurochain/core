@@ -29,6 +29,17 @@ Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
 }
 
 Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
+                     const std::vector<crypto::Ecc> &keys,
+                     const std::optional<Config> &config,
+                     PublishBlock publish_block, bool start_threads)
+    : _config(config.value_or(Config())),
+      _ledger(ledger),
+      _keys(keys),
+      _publish_block(publish_block) {
+  init(start_threads);
+}
+
+Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
                      const std::vector<crypto::Ecc> &keys, const Config &config,
                      PublishBlock publish_block, bool start_threads)
     : _config(config),

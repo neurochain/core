@@ -100,6 +100,11 @@ class Consensus {
             const std::vector<crypto::Ecc> &keys, const Config &config,
             PublishBlock publish_block, bool start_threads = true);
 
+  Consensus(std::shared_ptr<ledger::Ledger> ledger,
+            const std::vector<crypto::Ecc> &keys,
+            const std::optional<Config> &config, PublishBlock publish_block,
+            bool start_threads = true);
+
   Config config() const;
 
   void init(bool start_threads);

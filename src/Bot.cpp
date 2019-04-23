@@ -26,7 +26,8 @@ Bot::Bot(const messages::config::Config &config,
              _config.networking().tcp().peers().end()),
       _networking(&_queue, &_keys.at(0), &_peers, _config.mutable_networking()),
       _ledger(std::make_shared<ledger::LedgerMongodb>(_config.database())),
-      _update_timer(std::ref(*_io_context)) {
+      _update_timer(std::ref(*_io_context)),
+      _consensus_config(consensus_config) {
   LOG_DEBUG << this << " hello from bot " << &_queue << " "
             << _keys.at(0).key_pub() << std::endl
             << _peers << std::endl;
@@ -218,7 +219,7 @@ bool Bot::init() {
   _update_timer.async_wait(boost::bind(&Bot::regular_update, this));
 
   _consensus = std::make_shared<consensus::Consensus>(
-      _ledger, _keys,
+      _ledger, _keys, _consensus_config,
       [this](const messages::Block &block) { publish_block(block); });
 
   _io_context_thread = std::thread([this]() { _io_context->run(); });

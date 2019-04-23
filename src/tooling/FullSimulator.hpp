@@ -77,9 +77,11 @@ class FullSimulator {
       bots.push_back(
           std::make_unique<Bot>(bot_config(i, nb_bots), consensus_config));
       auto &bot = bots[i];
+      LOG_WARNING << "SETTING DATABASE " << i << std::endl;
       bot->_ledger->empty_database();
       bot->_ledger->init_database(block0);
       bot->_ledger->set_main_branch_tip();
+      LOG_WARNING << "FINISHED SETTING DATABASE " << i << std::endl;
     }
   };
 };

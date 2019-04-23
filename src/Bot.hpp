@@ -41,7 +41,7 @@ class Bot {
   networking::Networking _networking;
   std::shared_ptr<ledger::Ledger> _ledger;
   boost::asio::steady_timer _update_timer;
-  consensus::Config _consensus_config;
+  std::optional<consensus::Config> _consensus_config;
   std::shared_ptr<consensus::Consensus> _consensus;
   // std::shared_ptr<rest::Rest> _rest;
   std::unordered_set<int32_t> _request_ids;

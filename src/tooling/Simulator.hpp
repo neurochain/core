@@ -22,7 +22,7 @@ class Simulator {
 
   Simulator(const std::string &db_url, const std::string &db_name,
             const int32_t nb_keys, const messages::NCCAmount &ncc_block0,
-            const int32_t time_delta);
+            const int32_t time_delta, const bool start_threads);
 
   static Simulator RealtimeSimulator(const std::string &db_url,
                                      const std::string &db_name,
