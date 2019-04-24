@@ -293,7 +293,7 @@ void Bot::handler_get_peers(const messages::Header &header,
     tmp_peer->set_endpoint(peer_conn.endpoint());
     tmp_peer->set_port(peer_conn.port());
   }
-  LOG_DEBUG << _me.port() << " got a get_peers message, sending : " << peers;
+  LOG_DEBUG << _me.port() << " got a get_peers message, sending : " << *peers;
   _networking.send_unicast(msg);
 }
 

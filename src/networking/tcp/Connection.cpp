@@ -66,7 +66,8 @@ void Connection::read_body(std::size_t body_size) {
 
         auto message = std::make_shared<messages::Message>();
         messages::from_buffer(_this->_buffer, message.get());
-
+        LOG_DEBUG << "Receiving [" << _socket->local_endpoint().port() << " <- "
+                  << _remote_peer.port() << "]: <<" << *message;
         auto header = message->mutable_header();
 
         header->set_connection_id(_id);
