@@ -11,22 +11,23 @@ class Ec2:
     def __init__(self):
         self.ec2 = boto3.client("ec2")
 
-    def list_vm_by_role(self, role):
+    def describe_instances_by_role(self, role):
         return self.ec2.describe_instances(
             Filters=[{"Name": "tag:role", "Values": [role]}]
         )
 
+    def describe_instance(self, instance_id):
+        print(self.ec2.describe_instances())
+
     def filter_tags(self, instances, tags):
-        list = []
+        instances = []
         for reservation in instances["Reservations"]:
             for instance in reservation["Instances"]:
-                element = {}
-                for tag in tags:
-                    element[tag] = instance[tag]
+                element = {tag: instance[tag] for tag in tags}
 
-                list.append(element)
+                instances.append(element)
 
-        return list
+        return instances
 
     def instance_tags(self):
         return ["InstanceId", "PublicIpAddress"]
@@ -35,11 +36,11 @@ class Ec2:
         return self.filter_tags(instances, self.instance_tags())
 
     def boots(self):
-        instances = self.list_vm_by_role("boot")
+        instances = self.describe_instances_by_role("boot")
         return self.filter_tags(instances, self.instance_tags())
 
     def bots(self):
-        instances = self.list_vm_by_role("bot")
+        instances = self.describe_instances_by_role("bot")
         return self.filter_tags(instances, self.instance_tags())
 
 
@@ -49,7 +50,7 @@ class RemoteExec:
         self.key_path = key_path
         self.ips = ips
 
-    def execute(self, command):
+    def execute(self, commands):
         result = fabric.ThreadingGroup(
             *self.ips,
             user=self.user,
@@ -70,9 +71,9 @@ class Cli:
     def bots(self):
         print(self.ec2.bots())
 
-    def execute(self, role, command):
+    def execute(self, role, *commands):
         instances = self.ec2.filter_instance_tags(
-            self.ec2.list_vm_by_role(role)
+            self.ec2.describe_instances_by_role(role)
         )
         pprint(instances)
         remote = RemoteExec(
@@ -81,6 +82,26 @@ class Cli:
         )
         remote.execute(command)
 
+    def docker_install(self, role):
+        self.execute(role=role, command='sudo apt-get remove docker docker-engine docker.io containerd runc')
+        self.execute(role=role, command='sudo apt-get update')
+        self.execute(role=role, command='sudo apt-get install apt-transport-https ca-certificates curl gnupg-agent software-properties-common')
+        self.execute(role=role, command='curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -')
+        self.execute(role=role, command='sudo apt-key fingerprint 0EBFCD88')
+        self.execute(role=role, command='sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"')
+        self.execute(role=role, command='sudo apt-get update')
+        self.execute(role=role, command='sudo apt-get install docker-ce docker-ce-cli containerd.io')
+                     
+        
+    def docker_init(self, role):
+        self.execute(role=role, command='docker network create core')
+        self.execute(role=role, command='docker network create core')
+
+    def describe_instance(self, instance_id):
+        self.ec2.describe_instance(instance_id)
+
+    def core_update(self, role):
+        self.execute(role=role, command="docker container pull ")
 
 if __name__ == "__main__":
     fire.Fire(Cli)
