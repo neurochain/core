@@ -239,9 +239,32 @@ void Bot::regular_update() {
   keep_max_connections();
   update_ledger();
   keep_max_connections();
+
+  LOG_DEBUG << "TOTORO" << rand();
+  LOG_DEBUG << "TOTORO" << _config.random_transaction() * RAND_MAX;
+  if (_config.has_random_transaction() &&
+      rand() < _config.random_transaction() * RAND_MAX) {
+    LOG_DEBUG << "TUTU";
+    send_random_transaction();
+  } else {
+    LOG_DEBUG << "TITI";
+  }
   _update_timer.expires_at(_update_timer.expiry() +
                            boost::asio::chrono::seconds(_update_time));
   _update_timer.async_wait(boost::bind(&Bot::regular_update, this));
+}
+
+void Bot::send_random_transaction() {
+  const auto peers = _peers.connected_peers();
+  if (peers.size() == 0) {
+    return;
+  }
+  const auto recipient = peers[rand() % peers.size()];
+  const auto transaction = _ledger->send_ncc(
+      _keys[0].key_priv(), messages::Address(recipient->key_pub()), 0.5);
+
+  LOG_DEBUG << "Sending random transaction" << transaction;
+  publish_transaction(transaction);
 }
 
 void Bot::update_peerlist() {
@@ -464,6 +487,7 @@ void Bot::subscribe(const messages::Type type,
 
 void Bot::publish_transaction(const messages::Transaction &transaction) const {
   // Add the transaction to the transaction pool
+  _consensus->add_transaction(transaction);
 
   // Send the transaction on the network
   auto message = std::make_shared<messages::Message>();
