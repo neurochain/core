@@ -101,9 +101,7 @@ void Bot::handler_block(const messages::Header &header,
 
 void Bot::handler_transaction(const messages::Header &header,
                               const messages::Body &body) {
-  // TODO send to concensus
-
-  // update_ledger();
+  _consensus->add_transaction(body.transaction());
 }
 
 bool Bot::update_ledger() {
@@ -240,14 +238,9 @@ void Bot::regular_update() {
   update_ledger();
   keep_max_connections();
 
-  LOG_DEBUG << "TOTORO" << rand();
-  LOG_DEBUG << "TOTORO" << _config.random_transaction() * RAND_MAX;
   if (_config.has_random_transaction() &&
       rand() < _config.random_transaction() * RAND_MAX) {
-    LOG_DEBUG << "TUTU";
     send_random_transaction();
-  } else {
-    LOG_DEBUG << "TITI";
   }
   _update_timer.expires_at(_update_timer.expiry() +
                            boost::asio::chrono::seconds(_update_time));
