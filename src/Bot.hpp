@@ -77,6 +77,7 @@ class Bot {
   bool configure_networking(messages::config::Config *config);
   void subscribe();
   void regular_update();
+  void send_random_transaction();
   bool update_ledger();
   void update_peerlist();
 
