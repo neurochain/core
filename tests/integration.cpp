@@ -185,6 +185,38 @@ TEST(INTEGRATION, disconnect) {
   ASSERT_EQ(bot0->connected_peers().size(), 0);
 }
 
+TEST(INTEGRATION, disconnect_message) {
+  Port port_offset = 3500;
+  bool message_received0 = false;
+  bool message_received2 = false;
+  BotTest bot0("bot0.json", port_offset);
+  BotTest bot1("bot1.json", port_offset);
+  BotTest bot2("bot2.json", port_offset);
+  bot0->subscribe(messages::Type::kConnectionClosed,
+                  [&](const messages::Header &header,
+                     const messages::Body &body) {
+                    message_received0 = true;
+                  });
+  bot2->subscribe(messages::Type::kConnectionClosed,
+                  [&](const messages::Header &header,
+                      const messages::Body &body) {
+                    message_received2 = true;
+                  });
+
+  std::this_thread::sleep_for(1s);
+  ASSERT_EQ(bot0->connected_peers().size(), 2);
+  ASSERT_EQ(bot1->connected_peers().size(), 2);
+  ASSERT_EQ(bot2->connected_peers().size(), 2);
+
+  bot1.operator->().reset();
+
+  std::this_thread::sleep_for(1s);
+  ASSERT_TRUE(message_received0) << bot0.peers();
+  ASSERT_TRUE(message_received2) << bot2.peers();
+  ASSERT_EQ(bot0->connected_peers().size(), 1);
+  ASSERT_EQ(bot2->connected_peers().size(), 1);
+}
+
 TEST(INTEGRATION, neighbors_propagation) {
   Port port_offset = 4000;
   BotTest bot0("integration_propagation0.json", port_offset);
