@@ -7,7 +7,7 @@
         "key_pub_path": "@CMAKE_CURRENT_BINARY_DIR@/key51.pub",
         "key_priv_path": "@CMAKE_CURRENT_BINARY_DIR@/key51.priv",
         "max_connections": 3,
-        "peers_update_time": 20,
+        "peers_update_time": 3,
         "tcp": {
             "port": 13351,
             "endpoint": "localhost",

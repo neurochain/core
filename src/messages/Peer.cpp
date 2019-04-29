@@ -26,10 +26,10 @@ void Peer::set_status(::neuro::messages::_Peer_Status value) {
   _Peer::set_status(value);
   switch(value) {
     case _Peer_Status_CONNECTING:
-      update_timestamp(3);
+      update_timestamp(4);
       break;
     default:
-      update_timestamp();  // default to 10 sec
+      update_timestamp();  // default to 7 sec
       break;
   }
 }

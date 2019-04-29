@@ -23,7 +23,7 @@ class Peer : public _Peer {
        const crypto::KeyPub &ecc_pub);
 
   void set_status(::neuro::messages::_Peer_Status value);
-  void update_timestamp(std::time_t tick = 10);
+  void update_timestamp(std::time_t tick = 7);
   void update_unreachable(const std::time_t t);
 
   friend class neuro::messages::test::PeersF;

@@ -70,6 +70,13 @@ std::optional<Peer *> Peers::find(const _KeyPub &key_pub) {
   return {got->second.get()};
 }
 
+/**
+ * Get a list of peer filtered by status
+ * The peer obtained this way can still change (have their status changed)
+ * @attention apply update_unreachable on each peer as a side effect
+ * @param status a status to filter the list
+ * @return the filtered list of peer
+ */
 std::vector<Peer *> Peers::by_status(const Peer::Status status) {
   std::shared_lock<std::shared_mutex> lock(_mutex);
   std::vector<Peer *> res;
@@ -114,6 +121,7 @@ void Peers::update_unreachable() {
 }
 
 std::optional<Peer* > Peers::peer_by_port(const Port port) const {
+  std::shared_lock<std::shared_mutex> lock(_mutex);
   for (auto &[_, peer] : _peers) {
     if (peer->port() == port) {
       return std::make_optional(peer.get());
