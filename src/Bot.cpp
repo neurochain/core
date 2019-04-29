@@ -399,6 +399,7 @@ void Bot::handler_hello(const messages::Header &header,
 
   if (!_networking.send_unicast(message)) {
     LOG_ERROR << _me.port() << " Failed to send world message: " << messages::to_json(*message);
+    (*remote_peer)->set_status(messages::Peer::UNREACHABLE);
   }
 }
 
@@ -450,7 +451,9 @@ void Bot::keep_max_connections() {
 
   LOG_DEBUG << _me.port() << " Asking to connect to " << **peer_it;
   (*peer_it)->set_status(messages::Peer::CONNECTING);
-  _networking.connect(*peer_it);
+  if (!_networking.connect(*peer_it)) {
+    (*peer_it)->set_status(messages::Peer::UNREACHABLE);
+  }
 }
 
 const messages::Peers &Bot::peers() const { return _peers; }
