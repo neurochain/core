@@ -42,6 +42,7 @@ void Connection::read_header() {
       [_this = ptr()](const boost::system::error_code &error,
                       std::size_t bytes_read) {
         if (error) {
+          LOG_WARNING << "read header error " << error.message();
           _this->terminate();
           return;
         }
@@ -58,6 +59,7 @@ void Connection::read_body(std::size_t body_size) {
       [_this = ptr(), this](const boost::system::error_code &error,
                             std::size_t bytes_read) {
         if (error) {
+          LOG_WARNING << "read body error " << error.message();
           _this->terminate();
           return;
         }
@@ -124,6 +126,7 @@ bool Connection::send(std::shared_ptr<Buffer> &message) {
       [_this = ptr(), message](const boost::system::error_code &error,
                                std::size_t bytes_transferred) {
         if (error) {
+          LOG_WARNING << "send error " << error.message();
           _this->terminate();
           return false;
         }
