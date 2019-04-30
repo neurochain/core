@@ -187,6 +187,17 @@ class Consensus : public testing::Test {
       crypto::sign(keys, &block);
 
       ASSERT_TRUE(consensus->add_block(block));
+      std::vector<messages::TaggedBlock> blocks;
+      ledger->get_blocks_by_previd(block.header().previous_block_hash(),
+                                   &blocks);
+      ASSERT_EQ(blocks.size(), 1);
+
+      // Try inserting the same block again
+      ASSERT_FALSE(consensus->add_block(block));
+      blocks.clear();
+      ledger->get_blocks_by_previd(block.header().previous_block_hash(),
+                                   &blocks);
+      ASSERT_EQ(blocks.size(), 1);
     }
   }
 };

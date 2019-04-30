@@ -660,6 +660,8 @@ bool LedgerMongodb::delete_block(const messages::BlockID &id) {
                                                     << bss::finalize;
     auto res_transaction =
         _transactions.delete_many(std::move(delete_transaction_query));
+  } else {
+    LOG_WARNING << "Failed to delete block " << id;
   }
   return did_delete;
 }
