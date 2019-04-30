@@ -6,9 +6,9 @@
 #include "crypto/Hash.hpp"
 #include "crypto/Sign.hpp"
 #include "ledger/Filter.hpp"
-#include "messages/Message.hpp"
 #include "messages.pb.h"
 #include "messages/Address.hpp"
+#include "messages/Message.hpp"
 #include "rest.pb.h"
 
 namespace neuro {
@@ -236,6 +236,11 @@ class Ledger {
    * List transactions for an address that are either in the main branch or in
    * the transaction pool
    */
+  bool has_block(const messages::BlockID &id) const {
+    messages::Block block;
+    return get_block(id, &block);
+  }
+
   messages::Transactions list_transactions(
       const messages::Address &address) const {
     Filter filter;

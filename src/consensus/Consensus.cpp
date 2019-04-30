@@ -459,6 +459,7 @@ messages::BlockScore Consensus::get_block_score(
 }
 
 bool Consensus::verify_blocks() {
+  std::lock_guard<std::recursive_mutex> lock(_verify_blocks_mutex);
   std::vector<messages::TaggedBlock> tagged_blocks;
   _ledger->get_unverified_blocks(&tagged_blocks);
   for (auto &tagged_block : tagged_blocks) {
