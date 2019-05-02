@@ -26,7 +26,7 @@ class Ecc {
 
  public:
   Ecc();
-  Ecc(Ecc &&ecc) {}
+  Ecc(Ecc &&ecc) = default;
 
   Ecc(const Ecc &) = delete;
   Ecc(const std::string &filepath_private, const std::string &filepath_public);
