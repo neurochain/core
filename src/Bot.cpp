@@ -286,14 +286,13 @@ void Bot::handler_get_peers(const messages::Header &header,
   messages::fill_header_reply(header, header_reply);
   auto peers_body = msg->add_bodies()->mutable_peers();
 
-  auto peers = _tcp_config->mutable_peers();
-  for (const auto &peer_conn : *peers) {
+  for (const auto peer_conn : peers().peers_copy()) {
     auto tmp_peer = peers_body->add_peers();
     tmp_peer->mutable_key_pub()->CopyFrom(peer_conn.key_pub());
     tmp_peer->set_endpoint(peer_conn.endpoint());
     tmp_peer->set_port(peer_conn.port());
   }
-  LOG_DEBUG << _me.port() << " got a get_peers message, sending : " << *peers;
+  LOG_DEBUG << _me.port() << " got a get_peers message, sending instead : " << peers_body;
   _networking.send_unicast(msg);
 }
 

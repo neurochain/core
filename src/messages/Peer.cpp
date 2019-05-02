@@ -26,10 +26,10 @@ void Peer::set_status(::neuro::messages::_Peer_Status value) {
   _Peer::set_status(value);
   switch(value) {
     case _Peer_Status_CONNECTING:
-      update_timestamp(4);
+      update_timestamp(3);
       break;
     default:
-      update_timestamp();  // default to 7 sec
+      update_timestamp(7);
       break;
   }
 }
@@ -50,6 +50,7 @@ void Peer::update_unreachable(const std::time_t t) {
     if (peer_status & Peer::UNREACHABLE) {
       this->set_status(Peer::DISCONNECTED);
     } else if (peer_status & Peer::CONNECTING) {
+      LOG_WARNING << "connection timed out for peer " << port();
       this->set_status(Peer::UNREACHABLE);
     }
   }
