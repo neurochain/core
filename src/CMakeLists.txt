@@ -103,6 +103,8 @@ target_link_libraries(core
   protobuf::libprotobuf
   ${LIBMONGOCXX_STATIC_LIBRARIES}
 
+  pistache
+  
   mpfr
 )
 
