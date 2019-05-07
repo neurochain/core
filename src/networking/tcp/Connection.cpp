@@ -142,7 +142,8 @@ void Connection::terminate() {
   boost::system::error_code ec;
   _socket->shutdown(tcp::socket::shutdown_both, ec);
   if (ec) {
-    LOG_DEBUG << "double termination : " << ec.message();
+    LOG_DEBUG << "can't shutdown connection socket to : "
+              << remote_port().value_or(0) << " : " << ec.message();
   }
   auto message = std::make_shared<messages::Message>();
   auto header = message->mutable_header();

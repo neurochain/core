@@ -29,34 +29,23 @@ std::optional<Peer *> Peers::insert(const Peer &peer) {
     found_peer->set_endpoint(peer.endpoint());
     return {found_peer.get()};
   }
-  found_peer->set_status(Peer::DISCONNECTED);
+
   return found_peer.get();
 }
 
 /**
  * count the number of bot communicating with us (connecting or connected peers)
- * @return number of connection | connected peers
+ * \return number of connection | connected peers
  */
 std::size_t Peers::used_peers_count() const {
   std::shared_lock<std::shared_mutex> lock(_mutex);
   long used_peers_count =
       std::count_if(_peers.begin(), _peers.end(), [](const auto &it) {
         const auto &peer = it.second;
-        auto connection_status =
-            peer->status() & (Peer::CONNECTED);
+        auto connection_status = peer->status() & Peer::CONNECTED;
         return peer->has_status() && connection_status;
       });
   return used_peers_count;
-}
-
-bool Peers::update_peer_status(const Peer &peer, const Peer::Status status) {
-  std::unique_lock<std::shared_mutex> lock(_mutex);
-  auto found_peer = _peers.find(peer.key_pub());
-  if (found_peer == _peers.end()) {
-    return false;
-  }
-  found_peer->second->set_status(status);
-  return true;
 }
 
 std::optional<Peer *> Peers::find(const _KeyPub &key_pub) {
@@ -73,9 +62,9 @@ std::optional<Peer *> Peers::find(const _KeyPub &key_pub) {
 /**
  * Get a list of peer filtered by status
  * The peer obtained this way can still change (have their status changed)
- * @attention apply update_unreachable on each peer as a side effect
- * @param status a status to filter the list
- * @return the filtered list of peer
+ * \attention apply update_unreachable on each peer as a side effect
+ * \param status a status to filter the list
+ * \return the filtered list of peer
  */
 std::vector<Peer *> Peers::by_status(const Peer::Status status) {
   std::shared_lock<std::shared_mutex> lock(_mutex);
@@ -83,7 +72,7 @@ std::vector<Peer *> Peers::by_status(const Peer::Status status) {
 
   const auto time = ::neuro::time();
 
-  for (auto &[_, peer] : _peers) {
+  for (const auto &[_, peer] : _peers) {
     peer->update_unreachable(time);
     if (peer->status() & status) {
       res.push_back(peer.get());

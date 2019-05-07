@@ -249,10 +249,11 @@ TEST(INTEGRATION, neighbors_propagation) {
   ASSERT_TRUE(bot1.check_is_connected({1337})) << bot1->peers();
   ASSERT_TRUE(bot2.check_is_connected({1337})) << bot2->peers();
 
-  // 2 sec for regular update,
+  // 2 sec for regular update (peer_list),
+  // 2 sec for regular update (hello),
   // 7 sec for unreachable to disconnected,
   // 1 sec for some margin
-  std::this_thread::sleep_for(10s);
+  std::this_thread::sleep_for(12s);
 
   ASSERT_TRUE(bot0.check_peers_ports({1338, 1339})) << bot0->peers();
   ASSERT_TRUE(bot1.check_peers_ports({1337, 1339})) << bot1->peers();

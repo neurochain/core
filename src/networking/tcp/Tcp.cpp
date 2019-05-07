@@ -270,7 +270,7 @@ bool Tcp::send_unicast(std::shared_ptr<messages::Message> message) const {
 /**
  * count the number of active TCP connexion
  * (either accepted one or attempting one)
- * @return the number of active connexion
+ * \return the number of active connexion
  */
 std::size_t Tcp::peer_count() const { return _connections.size(); }
 

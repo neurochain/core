@@ -89,7 +89,6 @@ class Peers {
   bool fill(_Peers *peers, uint8_t peer_count = 10);
   std::size_t used_peers_count() const;
   void update_unreachable();
-  bool update_peer_status(const Peer &peer, const Peer::Status status);
   std::optional<Peer *> find(const _KeyPub &key_pub);
   std::vector<Peer *> by_status(const Peer::Status status);
   std::vector<Peer *> used_peers();

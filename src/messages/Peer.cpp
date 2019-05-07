@@ -50,7 +50,7 @@ void Peer::update_unreachable(const std::time_t t) {
     if (peer_status & Peer::UNREACHABLE) {
       this->set_status(Peer::DISCONNECTED);
     } else if (peer_status & Peer::CONNECTING) {
-      LOG_WARNING << "connection timed out for peer " << port();
+      LOG_WARNING << this << " : " << port() << " connection timed out";
       this->set_status(Peer::UNREACHABLE);
     }
   }

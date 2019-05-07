@@ -339,7 +339,8 @@ void Bot::handler_connection(const messages::Header &header,
   hello->mutable_peer()->CopyFrom(_me);
 
   if (!_networking.send_unicast(message)) {
-    LOG_DEBUG << "can't respond to connection message " << _me;
+    LOG_DEBUG << this << " : " << _me << " can't send hello message "
+              << message;
   }
   keep_max_connections();
 }
