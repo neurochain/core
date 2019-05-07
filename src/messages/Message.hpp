@@ -7,6 +7,7 @@
 #include <functional>
 #include <string>
 #include <type_traits>
+#include <vector>
 
 #include "common/Buffer.hpp"
 #include "common/logger.hpp"
@@ -31,6 +32,7 @@ using AssemblyID = std::remove_reference<decltype(
 using TransactionID = std::remove_reference<decltype(
     *(((Transaction *)nullptr)->mutable_id()))>::type;
 using Packet = google::protobuf::Message;
+using Transactions = std::vector<Transaction>;
 
 using Type = Body::BodyCase;
 using BranchID = int32_t;

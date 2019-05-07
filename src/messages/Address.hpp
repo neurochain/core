@@ -42,6 +42,7 @@ class Address : public _Address {
   operator bool() const;
 };
 
+using Addresses = std::vector<Address>;
 }  // namespace messages
 }  // namespace neuro
 
