@@ -60,19 +60,26 @@ bool Consensus::check_inputs(
     bool invalid = false;
 
     // Check that inputs are not spent by any other transaction
-    const bool check_transaction_pool = true;
-    _ledger->for_each(
-        filter, tip, check_transaction_pool,
-        [&transaction, &invalid](const messages::TaggedTransaction match) {
-          if ((match.transaction().id() != transaction.id())) {
-            invalid = true;
-            return false;
-          }
-          return true;
-        });
+    const bool check_transaction_pool = false;
+    _ledger->for_each(filter, tip, check_transaction_pool,
+                      [&transaction, &invalid,
+                       &input](const messages::TaggedTransaction match) {
+                        if ((match.transaction() != transaction)) {
+                          invalid = true;
+                          LOG_DEBUG << "Input " << input
+                                    << " is already spent by transaction "
+                                    << match.transaction().id() << " in block "
+                                    << match.block_id();
+                          return false;
+                        }
+                        return true;
+                      });
     if (invalid) {
+      LOG_DEBUG << "TIP " << tip;
+
       LOG_INFO << "Failed check_input for transaction "
-               << tagged_transaction.transaction().id();
+               << tagged_transaction.transaction().id() << " for input "
+               << input;
       return false;
     }
   }
@@ -497,14 +504,21 @@ bool Consensus::verify_blocks() {
     if (is_valid(tagged_block)) {
       _ledger->set_block_verified(tagged_block.block().header().id(),
                                   get_block_score(tagged_block), assembly_id);
-    } else if (!_ledger->delete_block_and_children(
-                   tagged_block.block().header().id())) {
-      throw std::runtime_error("Failed to delete an invalid block");
     } else {
-      // The list of unverified blocks should have changed
-      verify_blocks();
-      return false;
+      std::stringstream ss;
+      ss << "Block " << tagged_block.block().header().id() << " of height "
+         << tagged_block.block().header().height() << " is invalid ";
+      throw std::runtime_error(ss.str());
     }
+
+    /*else if (!_ledger->delete_block_and_children(*/
+    // tagged_block.block().header().id())) {
+    // throw std::runtime_error("Failed to delete an invalid block");
+    //} else {
+    //// The list of unverified blocks should have changed
+    // verify_blocks();
+    // return false;
+    /*}*/
   }
   return true;
 }
@@ -923,8 +937,8 @@ bool Consensus::mine_block(const messages::Block &block0) {
   build_block(_keys[address_index], height, &new_block);
   _publish_block(new_block);
   add_block(new_block);
-  LOG_INFO << "Mined block successfully with height "
-           << new_block.header().height();
+  LOG_INFO << "Mined block successfully with id " << new_block.header().id()
+           << " with height " << new_block.header().height();
   return true;
 }
 

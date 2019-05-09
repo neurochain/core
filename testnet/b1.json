@@ -1,5 +1,5 @@
 {
-  "random_transaction": 0.1,
+  "random_transaction": 0.5,
   "logs": {
     "severity": "trace",
     "toStdout": true
@@ -32,7 +32,7 @@
     "keyPrivPath": "key1.priv"
   },
   "database": {
-    "url": "mongodb://localhost:27017/neuro",
+    "url": "mongodb://localhost:27017/",
     "dbName": "neuro1338",
     "block0Format": "PROTO",
     "block0Path": "data.0.testnet"
