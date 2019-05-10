@@ -493,11 +493,11 @@ class Ledger {
     const auto ecc = crypto::Ecc(key_priv, key_pub);
     std::vector<const crypto::Ecc *> keys = {&ecc};
 
-    for (auto input : inputs) {
+    for (const auto& input : inputs) {
       transaction.add_inputs()->CopyFrom(input);
     }
 
-    for (auto output : outputs) {
+    for (const auto& output : outputs) {
       transaction.add_outputs()->CopyFrom(output);
     }
 
@@ -548,6 +548,7 @@ class Ledger {
       const crypto::KeyPriv &sender_key_priv,
       const messages::Address &recipient_address, const float ratio_to_send,
       const std::optional<messages::NCCAmount> &fees = {}) const {
+    assert(ratio_to_send <= 1);
     auto sender_address = messages::Address(sender_key_priv.make_key_pub());
 
     std::vector<messages::Transaction> unspent_outputs =
