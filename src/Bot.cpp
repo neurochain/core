@@ -499,6 +499,10 @@ void Bot::publish_block(const messages::Block &block) const {
   _networking.send(message);
 }
 
+Ledger *Bot::ledger() {
+  return _leger.get();
+}
+  
 void Bot::join() { _networking.join(); }
 
 Bot::~Bot() {
