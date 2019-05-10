@@ -33,7 +33,8 @@ using TransactionID = std::remove_reference<decltype(
     *(((Transaction *)nullptr)->mutable_id()))>::type;
 using Packet = google::protobuf::Message;
 using Transactions = std::vector<Transaction>;
-
+using Addresses = std::vector<Address>;
+  
 using Type = Body::BodyCase;
 using BranchID = int32_t;
 using IntegrityScore = Double;
