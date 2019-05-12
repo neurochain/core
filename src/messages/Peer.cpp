@@ -3,33 +3,41 @@
 namespace neuro {
 namespace messages {
 
-Peer::Peer() { set_status(Peer::DISCONNECTED); }
+Peer::Peer(const ::neuro::messages::config::Networking &config)
+    : _config(config) {
+  set_status(Peer::DISCONNECTED);
+}
 
-Peer::Peer(const _Peer &peer) {
+Peer::Peer(const ::neuro::messages::config::Networking &config,
+           const _Peer &peer) : _config(config) {
   CopyFrom(peer);
   if (!has_status()) {
     set_status(Peer::DISCONNECTED);
   }
 }
 
-Peer::Peer(const std::string &endpoint, const Port port,
-           const crypto::KeyPub &ecc_pub) {
-  set_endpoint(endpoint);
-  set_port(port);
+Peer::Peer(const ::neuro::messages::config::Networking &config,
+           const crypto::KeyPub &ecc_pub) : _config(config) {
+  set_endpoint(config.tcp().endpoint());
+  set_port(config.tcp().port());
   ecc_pub.save(mutable_key_pub());
   if (!has_status()) {
     set_status(Peer::DISCONNECTED);
   }
 }
 
+/**
+ * change the status of a peer, and make it elligible for update
+ * \param value a new status for the peer
+ */
 void Peer::set_status(::neuro::messages::_Peer_Status value) {
   _Peer::set_status(value);
   switch(value) {
     case _Peer_Status_CONNECTING:
-      update_timestamp(3);
+      update_timestamp(_config.connecting_next_update_time());
       break;
     default:
-      update_timestamp(7);
+      update_timestamp(_config.default_next_update_time());
       break;
   }
 }

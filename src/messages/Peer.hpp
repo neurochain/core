@@ -15,11 +15,13 @@ class PeersF;
 
 class Peer : public _Peer {
  private:
- public:
-  Peer();
+  const ::neuro::messages::config::Networking &_config;
 
-  Peer(const _Peer &peer);
-  Peer(const std::string &endpoint, const Port port,
+ public:
+  Peer(const ::neuro::messages::config::Networking &config);
+
+  Peer(const ::neuro::messages::config::Networking &config, const _Peer &peer);
+  Peer(const ::neuro::messages::config::Networking &config,
        const crypto::KeyPub &ecc_pub);
 
   void set_status(::neuro::messages::_Peer_Status value);

@@ -71,12 +71,10 @@ class Peers {
     Peer *operator->() { return *_it; }
   };
 
-  Peers(const _KeyPub &own_key) : _own_key(own_key) {}
-
-  template <typename It>
-  Peers(const _KeyPub &own_key, It it, It end) : Peers(own_key) {
-    for (; it != end; ++it) {
-      insert(*it);
+  Peers(const _KeyPub &own_key, const messages::config::Networking &config) : _own_key(own_key) {
+    for (auto configured_peer : config.tcp().peers()) {
+      messages::Peer peer(config, configured_peer);
+      insert(peer);
     }
   }
 

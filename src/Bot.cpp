@@ -20,10 +20,8 @@ Bot::Bot(const messages::config::Config &config)
       _subscriber(&_queue),
       _keys(_config.networking().key_priv_path(),
             _config.networking().key_pub_path()),
-      _me(_config.networking().tcp().endpoint(),
-          _config.networking().tcp().port(), _keys.at(0).key_pub()),
-      _peers(_me.key_pub(), _config.networking().tcp().peers().begin(),
-             _config.networking().tcp().peers().end()),
+      _me(_config.networking(), _keys.at(0).key_pub()),
+      _peers(_me.key_pub(), _config.networking()),
       _networking(&_queue, &_keys.at(0), &_peers, _config.mutable_networking()),
       _ledger(std::make_shared<ledger::LedgerMongodb>(_config.database())),
       _update_timer(std::ref(*_io_context)) {
@@ -317,7 +315,8 @@ void Bot::handler_peers(const messages::Header &header,
                         const messages::Body &body) {
   const auto &peers = body.peers().peers();
   LOG_DEBUG << _me.port() << " got a peers message, receiving : " << peers;
-  for (const auto &peer : peers) {
+  for (const auto &remote_peer : peers) {
+    messages::Peer peer(_config.networking(), remote_peer);
     _peers.insert(peer);
   }
 }
@@ -391,7 +390,8 @@ void Bot::handler_hello(const messages::Header &header,
     return;
   }
   auto hello = body.hello();
-  auto remote_peer = _peers.insert(hello.peer());
+  messages::Peer peer(_config.networking(), hello.peer());
+  auto remote_peer = _peers.insert(peer);
 
   if (!remote_peer) {
     LOG_WARNING << this << " : " << _me.port() << "Received a message from ourself (from the futuru?)";

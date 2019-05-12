@@ -12,21 +12,24 @@ namespace tcp {
 
 Connection::Connection(const ID id, messages::Queue *queue,
                        const std::shared_ptr<tcp::socket> &socket,
-                       const messages::Peer &remote_peer)
+                       const messages::Peer &remote_peer,
+                       const messages::config::Networking &config)
     : ::neuro::networking::Connection::Connection(id, queue),
       _header(sizeof(HeaderPattern), 0),
       _buffer(128, 0),
       _socket(socket),
-      _remote_peer(remote_peer) {
+      _remote_peer(config, remote_peer) {
   assert(_socket != nullptr);
 }
 
 Connection::Connection(const ID id, messages::Queue *queue,
-                       const std::shared_ptr<tcp::socket> &socket)
+                       const std::shared_ptr<tcp::socket> &socket,
+                       const messages::config::Networking &config)
     : ::neuro::networking::Connection::Connection(id, queue),
       _header(sizeof(HeaderPattern), 0),
       _buffer(128, 0),
-      _socket(socket) {
+      _socket(socket),
+      _remote_peer(config){
   assert(_socket != nullptr);
 }
 

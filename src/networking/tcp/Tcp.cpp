@@ -16,16 +16,17 @@ namespace neuro {
 namespace networking {
 using namespace std::chrono_literals;
 
-Tcp::Tcp(const Port port, messages::Queue *queue, messages::Peers *peers,
-         crypto::Ecc *keys)
+Tcp::Tcp(messages::Queue *queue, messages::Peers *peers,
+         crypto::Ecc *keys, const messages::config::Networking &config)
     : TransportLayer(queue, peers, keys),
       _stopped(false),
-      _listening_port(port),
+      _listening_port(config.tcp().port()),
       _io_context(),
       _resolver(_io_context),
       _acceptor(_io_context,
                 bai::tcp::endpoint(bai::tcp::v4(), _listening_port)),
-      _peers(peers) {
+      _peers(peers),
+      _config(config) {
   assert(peers);
 
   while (!_acceptor.is_open()) {
@@ -95,7 +96,7 @@ void Tcp::new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
 
     msg_header->set_connection_id(_current_id);
     auto connection =
-        std::make_shared<tcp::Connection>(_current_id, _queue, socket);
+        std::make_shared<tcp::Connection>(_current_id, _queue, socket, _config);
     _connections.insert(std::make_pair(_current_id, connection));
 
     auto connection_ready = msg_body->mutable_connection_ready();
@@ -125,8 +126,11 @@ void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
     _current_id++;
 
     msg_header->set_connection_id(_current_id);
-    auto connection =
-        std::make_shared<tcp::Connection>(_current_id, _queue, socket, *peer);
+    auto connection = std::make_shared<tcp::Connection>(_current_id,
+                                                        _queue,
+                                                        socket,
+                                                        *peer,
+                                                        _config);
     _connections.insert(std::make_pair(_current_id, connection));
 
     auto connection_ready = msg_body->mutable_connection_ready();

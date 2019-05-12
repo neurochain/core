@@ -17,7 +17,7 @@ Networking::Networking(messages::Queue *queue, crypto::Ecc *keys,
       _dist(0, std::numeric_limits<uint32_t>::max()) {
   _queue->run();
   _transport_layer =
-      std::make_unique<Tcp>(config->tcp().port(), queue, peers, _keys);
+      std::make_unique<Tcp>(queue, peers, _keys, *config);
 }
 
 TransportLayer::SendResult Networking::send(

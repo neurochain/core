@@ -30,6 +30,8 @@ std::optional<Peer *> Peers::insert(const Peer &peer) {
     return {found_peer.get()};
   }
 
+  found_peer->set_status(Peer::DISCONNECTED);
+
   return found_peer.get();
 }
 
