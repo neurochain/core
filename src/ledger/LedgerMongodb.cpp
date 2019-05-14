@@ -894,7 +894,7 @@ bool LedgerMongodb::delete_transaction(const messages::TransactionID &id) {
   return did_delete;
 }
 
-std::size_t LedgerMongodb::get_transaction_pool(messages::Block *block) {
+std::size_t LedgerMongodb::get_transaction_pool(messages::Block *block) const {
   // This method put the whole transaction pool in a block but does not cleanup
   // the transaction pool.
   // TODO add a way to limit the number of transactions you want to include
@@ -914,6 +914,12 @@ std::size_t LedgerMongodb::get_transaction_pool(messages::Block *block) {
   }
 
   return num_transactions;
+}
+
+std::size_t LedgerMongodb::cleanup_transaction_pool() {
+  auto query = bss::document{} << BLOCK_ID << bsoncxx::types::b_null{}
+                               << bss::finalize;
+  return _transactions.delete_many(std::move(query))->deleted_count();
 }
 
 bool LedgerMongodb::insert_block(const messages::Block &block) {
@@ -1127,6 +1133,9 @@ bool LedgerMongodb::update_main_branch() {
     if (!update_branch_tag(id, messages::Branch::FORK)) {
       return false;
     }
+  }
+  if (previous_main_branch.size() > 0) {
+    cleanup_transaction_pool();
   }
 
   // This order makes the database never be in a inconsistent state
