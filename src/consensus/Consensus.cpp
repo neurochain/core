@@ -838,6 +838,12 @@ bool Consensus::build_block(const crypto::Ecc &keys,
     return false;
   }
   auto &last_block_header = last_block.block().header();
+  if (last_block_header.height() >= height) {
+    LOG_WARNING << "Trying to mine block with height " << height
+                << " while previous block has height "
+                << last_block_header.height();
+    return false;
+  }
   auto header = block->mutable_header();
   header->set_height(height);
   header->mutable_previous_block_hash()->CopyFrom(last_block_header.id());
@@ -934,7 +940,15 @@ bool Consensus::mine_block(const messages::Block &block0) {
   }
 
   messages::Block new_block;
-  build_block(_keys[address_index], height, &new_block);
+  if (!build_block(_keys[address_index], height, &new_block)) {
+    return false;
+  }
+
+  // Check that the newly created block isn't late
+  if (new_block.header().timestamp().data() >= block_end) {
+    return false;
+  }
+
   _publish_block(new_block);
   add_block(new_block);
   LOG_INFO << "Mined block successfully with id " << new_block.header().id()
