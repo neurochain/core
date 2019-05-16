@@ -100,7 +100,7 @@ class Bot {
 
   void publish_transaction(const messages::Transaction &transaction) const;
   void publish_block(const messages::Block &block) const;
-  Ledger* ledger();
+  ledger::Ledger* ledger();
   
   friend class neuro::tests::BotTest;
 };

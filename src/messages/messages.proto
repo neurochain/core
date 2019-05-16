@@ -72,6 +72,10 @@ message Transaction {
   optional int32 coinbase_height = 6;
 }
 
+message Transactions {
+  repeated Transaction transactions = 1;
+}
+
 message BlockHeader {
   required Hash id = 1;
   required Timestamp timestamp = 2;

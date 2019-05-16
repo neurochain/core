@@ -2,10 +2,10 @@
 #define NEURO_SRC_MESSAGES_ADDRESS_HPP
 
 #include <cryptopp/integer.h>
+#include <vector>
 #include "common.pb.h"
 #include "common/logger.hpp"
 #include "crypto/Ecc.hpp"
-#include "messages/Hasher.hpp"
 
 namespace neuro {
 namespace messages {
@@ -42,16 +42,11 @@ class Address : public _Address {
   operator bool() const;
 };
 
+using Addresses = std::vector<Address>;
+  
 }  // namespace messages
 }  // namespace neuro
 
-namespace std {
-template <>
-struct hash<neuro::messages::Address> {
-  size_t operator()(const neuro::messages::Address &address) const {
-    return hash<string>()(to_json(address));
-  }
-};
-}  // namespace std
+
 
 #endif /* NEURO_SRC_MESSAGES_ADDRESS_HPP */

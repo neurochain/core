@@ -17,6 +17,7 @@
 #include "ledger/mongo.hpp"
 #include "messages.pb.h"
 #include "messages/Peer.hpp"
+#include "messages/Address.hpp"
 
 namespace neuro {
 namespace messages {
@@ -32,8 +33,6 @@ using AssemblyID = std::remove_reference<decltype(
 using TransactionID = std::remove_reference<decltype(
     *(((Transaction *)nullptr)->mutable_id()))>::type;
 using Packet = google::protobuf::Message;
-using Transactions = std::vector<Transaction>;
-using Addresses = std::vector<Address>;
   
 using Type = Body::BodyCase;
 using BranchID = int32_t;
@@ -162,6 +161,14 @@ struct hash<neuro::messages::TaggedTransaction> {
     return hash<string>()(neuro::messages::to_json(tagged_transaction));
   }
 };
+
+template <>
+struct hash<neuro::messages::Address> {
+  size_t operator()(const neuro::messages::Address &address) const {
+    return hash<string>()(::neuro::messages::to_json(address));
+  }
+};
+
 
 }  // namespace std
 

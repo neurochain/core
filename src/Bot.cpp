@@ -26,7 +26,8 @@ Bot::Bot(const messages::config::Config &config)
              _config.networking().tcp().peers().end()),
       _networking(&_queue, &_keys.at(0), &_peers, _config.mutable_networking()),
       _ledger(std::make_shared<ledger::LedgerMongodb>(_config.database())),
-      _update_timer(std::ref(*_io_context)) {
+      _update_timer(std::ref(*_io_context)),
+      _api(this) {
   LOG_DEBUG << this << " hello from bot " << &_queue << " "
             << _keys.at(0).key_pub() << std::endl
             << _peers << std::endl;
@@ -499,8 +500,8 @@ void Bot::publish_block(const messages::Block &block) const {
   _networking.send(message);
 }
 
-Ledger *Bot::ledger() {
-  return _leger.get();
+ledger::Ledger *Bot::ledger() {
+  return _ledger.get();
 }
   
 void Bot::join() { _networking.join(); }

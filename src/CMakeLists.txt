@@ -2,7 +2,6 @@ set(ProtoFiles
   "${CMAKE_CURRENT_SOURCE_DIR}/messages/common.proto"
   "${CMAKE_CURRENT_SOURCE_DIR}/messages/config.proto"
   "${CMAKE_CURRENT_SOURCE_DIR}/messages/messages.proto"
-  "${CMAKE_CURRENT_SOURCE_DIR}/messages/rest.proto"
   "${CMAKE_CURRENT_SOURCE_DIR}/messages/consensus.proto"
   )
 
@@ -79,6 +78,8 @@ add_library(core
   ./Bot.hpp
 #  ./rest/Rest.cpp
 #  ./rest/Rest.hpp
+  ./api/Api.hpp
+  ./api/Api.cpp
   ./consensus/Consensus.hpp
   ./consensus/Consensus.cpp
   ./consensus/Pii.hpp
