@@ -13,7 +13,7 @@ class Api {
   Bot *_bot;
   
  public:
-  Api(Bot *bot) : _bot(bot) {}
+  Api(Bot *bot);
   virtual ~Api(){}
 
  protected:
