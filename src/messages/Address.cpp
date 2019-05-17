@@ -48,6 +48,7 @@ void Address::init(const messages::_KeyPub &key_pub) {
   set_data(address);
 }
 
+Address::Address() : _Address() {}
 Address::Address(const messages::_KeyPub &key_pub) { init(key_pub); }
 
 Address::Address(const crypto::KeyPub &ecc_pub) {
@@ -57,8 +58,9 @@ Address::Address(const crypto::KeyPub &ecc_pub) {
 }
 
 Address::Address(const messages::_Address &address) : _Address(address) {}
-
-Address::Address() : _Address() {}
+Address::Address(const std::string &str) {
+  set_data(str);
+}
 
 Address Address::random() {
   crypto::Ecc ecc;
@@ -70,7 +72,7 @@ bool Address::verify() const {
     return false;
   }
 
-  if (data().size() < _hash_size + _checksum_size) {
+  if (data().size() < (_hash_size + _checksum_size)) {
     return false;
   }
 

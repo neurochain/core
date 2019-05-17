@@ -27,13 +27,11 @@ class Address : public _Address {
   void init(const messages::_KeyPub &key_pub);
 
  public:
-  Address(const messages::_KeyPub &key_pub);
-
-  Address(const crypto::KeyPub &ecc_pub);
-
-  Address(const messages::_Address &address);
-
   Address();
+  Address(const messages::_KeyPub &key_pub);
+  Address(const crypto::KeyPub &ecc_pub);
+  Address(const messages::_Address &address);
+  Address(const std::string &address);
 
   static Address random();
 
