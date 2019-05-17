@@ -9,6 +9,7 @@
 #include "common/logger.hpp"
 #include "common/types.hpp"
 #include "messages/Subscriber.hpp"
+#include "api/Rest.hpp"
 
 namespace neuro {
 using namespace std::chrono_literals;
@@ -26,8 +27,7 @@ Bot::Bot(const messages::config::Config &config)
              _config.networking().tcp().peers().end()),
       _networking(&_queue, &_keys.at(0), &_peers, _config.mutable_networking()),
       _ledger(std::make_shared<ledger::LedgerMongodb>(_config.database())),
-      _update_timer(std::ref(*_io_context)),
-      _api(this) {
+      _update_timer(std::ref(*_io_context)) {
   LOG_DEBUG << this << " hello from bot " << &_queue << " "
             << _keys.at(0).key_pub() << std::endl
             << _peers << std::endl;
@@ -226,6 +226,8 @@ bool Bot::init() {
     std::this_thread::sleep_for(1s);
   }
 
+  _api = std::make_unique<api::Rest>(_config.rest(), this);
+  
   update_ledger();
   this->keep_max_connections();
 
