@@ -64,7 +64,7 @@ message Signature {
 }
 
 message Transaction {
-  required Hash id = 1;
+  optional Hash id = 1;
   repeated Input inputs = 2;
   repeated Output outputs = 3;
   repeated Signature signatures = 4;

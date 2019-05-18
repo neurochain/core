@@ -574,12 +574,11 @@ class Ledger {
    */
 
 
-  std::optional<messages::Transaction>
-  create_transaction (const std::vector<std::pair<messages::Address, messages::NCCAmount>> &recipients,
-		      const messages::Address &sender,
-		      const messages::NCCAmount &fees) {
+  
+  bool set_inputs (messages::Transaction *transaction,
+		   const messages::Address &sender,
+		   const messages::NCCAmount &fees) {
 
-    messages::Transaction transaction;
     auto unspent_outputs = list_unspent_outputs(sender);
 
     messages::NCCValue inputs_total = 0;
@@ -589,38 +588,33 @@ class Ledger {
       }
     }
 
-    build_inputs_from_outputs(unspent_outputs, &transaction);
+    build_inputs_from_outputs(unspent_outputs, transaction);
 
-    for (const auto &recipient : recipients) {
-      if(inputs_total < recipient.second.value()) {
+    for (const auto &output : transaction->outputs()) {
+      if(inputs_total < output.value().value()) {
 	LOG_INFO << "Could not create transaction because of insufficient funds";
-	return {};
+	return false;
       }
-      inputs_total -= recipient.second.value();
-
-      auto *output = transaction.add_outputs();
-      output->mutable_address()->CopyFrom(recipient.first);
-      output->mutable_value()->CopyFrom(recipient.second);
+      inputs_total -= output.value().value();
     }
 
     if (inputs_total < fees.value()) {
-      LOG_INFO << "Could not create transaction because of insufficient funds";
-      return {};
+      LOG_INFO << "Could not create transaction because of insufficient funds to pay fees";
+      return false;
     }
     
     if (fees.value() > 0) {
-      transaction.mutable_fees()->CopyFrom(fees);
+      transaction->mutable_fees()->CopyFrom(fees);
       inputs_total -= fees.value();
     }
     
     if(inputs_total > 0) {
-      auto *output = transaction.add_outputs();
+      auto *output = transaction->add_outputs();
       output->mutable_address()->CopyFrom(sender);
       output->mutable_value()->set_value(inputs_total);
     }
 
-    return transaction;
-    
+    return true;
   }
 
   messages::Transaction send_ncc(

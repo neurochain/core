@@ -46,7 +46,7 @@ class Rest : public Api {
     // Routes::Post(router, "/record/:name/:value?", Routes::bind(&StatsEndpoint::doRecordMetric, this));
     Routes::Get(router, "/balance/:address", Routes::bind(&Rest::get_balance, this));
     Routes::Get(router, "/ready", Routes::bind(&Rest::get_ready, this));
-    // Routes::Get(router, "/auth", Routes::bind(&StatsEndpoint::doAuth, this));
+    Routes::Get(router, "/fill_transaction/:address/:fees", Routes::bind(&Rest::get_create_transaction, this));
 
   }
 
@@ -55,11 +55,25 @@ class Rest : public Api {
     const auto balance_amount = balance(address);
     response.send(Pistache::Http::Code::Ok, to_json(balance_amount));
   }
-
+  
   void get_ready(const Pistache::Rest::Request& request, Pistache::Http::ResponseWriter response) {
     response.send(Pistache::Http::Code::Ok, "{ok: 1}");
   }
-  
+
+  void get_create_transaction (const Pistache::Rest::Request& request, Pistache::Http::ResponseWriter response) {
+    const messages::Address address (request.param(":address").as<std::string>());
+    const auto fees = request.param(":fees").as<uint64_t>();
+    
+    messages::Transaction transaction;
+    messages::from_json(request.body(), &transaction);
+    if(!set_inputs(&transaction, address, messages::NCCAmount{fees})) {
+      response.send(Pistache::Http::Code::Bad_Request, "Could not set inputs");
+      return;
+    }
+    
+    response.send(Pistache::Http::Code::Ok, messages::to_json(transaction));
+  }
+
   
  public:
   Rest(const messages::config::Rest &config,
