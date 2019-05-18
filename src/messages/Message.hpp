@@ -18,7 +18,7 @@
 #include "messages.pb.h"
 #include "messages/Peer.hpp"
 #include "messages/Address.hpp"
-
+#include "messages/NCCAmount.hpp"
 namespace neuro {
 namespace messages {
 
@@ -76,13 +76,6 @@ class Message : public _Message {
 
   Message(const Path &path) { from_json_file(path.string(), this); }
   virtual ~Message() {}
-};
-
-class NCCAmount : public _NCCAmount {
- public:
-  NCCAmount() {}
-  NCCAmount(const _NCCAmount &nccsdf) : _NCCAmount(nccsdf) {}
-  NCCAmount(int64_t amount) { set_value(amount); }
 };
 
 class Denunciation : public _Denunciation {

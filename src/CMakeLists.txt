@@ -68,6 +68,7 @@ add_library(core
   ./messages/Peers.cpp
   ./messages/Peer.hpp
   ./messages/Peer.cpp
+  ./messages/NCCAmount.hpp
   ./ledger/Parser.hpp
   ./ledger/Filter.hpp
   ./ledger/mongo.hpp
