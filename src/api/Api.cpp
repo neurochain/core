@@ -76,10 +76,10 @@ Api::set_inputs(messages::Transaction *transaction,
 // messages::Transactions Api::transaction_pool(){
 
 // }
-
-// bool Api::transaction_publish(const Buffer &buffer){
-
-// }
+  
+bool Api::transaction_publish(const messages::Transaction &transaction) {
+  return _bot->publish_transaction(transaction);
+}
 
 
 

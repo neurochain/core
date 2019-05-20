@@ -91,10 +91,12 @@ class Rest : public Api {
       return;
     }
 
+    if(!transaction_publish(transaction)) {
+      response.send(Pistache::Http::Code::Bad_Request, "Could not publish trnasaction");
+      return;
+    }
     
-    
-    response.send(Pistache::Http::Code::Ok, transaction_opt->to_hex());
-    
+    response.send(Pistache::Http::Code::Ok);
   }
   
  public:
@@ -102,7 +104,7 @@ class Rest : public Api {
        Bot *bot) :
       Api::Api(bot),
       httpEndpoint(std::make_shared<Http::Endpoint>(Address (Ipv4::any(), config.port()))) {
-
+    
     init();
   }
 

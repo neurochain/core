@@ -481,7 +481,7 @@ void Bot::subscribe(const messages::Type type,
   _subscriber.subscribe(type, callback);
 }
 
-void Bot::publish_transaction(const messages::Transaction &transaction) const {
+bool Bot::publish_transaction(const messages::Transaction &transaction) const {
   // Add the transaction to the transaction pool
   _consensus->add_transaction(transaction);
 
@@ -490,7 +490,7 @@ void Bot::publish_transaction(const messages::Transaction &transaction) const {
   messages::fill_header(message->mutable_header());
   auto body = message->add_bodies();
   body->mutable_transaction()->CopyFrom(transaction);
-  _networking.send(message);
+  return (_networking.send(message) != networking::TransportLayer::SendResult::FAILED);
 }
 
 void Bot::publish_block(const messages::Block &block) const {

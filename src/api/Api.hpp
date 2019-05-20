@@ -32,11 +32,7 @@ class Api {
   set_inputs(messages::Transaction *transaction,
 	     const messages::Address &sender,
 	     const messages::NCCAmount &fees);
-  // virtual messages::Transactions transactions_in(const messages::Address &address) final;
-  // virtual messages::Transactions transactions_out(const messages::Address &address) final;
-  // virtual messages::Transactions transactions_unspent(const messages::Address &address) final;
-  // virtual messages::Transactions transaction_pool() final;
-  // virtual bool transaction_publish(const Buffer &buffer) final;
+  virtual bool transaction_publish(const messages::Transaction &transaction) final;
 };
 
 

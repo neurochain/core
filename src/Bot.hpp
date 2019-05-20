@@ -98,7 +98,7 @@ class Bot {
   void subscribe(const messages::Type type,
                  messages::Subscriber::Callback callback);
 
-  void publish_transaction(const messages::Transaction &transaction) const;
+  bool publish_transaction(const messages::Transaction &transaction) const;
   void publish_block(const messages::Block &block) const;
   ledger::Ledger* ledger();
   
