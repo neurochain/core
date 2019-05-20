@@ -46,7 +46,8 @@ bool from_json_file(const std::string &path, Packet *packet);
 bool from_bson(const bsoncxx::document::value &doc, Packet *packet);
 bool from_bson(const bsoncxx::document::view &doc, Packet *packet);
 
-std::size_t to_buffer(const Packet &packet, Buffer *buffer);
+bool to_buffer(const Packet &packet, Buffer *buffer);
+std::optional<Buffer> to_buffer(const Packet &packet);
 void to_json(const Packet &packet, std::string *output);
 std::string to_json(const Packet &packet);
 bsoncxx::document::value to_bson(const Packet &packet);
