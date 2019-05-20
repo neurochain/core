@@ -336,7 +336,7 @@ class Ledger {
     std::vector<messages::UnspentTransaction> unspent_transactions;
 
     auto transactions = list_transactions(address).transactions();
-    for (auto transaction : transactions) {
+    for (const auto & transaction : transactions) {
       bool has_unspent_output = false;
       int64_t amount = 0;
       for (int i = 0; i < transaction.outputs_size(); i++) {
