@@ -46,8 +46,8 @@ class Rest : public Api {
     // Routes::Post(router, "/record/:name/:value?", Routes::bind(&StatsEndpoint::doRecordMetric, this));
     Routes::Get(router, "/balance/:address", Routes::bind(&Rest::get_balance, this));
     Routes::Get(router, "/ready", Routes::bind(&Rest::get_ready, this));
-    Routes::Get(router, "/fill_transaction/:address/:fees", Routes::bind(&Rest::get_create_transaction, this));
-
+    Routes::Get(router, "/create_transaction/:address/:fees", Routes::bind(&Rest::get_create_transaction, this));
+    Routes::Post(router, "/publish/:transaction/:signature", Routes::bind(&Rest::publish, this));
   }
 
   void get_balance(const Pistache::Rest::Request& request, Pistache::Http::ResponseWriter response) {
@@ -67,13 +67,33 @@ class Rest : public Api {
     messages::Transaction transaction;
     messages::from_json(request.body(), &transaction);
     if(!set_inputs(&transaction, address, messages::NCCAmount{fees})) {
-      response.send(Pistache::Http::Code::Bad_Request, "Could not set inputs");
+      response.send(Pistache::Http::Code::Bad_Request, "Could not set inputs, insuffisant funds?");
       return;
     }
-    
-    response.send(Pistache::Http::Code::Ok, messages::to_json(transaction));
+
+    const auto transaction_opt = messages::to_buffer(transaction);
+    if(!transaction_opt) {
+      response.send(Pistache::Http::Code::Bad_Request, "Could not serialize transaction");
+      return;
+    }
+    response.send(Pistache::Http::Code::Ok, transaction_opt->to_hex());
   }
 
+  void publish(const Pistache::Rest::Request& request, Pistache::Http::ResponseWriter response) {
+    const auto transaction_bin  = Buffer(request.param(":transaction").as<std::string>(),
+				     Buffer::InputType::HEX);
+    const auto signature = Buffer(request.param(":signature").as<std::string>(),
+				  Buffer::InputType::HEX);
+
+    messages::Transaction transaction;
+    if(!messages::from_buffer(transaction_bin, &transaction)) {
+      response.send(Pistache::Http::Code::Bad_Request, "Could parse transaction");
+      return;
+    }
+
+    
+    
+  }
   
  public:
   Rest(const messages::config::Rest &config,
