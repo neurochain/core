@@ -71,6 +71,8 @@ class Ledger {
   };
 
  private:
+  mutable std::mutex _send_ncc_mutex;
+
  public:
   Ledger() {}
   virtual messages::TaggedBlock get_main_branch_tip() const = 0;
@@ -336,7 +338,7 @@ class Ledger {
     std::vector<messages::UnspentTransaction> unspent_transactions;
 
     auto transactions = list_transactions(address).transactions();
-    for (const auto & transaction : transactions) {
+    for (const auto &transaction : transactions) {
       bool has_unspent_output = false;
       int64_t amount = 0;
       for (int i = 0; i < transaction.outputs_size(); i++) {
@@ -551,6 +553,7 @@ class Ledger {
       const crypto::KeyPriv &sender_key_priv,
       const messages::Address &recipient_address, const float ratio_to_send,
       const std::optional<messages::NCCAmount> &fees = {}) const {
+    std::lock_guard<std::mutex> lock(_send_ncc_mutex);
     auto sender_address = messages::Address(sender_key_priv.make_key_pub());
 
     std::vector<messages::Transaction> unspent_outputs =

@@ -722,12 +722,12 @@ TEST_F(LedgerMongodb, balance) {
   auto &address1 = simulator.addresses[1];
   ASSERT_EQ(ledger->balance(address0), ncc_block0);
   ASSERT_EQ(ledger->balance(address1), ncc_block0);
-  simulator.consensus->add_transaction(
-      ledger->send_ncc(simulator.keys[0].key_priv(), address1, 1));
+  ASSERT_TRUE(simulator.consensus->add_transaction(
+      ledger->send_ncc(simulator.keys[0].key_priv(), address1, 1)));
   ASSERT_EQ(ledger->balance(address0).value(), 0);
   ASSERT_EQ(ledger->balance(address1).value(), 2 * ncc_block0.value());
-  simulator.consensus->add_transaction(
-      ledger->send_ncc(simulator.keys[1].key_priv(), address0, 0.5));
+  ASSERT_TRUE(simulator.consensus->add_transaction(
+      ledger->send_ncc(simulator.keys[1].key_priv(), address0, 0.5)));
   ASSERT_EQ(ledger->balance(address0), ncc_block0);
   ASSERT_EQ(ledger->balance(address1), ncc_block0);
 }
@@ -880,6 +880,19 @@ TEST_F(LedgerMongodb, add_denunciations) {
   ASSERT_EQ(denunciation.block_height(), block1_bis.header().height());
   ASSERT_EQ(denunciation.block_author(), block1_bis.header().author());
   ASSERT_FALSE(denunciation.has_branch_path());
+}
+
+TEST_F(LedgerMongodb, send_ncc) {
+  auto &address0 = simulator.addresses[0];
+  auto &address1 = simulator.addresses[1];
+  ASSERT_EQ(ledger->balance(address0), ncc_block0);
+  ASSERT_EQ(ledger->balance(address1), ncc_block0);
+  ASSERT_TRUE(simulator.consensus->add_transaction(
+      ledger->send_ncc(simulator.keys[0].key_priv(), address1, 0.5)));
+  ASSERT_NE(ledger->balance(address0).value(), 0);
+  ASSERT_TRUE(simulator.consensus->add_transaction(
+      ledger->send_ncc(simulator.keys[0].key_priv(), address1, 1)));
+  ASSERT_EQ(ledger->balance(address0).value(), 0);
 }
 
 }  // namespace tests
