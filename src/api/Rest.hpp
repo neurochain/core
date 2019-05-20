@@ -93,6 +93,8 @@ class Rest : public Api {
 
     
     
+    response.send(Pistache::Http::Code::Ok, transaction_opt->to_hex());
+    
   }
   
  public:

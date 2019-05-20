@@ -595,8 +595,10 @@ bool Consensus::add_double_mining(const messages::Block &block) {
 }
 
 bool Consensus::add_block(const messages::Block &block) {
-  return _ledger->insert_block(block) && verify_blocks() &&
-         _ledger->update_main_branch() && add_double_mining(block);
+  return _ledger->insert_block(block) &&
+      verify_blocks() &&
+      _ledger->update_main_branch() &&
+      add_double_mining(block);
 }
 
 void Consensus::start_compute_pii_thread() {
