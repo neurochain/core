@@ -117,8 +117,8 @@ class Ledger {
                         bool include_transaction_pool,
                         Functor functor) const = 0;
   virtual bool for_each(const Filter &filter, Functor functor) const = 0;
-  virtual bool get_transaction(const messages::TransactionID &id,
-                               messages::Transaction *transaction) const = 0;
+  virtual std::vector<messages::TaggedTransaction> get_transaction_pool()
+      const = 0;
   virtual bool get_transaction(const messages::TransactionID &id,
                                messages::Transaction *transaction,
                                messages::BlockHeight *blockheight) const = 0;
@@ -555,6 +555,8 @@ class Ledger {
       const std::optional<messages::NCCAmount> &fees = {}) const {
     std::lock_guard<std::mutex> lock(_send_ncc_mutex);
     auto sender_address = messages::Address(sender_key_priv.make_key_pub());
+    LOG_DEBUG << "ENTERING SEND_NCC FROM " << sender_address << " TO "
+              << recipient_address;
 
     std::vector<messages::Transaction> unspent_outputs =
         list_unspent_outputs(sender_address);
@@ -584,6 +586,7 @@ class Ledger {
 
     auto result = build_transaction(inputs, outputs, sender_key_priv, fees,
                                     add_change_output);
+    LOG_DEBUG << "SEND_NCC RESULT " << result;
     return result;
   }
 
