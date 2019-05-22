@@ -5,6 +5,14 @@ from pathlib import Path
 import sh
 
 
+def kill_bots():
+    for line in sh.ps.auxw().splitlines():
+        if "src/main" in line:
+            pid = line.split()[1]
+            if pid.isnumeric():
+                sh.kill(pid)
+
+
 def start_bots():
     home = str(Path.home())
     bots = []
@@ -26,4 +34,5 @@ def start_bots():
 
 
 if __name__ == "__main__":
+    kill_bots()
     start_bots()

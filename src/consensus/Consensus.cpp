@@ -60,11 +60,11 @@ bool Consensus::check_inputs(
     bool invalid = false;
 
     // Check that inputs are not spent by any other transaction
-    const bool check_transaction_pool = false;
+    const bool check_transaction_pool = !tagged_transaction.has_block_id();
     _ledger->for_each(filter, tip, check_transaction_pool,
                       [&transaction, &invalid,
                        &input](const messages::TaggedTransaction match) {
-                        if ((match.transaction() != transaction)) {
+                        if ((match.transaction().id() != transaction.id())) {
                           invalid = true;
                           LOG_DEBUG << "Input " << input
                                     << " is already spent by transaction "
@@ -72,6 +72,8 @@ bool Consensus::check_inputs(
                                     << match.block_id();
                           return false;
                         }
+                        LOG_DEBUG << "FOUND ITSELF" << match.transaction()
+                                  << transaction;
                         return true;
                       });
     if (invalid) {
@@ -854,6 +856,7 @@ bool Consensus::build_block(const crypto::Ecc &keys,
                               block->mutable_coinbase(), height);
 
   _ledger->get_transaction_pool(block);
+
   _ledger->add_denunciations(block, last_block.branch_path());
 
   messages::sort_transactions(block);

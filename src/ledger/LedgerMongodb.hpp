@@ -217,6 +217,8 @@ class LedgerMongodb : public Ledger {
 
   bool delete_transaction(const messages::TransactionID &id);
 
+  std::vector<messages::TaggedTransaction> get_transaction_pool() const;
+
   std::size_t get_transaction_pool(messages::Block *block) const;
 
   bool get_unverified_blocks(

@@ -117,8 +117,8 @@ class Ledger {
                         bool include_transaction_pool,
                         Functor functor) const = 0;
   virtual bool for_each(const Filter &filter, Functor functor) const = 0;
-  virtual std::vector<messages::TaggedTransaction> get_transaction_pool()
-      const = 0;
+  virtual bool get_transaction(const messages::TransactionID &id,
+                               messages::Transaction *transaction) const = 0;
   virtual bool get_transaction(const messages::TransactionID &id,
                                messages::Transaction *transaction,
                                messages::BlockHeight *blockheight) const = 0;
@@ -132,6 +132,8 @@ class Ledger {
       const messages::Transaction &transaction) = 0;
   virtual bool delete_transaction(const messages::TransactionID &id) = 0;
   virtual std::size_t get_transaction_pool(messages::Block *block) const = 0;
+  virtual std::vector<messages::TaggedTransaction> get_transaction_pool()
+      const = 0;
 
   // virtual bool get_blocks(int start, int size,
   // std::vector<messages::Block> &blocks) = 0;

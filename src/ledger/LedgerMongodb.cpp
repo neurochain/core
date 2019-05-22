@@ -894,26 +894,33 @@ bool LedgerMongodb::delete_transaction(const messages::TransactionID &id) {
   return did_delete;
 }
 
-std::size_t LedgerMongodb::get_transaction_pool(messages::Block *block) const {
+std::vector<messages::TaggedTransaction> LedgerMongodb::get_transaction_pool()
+    const {
   // This method put the whole transaction pool in a block but does not cleanup
   // the transaction pool.
   // TODO add a way to limit the number of transactions you want to include
   std::lock_guard<std::mutex> lock(_ledger_mutex);
+  std::vector<messages::TaggedTransaction> tagged_transactions;
   auto query = bss::document{} << BLOCK_ID << bsoncxx::types::b_null{}
                                << bss::finalize;
 
-  auto options = projection(TRANSACTION);
+  auto options = remove_OID();
   options.sort(bss::document{} << TRANSACTION + "." + ID << 1 << bss::finalize);
   auto cursor = _transactions.find(std::move(query), options);
 
-  int num_transactions = 0;
   for (const auto &bson_transaction : cursor) {
-    num_transactions++;
-    auto transaction = block->add_transactions();
-    from_bson(bson_transaction[TRANSACTION].get_document(), transaction);
+    from_bson(bson_transaction, &tagged_transactions.emplace_back());
   }
 
-  return num_transactions;
+  return tagged_transactions;
+}
+
+std::size_t LedgerMongodb::get_transaction_pool(messages::Block *block) const {
+  auto tagged_transactions = get_transaction_pool();
+  for (const auto &tagged_transaction : tagged_transactions) {
+    block->add_transactions()->CopyFrom(tagged_transaction.transaction());
+  }
+  return tagged_transactions.size();
 }
 
 std::size_t LedgerMongodb::cleanup_transaction_pool() {
@@ -1078,20 +1085,37 @@ bool LedgerMongodb::cleanup_transaction_pool(
     const messages::BlockID &block_id) {
   auto query = bss::document{} << BLOCK_ID << to_bson(block_id)
                                << bss::finalize;
-  auto cursor =
-      _transactions.find(std::move(query), projection(TRANSACTION + "." + ID));
+  auto cursor = _transactions.find(std::move(query), remove_OID());
+
+  int deleted_count = 0;
 
   std::vector<messages::TransactionID> ids;
   bsoncxx::builder::basic::array bson_ids;
   for (const auto &bson_transaction : cursor) {
+    messages::TaggedTransaction tagged_transaction;
+    from_bson(bson_transaction, &tagged_transaction);
     bson_ids.append(bson_transaction[TRANSACTION][ID].get_document());
+
+    // Remove transactions from the transaction pool that spend the same inputs
+    for (const auto &input : tagged_transaction.transaction().inputs()) {
+      auto query = bss::document{}
+                   << TRANSACTION + "." + INPUTS << bss::open_document
+                   << "$elemMatch" << bss::open_document << ID
+                   << to_bson(input.id()) << OUTPUT_ID << input.output_id()
+                   << bss::close_document << bss::close_document << BLOCK_ID
+                   << bss::open_document << $EXISTS << false
+                   << bss::close_document << bss::finalize;
+      deleted_count +=
+          static_cast<bool>(_transactions.delete_many(query.view()));
+    }
   }
 
   query = bss::document{} << TRANSACTION + "." + ID << bss::open_document << $IN
                           << bson_ids << bss::close_document << BLOCK_ID
                           << bss::open_document << $EXISTS << false
                           << bss::close_document << bss::finalize;
-  return static_cast<bool>(_transactions.delete_many(query.view()));
+  return deleted_count +
+         static_cast<bool>(_transactions.delete_many(query.view()));
 }
 
 bool LedgerMongodb::update_main_branch() {

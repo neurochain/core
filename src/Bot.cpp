@@ -255,9 +255,12 @@ void Bot::send_random_transaction() {
   const auto recipient = peers[rand() % peers.size()];
   const auto transaction = _ledger->send_ncc(
       _keys[0].key_priv(), messages::Address(recipient->key_pub()), 0.5);
-
-  LOG_DEBUG << "Sending random transaction" << transaction;
-  publish_transaction(transaction);
+  if (_consensus->add_transaction(transaction)) {
+    LOG_DEBUG << "Sending random transaction" << transaction;
+    publish_transaction(transaction);
+  } else {
+    LOG_WARNING << "Random transaction is not valid " << transaction;
+  }
 }
 
 void Bot::update_peerlist() {
