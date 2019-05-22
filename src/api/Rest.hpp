@@ -18,8 +18,8 @@ namespace api {
 
 class Rest : public Api {
  private:
-  Api *_api;
-  std::shared_ptr<Http::Endpoint> httpEndpoint;
+   //  Api *_api;
+   std::shared_ptr<Http::Endpoint> httpEndpoint;
   Pistache::Rest::Router router;
 
   void init() {
@@ -39,14 +39,15 @@ class Rest : public Api {
   void shutdown() {
     httpEndpoint->shutdown();
   }
-  
+
   void setupRoutes() {
     using namespace Rest;
 
     // Routes::Post(router, "/record/:name/:value?", Routes::bind(&StatsEndpoint::doRecordMetric, this));
     Routes::Get(router, "/balance/:address", Routes::bind(&Rest::get_balance, this));
     Routes::Get(router, "/ready", Routes::bind(&Rest::get_ready, this));
-    Routes::Get(router, "/create_transaction/:address/:fees", Routes::bind(&Rest::get_create_transaction, this));
+    Routes::Post(router, "/create_transaction/:address/:fees",
+                 Routes::bind(&Rest::get_create_transaction, this));
     Routes::Post(router, "/publish/:transaction/:signature", Routes::bind(&Rest::publish, this));
   }
 
@@ -55,7 +56,7 @@ class Rest : public Api {
     const auto balance_amount = balance(address);
     response.send(Pistache::Http::Code::Ok, to_json(balance_amount));
   }
-  
+
   void get_ready(const Pistache::Rest::Request& request, Pistache::Http::ResponseWriter response) {
     response.send(Pistache::Http::Code::Ok, "{ok: 1}");
   }
@@ -87,24 +88,44 @@ class Rest : public Api {
 
     messages::Transaction transaction;
     if(!messages::from_buffer(transaction_bin, &transaction)) {
-      response.send(Pistache::Http::Code::Bad_Request, "Could parse transaction");
+      response.headers().add<Http::Header::AccessControlAllowOrigin>("*");
+      response.send(Pistache::Http::Code::Bad_Request,
+                    "Could not parse transaction");
+      return;
+    }
+
+    Buffer key_pub_bin(request.body(), Buffer::InputType::HEX);
+    crypto::KeyPub key_pub(key_pub_bin);
+    const messages::Address address(key_pub);
+
+    auto input_signature = transaction.add_signatures();
+    input_signature->mutable_signature()->set_data(signature.data(),
+                                                   signature.size());
+    input_signature->mutable_signature()->set_type(messages::Hash::SHA256);
+    key_pub.save(input_signature->mutable_key_pub());
+
+    if (!crypto::verify(transaction)) {
+      response.headers().add<Http::Header::AccessControlAllowOrigin>("*");
+      response.send(Pistache::Http::Code::Bad_Request, "Bad signature");
       return;
     }
 
     if(!transaction_publish(transaction)) {
-      response.send(Pistache::Http::Code::Bad_Request, "Could not publish trnasaction");
+      response.headers().add<Http::Header::AccessControlAllowOrigin>("*");
+      response.send(Pistache::Http::Code::Bad_Request,
+                    "Could not publish transaction");
       return;
     }
     
     response.send(Pistache::Http::Code::Ok);
   }
-  
- public:
+
+public:
   Rest(const messages::config::Rest &config,
        Bot *bot) :
       Api::Api(bot),
       httpEndpoint(std::make_shared<Http::Endpoint>(Address (Ipv4::any(), config.port()))) {
-    
+
     init();
   }
 
