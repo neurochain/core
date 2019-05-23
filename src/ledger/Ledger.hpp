@@ -557,8 +557,6 @@ class Ledger {
       const std::optional<messages::NCCAmount> &fees = {}) const {
     std::lock_guard<std::mutex> lock(_send_ncc_mutex);
     auto sender_address = messages::Address(sender_key_priv.make_key_pub());
-    LOG_DEBUG << "ENTERING SEND_NCC FROM " << sender_address << " TO "
-              << recipient_address;
 
     std::vector<messages::Transaction> unspent_outputs =
         list_unspent_outputs(sender_address);
@@ -586,10 +584,8 @@ class Ledger {
 
     bool add_change_output = false;
 
-    auto result = build_transaction(inputs, outputs, sender_key_priv, fees,
-                                    add_change_output);
-    LOG_DEBUG << "SEND_NCC RESULT " << result;
-    return result;
+    return build_transaction(inputs, outputs, sender_key_priv, fees,
+                             add_change_output);
   }
 
   virtual ~Ledger() {}

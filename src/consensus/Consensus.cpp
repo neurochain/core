@@ -66,19 +66,15 @@ bool Consensus::check_inputs(
                        &input](const messages::TaggedTransaction match) {
                         if ((match.transaction().id() != transaction.id())) {
                           invalid = true;
-                          LOG_DEBUG << "Input " << input
-                                    << " is already spent by transaction "
-                                    << match.transaction().id() << " in block "
-                                    << match.block_id();
+                          LOG_INFO << "Input " << input
+                                   << " is already spent by transaction "
+                                   << match.transaction().id() << " in block "
+                                   << match.block_id();
                           return false;
                         }
-                        LOG_DEBUG << "FOUND ITSELF" << match.transaction()
-                                  << transaction;
                         return true;
                       });
     if (invalid) {
-      LOG_DEBUG << "TIP " << tip;
-
       LOG_INFO << "Failed check_input for transaction "
                << tagged_transaction.transaction().id() << " for input "
                << input;
@@ -506,21 +502,14 @@ bool Consensus::verify_blocks() {
     if (is_valid(tagged_block)) {
       _ledger->set_block_verified(tagged_block.block().header().id(),
                                   get_block_score(tagged_block), assembly_id);
+    } else if (!_ledger->delete_block_and_children(
+                   tagged_block.block().header().id())) {
+      throw std::runtime_error("Failed to delete an invalid block");
     } else {
-      std::stringstream ss;
-      ss << "Block " << tagged_block.block().header().id() << " of height "
-         << tagged_block.block().header().height() << " is invalid ";
-      throw std::runtime_error(ss.str());
+      // The list of unverified blocks should have changed
+      verify_blocks();
+      return false;
     }
-
-    /*else if (!_ledger->delete_block_and_children(*/
-    // tagged_block.block().header().id())) {
-    // throw std::runtime_error("Failed to delete an invalid block");
-    //} else {
-    //// The list of unverified blocks should have changed
-    // verify_blocks();
-    // return false;
-    /*}*/
   }
   return true;
 }
