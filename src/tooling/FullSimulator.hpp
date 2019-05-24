@@ -55,8 +55,9 @@ class FullSimulator {
     auto database = config.mutable_database();
     database->set_url(db_url);
     database->set_db_name(db_name + std::to_string(bot_index));
-    database->set_block0_format(messages::config::Database::PROTO);
-    database->set_block0_path("data.0.testnet");
+    database->mutable_block0_file()->set_block0_format(
+        messages::config::Block0File::PROTO);
+    database->mutable_block0_file()->set_block0_path("data.0.testnet");
     return config;
   }
 

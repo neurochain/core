@@ -165,27 +165,33 @@ void LedgerMongodb::create_first_assemblies(
 bool LedgerMongodb::load_block0(const messages::config::Database &config,
                                 messages::Block *block0) {
   std::lock_guard lock(_ledger_mutex);
-  std::ifstream block0stream(config.block0_path());
-  if (!block0stream.is_open()) {
-    LOG_ERROR << "Could not load block from " << config.block0_path()
-              << " from " << boost::filesystem::current_path().native();
-    return false;
-  }
-  std::string str((std::istreambuf_iterator<char>(block0stream)),
-                  std::istreambuf_iterator<char>());
+  if (config.has_block0_file()) {
+    auto block0_file = config.block0_file();
+    std::ifstream block0stream(block0_file.block0_path());
+    if (!block0stream.is_open()) {
+      LOG_ERROR << "Could not load block from " << block0_file.block0_path()
+                << " from " << boost::filesystem::current_path().native();
+      return false;
+    }
+    std::string str((std::istreambuf_iterator<char>(block0stream)),
+                    std::istreambuf_iterator<char>());
 
-  auto d = bss::document{};
-  switch (config.block0_format()) {
-    case messages::config::Database::Block0Format::_Database_Block0Format_PROTO:
-      block0->ParseFromString(str);
-      break;
-    case messages::config::Database::Block0Format::_Database_Block0Format_BSON:
-      d << str;
-      from_bson(d.view(), block0);
-      break;
-    case messages::config::Database::Block0Format::_Database_Block0Format_JSON:
-      messages::from_json(str, block0);
-      break;
+    auto d = bss::document{};
+    switch (block0_file.block0_format()) {
+      case messages::config::Block0File::Block0Format::
+          Block0File_Block0Format_PROTO:
+        block0->ParseFromString(str);
+        break;
+      case messages::config::Block0File::Block0Format::
+          Block0File_Block0Format_BSON:
+        d << str;
+        from_bson(d.view(), block0);
+        break;
+      case messages::config::Block0File::Block0Format::
+          Block0File_Block0Format_JSON:
+        messages::from_json(str, block0);
+        break;
+    }
   }
 
   return true;
