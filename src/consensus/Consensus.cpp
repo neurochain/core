@@ -71,19 +71,24 @@ bool Consensus::check_inputs(
     bool invalid = false;
 
     // Check that inputs are not spent by any other transaction
-    const bool check_transaction_pool = true;
-    _ledger->for_each(
-        filter, tip, check_transaction_pool,
-        [&transaction, &invalid](const messages::TaggedTransaction match) {
-          if ((match.transaction().id() != transaction.id())) {
-            invalid = true;
-            return false;
-          }
-          return true;
-        });
+    const bool check_transaction_pool = !tagged_transaction.has_block_id();
+    _ledger->for_each(filter, tip, check_transaction_pool,
+                      [&transaction, &invalid,
+                       &input](const messages::TaggedTransaction match) {
+                        if ((match.transaction().id() != transaction.id())) {
+                          invalid = true;
+                          LOG_INFO << "Input " << input
+                                   << " is already spent by transaction "
+                                   << match.transaction().id() << " in block "
+                                   << match.block_id();
+                          return false;
+                        }
+                        return true;
+                      });
     if (invalid) {
       LOG_INFO << "Failed check_input for transaction "
-               << tagged_transaction.transaction().id();
+               << tagged_transaction.transaction().id() << " for input "
+               << input;
       return false;
     }
   }
@@ -470,6 +475,7 @@ messages::BlockScore Consensus::get_block_score(
 }
 
 bool Consensus::verify_blocks() {
+  std::lock_guard<std::recursive_mutex> lock(_verify_blocks_mutex);
   std::vector<messages::TaggedBlock> tagged_blocks;
   _ledger->get_unverified_blocks(&tagged_blocks);
   for (auto &tagged_block : tagged_blocks) {
@@ -835,6 +841,12 @@ bool Consensus::build_block(const crypto::Ecc &keys,
     return false;
   }
   auto &last_block_header = last_block.block().header();
+  if (last_block_header.height() >= height) {
+    LOG_WARNING << "Trying to mine block with height " << height
+                << " while previous block has height "
+                << last_block_header.height();
+    return false;
+  }
   auto header = block->mutable_header();
   header->set_height(height);
   header->mutable_previous_block_hash()->CopyFrom(last_block_header.id());
@@ -845,6 +857,7 @@ bool Consensus::build_block(const crypto::Ecc &keys,
                               block->mutable_coinbase(), height);
 
   _ledger->get_transaction_pool(block);
+
   _ledger->add_denunciations(block, last_block.branch_path());
 
   messages::sort_transactions(block);
@@ -931,11 +944,19 @@ bool Consensus::mine_block(const messages::Block &block0) {
   }
 
   messages::Block new_block;
-  build_block(_keys[address_index], height, &new_block);
+  if (!build_block(_keys[address_index], height, &new_block)) {
+    return false;
+  }
+
+  // Check that the newly created block isn't late
+  if (new_block.header().timestamp().data() >= block_end) {
+    return false;
+  }
+
   _publish_block(new_block);
   add_block(new_block);
-  LOG_INFO << "Mined block successfully with height "
-           << new_block.header().height();
+  LOG_INFO << "Mined block successfully with id " << new_block.header().id()
+           << " with height " << new_block.header().height();
   return true;
 }
 

@@ -118,6 +118,8 @@ class LedgerMongodb : public Ledger {
 
   bool cleanup_transaction_pool(const messages::BlockID &block_id);
 
+  std::size_t cleanup_transaction_pool();
+
   bool unsafe_set_integrity(const messages::Integrity &integrity);
 
   messages::IntegrityScore unsafe_get_integrity(
@@ -217,7 +219,9 @@ class LedgerMongodb : public Ledger {
 
   bool delete_transaction(const messages::TransactionID &id);
 
-  std::size_t get_transaction_pool(messages::Block *block);
+  std::vector<messages::TaggedTransaction> get_transaction_pool() const;
+
+  std::size_t get_transaction_pool(messages::Block *block) const;
 
   bool get_unverified_blocks(
       std::vector<messages::TaggedBlock> *tagged_blocks) const;

@@ -36,6 +36,7 @@ class Consensus {
   std::thread _compute_pii_thread;
   std::vector<std::pair<messages::BlockHeight, AddressIndex>> _heights_to_write;
   std::mutex _heights_to_write_mutex;
+  std::recursive_mutex _verify_blocks_mutex;
   std::optional<messages::AssemblyID> _previous_assembly_id;
   std::optional<messages::AssemblyHeight> _current_assembly_height;
   std::atomic<bool> _stop_update_heights;

@@ -71,6 +71,8 @@ class Ledger {
   };
 
  private:
+  mutable std::mutex _send_ncc_mutex;
+
  public:
   Ledger() {}
   virtual messages::TaggedBlock get_main_branch_tip() const = 0;
@@ -129,7 +131,9 @@ class Ledger {
   virtual bool add_to_transaction_pool(
       const messages::Transaction &transaction) = 0;
   virtual bool delete_transaction(const messages::TransactionID &id) = 0;
-  virtual std::size_t get_transaction_pool(messages::Block *block) = 0;
+  virtual std::size_t get_transaction_pool(messages::Block *block) const = 0;
+  virtual std::vector<messages::TaggedTransaction> get_transaction_pool()
+      const = 0;
 
   // virtual bool get_blocks(int start, int size,
   // std::vector<messages::Block> &blocks) = 0;
@@ -238,6 +242,11 @@ class Ledger {
    * List transactions for an address that are either in the main branch or in
    * the transaction pool
    */
+  bool has_block(const messages::BlockID &id) const {
+    messages::Block block;
+    return get_block(id, &block);
+  }
+
   messages::Transactions list_transactions(
       const messages::Address &address) const {
     Filter filter;
@@ -333,7 +342,7 @@ class Ledger {
     std::vector<messages::UnspentTransaction> unspent_transactions;
 
     auto transactions = list_transactions(address).transactions();
-    for (auto transaction : transactions) {
+    for (const auto &transaction : transactions) {
       bool has_unspent_output = false;
       int64_t amount = 0;
       for (int i = 0; i < transaction.outputs_size(); i++) {
@@ -493,11 +502,11 @@ class Ledger {
     const auto ecc = crypto::Ecc(key_priv, key_pub);
     std::vector<const crypto::Ecc *> keys = {&ecc};
 
-    for (const auto& input : inputs) {
+    for (const auto &input : inputs) {
       transaction.add_inputs()->CopyFrom(input);
     }
 
-    for (const auto& output : outputs) {
+    for (const auto &output : outputs) {
       transaction.add_outputs()->CopyFrom(output);
     }
 
@@ -549,6 +558,7 @@ class Ledger {
       const messages::Address &recipient_address, const float ratio_to_send,
       const std::optional<messages::NCCAmount> &fees = {}) const {
     assert(ratio_to_send <= 1);
+    std::lock_guard<std::mutex> lock(_send_ncc_mutex);
     auto sender_address = messages::Address(sender_key_priv.make_key_pub());
 
     std::vector<messages::Transaction> unspent_outputs =
@@ -577,9 +587,8 @@ class Ledger {
 
     bool add_change_output = false;
 
-    auto result = build_transaction(inputs, outputs, sender_key_priv, fees,
-                                    add_change_output);
-    return result;
+    return build_transaction(inputs, outputs, sender_key_priv, fees,
+                             add_change_output);
   }
 
   virtual ~Ledger() {}
