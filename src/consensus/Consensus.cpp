@@ -919,8 +919,8 @@ bool Consensus::mine_block(const messages::Block &block0) {
   const auto address_index = _heights_to_write[0].second;
   const auto block_start =
       block0.header().timestamp().data() + height * _config.block_period;
-  const auto block_end = block_start + _config.block_period;
-  const auto current_time = std::time(nullptr);
+  const int64_t block_end = block_start + _config.block_period;
+  const int64_t current_time = std::time(nullptr);
 
   if (current_time < block_start) {
     return false;
