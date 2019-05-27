@@ -66,10 +66,17 @@ bool Consensus::check_inputs(
                        &input](const messages::TaggedTransaction match) {
                         if ((match.transaction().id() != transaction.id())) {
                           invalid = true;
-                          LOG_INFO << "Input " << input
-                                   << " is already spent by transaction "
-                                   << match.transaction().id() << " in block "
-                                   << match.block_id();
+                          std::stringstream message;
+                          message << "Input " << input
+                                  << " is already spent by transaction "
+                                  << match.transaction().id();
+                          if (match.has_block_id()) {
+                            message << " in block " << match.block_id();
+                          } else {
+                            message << " in transaction pool";
+                          }
+                          LOG_INFO << message.str();
+
                           return false;
                         }
                         return true;
