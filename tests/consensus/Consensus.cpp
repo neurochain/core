@@ -231,18 +231,24 @@ TEST_F(Consensus, add_transaction) {
                              simulator.addresses[1], 0.5);
   auto t1 = ledger->send_ncc(simulator.keys[0].key_priv(),
                              simulator.addresses[0], 0.5);
+  LOG_INFO << "TOTO0";
   ASSERT_TRUE(consensus->add_transaction(t0));
 
   // The second time the transaction should be valid but not inserted twice
+  LOG_INFO << "TOTO1";
   ASSERT_FALSE(consensus->add_transaction(t0));
 
   // t1 is also invalid because it tries to double spend
+  LOG_INFO << "TOTO2";
   ASSERT_FALSE(consensus->add_transaction(t1));
 
   // Now that t0 has been added to the transaction pool. t2 should be build with
   // a different input so there should be no double spending
+  LOG_INFO << "TOTO3";
   auto t2 = ledger->send_ncc(simulator.keys[0].key_priv(),
                              simulator.addresses[0], 0.5);
+
+  LOG_INFO << "TOTO4";
   ASSERT_TRUE(consensus->add_transaction(t2));
 }
 
