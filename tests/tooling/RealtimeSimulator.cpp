@@ -21,6 +21,7 @@ class RealtimeSimulator : public testing::Test {
   RealtimeSimulator(){};
 
   void test_simulation(bool empty_assemblies = false) {
+    LOG_INFO << "TOTO0" << std::endl;
     int time_delta;
     int nb_empty_assemblies;
     if (empty_assemblies) {
@@ -34,9 +35,9 @@ class RealtimeSimulator : public testing::Test {
       time_delta = 2;
     }
 
-    LOG_INFO << "TOTO0";
+    LOG_INFO << "TOTO1" << std::endl;
     Simulator simulator(db_url, db_name, nb_keys, ncc_block0, time_delta);
-    LOG_INFO << "TOTO1";
+    LOG_INFO << "TOTO2" << std::endl;
     std::shared_ptr<neuro::ledger::LedgerMongodb> ledger(simulator.ledger);
     std::shared_ptr<consensus::Consensus> consensus(simulator.consensus);
 
