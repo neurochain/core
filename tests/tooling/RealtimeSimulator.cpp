@@ -34,7 +34,9 @@ class RealtimeSimulator : public testing::Test {
       time_delta = 2;
     }
 
+    LOG_INFO << "TOTO0";
     Simulator simulator(db_url, db_name, nb_keys, ncc_block0, time_delta);
+    LOG_INFO << "TOTO1";
     std::shared_ptr<neuro::ledger::LedgerMongodb> ledger(simulator.ledger);
     std::shared_ptr<consensus::Consensus> consensus(simulator.consensus);
 
