@@ -46,7 +46,7 @@ bool Consensus::check_inputs(
       LOG_INFO << "Could not find transaction block for transaction "
                << tagged_transaction.transaction().id();
       return false;
-    };
+    }
   } else {
     tip = _ledger->get_main_branch_tip();
   }

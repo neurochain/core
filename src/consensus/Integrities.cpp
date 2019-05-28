@@ -8,7 +8,7 @@ Config Integrities::config() const { return _config; }
 std::unordered_map<messages::Address, messages::IntegrityScore>
 Integrities::scores() const {
   return _scores;
-};
+}
 
 void Integrities::add_block(const messages::TaggedBlock &tagged_block) {
   // Reward the block author
