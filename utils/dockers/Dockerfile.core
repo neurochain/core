@@ -1,4 +1,5 @@
-FROM registry.gitlab.com/neurochaintech/core/ubuntu:18.04
+ARG DOCKER_BUILD_TYPE=registry.gitlab.com/neurochaintech/build/Debug:latest
+FROM $DOCKER_BUILD_TYPE
 
 MAINTAINER trax Omar Givernaud
 LABEL Description "Just the bot: no configuraiton"
@@ -6,6 +7,3 @@ LABEL Description "Just the bot: no configuraiton"
 USER neuro
 COPY build/src/main main
 COPY testnet/data.0.testnet /home/neuro/data.0.testnet
-
-
-
