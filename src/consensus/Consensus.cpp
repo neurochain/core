@@ -538,13 +538,13 @@ bool Consensus::is_new_assembly(const messages::TaggedBlock &tagged_block,
 Config Consensus::config() const { return _config; }
 
 void Consensus::init(bool start_threads) {
+  for (const auto &key : _keys) {
+    _addresses.emplace_back(key.key_pub());
+  }
   if (start_threads) {
     start_compute_pii_thread();
     start_update_heights_thread();
     start_miner_thread();
-  }
-  for (const auto &key : _keys) {
-    _addresses.emplace_back(key.key_pub());
   }
 }
 
