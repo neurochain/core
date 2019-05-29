@@ -77,10 +77,17 @@ bool Consensus::check_inputs(
                        &input](const messages::TaggedTransaction match) {
                         if ((match.transaction().id() != transaction.id())) {
                           invalid = true;
-                          LOG_INFO << "Input " << input
-                                   << " is already spent by transaction "
-                                   << match.transaction().id() << " in block "
-                                   << match.block_id();
+                          std::stringstream message;
+                          message << "Input " << input
+                                  << " is already spent by transaction "
+                                  << match.transaction().id();
+                          if (match.has_block_id()) {
+                            message << " in block " << match.block_id();
+                          } else {
+                            message << " in transaction pool";
+                          }
+                          LOG_INFO << message.str();
+
                           return false;
                         }
                         return true;
@@ -542,13 +549,13 @@ bool Consensus::is_new_assembly(const messages::TaggedBlock &tagged_block,
 Config Consensus::config() const { return _config; }
 
 void Consensus::init(bool start_threads) {
+  for (const auto &key : _keys) {
+    _addresses.emplace_back(key.key_pub());
+  }
   if (start_threads) {
     start_compute_pii_thread();
     start_update_heights_thread();
     start_miner_thread();
-  }
-  for (const auto &key : _keys) {
-    _addresses.emplace_back(key.key_pub());
   }
 }
 
@@ -931,8 +938,8 @@ bool Consensus::mine_block(const messages::Block &block0) {
   const auto address_index = _heights_to_write[0].second;
   const auto block_start =
       block0.header().timestamp().data() + height * _config.block_period;
-  const auto block_end = block_start + _config.block_period;
-  const auto current_time = std::time(nullptr);
+  const int64_t block_end = block_start + _config.block_period;
+  const int64_t current_time = std::time(nullptr);
 
   if (current_time < block_start) {
     return false;
