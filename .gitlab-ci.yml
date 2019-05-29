@@ -22,7 +22,7 @@ build_image_dev:debug:
     - docker:stable-dind
   only:
     changes:
-    - utils/dockers/Dockerfile.ubuntu
+    - utils/dockers/Dockerfile.*
     - ./CMakeLists.txt 
     - ./**/CMakeLists.txt 
   script:
@@ -125,11 +125,12 @@ build_image_prod:release:
     set -ex 
     export DOCKER_FILE_NAME=$1
     export BUILD_TYPE=$2
+    export IMAGE_SUFFIX=$(echo $BUILD_TYPE| tr '[:upper:]' '[:lower:]')
 
     docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
-    docker build -f utils/dockers/$DOCKER_FILE_NAME --build-arg DOCKER_BUILD_TYPE=$BUILD_TYPE -t $DOCKER_IMAGE_CORE/$BUILD_TYPE:latest -t $DOCKER_IMAGE_CORE/$BUILD_TYPE:$CI_COMMIT_SHA .
-    docker push $DOCKER_IMAGE_BUILD/$BUILD_TYPE:latest 
-    docker push $DOCKER_IMAGE_CORE/$BUILD_TYPE:$CI_COMMIT_SHA
+    docker build -f utils/dockers/$DOCKER_FILE_NAME --build-arg DOCKER_BUILD_TYPE=$BUILD_TYPE -t $DOCKER_IMAGE_CORE/$IMAGE_SUFFIX:latest -t $DOCKER_IMAGE_CORE/$IMAGE_SUFFIX:$CI_COMMIT_SHA .
+    docker push $DOCKER_IMAGE_BUILD/$IMAGE_SUFFIX:latest 
+    docker push $DOCKER_IMAGE_CORE/$IMAGE_SUFFIX:$CI_COMMIT_SHA
   }
  
 before_script:
