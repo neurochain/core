@@ -24,7 +24,8 @@ build_image_dev:debug:
     changes:
     - utils/dockers/Dockerfile.*
     - ./CMakeLists.txt 
-    - ./**/CMakeLists.txt 
+    - ./**/CMakeLists.txt
+    - ./.gitlab-ci.yml
   script:
     - build_docker "Dockerfile.ubuntu" "Debug"
 
@@ -128,6 +129,7 @@ build_image_prod:release:
     export IMAGE_SUFFIX=$(echo $BUILD_TYPE| tr '[:upper:]' '[:lower:]')
 
     docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+    env
     echo docker build -f utils/dockers/$DOCKER_FILE_NAME --build-arg DOCKER_BUILD_TYPE=$BUILD_TYPE -t $DOCKER_IMAGE_CORE/$IMAGE_SUFFIX:latest -t $DOCKER_IMAGE_CORE/$IMAGE_SUFFIX:$CI_COMMIT_SHA .
     docker build -f utils/dockers/$DOCKER_FILE_NAME --build-arg DOCKER_BUILD_TYPE=$BUILD_TYPE -t $DOCKER_IMAGE_CORE/$IMAGE_SUFFIX:latest -t $DOCKER_IMAGE_CORE/$IMAGE_SUFFIX:$CI_COMMIT_SHA .
     docker push $DOCKER_IMAGE_BUILD/$IMAGE_SUFFIX:latest 
