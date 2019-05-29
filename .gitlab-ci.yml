@@ -143,6 +143,7 @@ pages:
     export BUILD_TYPE=$1
     mkdir build || echo k
     cd build
+    rm -r ./*
     cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/root -DCMAKE_BUILD_TYPE=$1 ..
     make -j5
     mkdir /tmp/db && nohup mongod --dbpath /tmp/db & 
