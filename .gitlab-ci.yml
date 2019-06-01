@@ -46,7 +46,7 @@ build_image_dev:release:
 
   
 build_job:dev:
-  image: $DOCKER_IMAGE_BUILD/Debug:latest # change that with sha after first run
+  image: $DOCKER_IMAGE_BUILD/debug:latest # change that with sha after first run
   stage: build
   tags:
     - cpp
@@ -59,7 +59,7 @@ build_job:dev:
       - testnet/data.0.testnet
 
 build_job:release:
-  image: $DOCKER_IMAGE_BUILD/Release:latest # change that with sha after first run
+  image: $DOCKER_IMAGE_BUILD/release:latest # change that with sha after first run
   stage: build
   tags:
     - cpp
