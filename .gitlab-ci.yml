@@ -6,8 +6,8 @@ stages:
   
 variables:
   DOCKER_IMAGE_BASE: "${CI_REGISTRY_IMAGE}"
-  DOCKER_IMAGE_BUILD: "${DOCKER_IMAGE_BASE}/build"
-  DOCKER_IMAGE_CORE: "${DOCKER_IMAGE_BASE}/core"
+  DOCKER_IMAGE_BUILD: "${CI_REGISTRY_IMAGE}/build"
+  DOCKER_IMAGE_CORE: "${CI_REGISTRY_IMAGE}/core"
 
 services:
   - docker:dind
