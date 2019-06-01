@@ -25,7 +25,7 @@ build_image_dev:debug:
     - utils/dockers/Dockerfile.*
     - ./CMakeLists.txt 
     - ./**/CMakeLists.txt
-    - ./.gitlab-ci.yml
+    - .gitlab-ci.yml
   script:
     - build_docker "Dockerfile.ubuntu" "Debug"
 
@@ -41,6 +41,7 @@ build_image_dev:release:
     - utils/dockers/Dockerfile.ubuntu
     - ./CMakeLists.txt 
     - ./**/CMakeLists.txt 
+    - .gitlab-ci.yml
   script:
     - build_docker "Dockerfile.ubuntu" "Release"
 
