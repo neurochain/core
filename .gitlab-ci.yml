@@ -135,7 +135,7 @@ build_image_prod:release:
     docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
     env
     docker container list -a 
-    docker build -f "utils/dockers/$DOCKER_FILE_NAME" --build-arg DOCKER_BUILD_TYPE=$BUILD_TYPE -t "$DOCKER_IMAGE_CORE/$IMAGE_SUFFIX:latest" -t "$DOCKER_IMAGE_CORE/$IMAGE_SUFFIX:$CI_COMMIT_SHA" .
+    docker build -f "utils/dockers/$DOCKER_FILE_NAME" --build-arg DOCKER_BUILD_TYPE=$BUILD_TYPE -t "${DOCKER_IMAGE_CORE}/$IMAGE_SUFFIX:latest" -t "${DOCKER_IMAGE_CORE}/$IMAGE_SUFFIX:$CI_COMMIT_SHA" .
     docker push "$DOCKER_IMAGE_BUILD/$IMAGE_SUFFIX:latest"
     docker push "$DOCKER_IMAGE_CORE/$IMAGE_SUFFIX:$CI_COMMIT_SHA"
   }
