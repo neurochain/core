@@ -47,8 +47,8 @@ build_image_dev:release:
 
   
 build_job:dev:
-#  image: $DOCKER_IMAGE_BUILD/debug:latest # change that with sha after first run
-  image: registry.gitlab.com/neurochaintech/core/build/debug:latest
+  image: "${DOCKER_IMAGE_BUILD}"/debug:latest # change that with sha after first run
+#  image: registry.gitlab.com/neurochaintech/core/build/debug:latest
 
   stage: build
   tags:
@@ -62,8 +62,8 @@ build_job:dev:
       - testnet/data.0.testnet
 
 build_job:release:
-  image: registry.gitlab.com/neurochaintech/core/build/release:latest
-#  image: $DOCKER_IMAGE_BUILD/release:latest # change that with sha after first run
+#  image: registry.gitlab.com/neurochaintech/core/build/release:latest
+  image: "${DOCKER_IMAGE_BUILD}"/release:latest # change that with sha after first run
   stage: build
   tags:
     - cpp
