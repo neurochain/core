@@ -23,8 +23,8 @@ build_image_dev:debug:
   only:
     changes:
     - utils/dockers/Dockerfile.*
-    - ./CMakeLists.txt 
-    - ./**/CMakeLists.txt
+    - CMakeLists.txt
+    - **/CMakeLists.txt
     - .gitlab-ci.yml
   script:
     - build_docker "Dockerfile.ubuntu" "Debug"
