@@ -65,9 +65,7 @@ void Buffer::append(const Buffer &buffer) {
 }
 
 std::string Buffer::str() const {
-  std::stringstream ss;
-  ss << this;
-  return ss.str();
+  return std::string(begin(), end());
 }
 
 std::string Buffer::to_hex() const {
