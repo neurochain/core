@@ -286,7 +286,7 @@ void Bot::update_peerlist() {
 //       continue;
 //     }
 //     crypto::EccPub ecc_pub;
-//     ecc_pub.load(peer.key_pub());
+//     ecc_pub.load_from_point(peer.key_pub());
 //     graph.add_peers_addresses()->CopyFrom(messages::Address(ecc_pub));
 //   }
 

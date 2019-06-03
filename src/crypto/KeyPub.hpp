@@ -22,7 +22,7 @@ class KeyPub : public messages::_KeyPub {
   bool load(const Buffer &buffer);
   bool load(const std::string &filepath);
   bool load(const uint8_t *data, const std::size_t size);
-  bool load(const messages::_KeyPub &keypub);
+  bool load_from_point(const messages::_KeyPub &key_pub);
 
  public:
   KeyPub(const KeyPub &key_pub) = default;
@@ -32,6 +32,7 @@ class KeyPub : public messages::_KeyPub {
   KeyPub(const Key &key);
   KeyPub(const uint8_t *data, const std::size_t size);
 
+  static KeyPub from_point(const std::string &key_pub);
   Key *key();
   bool save(const std::string &filepath) const;
   bool save(Buffer *buffer) const;
