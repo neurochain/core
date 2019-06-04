@@ -257,7 +257,7 @@ void Bot::send_random_transaction() {
   const auto transaction = _ledger->send_ncc(
       _keys[0].key_priv(), messages::Address(recipient->key_pub()), 0.5);
   if (_consensus->add_transaction(transaction)) {
-    LOG_DEBUG << "Sending random transaction" << transaction;
+    LOG_DEBUG << "Sending random transaction " << transaction;
     publish_transaction(transaction);
   } else {
     LOG_WARNING << "Random transaction is not valid " << transaction;
