@@ -101,10 +101,13 @@ build_image_prod:release:
   services:
     - docker:stable-dind
   only:
+    refs:
+      - refs/tags/build_prod
+      
     changes:
-    - utils/dockers/Dockerfile.ubuntu
-    - ./CMakeLists.txt 
-    - ./**/CMakeLists.txt 
+      - utils/dockers/Dockerfile.ubuntu
+      - ./CMakeLists.txt 
+      - ./**/CMakeLists.txt 
   script:
     - build_docker "Dockerfile.ubuntu" "Release"
 
