@@ -3,8 +3,8 @@ set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake")
 include(HunterGate)
 
 HunterGate(
-  URL "https://gitlab.com/traxncc/hunter/-/archive/pr.onion/hunter-pr.onion.tar.bz2"
-  SHA1 "dfc0c230e491ef7abf6a628d7d5c71d32dd05b6e"
+  URL "https://gitlab.com/traxncc/hunter/-/archive/b44295cdc47eaebecb7d29f25fa1f56cf633f6ba/hunter-705c7bb52ffe8f69531a8dedcb85205b06930b33.tar.gz"
+  SHA1 "043b9163aee2491060db19baf016f8c14fab1938"
   )
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -38,7 +38,7 @@ enable_testing ()
 
 
 set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};~/root/lib/cmake/pistache")
-set(CMAKE_CXX_FLAGS "-Wall  ${CMAKE_CXX_FLAGS} -std=c++17 -Wno-ignored-qualifiers -pipe -Werror")
+set(CMAKE_CXX_FLAGS "-Wall ${CMAKE_CXX_FLAGS} -std=c++17 -Wno-ignored-qualifiers -pipe -Werror")
 set(CMAKE_CXX_FLAGS_RELEASE " -O3")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 --coverage -fsanitize=address")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g -O2 -fsanitize=address")
