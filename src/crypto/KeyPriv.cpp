@@ -95,6 +95,10 @@ KeyPub KeyPriv::make_key_pub() const {
   return KeyPub{pub_key};
 }
 
+CryptoPP::Integer KeyPriv::exponent() const {
+  return _key.GetPrivateExponent();
+}
+
 bool KeyPriv::operator==(const KeyPriv &key) const {
   CryptoPP::ByteQueue queue0;
   CryptoPP::ByteQueue queue1;

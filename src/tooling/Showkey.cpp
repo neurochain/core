@@ -45,8 +45,9 @@ int main(int argc, char *argv[]) {
     ecc.key_priv().save(&priv_buffer);
     std::cout << "private buffer:  " << std::endl << priv_buffer << std::endl;
   } else {
-    std::cout << "public:  " << std::endl << ecc.key_pub() << std::endl;
-    std::cout << "private: " << std::endl << ecc.key_priv() << std::endl;
+    std::cout << "public:\n" << ecc.key_pub() << std::endl;
+    std::cout << "private:\n" << ecc.key_priv() << std::endl;
+    std::cout << "private exponent:\n" << std::hex << ecc.key_priv().exponent() << std::endl;
   }
 
   Buffer buf;
