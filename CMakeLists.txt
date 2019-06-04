@@ -4,7 +4,7 @@ include(HunterGate)
 
 HunterGate(
   URL "https://gitlab.com/traxncc/hunter/-/archive/pr.onion/hunter-pr.onion.tar.bz2"
-  SHA1 "dfc0c230e491ef7abf6a628d7d5c71d32dd05b6e"
+  SHA1 "388d878177fa088cc96bf9188ff36d962979dba8"
   )
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
