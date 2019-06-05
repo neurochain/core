@@ -1,11 +1,12 @@
 #include "networking/tcp/Tcp.hpp"
-#include <gtest/gtest.h>
 #include "common.pb.h"
 #include "crypto/Ecc.hpp"
 #include "messages/Message.hpp"
 #include "messages/Peers.hpp"
 #include "networking/Networking.hpp"
 #include "networking/TransportLayer.hpp"
+#include <gtest/gtest.h>
+#include <src/messages/config/Config.hpp>
 
 namespace neuro {
 namespace networking {
@@ -17,23 +18,22 @@ class Tcp {
 
   void test_connection() {
     auto queue = messages::Queue{};
-    auto keys0 = std::make_shared<crypto::Ecc>();
-    auto keys1 = std::make_shared<crypto::Ecc>();
-    auto keys2 = std::make_shared<crypto::Ecc>();
-    auto key_writer = std::make_shared<crypto::Ecc>();
+    crypto::Ecc keys1;
+    crypto::Ecc keys2;
 
-    messages::_KeyPub own_key;
-    key_writer->key_pub().save(&own_key);
-    messages::Peers peers(own_key);
-    Port port{31212};  // Maybe change this to the port to be used by the bot
-    messages::Peer peer;
-    peer.set_endpoint("127.0.0.1");
-    peer.set_port(port);
-    keys2->key_pub().save(peer.mutable_key_pub());
-    networking::Tcp tcp1(port, &queue, &peers, keys1.get());
-    networking::Tcp tcp2(port + 1, &queue, &peers, keys2.get());
+    auto conf1 = messages::config::Config{Path("bot1.json")};
+    auto conf2 = messages::config::Config{Path("bot2.json")};
+    messages::Peer peer1(conf1.networking());
+    peer1.set_endpoint("localhost");
+    peer1.set_port(conf1.networking().tcp().port());
+    messages::Peer peer2(conf2.networking());
+    peer2.set_endpoint(conf2.networking().tcp().endpoint());
+    peer2.set_port(conf2.networking().tcp().port());
+    messages::Peers peers(peer1.key_pub(), conf1.networking());
+    networking::Tcp tcp1(&queue, &peers, &keys1, conf1.networking());
+    networking::Tcp tcp2(&queue, &peers, &keys2, conf2.networking());
     std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-    tcp2.connect(&peer);
+    tcp2.connect(&peer1);
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     ASSERT_EQ(tcp1._connections.size(), 1);
     ASSERT_EQ(tcp2._connections.size(), 1);

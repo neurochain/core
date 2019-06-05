@@ -57,7 +57,7 @@ void Tcp::accept(const boost::system::error_code &error) {
 
     this->new_connection_from_remote(_new_socket, error);
   } else {
-    LOG_WARNING << "Rejected connection";
+    LOG_WARNING << "Rejected connection " << error.message();
   }
   _new_socket.reset();  // TODO why?
   start_accept();
@@ -106,8 +106,8 @@ void Tcp::new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
     _queue->publish(message);
     connection->read();
   } else {
-    LOG_WARNING << "Could not create new connection to "
-                << " due to " << error.message();
+    LOG_WARNING << "Could not create new connection : "
+                << error.message();
 
     msg_body->mutable_connection_closed();
     _queue->publish(message);
@@ -129,8 +129,7 @@ void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
     auto connection = std::make_shared<tcp::Connection>(_current_id,
                                                         _queue,
                                                         socket,
-                                                        *peer,
-                                                        _config);
+                                                        *peer);
     _connections.insert(std::make_pair(_current_id, connection));
 
     auto connection_ready = msg_body->mutable_connection_ready();
@@ -140,7 +139,7 @@ void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
     _queue->publish(message);
     connection->read();
   } else {
-    LOG_WARNING << "Could not create new connection to " << *peer << " due to "
+    LOG_WARNING << "Could not create new connection to " << *peer << " : "
                 << error.message();
 
     auto connection_closed = msg_body->mutable_connection_closed();

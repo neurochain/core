@@ -49,10 +49,10 @@ TEST(Conf, load) {
     ASSERT_TRUE(kp.has_raw_data());
   }
 
-  const messages::Peer& peer0(tcp.peers(0));
+  const messages::Peer peer0(networking, tcp.peers(0));
   ASSERT_EQ(peer0.port(), 1337);
 
-  const messages::Peer& peer1(tcp.peers(1));
+  const messages::Peer peer1(networking, tcp.peers(1));
   ASSERT_EQ(peer1.port(), 1338);
 }
 

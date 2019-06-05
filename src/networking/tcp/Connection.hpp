@@ -38,8 +38,7 @@ class Connection : public networking::Connection,
              const messages::config::Networking &config);
   Connection(const ID id, messages::Queue* queue,
              const std::shared_ptr<tcp::socket>& socket,
-             const messages::Peer& remote_peer,
-             const messages::config::Networking &config);
+             const messages::Peer& remote_peer);
 
   std::shared_ptr<const tcp::socket> socket() const;
   void terminate();
