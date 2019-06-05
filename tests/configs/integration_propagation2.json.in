@@ -1,34 +1,38 @@
 {
-    "logs": {
-        "severity": "fatal",
-        "to_stdout": true
-    },
-    "networking": {
-        "keys_paths": [{
-            "key_pub_path": "@CMAKE_CURRENT_BINARY_DIR@/key2.pub",
-            "key_priv_path": "@CMAKE_CURRENT_BINARY_DIR@/key2.priv"
-        }],
-        "max_connections": 3,
-        "peers_update_time": 20,
-        "tcp": {
-            "port": 1339,
-            "endpoint": "localhost",
-            "peers": [
-                {
-                    "endpoint": "localhost",
-                    "port": 1337,
-                    "keyPub": {
-                        "type": "ECP256K1",
-                        "rawData":"Awqh/GaK+zXAydO8h4sDf4apFNmW8SFaIqRqXioYDXy8"
-                    }
-                }
-            ]
+  "logs": {
+    "severity": "fatal",
+    "to_stdout": true
+  },
+  "networking": {
+    "keys_paths": [
+      {
+        "key_pub_path": "@CMAKE_CURRENT_BINARY_DIR@/key2.pub",
+        "key_priv_path": "@CMAKE_CURRENT_BINARY_DIR@/key2.priv"
+      }
+    ],
+    "max_connections": 3,
+    "peers_update_time": 20,
+    "tcp": {
+      "port": 1339,
+      "endpoint": "localhost",
+      "peers": [
+        {
+          "endpoint": "localhost",
+          "port": 1337,
+          "keyPub": {
+            "type": "ECP256K1",
+            "rawData": "Awqh/GaK+zXAydO8h4sDf4apFNmW8SFaIqRqXioYDXy8"
+          }
         }
-    },
-    "database": {
-        "url": "mongodb://localhost:27017/neuro",
-        "db_name": "neuro_tests_propa1339",
-        "block0_format": "PROTO",
-        "block0_path": "@CMAKE_CURRENT_BINARY_DIR@/data.0.testnet"
+      ]
     }
+  },
+  "database": {
+    "url": "mongodb://localhost:27017/neuro",
+    "db_name": "neuro_tests_propa1339",
+    "block0_file": {
+      "block0_format": "PROTO",
+      "block0_path": "@CMAKE_CURRENT_BINARY_DIR@/data.0.testnet"
+    }
+  }
 }
