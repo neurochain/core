@@ -57,7 +57,7 @@ Api::set_inputs(messages::Transaction *transaction,
 		const messages::Address &sender,
 		const messages::NCCAmount &fees) {
   
-  return  _bot->ledger()->set_inputs(transaction, sender, fees);
+  return false;// _bot->ledger()->set_inputs(transaction, sender, fees);
   
 }
 

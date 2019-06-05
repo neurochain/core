@@ -123,8 +123,7 @@ target_link_libraries(main
   Boost::filesystem
   Boost::thread
 
-  libonion::onion
-  libonion::onioncpp
+  pistache
 
   cpr::cpr
 
