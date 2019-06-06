@@ -23,13 +23,14 @@ class FullSimulator : public ::testing::Test {
     std::this_thread::sleep_for(30s);
     for (const auto &bot : simulator.bots) {
       ASSERT_GT(bot->connected_peers().size(), 2);
-    }
-    for (const auto &bot : simulator.bots) {
-      LOG_DEBUG << "TOTORO" << bot->_config.networking().tcp().port() << " "
-                << bot->_ledger->height() << std::endl;
-    }
-    for (const auto &bot : simulator.bots) {
-      ASSERT_GT(bot->_ledger->height(), 0);
+      auto height = bot->_ledger->height();
+      ASSERT_GT(height, 20);
+      ASSERT_LT(height, 30);
+      auto total_nb_blocks = bot->_ledger->total_nb_blocks();
+      ASSERT_GT(total_nb_blocks, 20);
+      ASSERT_LT(total_nb_blocks, 30);
+      auto total_nb_transactions = bot->_ledger->total_nb_transactions();
+      ASSERT_GT(total_nb_transactions, 30);
     }
   }
 };

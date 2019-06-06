@@ -58,6 +58,8 @@ add_library(core
   ./tooling/blockgen.cpp
   ./tooling/Simulator.hpp
   ./tooling/Simulator.cpp
+  ./tooling/FullSimulator.hpp
+  ./tooling/FullSimulator.cpp
   ./messages/Queue.hpp
   ./messages/Queue.cpp
   ./messages/Message.hpp

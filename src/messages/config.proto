@@ -44,6 +44,7 @@ message _Database {
     Block0File block0_file = 3;
     Block block0 = 4;
   }
+  optional bool empty_database = 5 [default=false];
 }
 
 message Tcp {

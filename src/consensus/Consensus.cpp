@@ -550,6 +550,9 @@ Config Consensus::config() const { return _config; }
 
 void Consensus::init(bool start_threads) {
   for (const auto &key : _keys) {
+    LOG_DEBUG << "EMPLACE ADDRESS " << std::endl;
+    LOG_DEBUG << "EMPLACE ADDRESS " << messages::Address(key.key_pub())
+              << std::endl;
     _addresses.emplace_back(key.key_pub());
   }
   if (start_threads) {
@@ -770,32 +773,40 @@ bool Consensus::get_heights_to_write(
   _ledger->get_block(last_block_height, &last_block);
   messages::Assembly previous_assembly, previous_previous_assembly;
 
+  LOG_TRACE << std::endl;
   if (!_ledger->get_assembly(last_block.previous_assembly_id(),
                              &previous_assembly)) {
     LOG_WARNING
         << "Could not find the previous assembly in get_heights_to_write";
     return false;
   }
+  LOG_TRACE << std::endl;
   if (!_ledger->get_assembly(previous_assembly.previous_assembly_id(),
                              &previous_previous_assembly)) {
     LOG_WARNING << "Could not find the previous previous assembly in "
                    "get_heights_to_write";
     return false;
   }
+  LOG_TRACE << std::endl;
   if (!previous_previous_assembly.finished_computation()) {
     LOG_WARNING << "The computation of the assembly "
                 << previous_previous_assembly.id() << " is not finished.";
     return false;
   }
+  LOG_TRACE << std::endl;
   std::unordered_map<messages::Address, AddressIndex> addresses_map;
   for (uint32_t i = 0; i < addresses.size(); i++) {
     addresses_map[addresses[i]] = i;
   }
 
+  LOG_TRACE << std::endl;
+
   // I never want anyone to mine the block 0
   const int32_t current_height = std::max(get_current_height(), 1);
   const int32_t last_block_assembly_height =
       last_block_height / _config.blocks_per_assembly;
+
+  LOG_TRACE << std::endl;
 
   int32_t first_height = last_block_height + 1;
   int32_t last_height =

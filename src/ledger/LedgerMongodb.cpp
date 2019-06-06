@@ -87,6 +87,9 @@ LedgerMongodb::LedgerMongodb(const std::string &url, const std::string &db_name,
 LedgerMongodb::LedgerMongodb(const messages::config::Database &config)
     : LedgerMongodb(config.url(), config.db_name()) {
   std::lock_guard lock(_ledger_mutex);
+  if (config.has_empty_database() && config.empty_database()) {
+    empty_database();
+  }
   init_block0(config);
   set_main_branch_tip();
 }
@@ -192,6 +195,8 @@ bool LedgerMongodb::load_block0(const messages::config::Database &config,
         messages::from_json(str, block0);
         break;
     }
+  } else if (config.has_block0()) {
+    block0->CopyFrom(config.block0());
   }
 
   return true;
