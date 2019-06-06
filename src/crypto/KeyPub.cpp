@@ -34,15 +34,9 @@ KeyPub::KeyPub(const uint8_t *data, const std::size_t size) {
 }
 
 KeyPub::KeyPub(const messages::_KeyPub &key_pub) {
-  if (!load_from_point(key_pub)) {
+  if (!load(key_pub)) {
     throw std::runtime_error("Could not load key from proto");
   }
-}
-
-KeyPub KeyPub::from_point(const std::string &key_pub) {
-  messages::_KeyPub message;
-  message.set_hex_data(key_pub);
-  return KeyPub(message);
 }
 
 bool KeyPub::save(const std::string &filepath) const {
@@ -84,7 +78,7 @@ bool KeyPub::load(const uint8_t *data, const std::size_t size) {
   return true;
 }
 
-bool KeyPub::load_from_point(const messages::_KeyPub &key_pub) {
+bool KeyPub::load(const messages::_KeyPub &key_pub) {
   CryptoPP::ECP::Point point;
   _key.AccessGroupParameters().Initialize(CryptoPP::ASN1::secp256k1());
 

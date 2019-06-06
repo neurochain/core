@@ -98,8 +98,13 @@ class Rest : public Api {
       return;
     }
 
-    crypto::KeyPub key_pub = crypto::KeyPub::from_point(request.body());
+    messages::_KeyPub key_pub_proto;
+    if (!messages::from_json(request.body(), &key_pub_proto)) {
+      response.send(Pistache::Http::Code::Bad_Request,
+          "Could not parse public key");
+    }
 
+    crypto::KeyPub key_pub(key_pub_proto);
     auto input_signature = transaction.add_signatures();
     input_signature->mutable_signature()->set_type(messages::Hash::SHA256);
     key_pub.save(input_signature->mutable_key_pub());
