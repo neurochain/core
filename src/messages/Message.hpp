@@ -7,6 +7,7 @@
 #include <functional>
 #include <string>
 #include <type_traits>
+#include <vector>
 
 #include "common/Buffer.hpp"
 #include "common/logger.hpp"
@@ -16,7 +17,8 @@
 #include "ledger/mongo.hpp"
 #include "messages.pb.h"
 #include "messages/Peer.hpp"
-
+#include "messages/Address.hpp"
+#include "messages/NCCAmount.hpp"
 namespace neuro {
 namespace messages {
 
@@ -31,7 +33,7 @@ using AssemblyID = std::remove_reference<decltype(
 using TransactionID = std::remove_reference<decltype(
     *(((Transaction *)nullptr)->mutable_id()))>::type;
 using Packet = google::protobuf::Message;
-
+  
 using Type = Body::BodyCase;
 using BranchID = int32_t;
 using IntegrityScore = Double;
@@ -44,7 +46,8 @@ bool from_json_file(const std::string &path, Packet *packet);
 bool from_bson(const bsoncxx::document::value &doc, Packet *packet);
 bool from_bson(const bsoncxx::document::view &doc, Packet *packet);
 
-std::size_t to_buffer(const Packet &packet, Buffer *buffer);
+bool to_buffer(const Packet &packet, Buffer *buffer);
+std::optional<Buffer> to_buffer(const Packet &packet);
 void to_json(const Packet &packet, std::string *output);
 std::string to_json(const Packet &packet);
 bsoncxx::document::value to_bson(const Packet &packet);
@@ -74,13 +77,6 @@ class Message : public _Message {
 
   Message(const Path &path) { from_json_file(path.string(), this); }
   virtual ~Message() {}
-};
-
-class NCCAmount : public _NCCAmount {
- public:
-  NCCAmount() {}
-  NCCAmount(const _NCCAmount &nccsdf) : _NCCAmount(nccsdf) {}
-  NCCAmount(int64_t amount) { set_value(amount); }
 };
 
 class Denunciation : public _Denunciation {
@@ -159,6 +155,14 @@ struct hash<neuro::messages::TaggedTransaction> {
     return hash<string>()(neuro::messages::to_json(tagged_transaction));
   }
 };
+
+template <>
+struct hash<neuro::messages::Address> {
+  size_t operator()(const neuro::messages::Address &address) const {
+    return hash<string>()(::neuro::messages::to_json(address));
+  }
+};
+
 
 }  // namespace std
 

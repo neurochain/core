@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
 
   messages::config::Config config;
   if (!messages::from_json_file(conf_path, &config)) {
-    std::cout << "Could not load configuration" << std::endl;
+    std::cout << "Could not load_from_point configuration" << std::endl;
     std::cout << desc << "\n";
     return 1;
   }

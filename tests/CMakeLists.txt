@@ -58,9 +58,7 @@ target_link_libraries(integration
   Boost::filesystem
   Boost::thread
   Boost::log
-  libonion::onion
   cpr::cpr
-  libonion::onioncpp
   ${LIBMONGOCXX_STATIC_LIBRARIES}
   )
 add_test(integration integration)
@@ -89,9 +87,7 @@ target_link_libraries(ut
   Boost::system
   Boost::filesystem
   Boost::thread
-  libonion::onion
   cpr::cpr
-  libonion::onioncpp
   ${LIBMONGOCXX_STATIC_LIBRARIES}
   )
 
@@ -111,8 +107,6 @@ target_link_libraries(LedgerMongodb
   ${LIBMONGOCXX_STATIC_LIBRARIES}
   core
   protos
-  libonion::onion
-  libonion::onioncpp
   )
 add_test(LedgerMongodb LedgerMongodb)
 
@@ -130,8 +124,6 @@ target_link_libraries(Simulator
   ${LIBMONGOCXX_STATIC_LIBRARIES}
   core
   protos
-  libonion::onion
-  libonion::onioncpp
   )
 add_test(Simulator Simulator)
 
@@ -149,8 +141,6 @@ target_link_libraries(Pii
   ${LIBMONGOCXX_STATIC_LIBRARIES}
   core
   protos
-  libonion::onion
-  libonion::onioncpp
   )
 add_test(Pii Pii)
 
@@ -168,8 +158,6 @@ target_link_libraries(Consensus
   ${LIBMONGOCXX_STATIC_LIBRARIES}
   core
   protos
-  libonion::onion
-  libonion::onioncpp
   )
 add_test(Consensus Consensus)
 
@@ -187,8 +175,7 @@ target_link_libraries(RealtimeConsensus
   ${LIBMONGOCXX_STATIC_LIBRARIES}
   core
   protos
-  libonion::onion
-  libonion::onioncpp
+
   )
 add_test(RealtimeConsensus RealtimeConsensus)
 
@@ -206,8 +193,6 @@ target_link_libraries(RealtimeSimulator
   ${LIBMONGOCXX_STATIC_LIBRARIES}
   core
   protos
-  libonion::onion
-  libonion::onioncpp
   )
 add_test(RealtimeSimulator RealtimeSimulator)
 

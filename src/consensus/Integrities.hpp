@@ -3,6 +3,7 @@
 
 #include "consensus/Config.hpp"
 #include "ledger/Ledger.hpp"
+#include "messages/Message.hpp"
 
 namespace neuro {
 namespace consensus {

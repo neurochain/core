@@ -3,6 +3,7 @@
 
 #include <memory>
 #include "Bot.hpp"
+#include "api/Api.hpp"
 #include "crypto/Ecc.hpp"
 #include "ledger/LedgerMongodb.hpp"
 #include "messages/Message.hpp"
@@ -35,7 +36,7 @@ class Bot {
   std::shared_ptr<ledger::Ledger> _ledger;
   boost::asio::steady_timer _update_timer;
   std::shared_ptr<consensus::Consensus> _consensus;
-  // std::shared_ptr<rest::Rest> _rest;
+  std::unique_ptr<api::Api> _api;
   std::unordered_set<int32_t> _request_ids;
   std::thread _io_context_thread;
 
@@ -97,9 +98,10 @@ class Bot {
   void subscribe(const messages::Type type,
                  messages::Subscriber::Callback callback);
 
-  void publish_transaction(const messages::Transaction &transaction) const;
+  bool publish_transaction(const messages::Transaction &transaction) const;
   void publish_block(const messages::Block &block) const;
-
+  ledger::Ledger* ledger();
+  
   friend class neuro::tests::BotTest;
 };
 

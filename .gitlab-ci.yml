@@ -48,7 +48,6 @@ build_image_dev:release:
   
 build_job:dev:
   image: "${DOCKER_IMAGE_BUILD}/debug:latest" # change that with sha after first run
-#  image: registry.gitlab.com/neurochaintech/core/build/debug:latest
 
   stage: build
   tags:
@@ -62,7 +61,6 @@ build_job:dev:
       - testnet/data.0.testnet
 
 build_job:release:
-#  image: registry.gitlab.com/neurochaintech/core/build/release:latest
   image: "${DOCKER_IMAGE_BUILD}/release:latest" # change that with sha after first run
   stage: build
   tags:
@@ -84,6 +82,7 @@ pages:
     - mkdir build && cd build && doxygen ../doc/Doxyfile
     - mv html ../public
     - mv ../doc/img ../public 
+
   only:
     - feaeture/109/documentation
     - feature/ledger
@@ -100,10 +99,13 @@ build_image_prod:release:
   services:
     - docker:stable-dind
   only:
+    refs:
+      - refs/tags/build_prod
+      
     changes:
-    - utils/dockers/Dockerfile.ubuntu
-    - ./CMakeLists.txt 
-    - ./**/CMakeLists.txt 
+      - utils/dockers/Dockerfile.ubuntu
+      - ./CMakeLists.txt 
+      - ./**/CMakeLists.txt 
   script:
     - build_docker "Dockerfile.ubuntu" "Release"
 

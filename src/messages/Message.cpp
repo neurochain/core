@@ -42,16 +42,24 @@ bool from_bson(const bsoncxx::document::view &doc, Packet *packet) {
   return from_json(mongo_json, packet);
 }
 
-std::size_t to_buffer(const Packet &packet, Buffer *buffer) {
+bool to_buffer(const Packet &packet, Buffer *buffer) {
   try {
     const auto size = packet.ByteSizeLong();
     buffer->resize(size);
     packet.SerializeToArray(buffer->data(), buffer->size());
-    return size;
+    return true;
   } catch (...) {
     std::cout << boost::stacktrace::stacktrace() << std::endl;
-    throw;
+    return false;
   }
+}
+
+std::optional<Buffer> to_buffer(const Packet &packet) {
+  Buffer buffer;
+  if(!to_buffer(packet, &buffer)) {
+    return std::nullopt;
+  }
+  return std::make_optional(buffer);
 }
 
 void to_json(const Packet &packet, std::string *output) {

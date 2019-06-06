@@ -22,7 +22,7 @@ class KeyPub : public messages::_KeyPub {
   bool load(const Buffer &buffer);
   bool load(const std::string &filepath);
   bool load(const uint8_t *data, const std::size_t size);
-  bool load(const messages::_KeyPub &keypub);
+  bool load(const messages::_KeyPub &key_pub);
 
  public:
   KeyPub(const KeyPub &key_pub) = default;
