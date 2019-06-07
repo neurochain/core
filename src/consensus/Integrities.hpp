@@ -15,7 +15,7 @@ class Integrities {
   std::unordered_map<messages::Address, messages::IntegrityScore> _scores;
 
  public:
-  Integrities(const consensus::Config &config) : _config(config) {}
+  explicit Integrities(const consensus::Config &config) : _config(config) {}
 
   Config config() const;
 

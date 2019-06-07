@@ -11,7 +11,7 @@ namespace config {
 class Database : public _Database {
  public:
   Database() {}
-  Database(const Path &filepath) {
+  explicit Database(const Path &filepath) {
     if (!messages::from_json_file(filepath.string(), this)) {
       std::string s = "Could not parse configuration file " +
                       filepath.string() + " from " +
@@ -19,12 +19,14 @@ class Database : public _Database {
       throw std::runtime_error(s);
     }
   }
-  Database(const std::string &data) {
+
+  explicit Database(const std::string &data) {
     if (!messages::from_json(data, this)) {
       throw std::runtime_error(
           std::string{"Could not parse configuration " + data});
     }
   }
+
   Database(const _Database &raw) : _Database::_Database(raw) {}
 };
 

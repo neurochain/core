@@ -136,7 +136,7 @@ class LedgerMongodb : public Ledger {
   LedgerMongodb(const std::string &url, const std::string &db_name);
   LedgerMongodb(const std::string &url, const std::string &db_name,
                 const messages::Block &block0);
-  LedgerMongodb(const messages::config::Database &config);
+  explicit LedgerMongodb(const messages::config::Database &config);
 
   ~LedgerMongodb() {}
 

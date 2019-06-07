@@ -81,14 +81,14 @@ bool Consensus::check_inputs(
 }
 
 bool Consensus::check_outputs(
-    const messages::TaggedTransaction tagged_transaction) const {
+    const messages::TaggedTransaction& tagged_transaction) const {
   messages::TaggedBlock tip;
   if (tagged_transaction.has_block_id()) {
     if (!_ledger->get_block(tagged_transaction.block_id(), &tip, false)) {
       LOG_INFO << "Failed check_output for transaction "
                << tagged_transaction.transaction().id();
       return false;
-    };
+    }
   } else {
     tip = _ledger->get_main_branch_tip();
   }
@@ -656,7 +656,7 @@ bool Consensus::compute_assembly_pii(const messages::Assembly &assembly) {
     LOG_WARNING << "During Pii computation failed to set seed for assembly "
                 << assembly.id();
     return false;
-  };
+  }
 
   // Add the integrity before the pii because it is used in the pii computations
   for (const auto &[address, score] : integrities.scores()) {
@@ -681,20 +681,20 @@ bool Consensus::compute_assembly_pii(const messages::Assembly &assembly) {
     pii.mutable_assembly_id()->CopyFrom(assembly.id());
     pii.set_rank(i);
     _ledger->set_pii(pii);
-  };
+  }
 
   if (!_ledger->set_nb_addresses(assembly.id(), piis.size())) {
     LOG_WARNING
         << "During Pii computation failed to set nb_addresses for assembly "
         << assembly.id();
     return false;
-  };
+  }
   if (!_ledger->set_finished_computation(assembly.id())) {
     LOG_WARNING << "During Pii computation failed to set "
                    "finished_computation for assembly "
                 << assembly.id();
     return false;
-  };
+  }
   return true;
 }
 

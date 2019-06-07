@@ -80,7 +80,7 @@ LedgerMongodb::LedgerMongodb(const std::string &url, const std::string &db_name,
   empty_database();
   init_database(block0);
   set_main_branch_tip();
-};
+}
 
 LedgerMongodb::LedgerMongodb(const messages::config::Database &config)
     : LedgerMongodb(config.url(), config.db_name()) {
@@ -389,7 +389,7 @@ bool LedgerMongodb::get_last_block(messages::TaggedBlock *tagged_block,
 }
 
 int LedgerMongodb::fill_block_transactions(messages::Block *block) const {
-  assert(block->transactions().size() == 0);
+  assert(block->transactions().empty());
   auto query = bss::document{} << BLOCK_ID << to_bson(block->header().id())
                                << bss::finalize;
   auto options = remove_OID();
@@ -1023,7 +1023,7 @@ bool LedgerMongodb::set_branch_path(const messages::BlockHeader &block_header) {
                                ? unsafe_fork_from(parent.branch_path())
                                : unsafe_first_child(parent.branch_path());
   return set_branch_path(block_header, branch_path);
-};
+}
 
 bool LedgerMongodb::get_unverified_blocks(
     std::vector<messages::TaggedBlock> *tagged_blocks) const {
@@ -1359,7 +1359,7 @@ bool LedgerMongodb::get_block_writer(const messages::AssemblyID &assembly_id,
   auto result = _pii.find_one(std::move(query), projection(ADDRESS));
   if (!result) {
     return false;
-  };
+  }
   from_bson(result->view()[ADDRESS].get_document(), address);
   return true;
 }

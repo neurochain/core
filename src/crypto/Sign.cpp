@@ -96,7 +96,7 @@ bool verify(const messages::Denunciation &denunciation) {
   Buffer buffer;
   messages::to_buffer(denunciation_copy, &buffer);
 
-  const auto author = denunciation.block_author();
+  const auto& author = denunciation.block_author();
   const auto hash = author.signature().data();
   const Buffer sig(hash.data(), hash.size());
 

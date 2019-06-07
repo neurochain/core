@@ -16,8 +16,8 @@ class Consensus : public testing::Test {
   const int nb_keys = 4;
 
  protected:
-  tooling::Simulator simulator;
-  std::shared_ptr<neuro::ledger::LedgerMongodb> ledger;
+  tooling::Simulator simulator{};
+  std::shared_ptr<neuro::ledger::LedgerMongodb> ledger{};
   std::shared_ptr<consensus::Consensus> consensus;
 
   Consensus()

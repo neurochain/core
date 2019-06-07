@@ -70,7 +70,7 @@ bool Ecc::load_keys(const std::string &keypath_priv,
 //       _key_public(ecc_pub) {}
 
 const KeyPriv &Ecc::key_priv() const { return *_key_private.get(); }
-const KeyPub &Ecc::key_pub() const { return *_key_public.get(); }
+const KeyPub &Ecc::key_pub() const { return *_key_public; }
 KeyPriv *Ecc::mutable_key_priv() { return _key_private.get(); }
 KeyPub *Ecc::mutable_key_pub() { return _key_public.get(); }
 

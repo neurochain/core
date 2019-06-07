@@ -89,7 +89,5 @@ bool Address::verify() const {
   return true;
 }
 
-Address::operator bool() const { return verify(); }
-
 }  // namespace messages
 }  // namespace neuro

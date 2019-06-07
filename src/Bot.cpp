@@ -43,14 +43,14 @@ Bot::Bot(const std::string &config_path)
 void Bot::handler_get_block(const messages::Header &header,
                             const messages::Body &body) {
   LOG_DEBUG << this << " Got a get_block message";
-  const auto get_block = body.get_block();
+  const auto& get_block = body.get_block();
 
   auto message = std::make_shared<messages::Message>();
   auto header_reply = message->mutable_header();
   auto id = messages::fill_header_reply(header, header_reply);
 
   if (get_block.has_hash()) {
-    const auto previd = get_block.hash();
+    const auto& previd = get_block.hash();
     auto block = message->add_bodies()->mutable_block();
     if (!_ledger->get_block_by_previd(previd, block)) {
       std::stringstream sstr;  // TODO operator <<
@@ -122,7 +122,7 @@ bool Bot::update_ledger() {
   auto header = message->mutable_header();
   auto idheader = messages::fill_header(header);
 
-  const auto id = last_header.id();
+  const auto& id = last_header.id();
 
   auto get_block = message->add_bodies()->mutable_get_block();
   get_block->mutable_hash()->CopyFrom(id);
@@ -329,7 +329,7 @@ void Bot::handler_connection(const messages::Header &header,
                              const messages::Body &body) {
   LOG_DEBUG << this << " It entered in handler_connection in bot " << body;
 
-  auto connection_ready = body.connection_ready();
+  auto& connection_ready = body.connection_ready();
 
   if (connection_ready.from_remote()) {
     // Nothing to do; just wait for the hello message from remote peer
@@ -361,7 +361,7 @@ void Bot::handler_deconnection(const messages::Header &header,
 
 void Bot::handler_world(const messages::Header &header,
                         const messages::Body &body) {
-  auto world = body.world();
+  auto& world = body.world();
   auto remote_peer = _peers.find(header.key_pub());
   if (!remote_peer) {
     LOG_WARNING << "Received world message from unknown peer";
@@ -386,7 +386,7 @@ void Bot::handler_hello(const messages::Header &header,
                    "different type of body on the msg";
     return;
   }
-  auto hello = body.hello();
+  auto& hello = body.hello();
 
   LOG_DEBUG << this << " Got a HELLO message in bot";
   auto remote_peer = _peers.insert(hello.peer());

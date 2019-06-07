@@ -83,8 +83,8 @@ class Bot {
   void update_peerlist();
 
  public:
-  Bot(const messages::config::Config &config);
-  Bot(const std::string &config_path);
+  explicit Bot(const messages::config::Config &config);
+  explicit Bot(const std::string &config_path);
   Bot(const Bot &) = delete;
   Bot(Bot &&) = delete;
 

@@ -318,7 +318,7 @@ class Ledger {
     auto blocks = std::vector<messages::Block>{block};
     for (uint32_t i = 0; i < nb_blocks - 1; i++) {
       messages::BlockID previous_hash = block.header().previous_block_hash();
-      if (previous_hash.data().size() == 0) {
+      if (previous_hash.data().empty()) {
         break;
       }
       if (get_block(previous_hash, &block)) {

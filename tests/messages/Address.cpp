@@ -34,6 +34,7 @@ TEST(Address, address) {
     ASSERT_EQ(address.data()[0], 'N');
     ASSERT_TRUE(address.verify());
   }
+
   ASSERT_EQ(address0, address1);
   ASSERT_NE(address0, address2);
   ASSERT_NE(address1, address2);
