@@ -63,23 +63,6 @@ class LedgerMongodb : public Ledger {
 
   int fill_block_transactions(messages::Block *block) const;
 
-  bool unsafe_get_block(const messages::BlockID &id,
-                        messages::TaggedBlock *tagged_block,
-                        bool include_transactions = true) const;
-
-  bool unsafe_get_block(const messages::BlockHeight height,
-                        messages::Block *block,
-                        bool include_transactions = true) const;
-
-  bool unsafe_get_block(const messages::BlockHeight height,
-                        messages::TaggedBlock *tagged_block,
-                        bool include_transaction = true) const;
-
-  bool unsafe_get_blocks_by_previd(
-      const messages::BlockID &previd,
-      std::vector<messages::TaggedBlock> *tagged_blocks,
-      bool include_transactions = true) const;
-
   bool get_block(const messages::BlockHeight height,
                  const messages::BranchPath &branch_path,
                  messages::TaggedBlock *tagged_block,
@@ -92,25 +75,8 @@ class LedgerMongodb : public Ledger {
 
   bool set_branch_path(const messages::BlockHeader &block_header);
 
-  bool unsafe_insert_block(const messages::TaggedBlock &tagged_block);
-
-  messages::BranchPath unsafe_fork_from(
-      const messages::BranchPath &branch_path) const;
-
-  messages::BranchPath unsafe_first_child(
-      const messages::BranchPath &branch_path) const;
-
   bool update_branch_tag(const messages::BlockID &id,
                          const messages::Branch &branch);
-
-  bool unsafe_get_block_by_previd(const messages::BlockID &previd,
-                                  messages::Block *block,
-                                  bool include_transactions = true) const;
-
-  messages::BlockHeight unsafe_height() const;
-
-  bool unsafe_get_assembly(const messages::AssemblyID &assembly_id,
-                           messages::Assembly *assembly) const;
 
   void create_indexes();
 
@@ -119,22 +85,6 @@ class LedgerMongodb : public Ledger {
   bool cleanup_transaction_pool(const messages::BlockID &block_id);
 
   std::size_t cleanup_transaction_pool();
-
-  bool unsafe_set_integrity(const messages::Integrity &integrity);
-
-  messages::IntegrityScore unsafe_get_integrity(
-      const messages::Address &address,
-      const messages::AssemblyHeight &assembly_height,
-      const messages::BranchPath &branch_path) const;
-
-  bool unsafe_denunciation_exists(
-      const messages::Denunciation &denunciation,
-      const messages::BlockHeight &max_block_height,
-      const messages::BranchPath &branch_path) const;
-
-  void unsafe_empty_database();
-
-  void unsafe_init_database(const messages::Block &block0);
 
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);

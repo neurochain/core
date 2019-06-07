@@ -79,7 +79,7 @@ LedgerMongodb::LedgerMongodb(const std::string &url, const std::string &db_name,
                              const messages::Block &block0)
     : LedgerMongodb(url, db_name) {
   std::lock_guard lock(_ledger_mutex);
-  unsafe_empty_database();
+  empty_database();
   init_database(block0);
   set_main_branch_tip();
 };
@@ -285,10 +285,10 @@ messages::TaggedBlock LedgerMongodb::get_main_branch_tip() const {
 
 bool LedgerMongodb::set_main_branch_tip() {
   std::lock_guard lock(_ledger_mutex);
-  return unsafe_get_block(unsafe_height(), &_main_branch_tip, false);
+  return get_block(height(), &_main_branch_tip, false);
 }
 
-messages::BlockHeight LedgerMongodb::unsafe_height() const {
+messages::BlockHeight LedgerMongodb::height() const {
   std::lock_guard lock(_ledger_mutex);
   auto query = bss::document{} << BRANCH << MAIN_BRANCH_NAME << bss::finalize;
 
@@ -302,11 +302,6 @@ messages::BlockHeight LedgerMongodb::unsafe_height() const {
   }
 
   return result->view()[BLOCK][HEADER][HEIGHT].get_int32().value;
-}
-
-messages::BlockHeight LedgerMongodb::height() const {
-  std::lock_guard lock(_ledger_mutex);
-  return unsafe_height();
 }
 
 bool LedgerMongodb::is_ancestor(const messages::TaggedBlock &ancestor,
@@ -361,7 +356,7 @@ bool LedgerMongodb::is_main_branch(
     const messages::TaggedTransaction &tagged_transaction) const {
   std::lock_guard lock(_ledger_mutex);
   messages::TaggedBlock tagged_block;
-  return unsafe_get_block(tagged_transaction.block_id(), &tagged_block) &&
+  return get_block(tagged_transaction.block_id(), &tagged_block) &&
          tagged_block.branch() == messages::Branch::MAIN;
 }
 
@@ -439,9 +434,9 @@ int LedgerMongodb::fill_block_transactions(messages::Block *block) const {
   return num_transactions;
 }
 
-bool LedgerMongodb::unsafe_get_block(const messages::BlockID &id,
-                                     messages::TaggedBlock *tagged_block,
-                                     bool include_transactions) const {
+bool LedgerMongodb::get_block(const messages::BlockID &id,
+                              messages::TaggedBlock *tagged_block,
+                              bool include_transactions) const {
   std::lock_guard lock(_ledger_mutex);
   auto query = bss::document{} << BLOCK + "." + HEADER + "." + ID << to_bson(id)
                                << bss::finalize;
@@ -460,13 +455,6 @@ bool LedgerMongodb::unsafe_get_block(const messages::BlockID &id,
 }
 
 bool LedgerMongodb::get_block(const messages::BlockID &id,
-                              messages::TaggedBlock *tagged_block,
-                              bool include_transactions) const {
-  std::lock_guard lock(_ledger_mutex);
-  return unsafe_get_block(id, tagged_block, include_transactions);
-}
-
-bool LedgerMongodb::get_block(const messages::BlockID &id,
                               messages::Block *block,
                               bool include_transactions) const {
   std::lock_guard lock(_ledger_mutex);
@@ -481,9 +469,9 @@ bool LedgerMongodb::get_block(const messages::BlockID &id,
   return true;
 }
 
-bool LedgerMongodb::unsafe_get_block_by_previd(
-    const messages::BlockID &previd, messages::Block *block,
-    bool include_transactions) const {
+bool LedgerMongodb::get_block_by_previd(const messages::BlockID &previd,
+                                        messages::Block *block,
+                                        bool include_transactions) const {
   // Look for a block in the main branch.
   // There may be several blocks with the same previd in forks.
   std::lock_guard lock(_ledger_mutex);
@@ -505,14 +493,7 @@ bool LedgerMongodb::unsafe_get_block_by_previd(
   return true;
 }
 
-bool LedgerMongodb::get_block_by_previd(const messages::BlockID &previd,
-                                        messages::Block *block,
-                                        bool include_transactions) const {
-  std::lock_guard lock(_ledger_mutex);
-  return unsafe_get_block_by_previd(previd, block, include_transactions);
-}
-
-bool LedgerMongodb::unsafe_get_blocks_by_previd(
+bool LedgerMongodb::get_blocks_by_previd(
     const messages::BlockID &previd,
     std::vector<messages::TaggedBlock> *tagged_blocks,
     bool include_transactions) const {
@@ -541,18 +522,9 @@ bool LedgerMongodb::unsafe_get_blocks_by_previd(
   return true;
 }
 
-bool LedgerMongodb::get_blocks_by_previd(
-    const messages::BlockID &previd,
-    std::vector<messages::TaggedBlock> *tagged_blocks,
-    bool include_transactions) const {
-  std::lock_guard lock(_ledger_mutex);
-  return unsafe_get_blocks_by_previd(previd, tagged_blocks,
-                                     include_transactions);
-}
-
-bool LedgerMongodb::unsafe_get_block(const messages::BlockHeight height,
-                                     messages::Block *block,
-                                     bool include_transactions) const {
+bool LedgerMongodb::get_block(const messages::BlockHeight height,
+                              messages::Block *block,
+                              bool include_transactions) const {
   std::lock_guard lock(_ledger_mutex);
   auto query = bss::document{} << BRANCH << MAIN_BRANCH_NAME
                                << BLOCK + "." + HEADER + "." + HEIGHT << height
@@ -568,13 +540,6 @@ bool LedgerMongodb::unsafe_get_block(const messages::BlockHeight height,
     fill_block_transactions(block);
   }
   return true;
-}
-
-bool LedgerMongodb::get_block(const messages::BlockHeight height,
-                              messages::Block *block,
-                              bool include_transactions) const {
-  std::lock_guard lock(_ledger_mutex);
-  return unsafe_get_block(height, block, include_transactions);
 }
 
 bool LedgerMongodb::get_block(const messages::BlockHeight height,
@@ -595,9 +560,9 @@ bool LedgerMongodb::get_block(const messages::BlockHeight height,
   return false;
 }
 
-bool LedgerMongodb::unsafe_get_block(const messages::BlockHeight height,
-                                     messages::TaggedBlock *tagged_block,
-                                     bool include_transactions) const {
+bool LedgerMongodb::get_block(const messages::BlockHeight height,
+                              messages::TaggedBlock *tagged_block,
+                              bool include_transactions) const {
   std::lock_guard lock(_ledger_mutex);
   auto query = bss::document{} << BRANCH << MAIN_BRANCH_NAME
                                << BLOCK + "." + HEADER + "." + HEIGHT << height
@@ -615,20 +580,12 @@ bool LedgerMongodb::unsafe_get_block(const messages::BlockHeight height,
   return true;
 }
 
-bool LedgerMongodb::get_block(const messages::BlockHeight height,
-                              messages::TaggedBlock *tagged_block,
-                              bool include_transactions) const {
-  std::lock_guard lock(_ledger_mutex);
-  return unsafe_get_block(height, tagged_block, include_transactions);
-}
-
-bool LedgerMongodb::unsafe_insert_block(
-    const messages::TaggedBlock &tagged_block) {
+bool LedgerMongodb::insert_block(const messages::TaggedBlock &tagged_block) {
   std::lock_guard lock(_ledger_mutex);
   messages::TaggedBlock unused;
   bool include_transactions = false;
-  if (unsafe_get_block(tagged_block.block().header().id(), &unused,
-                       include_transactions)) {
+  if (get_block(tagged_block.block().header().id(), &unused,
+                include_transactions)) {
     // The block already exists
     LOG_INFO << "Failed to insert block " << tagged_block.block().header().id()
              << " it already exists";
@@ -677,11 +634,6 @@ bool LedgerMongodb::unsafe_insert_block(
         _transactions.insert_many(std::move(bson_transactions)));
   }
   return true;
-}
-
-bool LedgerMongodb::insert_block(const messages::TaggedBlock &tagged_block) {
-  std::lock_guard lock(_ledger_mutex);
-  return unsafe_insert_block(tagged_block);
 }
 
 bool LedgerMongodb::delete_block(const messages::BlockID &id) {
@@ -759,7 +711,7 @@ bool LedgerMongodb::get_transaction(const messages::TransactionID &id,
     from_bson(bson_transaction, &tagged_transaction);
     messages::TaggedBlock tagged_block;
     if (!tagged_transaction.has_block_id() ||
-        (unsafe_get_block(tagged_transaction.block_id(), &tagged_block) &&
+        (get_block(tagged_transaction.block_id(), &tagged_block) &&
          tagged_block.branch() == messages::Branch::MAIN)) {
       *transaction = tagged_transaction.transaction();
       *blockheight = tagged_block.block().header().height();
@@ -851,8 +803,8 @@ bool LedgerMongodb::for_each(const Filter &filter,
 
     // auto t1 = Timer::now();
     bool include_transactions = false;
-    if (!unsafe_get_block(tagged_transaction.block_id(), &tagged_block,
-                          include_transactions)) {
+    if (!get_block(tagged_transaction.block_id(), &tagged_block,
+                   include_transactions)) {
       return false;
     }
     // LOG_DEBUG << "GET_BLOCK DURATION IN US "
@@ -977,11 +929,11 @@ bool LedgerMongodb::insert_block(const messages::Block &block) {
   messages::TaggedBlock tagged_block;
   tagged_block.mutable_block()->CopyFrom(block);
   tagged_block.set_branch(messages::Branch::DETACHED);
-  return unsafe_insert_block(tagged_block) &&
+  return insert_block(tagged_block) &&
          set_branch_path(tagged_block.block().header());
 }
 
-messages::BranchPath LedgerMongodb::unsafe_fork_from(
+messages::BranchPath LedgerMongodb::fork_from(
     const messages::BranchPath &branch_path) const {
   // We must add the new branch_id at the beginning of the repeated field
   // And sadly protobuf does not support that
@@ -998,27 +950,13 @@ messages::BranchPath LedgerMongodb::unsafe_fork_from(
   return new_branch_path;
 }
 
-messages::BranchPath LedgerMongodb::fork_from(
-    const messages::BranchPath &branch_path) const {
-  std::lock_guard lock(_ledger_mutex);
-  return unsafe_fork_from(branch_path);
-}
-
-messages::BranchPath LedgerMongodb::unsafe_first_child(
+messages::BranchPath LedgerMongodb::first_child(
     const messages::BranchPath &branch_path) const {
   std::lock_guard lock(_ledger_mutex);
   auto new_branch_path = messages::BranchPath(branch_path);
   *new_branch_path.mutable_block_numbers()->Mutable(0) =
       branch_path.block_numbers(0) + 1;
   return new_branch_path;
-}
-
-messages::BranchPath LedgerMongodb::first_child(
-    const messages::BranchPath &branch_path) const {
-  // The mutex is not really useful here but all public method should have a
-  // mutex
-  std::lock_guard lock(_ledger_mutex);
-  return unsafe_first_child(branch_path);
 }
 
 bool LedgerMongodb::set_branch_path(const messages::BlockHeader &block_header,
@@ -1038,21 +976,21 @@ bool LedgerMongodb::set_branch_path(const messages::BlockHeader &block_header,
 
   // Set the branch path of the children
   std::vector<messages::TaggedBlock> tagged_blocks;
-  unsafe_get_blocks_by_previd(block_header.id(), &tagged_blocks, false);
+  get_blocks_by_previd(block_header.id(), &tagged_blocks, false);
   for (uint32_t i = 0; i < tagged_blocks.size(); i++) {
     const auto tagged_block = tagged_blocks.at(i);
     assert(!tagged_block.has_branch_path());
     assert(tagged_block.branch() == messages::Branch::DETACHED);
     if (i == 0) {
       if (!set_branch_path(tagged_block.block().header(),
-                           unsafe_first_child(branch_path))) {
+                           first_child(branch_path))) {
         return false;
       }
     } else {
       // If there are several children there is a fork which needs a new branch
       // ID
       if (!set_branch_path(tagged_block.block().header(),
-                           unsafe_fork_from(branch_path))) {
+                           fork_from(branch_path))) {
         return false;
       }
     }
@@ -1065,7 +1003,7 @@ bool LedgerMongodb::set_branch_path(const messages::BlockHeader &block_header) {
   std::lock_guard lock(_ledger_mutex);
   messages::TaggedBlock parent;
 
-  if (!unsafe_get_block(block_header.previous_block_hash(), &parent, false) ||
+  if (!get_block(block_header.previous_block_hash(), &parent, false) ||
       parent.branch() == messages::Branch::DETACHED) {
     // If the parent does not have a branch path it is a detached block and
     // there is nothing to do
@@ -1073,14 +1011,13 @@ bool LedgerMongodb::set_branch_path(const messages::BlockHeader &block_header) {
   }
 
   std::vector<messages::TaggedBlock> children;
-  unsafe_get_blocks_by_previd(block_header.previous_block_hash(), &children,
-                              false);
+  get_blocks_by_previd(block_header.previous_block_hash(), &children, false);
 
   // If our parent has more than one child it means the current block is a
   // fork and needs a new branch ID
   const auto branch_path = children.size() > 1
-                               ? unsafe_fork_from(parent.branch_path())
-                               : unsafe_first_child(parent.branch_path());
+                               ? fork_from(parent.branch_path())
+                               : first_child(parent.branch_path());
   return set_branch_path(block_header, branch_path);
 };
 
@@ -1189,14 +1126,14 @@ bool LedgerMongodb::update_main_branch() {
   messages::TaggedBlock tagged_block{main_branch_tip};
   do {
     new_main_branch.push_back(tagged_block.block().header().id());
-    assert(unsafe_get_block(tagged_block.block().header().previous_block_hash(),
-                            &tagged_block, false));
+    assert(get_block(tagged_block.block().header().previous_block_hash(),
+                     &tagged_block, false));
   } while (tagged_block.branch() != messages::Branch::MAIN);
 
   // Go up from this MAIN block to the previous MAIN tip
   std::vector<messages::BlockID> previous_main_branch;
   messages::Block block{tagged_block.block()};
-  while (unsafe_get_block_by_previd(block.header().id(), &block)) {
+  while (get_block_by_previd(block.header().id(), &block)) {
     previous_main_branch.push_back(block.header().id());
   }
 
@@ -1247,18 +1184,13 @@ bool LedgerMongodb::get_pii(const messages::Address &address,
   return true;
 }
 
-void LedgerMongodb::unsafe_empty_database() {
+void LedgerMongodb::empty_database() {
   std::lock_guard lock(_ledger_mutex);
   _db.drop();
 }
 
-void LedgerMongodb::empty_database() {
-  std::lock_guard lock(_ledger_mutex);
-  unsafe_empty_database();
-}
-
-bool LedgerMongodb::unsafe_get_assembly(const messages::AssemblyID &assembly_id,
-                                        messages::Assembly *assembly) const {
+bool LedgerMongodb::get_assembly(const messages::AssemblyID &assembly_id,
+                                 messages::Assembly *assembly) const {
   std::lock_guard lock(_ledger_mutex);
   auto query = bss::document{} << ID << to_bson(assembly_id) << bss::finalize;
   const auto result = _assemblies.find_one(std::move(query), remove_OID());
@@ -1267,12 +1199,6 @@ bool LedgerMongodb::unsafe_get_assembly(const messages::AssemblyID &assembly_id,
   }
   from_bson(result->view(), assembly);
   return true;
-}
-
-bool LedgerMongodb::get_assembly(const messages::AssemblyID &assembly_id,
-                                 messages::Assembly *assembly) const {
-  std::lock_guard lock(_ledger_mutex);
-  return unsafe_get_assembly(assembly_id, assembly);
 }
 
 bool LedgerMongodb::get_next_assembly(const messages::AssemblyID &assembly_id,
@@ -1296,7 +1222,7 @@ bool LedgerMongodb::add_assembly(const messages::TaggedBlock &tagged_block,
     return false;
   }
   messages::Assembly assembly;
-  if (unsafe_get_assembly(tagged_block.block().header().id(), &assembly)) {
+  if (get_assembly(tagged_block.block().header().id(), &assembly)) {
     // The assembly already exist
     return false;
   }
@@ -1352,15 +1278,10 @@ bool LedgerMongodb::set_previous_assembly_id(
   return update_result && update_result->modified_count() > 0;
 }
 
-bool LedgerMongodb::unsafe_set_integrity(const messages::Integrity &integrity) {
+bool LedgerMongodb::set_integrity(const messages::Integrity &integrity) {
   std::lock_guard lock(_ledger_mutex);
   auto bson_integrity = to_bson(integrity);
   return static_cast<bool>(_integrity.insert_one(std::move(bson_integrity)));
-}
-
-bool LedgerMongodb::set_integrity(const messages::Integrity &integrity) {
-  std::lock_guard lock(_ledger_mutex);
-  return unsafe_set_integrity(integrity);
 }
 
 bool LedgerMongodb::add_integrity(
@@ -1373,7 +1294,7 @@ bool LedgerMongodb::add_integrity(
   // The branch_path is not the right one but it should work because it is a
   // descendant of the corrent branch_path
   auto previous_score =
-      unsafe_get_integrity(address, assembly_height - 1, branch_path);
+      get_integrity(address, assembly_height - 1, branch_path);
 
   messages::Integrity integrity;
   integrity.mutable_address()->CopyFrom(address);
@@ -1381,15 +1302,7 @@ bool LedgerMongodb::add_integrity(
   integrity.set_score((previous_score + added_score).toString());
   integrity.set_assembly_height(assembly_height);
   integrity.mutable_branch_path()->CopyFrom(branch_path);
-  return unsafe_set_integrity(integrity);
-}
-
-messages::IntegrityScore LedgerMongodb::get_integrity(
-    const messages::Address &address,
-    const messages::AssemblyHeight &assembly_height,
-    const messages::BranchPath &branch_path) const {
-  std::lock_guard lock(_ledger_mutex);
-  return unsafe_get_integrity(address, assembly_height, branch_path);
+  return set_integrity(integrity);
 }
 
 /*
@@ -1398,7 +1311,7 @@ messages::IntegrityScore LedgerMongodb::get_integrity(
  * only stored when it changes. And we only want to see the integrities for
  * our branch which we cannot specify in a mongo query.
  */
-messages::IntegrityScore LedgerMongodb::unsafe_get_integrity(
+messages::IntegrityScore LedgerMongodb::get_integrity(
     const messages::Address &address,
     const messages::AssemblyHeight &assembly_height,
     const messages::BranchPath &branch_path) const {
@@ -1489,15 +1402,6 @@ bool LedgerMongodb::set_finished_computation(
 }
 
 bool LedgerMongodb::denunciation_exists(
-    const messages::Denunciation &denunciation,
-    const messages::BlockHeight &max_block_height,
-    const messages::BranchPath &branch_path) const {
-  std::lock_guard lock(_ledger_mutex);
-  return unsafe_denunciation_exists(denunciation, max_block_height,
-                                    branch_path);
-}
-
-bool LedgerMongodb::unsafe_denunciation_exists(
     const messages::Denunciation &denunciation,
     const messages::BlockHeight &max_block_height,
     const messages::BranchPath &branch_path) const {
@@ -1599,8 +1503,8 @@ void LedgerMongodb::add_denunciations(
         denunciation.block_author().key_pub() ==
             *authors[denunciation.block_height()] &&
         !is_ancestor(denunciation.branch_path(), branch_path) &&
-        !unsafe_denunciation_exists(denunciation, block->header().height(),
-                                    branch_path)) {
+        !denunciation_exists(denunciation, block->header().height(),
+                             branch_path)) {
       auto added_denunciation = block->add_denunciations();
       added_denunciation->CopyFrom(denunciation);
       added_denunciation->clear_branch_path();

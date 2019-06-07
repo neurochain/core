@@ -198,9 +198,6 @@ class Ledger {
   virtual bool get_assemblies_to_compute(
       std::vector<messages::Assembly> *assemblies) const = 0;
 
-  virtual bool unsafe_get_assembly(const messages::AssemblyID &assembly_id,
-                                   messages::Assembly *assembly) const = 0;
-
   virtual bool get_block_writer(const messages::AssemblyID &assembly_id,
                                 int32_t address_rank,
                                 messages::Address *address) const = 0;

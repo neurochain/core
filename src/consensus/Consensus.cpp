@@ -550,9 +550,6 @@ Config Consensus::config() const { return _config; }
 
 void Consensus::init(bool start_threads) {
   for (const auto &key : _keys) {
-    LOG_DEBUG << "EMPLACE ADDRESS " << std::endl;
-    LOG_DEBUG << "EMPLACE ADDRESS " << messages::Address(key.key_pub())
-              << std::endl;
     _addresses.emplace_back(key.key_pub());
   }
   if (start_threads) {
