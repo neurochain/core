@@ -7,12 +7,7 @@ HunterGate(
   SHA1 "a96d2e54ee8218f0248da804f2b4f4234f66d612"
   )
 
-
-if (${CMAKE_BUILD_TYPE} MATCHES Debug)
-    option(CPPCHECK "use cppcheck" On)
-else()
-    option(CPPCHECK "use cppcheck" Off)
-endif()
+option(CPPCHECK "use cppcheck" OFF)
 
 set(CPACK_PACKAGE_VERSION_MAJOR "0")
 set(CPACK_PACKAGE_VERSION_MINOR "0")
@@ -89,6 +84,6 @@ set(CPACK_COMPONENTS_ALL dev main)
 
 include(CPack)
 
-if (NOT CPPCHECK)
-  unset(CMAKE_CXX_CPPCHECK)
+if (CPPCHECK)
+    find_program(CMAKE_CXX_CPPCHECK NAMES cppcheck)
 endif()
