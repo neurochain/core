@@ -36,7 +36,4 @@
     "block0Format": "PROTO",
     "block0Path": "data.0.testnet"
   },
-  "rest": {
-    "port": 8080
-  }
 }

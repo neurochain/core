@@ -122,8 +122,8 @@ build_image_prod:release:
     export BUILD_TYPE=$1
     mkdir build || echo k
     cd build
-    cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/root -DCMAKE_BUILD_TYPE=$1 ..
-    make -j5
+    cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/root -DCMAKE_BUILD_TYPE=$1 -G Ninja ..
+    ninja 
     mkdir /tmp/db && nohup mongod --dbpath /tmp/db & 
     sleep 5
     python3 ../utils/dockers/times3.py ctest -V
@@ -142,8 +142,8 @@ build_image_prod:release:
     env
     docker container list -a 
     docker build -f "utils/dockers/$DOCKER_FILE_NAME" --build-arg DOCKER_BUILD_TYPE=$BUILD_TYPE -t "${DOCKER_IMAGE_CORE}/$IMAGE_SUFFIX:latest" -t "${DOCKER_IMAGE_CORE}/$IMAGE_SUFFIX:$CI_COMMIT_SHA" .
-    docker push "$DOCKER_IMAGE_BUILD/$IMAGE_SUFFIX:latest"
-    docker push "$DOCKER_IMAGE_CORE/$IMAGE_SUFFIX:$CI_COMMIT_SHA"
+    docker push "${DOCKER_IMAGE_CORE}/$IMAGE_SUFFIX:latest"
+    docker push "${DOCKER_IMAGE_CORE}/$IMAGE_SUFFIX:$CI_COMMIT_SHA"
   }
  
 before_script:

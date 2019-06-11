@@ -226,7 +226,9 @@ bool Bot::init() {
     std::this_thread::sleep_for(1s);
   }
 
-  _api = std::make_unique<api::Rest>(_config.rest(), this);
+  if (_config.has_rest()) {
+    _api = std::make_unique<api::Rest>(_config.rest(), this);
+  }
   
   update_ledger();
   this->keep_max_connections();
