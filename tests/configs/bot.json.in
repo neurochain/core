@@ -16,9 +16,6 @@
     "block0_format": "PROTO",
     "block0_path": "../../block.0.bp"
   },
-  "rest": {
-    "port": 8080
-  }
 }
 
 
