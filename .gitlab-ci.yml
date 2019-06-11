@@ -18,8 +18,10 @@ build_image_dev:debug:
   stage: env_dev
   variables:
     DOCKER_DRIVER: overlay2
-  services:
-    - docker:stable-dind
+  tags:
+    - dind
+#  services:
+#    - docker:stable-dind
   only:
     changes:
     - utils/dockers/Dockerfile.*
@@ -34,8 +36,10 @@ build_image_dev:release:
   stage: env_dev
   variables:
     DOCKER_DRIVER: overlay2
-  services:
-    - docker:stable-dind
+  tags:
+    - dind
+#  services:
+#    - docker:stable-dind
   only:
     changes:
     - utils/dockers/Dockerfile.ubuntu
@@ -133,7 +137,7 @@ build_image_prod:release:
     export DOCKER_FILE_NAME=$1
     export BUILD_TYPE=$2
     export IMAGE_SUFFIX=$(echo $BUILD_TYPE| tr '[:upper:]' '[:lower:]')
-
+  
     docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
     env
     docker container list -a 
