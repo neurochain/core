@@ -33,6 +33,7 @@ class KeyPriv : public messages::_KeyPriv {
 
   KeyPub make_key_pub() const;
   bool operator==(const KeyPriv &key) const;
+  CryptoPP::Integer exponent() const;
   friend std::ostream &operator<<(std::ostream &os, const KeyPriv &priv);
 };
 

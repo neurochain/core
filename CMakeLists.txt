@@ -3,8 +3,8 @@ set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake")
 include(HunterGate)
 
 HunterGate(
-  URL "https://gitlab.com/traxncc/hunter/-/archive/b44295cdc47eaebecb7d29f25fa1f56cf633f6ba/hunter-705c7bb52ffe8f69531a8dedcb85205b06930b33.tar.gz"
-  SHA1 "043b9163aee2491060db19baf016f8c14fab1938"
+  URL "https://gitlab.com/traxncc/hunter/-/archive/f4397f73231e9e476ea971418834e4537141e161/hunter-f4397f73231e9e476ea971418834e4537141e161.tar.bz2"
+  SHA1 "a96d2e54ee8218f0248da804f2b4f4234f66d612"
   )
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -37,6 +37,7 @@ configure_file(
 enable_testing ()
 
 
+set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};~/root/lib/cmake/pistache")
 set(CMAKE_CXX_FLAGS "-Wall ${CMAKE_CXX_FLAGS} -std=c++17 -Wno-ignored-qualifiers -pipe -Werror")
 set(CMAKE_CXX_FLAGS_RELEASE " -O3")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 --coverage -fsanitize=address")
@@ -58,12 +59,12 @@ find_package(Protobuf CONFIG REQUIRED)
 hunter_add_package(cryptopp)
 find_package(cryptopp CONFIG REQUIRED)
 
+#hunter_add_package(Pistache)
+find_package(Pistache REQUIRED pistache_shared)
+
 hunter_add_package(mongo-cxx-driver)
 find_package(libbsoncxx-static CONFIG REQUIRED)
 find_package(libmongocxx-static CONFIG REQUIRED)
-
-hunter_add_package(libonion)
-find_package(libonion CONFIG REQUIRED)
 
 hunter_add_package(cpr)
 find_package(cpr CONFIG REQUIRED)

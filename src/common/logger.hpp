@@ -33,7 +33,6 @@
 
 #include "config.pb.h"
 #include "messages.pb.h"
-#include "messages/Message.hpp"
 
 // register a global logger
 BOOST_LOG_GLOBAL_LOGGER(logger, boost::log::sources::severity_logger_mt<
