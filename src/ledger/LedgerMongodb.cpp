@@ -1076,7 +1076,6 @@ bool LedgerMongodb::cleanup_transaction_pool(
   auto cursor =
       _transactions.find(std::move(query), projection(TRANSACTION + "." + ID));
 
-  std::vector<messages::TransactionID> ids;
   bsoncxx::builder::basic::array bson_ids;
   for (const auto &bson_transaction : cursor) {
     bson_ids.append(bson_transaction[TRANSACTION][ID].get_document());

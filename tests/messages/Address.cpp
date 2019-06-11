@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 #include <random>
 #include "crypto/KeyPub.hpp"
+#include "messages/Message.hpp"
 
 namespace neuro {
 namespace messages {
