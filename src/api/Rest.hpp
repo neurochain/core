@@ -24,8 +24,7 @@ class Rest : public Api {
 
   void init() {
     auto opts = Http::Endpoint::options()
-                .threads(1)
-                .flags(Tcp::Options::InstallSignalHandler);
+                .threads(1);
     httpEndpoint->init(opts);
     setupRoutes();
     start();
