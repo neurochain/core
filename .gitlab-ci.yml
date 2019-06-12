@@ -77,7 +77,7 @@ pages:
     - apk add doxygen
     - apk add ttf-freefont graphviz
   script:
-    - mkdir build && cd build && doxygen ../doc/Doxyfile
+    - mkdir build ||echo exist && cd build && doxygen ../doc/Doxyfile
     - mv html ../public
     - mv ../doc/img ../public 
 
