@@ -111,7 +111,7 @@ build_image_prod:release:
 
 .build_bot: &build_bot |
   function build_bot() {
-    echo "Building in $1"
+    echo "Building in $1 from $(pwd)"
     set -ex 
     export BUILD_TYPE=$1
     mkdir build || echo k
@@ -127,7 +127,7 @@ build_image_prod:release:
 
 .build_docker: &build_docker |
   function build_docker() {
-    echo "Building docker image $1"
+    echo "Building docker image $1 from $(pwd)"
     set -ex 
     export DOCKER_FILE_NAME=$1
     export BUILD_TYPE=$2
