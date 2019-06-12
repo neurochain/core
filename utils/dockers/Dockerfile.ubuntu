@@ -13,8 +13,8 @@ RUN python3 -m pip install requests
 RUN python3 -m pip install gcovr
 RUN /usr/bin/ssh-keygen -A
 
-RUN chown neuro:neuro -R .
-RUN chmod 700 -R .
+#RUN chown neuro:neuro -R .
+#RUN chmod 700 -R .
 
 RUN pwd && ls -lahrt \\
     cd .. && \\
