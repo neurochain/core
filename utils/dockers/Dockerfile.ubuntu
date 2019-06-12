@@ -19,7 +19,6 @@ RUN chown neuro:neuro -R .
 RUN chmod 700 -R .
 
 RUN pwd && ls -lahrt && whoami && \
-    cd .. && \
     git clone -n https://github.com/oktal/pistache.git && \
     cd pistache && \
     git checkout b68082f82214632ea7cc5e26edaf2c69cede2979 && \
