@@ -19,7 +19,7 @@ RUN /usr/bin/ssh-keygen -A
 RUN pwd && ls -lahrt && \
     cd .. && \
     git clone -n https://github.com/oktal/pistache.git && \
-    cd pistache \
+    cd pistache && \
     git checkout b68082f82214632ea7cc5e26edaf2c69cede2979 && \
     mkdir build && \
     cd build && \
