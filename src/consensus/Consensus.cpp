@@ -23,7 +23,7 @@ class RealtimeConsensus;
 
 Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
                      const std::vector<crypto::Ecc> &keys,
-                     const PublishBlock publish_block, bool start_threads)
+                     const PublishBlock &publish_block, bool start_threads)
     : _ledger(ledger), _keys(keys), _publish_block(publish_block) {
   init(start_threads);
 }
@@ -31,7 +31,7 @@ Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
 Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
                      const std::vector<crypto::Ecc> &keys,
                      const std::optional<Config> &config,
-                     const PublishBlock publish_block, bool start_threads)
+                     const PublishBlock &publish_block, bool start_threads)
     : _config(config.value_or(Config())),
       _ledger(ledger),
       _keys(keys),
@@ -41,7 +41,7 @@ Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
 
 Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
                      const std::vector<crypto::Ecc> &keys, const Config &config,
-                     const PublishBlock publish_block, bool start_threads)
+                     const PublishBlock &publish_block, bool start_threads)
     : _config(config),
       _ledger(ledger),
       _keys(keys),
@@ -619,10 +619,8 @@ bool Consensus::add_double_mining(const messages::Block &block) {
 }
 
 bool Consensus::add_block(const messages::Block &block) {
-  return _ledger->insert_block(block) &&
-      verify_blocks() &&
-      _ledger->update_main_branch() &&
-      add_double_mining(block);
+  return _ledger->insert_block(block) && verify_blocks() &&
+         _ledger->update_main_branch() && add_double_mining(block);
 }
 
 void Consensus::start_compute_pii_thread() {

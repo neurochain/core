@@ -31,7 +31,7 @@ class Consensus {
   std::shared_ptr<ledger::Ledger> _ledger;
   const std::vector<crypto::Ecc> &_keys;
   std::vector<messages::Address> _addresses;
-  const PublishBlock _publish_block;
+  const PublishBlock &_publish_block;
   std::atomic<bool> _stop_compute_pii;
   std::thread _compute_pii_thread;
   std::vector<std::pair<messages::BlockHeight, AddressIndex>> _heights_to_write;
@@ -95,16 +95,16 @@ class Consensus {
  public:
   Consensus(std::shared_ptr<ledger::Ledger> ledger,
             const std::vector<crypto::Ecc> &keys,
-            const PublishBlock publish_block, bool start_threads = true);
-
-  Consensus(std::shared_ptr<ledger::Ledger> ledger,
-            const std::vector<crypto::Ecc> &keys, const Config &config,
-            const PublishBlock publish_block, bool start_threads = true);
+            const PublishBlock &publish_block, bool start_threads = true);
 
   Consensus(std::shared_ptr<ledger::Ledger> ledger,
             const std::vector<crypto::Ecc> &keys,
             const std::optional<Config> &config,
-            const PublishBlock publish_block, bool start_threads = true);
+            const PublishBlock &publish_block, bool start_threads = true);
+
+  Consensus(std::shared_ptr<ledger::Ledger> ledger,
+            const std::vector<crypto::Ecc> &keys, const Config &config,
+            const PublishBlock &publish_block, bool start_threads = true);
 
   Config config() const;
 
