@@ -3,6 +3,7 @@ syntax = "proto2";
 package neuro.messages.config;
 
 import "common.proto";
+import "messages.proto";
 
 message Logs {
   enum Severity {
@@ -26,16 +27,24 @@ message Rest {
   optional uint64 faucet_amount = 3;
 }
 
-message _Database {
-  enum Block0Format {
+message BlockFile {
+  enum BlockFormat {
     PROTO = 1;
     BSON = 2;
     JSON = 3;
   }
+  required BlockFormat block_format = 1 [default = PROTO];
+  required string block_path = 2;
+}
+
+message _Database {
   required string url = 1;
   required string db_name = 2;
-  required Block0Format block0_format = 3 [default = PROTO];
-  required string block0_path = 4;
+  oneof block0_types {
+    BlockFile block0_file = 3;
+    Block block0 = 4;
+  }
+  optional bool empty_database = 5 [default=false];
 }
 
 message Tcp {
@@ -44,13 +53,22 @@ message Tcp {
   repeated _Peer peers = 3;
 }
 
+message KeysPaths {
+  required string key_pub_path = 1;
+  required string key_priv_path = 2;
+}
+
+message Keys {
+  required _KeyPriv key_priv = 1;
+  required _KeyPub key_pub = 2;
+}
+
 message Networking {
   optional int32 max_connections = 1;
   required Tcp tcp = 2;
   optional int32 peers_update_time = 3 [default = 2];
-  required string key_pub_path = 4;
-  required string key_priv_path = 5;
-  
+  repeated KeysPaths keys_paths = 4;
+  repeated Keys keys = 5;
 }
 
 message _Config {

@@ -148,6 +148,8 @@ class Ledger {
 
   virtual void empty_database() = 0;
 
+  virtual void init_database(const messages::Block &block0) = 0;
+
   virtual bool get_unverified_blocks(
       std::vector<messages::TaggedBlock> *tagged_blocks) const = 0;
 
@@ -194,9 +196,6 @@ class Ledger {
 
   virtual bool get_assemblies_to_compute(
       std::vector<messages::Assembly> *assemblies) const = 0;
-
-  virtual bool unsafe_get_assembly(const messages::AssemblyID &assembly_id,
-                                   messages::Assembly *assembly) const = 0;
 
   virtual bool get_block_writer(const messages::AssemblyID &assembly_id,
                                 int32_t address_rank,
@@ -529,11 +528,11 @@ class Ledger {
 
     // Build keys
 
-    for (auto input : inputs) {
+    for (const auto &input : inputs) {
       transaction.add_inputs()->CopyFrom(input);
     }
 
-    for (auto output : outputs) {
+    for (const auto &output : outputs) {
       transaction.add_outputs()->CopyFrom(output);
     }
 
@@ -618,6 +617,7 @@ class Ledger {
       const crypto::KeyPriv &sender_key_priv,
       const messages::Address &recipient_address, const float ratio_to_send,
       const std::optional<messages::NCCAmount> &fees = {}) const {
+    assert(ratio_to_send <= 1);
     std::lock_guard<std::mutex> lock(_send_ncc_mutex);
     auto sender_address = messages::Address(sender_key_priv.make_key_pub());
 

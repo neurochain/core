@@ -1,23 +1,28 @@
 {
   "logs": {
-      "severity": "debug",
-      "to_stdout": true
+    "severity": "debug",
+    "to_stdout": true
   },
-  "networking" : {
-      "key_pub_path" : "key0.pub",
-      "key_priv_path" : "key0.priv",
-      "max_connections" : 3,
-      "tcp" : {
-          "port" : 1337,
-            "endpoint": "localhost",
-          "peers" : [
-          ]
+  "networking": {
+    "keys_paths": [
+      {
+        "key_pub_path": "key0.pub",
+        "key_priv_path": "key0.priv"
       }
+    ],
+    "max_connections": 3,
+    "tcp": {
+      "port": 1337,
+      "endpoint": "localhost",
+      "peers": []
+    }
   },
   "database": {
-      "url" : "mongodb://localhost:27017/neuro",
-      "db_name" : "neuro",
-      "block0_format": "PROTO",
-      "block0_path" : "data.0.testnet"
+    "url": "mongodb://localhost:27017/neuro",
+    "db_name": "neuro",
+    "block0_file": {
+      "block_format": "PROTO",
+      "block_path": "data.0.testnet"
+    }
   }
 }

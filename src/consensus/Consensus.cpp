@@ -23,14 +23,25 @@ class RealtimeConsensus;
 
 Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
                      const std::vector<crypto::Ecc> &keys,
-                     PublishBlock publish_block, bool start_threads)
+                     const PublishBlock &publish_block, bool start_threads)
     : _ledger(ledger), _keys(keys), _publish_block(publish_block) {
   init(start_threads);
 }
 
 Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
+                     const std::vector<crypto::Ecc> &keys,
+                     const std::optional<Config> &config,
+                     const PublishBlock &publish_block, bool start_threads)
+    : _config(config.value_or(Config())),
+      _ledger(ledger),
+      _keys(keys),
+      _publish_block(publish_block) {
+  init(start_threads);
+}
+
+Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
                      const std::vector<crypto::Ecc> &keys, const Config &config,
-                     PublishBlock publish_block, bool start_threads)
+                     const PublishBlock &publish_block, bool start_threads)
     : _config(config),
       _ledger(ledger),
       _keys(keys),
@@ -549,16 +560,17 @@ void Consensus::init(bool start_threads) {
 }
 
 Consensus::~Consensus() {
-  halt_thread(&_compute_pii_thread, &_stop_compute_pii);
-  halt_thread(&_update_heights_thread, &_stop_update_heights);
-  halt_thread(&_miner_thread, &_stop_miner);
-}
-
-void Consensus::halt_thread(std::thread *thread_object,
-                            std::atomic<bool> *stop_thread) {
-  *stop_thread = true;
-  if (thread_object->joinable()) {
-    thread_object->join();
+  _stop_compute_pii = true;
+  _stop_update_heights = true;
+  _stop_miner = true;
+  if (_compute_pii_thread.joinable()) {
+    _compute_pii_thread.join();
+  }
+  if (_update_heights_thread.joinable()) {
+    _update_heights_thread.join();
+  }
+  if (_miner_thread.joinable()) {
+    _miner_thread.join();
   }
 }
 
@@ -607,10 +619,8 @@ bool Consensus::add_double_mining(const messages::Block &block) {
 }
 
 bool Consensus::add_block(const messages::Block &block) {
-  return _ledger->insert_block(block) &&
-      verify_blocks() &&
-      _ledger->update_main_branch() &&
-      add_double_mining(block);
+  return _ledger->insert_block(block) && verify_blocks() &&
+         _ledger->update_main_branch() && add_double_mining(block);
 }
 
 void Consensus::start_compute_pii_thread() {
