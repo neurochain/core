@@ -27,21 +27,21 @@ message Rest {
   optional uint64 faucet_amount = 3;
 }
 
-message Block0File {
-  enum Block0Format {
+message BlockFile {
+  enum BlockFormat {
     PROTO = 1;
     BSON = 2;
     JSON = 3;
   }
-  required Block0Format block0_format = 1 [default = PROTO];
-  required string block0_path = 2;
+  required BlockFormat block_format = 1 [default = PROTO];
+  required string block_path = 2;
 }
 
 message _Database {
   required string url = 1;
   required string db_name = 2;
   oneof block0_types {
-    Block0File block0_file = 3;
+    BlockFile block0_file = 3;
     Block block0 = 4;
   }
   optional bool empty_database = 5 [default=false];

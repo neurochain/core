@@ -170,9 +170,9 @@ bool LedgerMongodb::load_block0(const messages::config::Database &config,
   std::lock_guard lock(_ledger_mutex);
   if (config.has_block0_file()) {
     auto block0_file = config.block0_file();
-    std::ifstream block0stream(block0_file.block0_path());
+    std::ifstream block0stream(block0_file.block_path());
     if (!block0stream.is_open()) {
-      LOG_ERROR << "Could not load block from " << block0_file.block0_path()
+      LOG_ERROR << "Could not load block from " << block0_file.block_path()
                 << " from " << boost::filesystem::current_path().native();
       return false;
     }
@@ -180,18 +180,16 @@ bool LedgerMongodb::load_block0(const messages::config::Database &config,
                     std::istreambuf_iterator<char>());
 
     auto d = bss::document{};
-    switch (block0_file.block0_format()) {
-      case messages::config::Block0File::Block0Format::
-          Block0File_Block0Format_PROTO:
+    switch (block0_file.block_format()) {
+      case messages::config::BlockFile::BlockFormat::
+          BlockFile_BlockFormat_PROTO:
         block0->ParseFromString(str);
         break;
-      case messages::config::Block0File::Block0Format::
-          Block0File_Block0Format_BSON:
+      case messages::config::BlockFile::BlockFormat::BlockFile_BlockFormat_BSON:
         d << str;
         from_bson(d.view(), block0);
         break;
-      case messages::config::Block0File::Block0Format::
-          Block0File_Block0Format_JSON:
+      case messages::config::BlockFile::BlockFormat::BlockFile_BlockFormat_JSON:
         messages::from_json(str, block0);
         break;
     }

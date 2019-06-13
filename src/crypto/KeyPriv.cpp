@@ -21,7 +21,7 @@ KeyPriv::KeyPriv(std::shared_ptr<CryptoPP::AutoSeededRandomPool> prng,
                  const std::string &filepath)
     : _prng(prng) {
   if (!load(filepath)) {
-    throw std::runtime_error("Public key validation failed");
+    throw std::runtime_error("Public key load failed");
   }
 }
 
@@ -29,7 +29,7 @@ KeyPriv::KeyPriv(std::shared_ptr<CryptoPP::AutoSeededRandomPool> prng,
                  const messages::_KeyPriv &key_priv)
     : _prng(prng) {
   if (!load(Buffer(key_priv.data()))) {
-    throw std::runtime_error("Public key validation failed");
+    throw std::runtime_error("Public key load failed");
   }
 }
 
