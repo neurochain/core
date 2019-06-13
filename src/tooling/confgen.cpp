@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
     std::cout << desc << "\n";
     return 1;
   }
-  if (vm.count("help")) {
+  if (vm.count("help") != 0u) {
     std::cout << "usage: " << desc << "\n";
     return 1;
   }

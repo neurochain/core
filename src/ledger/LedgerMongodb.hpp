@@ -232,7 +232,7 @@ class LedgerMongodb : public Ledger {
       const messages::BranchPath &branch_path) const;
 
   bool get_pii(const messages::Address &address,
-               const messages::AssemblyID &assembly_id, Double *score) const;
+               const messages::AssemblyID &assembly_id, Double *pii) const;
 
   bool get_assembly_piis(const messages::AssemblyID &assembly_id,
                          std::vector<messages::Pii> *piis);

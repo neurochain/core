@@ -638,7 +638,7 @@ bool LedgerMongodb::unsafe_insert_block(
   if (!result) {
     return false;
   }
-  if (bson_transactions.size() > 0) {
+  if (!bson_transactions.empty()) {
     return static_cast<bool>(
         _transactions.insert_many(std::move(bson_transactions)));
   }
@@ -887,7 +887,7 @@ bool LedgerMongodb::delete_transaction(const messages::TransactionID &id) {
                                << BLOCK_ID << bsoncxx::types::b_null{}
                                << bss::finalize;
   auto result = _transactions.delete_many(std::move(query));
-  bool did_delete = result && result->deleted_count();
+  bool did_delete = result && (result->deleted_count() != 0);
   if (did_delete) {
     return true;
   }
@@ -1241,7 +1241,7 @@ bool LedgerMongodb::get_assembly_piis(const messages::AssemblyID &assembly_id,
     auto &pii = piis->emplace_back();
     from_bson(bson_pii, &pii);
   }
-  return piis->size() > 0;
+  return !piis->empty();
 }
 
 bool LedgerMongodb::set_pii(const messages::Pii &pii) {
