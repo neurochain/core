@@ -9,6 +9,7 @@
 #include "common/logger.hpp"
 #include "common/types.hpp"
 #include "messages/Subscriber.hpp"
+#include "api/Rest.hpp"
 
 namespace neuro {
 using namespace std::chrono_literals;
@@ -226,6 +227,10 @@ bool Bot::init() {
     std::this_thread::sleep_for(1s);
   }
 
+  if (_config.has_rest()) {
+    _api = std::make_unique<api::Rest>(_config.rest(), this);
+  }
+  
   update_ledger();
   this->keep_max_connections();
 
@@ -287,7 +292,7 @@ void Bot::update_peerlist() {
 //       continue;
 //     }
 //     crypto::EccPub ecc_pub;
-//     ecc_pub.load(peer.key_pub());
+//     ecc_pub.load_from_point(peer.key_pub());
 //     graph.add_peers_addresses()->CopyFrom(messages::Address(ecc_pub));
 //   }
 
@@ -482,7 +487,7 @@ void Bot::subscribe(const messages::Type type,
   _subscriber.subscribe(type, callback);
 }
 
-void Bot::publish_transaction(const messages::Transaction &transaction) const {
+bool Bot::publish_transaction(const messages::Transaction &transaction) const {
   // Add the transaction to the transaction pool
   _consensus->add_transaction(transaction);
 
@@ -491,7 +496,7 @@ void Bot::publish_transaction(const messages::Transaction &transaction) const {
   messages::fill_header(message->mutable_header());
   auto body = message->add_bodies();
   body->mutable_transaction()->CopyFrom(transaction);
-  _networking.send(message);
+  return (_networking.send(message) != networking::TransportLayer::SendResult::FAILED);
 }
 
 void Bot::publish_block(const messages::Block &block) const {
@@ -503,6 +508,10 @@ void Bot::publish_block(const messages::Block &block) const {
   _networking.send(message);
 }
 
+ledger::Ledger *Bot::ledger() {
+  return _ledger.get();
+}
+  
 void Bot::join() { _networking.join(); }
 
 Bot::~Bot() {

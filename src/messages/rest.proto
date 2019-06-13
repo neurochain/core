@@ -5,9 +5,6 @@ package neuro.messages;
 import "messages.proto";
 import "common.proto";
 
-message Transactions {
-  repeated Transaction transactions = 1;
-}
 
 message RestUnspentTransaction {
   required bytes transaction_id = 1;

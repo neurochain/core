@@ -2,13 +2,12 @@ FROM ubuntu:18.10
 
 MAINTAINER trax Omar Givernaud
 LABEL Description "compile linux ubuntu"
-ARG DOCKER_BUILD_TYPE=Release
 
 RUN apt-get update -y
 RUN adduser  --disabled-password --gecos "" neuro
 
-# Install Packages dep
-RUN apt-get install -y build-essential git cmake subversion  pkg-config wget tar python3 python3-pip mongodb-server libmpfrc++-dev
+# Install Packages
+RUN apt-get install -y build-essential git cmake subversion  pkg-config wget tar python3 python3-pip mongodb-server libmpfrc++-dev ninja-build
 RUN python3 -m pip install requests
 RUN python3 -m pip install gcovr
 RUN /usr/bin/ssh-keygen -A
@@ -20,6 +19,9 @@ RUN chmod 700 -R .
 WORKDIR /home/neuro/
 USER neuro
 
-RUN git clone https://gitlab.com/neurochaintech/core.git && mkdir core/build && cd core/build && cmake -DCMAKE_BUILD_TYPE=${DOCKER_BUILD_TYPE} ..
+RUN git clone --depth 1 https://github.com/oktal/pistache.git &&\
+    cd pistache && mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=~/root/lib/cmake/pistache .. && make && make install 
+
+RUN pwd && git clone https://gitlab.com/neurochaintech/core.git && mkdir core/build && cd core/build && cmake -DCMAKE_BUILD_TYPE=Debug ..
 
 EXPOSE 22

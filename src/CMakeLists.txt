@@ -2,7 +2,6 @@ set(ProtoFiles
   "${CMAKE_CURRENT_SOURCE_DIR}/messages/common.proto"
   "${CMAKE_CURRENT_SOURCE_DIR}/messages/config.proto"
   "${CMAKE_CURRENT_SOURCE_DIR}/messages/messages.proto"
-  "${CMAKE_CURRENT_SOURCE_DIR}/messages/rest.proto"
   "${CMAKE_CURRENT_SOURCE_DIR}/messages/consensus.proto"
   )
 
@@ -71,6 +70,7 @@ add_library(core
   ./messages/Peers.cpp
   ./messages/Peer.hpp
   ./messages/Peer.cpp
+  ./messages/NCCAmount.hpp
   ./ledger/Parser.hpp
   ./ledger/Filter.hpp
   ./ledger/mongo.hpp
@@ -81,6 +81,8 @@ add_library(core
   ./Bot.hpp
 #  ./rest/Rest.cpp
 #  ./rest/Rest.hpp
+  ./api/Api.hpp
+  ./api/Api.cpp
   ./consensus/Consensus.hpp
   ./consensus/Consensus.cpp
   ./consensus/Pii.hpp
@@ -105,6 +107,8 @@ target_link_libraries(core
   protobuf::libprotobuf
   ${LIBMONGOCXX_STATIC_LIBRARIES}
 
+  pistache
+  
   mpfr
 )
 
@@ -121,8 +125,7 @@ target_link_libraries(main
   Boost::filesystem
   Boost::thread
 
-  libonion::onion
-  libonion::onioncpp
+  pistache
 
   cpr::cpr
 

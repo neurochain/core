@@ -41,8 +41,5 @@
       "blockFormat": "PROTO",
       "blockPath": "data.0.testnet"
     }
-  },
-  "rest": {
-    "port": 8081
   }
 }

@@ -1,6 +1,7 @@
 #include "ledger/LedgerMongodb.hpp"
 #include <chrono>
 #include "common/logger.hpp"
+#include "messages/Hasher.hpp"
 #include "messages.pb.h"
 
 namespace neuro {
