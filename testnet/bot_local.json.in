@@ -40,8 +40,8 @@
   "database": {
     "url": "mongodb://localhost:27017",
     "dbName": "neuro",
-    "block0Format": "PROTO",
-    "block0Path": "@CMAKE_CURRENT_BINARY_DIR@/data.0.testnet"
+    "blockFormat": "PROTO",
+    "blockPath": "@CMAKE_CURRENT_BINARY_DIR@/data.0.testnet"
   },
   "rest": {
     "port": 8080
