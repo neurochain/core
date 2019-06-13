@@ -47,7 +47,7 @@ class Rest : public Api {
     Routes::Get(router, "/ready", Routes::bind(&Rest::get_ready, this));
     Routes::Post(router, "/create_transaction/:address/:fees",
                  Routes::bind(&Rest::get_create_transaction, this));
-    Routes::Post(router, "/publish/:transaction/:signature", Routes::bind(&Rest::publish, this));
+    Routes::Post(router, "/publish", Routes::bind(&Rest::publish, this));
   }
 
   void get_balance(const Pistache::Rest::Request& request, Pistache::Http::ResponseWriter response) {
@@ -84,10 +84,16 @@ class Rest : public Api {
 
   void publish(const Pistache::Rest::Request &request,
                Pistache::Http::ResponseWriter response) {
+    messages::Publish publish_message;
+    if (!messages::from_json(request.body(), &publish_message)) {
+      response.send(Pistache::Http::Code::Bad_Request,
+                    "Could not parse body");
+    }
+
     const auto transaction_bin =
-        Buffer(request.param(":transaction").as<std::string>(),
+        Buffer(publish_message.transaction(),
                Buffer::InputType::HEX);
-    const auto signature = Buffer(request.param(":signature").as<std::string>(),
+    const auto signature = Buffer(publish_message.signature(),
                                   Buffer::InputType::HEX);
 
     messages::Transaction transaction;
@@ -97,13 +103,7 @@ class Rest : public Api {
       return;
     }
 
-    messages::_KeyPub key_pub_proto;
-    if (!messages::from_json(request.body(), &key_pub_proto)) {
-      response.send(Pistache::Http::Code::Bad_Request,
-          "Could not parse public key");
-    }
-
-    crypto::KeyPub key_pub(key_pub_proto);
+    crypto::KeyPub key_pub(publish_message.key_pub());
     auto input_signature = transaction.add_signatures();
     input_signature->mutable_signature()->set_type(messages::Hash::SHA256);
     key_pub.save(input_signature->mutable_key_pub());

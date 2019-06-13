@@ -153,6 +153,12 @@ message ConnectionReady {
 
 message BodyCount {}
 
+message Publish {
+  required string transaction = 1;
+  required string signature = 2;
+  required _KeyPub key_pub = 3;
+}
+
 message Body {
   oneof body {
     Hello hello = 1;
@@ -167,6 +173,7 @@ message Body {
     ConnectionClosed connection_closed = 10;
     ConnectionReady connection_ready = 11;
     BodyCount body_count = 12;
+    Publish publish = 13;
   }
 }
 
