@@ -1,10 +1,11 @@
 {
-  "random_transaction": 0.1,
+  "random_transaction": 0.8,
   "logs": {
     "severity": "trace",
     "toStdout": true
   },
   "networking": {
+    "peersUpdateTime": 1,
     "maxConnections": 3,
     "tcp": {
       "port": 1339,
@@ -32,7 +33,7 @@
     "keyPrivPath": "key2.priv"
   },
   "database": {
-    "url": "mongodb://localhost:27017/neuro",
+    "url": "mongodb://localhost:27017/",
     "dbName": "neuro1339",
     "block0Format": "PROTO",
     "block0Path": "data.0.testnet"

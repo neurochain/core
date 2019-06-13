@@ -60,19 +60,31 @@ bool Consensus::check_inputs(
     bool invalid = false;
 
     // Check that inputs are not spent by any other transaction
-    const bool check_transaction_pool = true;
-    _ledger->for_each(
-        filter, tip, check_transaction_pool,
-        [&transaction, &invalid](const messages::TaggedTransaction match) {
-          if ((match.transaction().id() != transaction.id())) {
-            invalid = true;
-            return false;
-          }
-          return true;
-        });
+    const bool check_transaction_pool = !tagged_transaction.has_block_id();
+    _ledger->for_each(filter, tip, check_transaction_pool,
+                      [&transaction, &invalid,
+                       &input](const messages::TaggedTransaction match) {
+                        if ((match.transaction().id() != transaction.id())) {
+                          invalid = true;
+                          std::stringstream message;
+                          message << "Input " << input
+                                  << " is already spent by transaction "
+                                  << match.transaction().id();
+                          if (match.has_block_id()) {
+                            message << " in block " << match.block_id();
+                          } else {
+                            message << " in transaction pool";
+                          }
+                          LOG_INFO << message.str();
+
+                          return false;
+                        }
+                        return true;
+                      });
     if (invalid) {
       LOG_INFO << "Failed check_input for transaction "
-               << tagged_transaction.transaction().id();
+               << tagged_transaction.transaction().id() << " for input "
+               << input;
       return false;
     }
   }
@@ -526,13 +538,13 @@ bool Consensus::is_new_assembly(const messages::TaggedBlock &tagged_block,
 Config Consensus::config() const { return _config; }
 
 void Consensus::init(bool start_threads) {
+  for (const auto &key : _keys) {
+    _addresses.emplace_back(key.key_pub());
+  }
   if (start_threads) {
     start_compute_pii_thread();
     start_update_heights_thread();
     start_miner_thread();
-  }
-  for (const auto &key : _keys) {
-    _addresses.emplace_back(key.key_pub());
   }
 }
 
@@ -826,6 +838,12 @@ bool Consensus::build_block(const crypto::Ecc &keys,
     return false;
   }
   auto &last_block_header = last_block.block().header();
+  if (last_block_header.height() >= height) {
+    LOG_WARNING << "Trying to mine block with height " << height
+                << " while previous block has height "
+                << last_block_header.height();
+    return false;
+  }
   auto header = block->mutable_header();
   header->set_height(height);
   header->mutable_previous_block_hash()->CopyFrom(last_block_header.id());
@@ -836,6 +854,7 @@ bool Consensus::build_block(const crypto::Ecc &keys,
                               block->mutable_coinbase(), height);
 
   _ledger->get_transaction_pool(block);
+
   _ledger->add_denunciations(block, last_block.branch_path());
 
   messages::sort_transactions(block);
@@ -909,8 +928,8 @@ bool Consensus::mine_block(const messages::Block &block0) {
   const auto address_index = _heights_to_write[0].second;
   const auto block_start =
       block0.header().timestamp().data() + height * _config.block_period;
-  const auto block_end = block_start + _config.block_period;
-  const auto current_time = std::time(nullptr);
+  const std::time_t block_end = block_start + _config.block_period;
+  const std::time_t current_time = std::time(nullptr);
 
   if (current_time < block_start) {
     return false;
@@ -922,11 +941,19 @@ bool Consensus::mine_block(const messages::Block &block0) {
   }
 
   messages::Block new_block;
-  build_block(_keys[address_index], height, &new_block);
+  if (!build_block(_keys[address_index], height, &new_block)) {
+    return false;
+  }
+
+  // Check that the newly created block isn't late
+  if (new_block.header().timestamp().data() >= block_end) {
+    return false;
+  }
+
   _publish_block(new_block);
   add_block(new_block);
-  LOG_INFO << "Mined block successfully with height "
-           << new_block.header().height();
+  LOG_INFO << "Mined block successfully with id " << new_block.header().id()
+           << " with height " << new_block.header().height();
   return true;
 }
 

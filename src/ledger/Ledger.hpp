@@ -70,6 +70,8 @@ class Ledger {
   };
 
  private:
+  mutable std::mutex _send_ncc_mutex;
+
  public:
   Ledger() {}
   virtual messages::TaggedBlock get_main_branch_tip() const = 0;
@@ -128,7 +130,9 @@ class Ledger {
   virtual bool add_to_transaction_pool(
       const messages::Transaction &transaction) = 0;
   virtual bool delete_transaction(const messages::TransactionID &id) = 0;
-  virtual std::size_t get_transaction_pool(messages::Block *block) = 0;
+  virtual std::size_t get_transaction_pool(messages::Block *block) const = 0;
+  virtual std::vector<messages::TaggedTransaction> get_transaction_pool()
+      const = 0;
 
   // virtual bool get_blocks(int start, int size,
   // std::vector<messages::Block> &blocks) = 0;
@@ -335,11 +339,11 @@ class Ledger {
     std::vector<messages::UnspentTransaction> unspent_transactions;
 
     auto transactions = list_transactions(address).transactions();
-    for (const auto& transaction : transactions) {
+    for (const auto &transaction : transactions) {
       bool has_unspent_output = false;
       int64_t amount = 0;
       for (int i = 0; i < transaction.outputs_size(); i++) {
-        const auto& output = transaction.outputs(i);
+        const auto &output = transaction.outputs(i);
         if (output.address() == address &&
             is_unspent_output(transaction.id(), i)) {
           has_unspent_output = true;
@@ -447,10 +451,10 @@ class Ledger {
     return inputs;
   }
 
-  void build_inputs(const std::vector<messages::TransactionID> &unspent_transactions_ids,
-		    const messages::Address &address,
-		    messages::Transaction *transaction) const {
-
+  void build_inputs(
+      const std::vector<messages::TransactionID> &unspent_transactions_ids,
+      const messages::Address &address,
+      messages::Transaction *transaction) const {
     // Process the outputs and lookup their output_id to build the inputs
     for (const auto &transaction_id : unspent_transactions_ids) {
       auto transaction_outputs =
@@ -464,8 +468,7 @@ class Ledger {
       }
     }
   }
-  
-  
+
   /*
    * Build inputs for a new transaction given a list of transactions containing
    * only the unpsent output for the desired address.
@@ -491,11 +494,9 @@ class Ledger {
    * Build inputs for a new transaction given a list of transactions containing
    * only the unpsent output for the desired address.
    */
-  void
-  build_inputs_from_outputs(const std::vector<messages::Transaction> &unspent_outputs,
-			    messages::Transaction *transaction) const {
-
-
+  void build_inputs_from_outputs(
+      const std::vector<messages::Transaction> &unspent_outputs,
+      messages::Transaction *transaction) const {
     // The list of transactions contains only the unspent outputs which makes it
     // easier
     for (const auto &unspent_output : unspent_outputs) {
@@ -506,15 +507,13 @@ class Ledger {
         input->set_signature_id(0);
       }
     }
-
   }
-  
+
   messages::Transaction build_transaction(
       const std::vector<messages::TransactionID> &unspent_transactions_ids,
       const std::vector<messages::Output> &outputs,
       const messages::Address &address,
       const std::optional<const messages::NCCAmount> &fees = {}) const {
-
     auto inputs = build_inputs(unspent_transactions_ids, address);
 
     return build_transaction(inputs, outputs, address, fees);
@@ -548,8 +547,7 @@ class Ledger {
   }
 
   messages::Transaction build_transaction(
-      const messages::Address &address,
-      const messages::NCCAmount &amount,
+      const messages::Address &address, const messages::NCCAmount &amount,
       const std::optional<messages::NCCAmount> &fees = {}) const {
     std::vector<messages::UnspentTransaction> unspent_transactions =
         list_unspent_transactions(address);
@@ -573,12 +571,9 @@ class Ledger {
    * sending a ratio of all those coin to the recipient
    */
 
-
-  
-  bool set_inputs (messages::Transaction *transaction,
-		   const messages::Address &sender,
-		   const messages::NCCAmount &fees) {
-
+  bool set_inputs(messages::Transaction *transaction,
+                  const messages::Address &sender,
+                  const messages::NCCAmount &fees) {
     auto unspent_outputs = list_unspent_outputs(sender);
 
     messages::NCCValue inputs_total = 0;
@@ -591,24 +586,26 @@ class Ledger {
     build_inputs_from_outputs(unspent_outputs, transaction);
 
     for (const auto &output : transaction->outputs()) {
-      if(inputs_total < output.value().value()) {
-	LOG_INFO << "Could not create transaction because of insufficient funds";
-	return false;
+      if (inputs_total < output.value().value()) {
+        LOG_INFO
+            << "Could not create transaction because of insufficient funds";
+        return false;
       }
       inputs_total -= output.value().value();
     }
 
     if (inputs_total < fees.value()) {
-      LOG_INFO << "Could not create transaction because of insufficient funds to pay fees";
+      LOG_INFO << "Could not create transaction because of insufficient funds "
+                  "to pay fees";
       return false;
     }
-    
+
     if (fees.value() > 0) {
       transaction->mutable_fees()->CopyFrom(fees);
       inputs_total -= fees.value();
     }
-    
-    if(inputs_total > 0) {
+
+    if (inputs_total > 0) {
       auto *output = transaction->add_outputs();
       output->mutable_address()->CopyFrom(sender);
       output->mutable_value()->set_value(inputs_total);
@@ -621,6 +618,7 @@ class Ledger {
       const crypto::KeyPriv &sender_key_priv,
       const messages::Address &recipient_address, const float ratio_to_send,
       const std::optional<messages::NCCAmount> &fees = {}) const {
+    std::lock_guard<std::mutex> lock(_send_ncc_mutex);
     auto sender_address = messages::Address(sender_key_priv.make_key_pub());
 
     std::vector<messages::Transaction> unspent_outputs =

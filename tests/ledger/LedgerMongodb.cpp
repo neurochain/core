@@ -151,6 +151,38 @@ class LedgerMongodb : public ::testing::Test {
     ASSERT_TRUE(ledger->get_block(block2.header().id(), &tagged_block));
     ASSERT_EQ(tagged_block.branch(), messages::Branch::FORK);
   }
+
+  void test_clean_transaction_pool() {
+    auto &address1 = simulator.addresses[1];
+
+    // Check that a block does not empty the transaction pool
+    ASSERT_EQ(ledger->get_transaction_pool().size(), 0);
+    auto block1 = simulator.new_block();
+    ASSERT_TRUE(simulator.consensus->add_transaction(
+        ledger->send_ncc(simulator.keys[0].key_priv(), address1, 0.5)));
+    ASSERT_EQ(ledger->get_transaction_pool().size(), 1);
+    ASSERT_TRUE(simulator.consensus->add_block(block1));
+    ASSERT_EQ(ledger->get_transaction_pool().size(), 1);
+    ASSERT_EQ(ledger->cleanup_transaction_pool(), 1);
+    ASSERT_EQ(ledger->get_transaction_pool().size(), 0);
+
+    // Create a block with a transaction
+    ASSERT_TRUE(simulator.consensus->add_transaction(
+        ledger->send_ncc(simulator.keys[0].key_priv(), address1, 0.5)));
+    auto block2 = simulator.new_block();
+
+    // Then remove the transaction from the transaction pool and create another
+    // transaction that is incompatible with the first one
+    ASSERT_EQ(ledger->cleanup_transaction_pool(), 1);
+    ASSERT_EQ(ledger->get_transaction_pool().size(), 0);
+    ASSERT_TRUE(simulator.consensus->add_transaction(
+        ledger->send_ncc(simulator.keys[0].key_priv(), address1, 0.8)));
+    ASSERT_EQ(ledger->get_transaction_pool().size(), 1);
+
+    // Now check that adding the block cleanup the transaction pool
+    ASSERT_TRUE(simulator.consensus->add_block(block2));
+    ASSERT_EQ(ledger->get_transaction_pool().size(), 0);
+  }
 };
 
 TEST_F(LedgerMongodb, load_block_0) {
@@ -722,12 +754,12 @@ TEST_F(LedgerMongodb, balance) {
   auto &address1 = simulator.addresses[1];
   ASSERT_EQ(ledger->balance(address0), ncc_block0);
   ASSERT_EQ(ledger->balance(address1), ncc_block0);
-  simulator.consensus->add_transaction(
-      ledger->send_ncc(simulator.keys[0].key_priv(), address1, 1));
+  ASSERT_TRUE(simulator.consensus->add_transaction(
+      ledger->send_ncc(simulator.keys[0].key_priv(), address1, 1)));
   ASSERT_EQ(ledger->balance(address0).value(), 0);
   ASSERT_EQ(ledger->balance(address1).value(), 2 * ncc_block0.value());
-  simulator.consensus->add_transaction(
-      ledger->send_ncc(simulator.keys[1].key_priv(), address0, 0.5));
+  ASSERT_TRUE(simulator.consensus->add_transaction(
+      ledger->send_ncc(simulator.keys[1].key_priv(), address0, 0.5)));
   ASSERT_EQ(ledger->balance(address0), ncc_block0);
   ASSERT_EQ(ledger->balance(address1), ncc_block0);
 }
@@ -881,6 +913,21 @@ TEST_F(LedgerMongodb, add_denunciations) {
   ASSERT_EQ(denunciation.block_author(), block1_bis.header().author());
   ASSERT_FALSE(denunciation.has_branch_path());
 }
+
+TEST_F(LedgerMongodb, send_ncc) {
+  auto &address0 = simulator.addresses[0];
+  auto &address1 = simulator.addresses[1];
+  ASSERT_EQ(ledger->balance(address0), ncc_block0);
+  ASSERT_EQ(ledger->balance(address1), ncc_block0);
+  ASSERT_TRUE(simulator.consensus->add_transaction(
+      ledger->send_ncc(simulator.keys[0].key_priv(), address1, 0.5)));
+  ASSERT_NE(ledger->balance(address0).value(), 0);
+  ASSERT_TRUE(simulator.consensus->add_transaction(
+      ledger->send_ncc(simulator.keys[0].key_priv(), address1, 1)));
+  ASSERT_EQ(ledger->balance(address0).value(), 0);
+}
+
+TEST_F(LedgerMongodb, clean_transaction_pool) { test_clean_transaction_pool(); }
 
 }  // namespace tests
 }  // namespace ledger
