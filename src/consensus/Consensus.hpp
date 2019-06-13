@@ -31,7 +31,7 @@ class Consensus {
   std::shared_ptr<ledger::Ledger> _ledger;
   const std::vector<crypto::Ecc> &_keys;
   std::vector<messages::Address> _addresses;
-  const PublishBlock &_publish_block;
+  const PublishBlock _publish_block;
   std::atomic<bool> _stop_compute_pii;
   std::thread _compute_pii_thread;
   std::vector<std::pair<messages::BlockHeight, AddressIndex>> _heights_to_write;
