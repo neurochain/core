@@ -26,14 +26,14 @@ def update_config(config):
     if database:
         if "block0Format" in database and "block0Path" in database:
             database["block0File"] = {
-                "block0Format": database.pop("block0Format"),
-                "block0Path": database.pop("block0Path"),
+                "blockFormat": database.pop("block0Format"),
+                "blockPath": database.pop("block0Path"),
             }
 
         elif "block0_format" in database and "block0_path" in database:
             database["block0_file"] = {
-                "block0_format": database.pop("block0_format"),
-                "block0_path": database.pop("block0_path"),
+                "block_format": database.pop("block0_format"),
+                "block_path": database.pop("block0_path"),
             }
 
     return config

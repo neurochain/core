@@ -2,6 +2,7 @@
 #include "crypto/Ecc.hpp"
 #include "messages.pb.h"
 #include "messages/Address.hpp"
+#include "messages/Message.hpp"
 
 namespace neuro {
 namespace po = boost::program_options;
@@ -9,10 +10,8 @@ namespace po = boost::program_options;
 int main(int argc, char *argv[]) {
   po::options_description desc("Allowed options");
   desc.add_options()("help,h", "Produce help message.")(
-      "private,k", po::value<std::string>(),
-      "File path for private keys")(
-      "public,p", po::value<std::string>(),
-      "File path for private keys")(
+      "private,k", po::value<std::string>(), "File path for private keys")(
+      "public,p", po::value<std::string>(), "File path for private keys")(
       "buffer,b", po::bool_switch()->default_value(false),
       "display key as hex value");
 
@@ -47,13 +46,15 @@ int main(int argc, char *argv[]) {
   } else {
     std::cout << "public:\n" << ecc.key_pub() << std::endl;
     std::cout << "private:\n" << ecc.key_priv() << std::endl;
-    std::cout << "private exponent:\n" << std::hex << ecc.key_priv().exponent() << std::endl;
+    std::cout << "private exponent:\n"
+              << std::hex << ecc.key_priv().exponent() << std::endl;
   }
 
   Buffer buf;
   ecc.key_pub().save(&buf);
   messages::Address addr(buf);
-  std::cout << "address : " << std::endl << addr << std::endl;
+  std::cout << "address : " << std::endl
+            << messages::to_json(addr) << std::endl;
 
   return 0;
 }
