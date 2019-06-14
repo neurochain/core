@@ -145,14 +145,20 @@ void LedgerMongodb::create_first_assemblies(
       pii.mutable_assembly_id()->CopyFrom(assembly.id());
       pii.set_score("1");
       pii.set_rank(i);
-      assert(set_pii(pii));
+      bool is_pii_set = set_pii(pii);
+      assert(is_pii_set);
     }
   }
 
   messages::Block block0;
-  assert(get_block(0, &block0));
-  assert(set_block_verified(block0.header().id(), 0, assembly_minus_1.id()));
-  assert(update_branch_tag(block0.header().id(), messages::Branch::MAIN));
+  bool has_block= get_block(0, &block0);
+  assert(has_block);
+  bool is_block_verified=
+      set_block_verified(block0.header().id(), 0, assembly_minus_1.id());
+  assert(is_block_verified);
+  bool is_branch_tag_updated=
+      update_branch_tag(block0.header().id(), messages::Branch::MAIN);
+  assert(is_branch_tag_updated);
 }
 
 bool LedgerMongodb::load_block0(const messages::config::Database &config,
