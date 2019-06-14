@@ -9,6 +9,15 @@ HunterGate(
 
 option(CPPCHECK "use cppcheck" OFF)
 
+if (CPPCHECK)
+    find_program(CMAKE_CXX_CPPCHECK NAMES cppcheck)
+    list(APPEND CMAKE_CXX_CPPCHECK
+            --enable=warning,performance
+            -DGOOGLE_PROTOBUF_MIN_PROTOC_VERSION=3005000
+            -DGOOGLE_PROTOBUF_VERSION=3005001
+            --suppressions-list=${CMAKE_SOURCE_DIR}/cppcheck_suppression.txt)
+endif ()
+
 set(CPACK_PACKAGE_VERSION_MAJOR "0")
 set(CPACK_PACKAGE_VERSION_MINOR "0")
 set(CPACK_PACKAGE_VERSION_PATCH "1")
@@ -83,7 +92,3 @@ set(CPACK_COMPONENTS_ALL dev main)
 
 
 include(CPack)
-
-if (CPPCHECK)
-    find_program(CMAKE_CXX_CPPCHECK NAMES cppcheck)
-endif()
