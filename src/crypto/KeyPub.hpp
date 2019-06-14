@@ -26,10 +26,10 @@ class KeyPub : public messages::_KeyPub {
 
  public:
   KeyPub(const KeyPub &key_pub) = default;
-  KeyPub(const messages::_KeyPub &key_pub);
-  KeyPub(const std::string &filepath);
-  KeyPub(const Buffer &key_pub);
-  KeyPub(const Key &key);
+  explicit KeyPub(const messages::_KeyPub &key_pub);
+  explicit KeyPub(const std::string &filepath);
+  explicit KeyPub(const Buffer &key_pub);
+  explicit KeyPub(const Key &key);
   KeyPub(const uint8_t *data, const std::size_t size);
 
   Key *key();
