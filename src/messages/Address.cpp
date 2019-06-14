@@ -1,4 +1,5 @@
 #include "messages/Address.hpp"
+#include "messages/Message.hpp"
 #include "crypto/Hash.hpp"
 #include <sstream>
 
