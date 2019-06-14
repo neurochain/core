@@ -5,7 +5,7 @@
 namespace neuro {
 namespace crypto {
 
-bool sign(const std::vector<const crypto::Ecc *> keys,
+bool sign(const std::vector<const crypto::Ecc *>& keys,
           messages::Transaction *transaction) {
   // Fill the id which is a required field. This makes the transaction
   // serializable.

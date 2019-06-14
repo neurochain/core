@@ -2,6 +2,7 @@
 #include "crypto/Ecc.hpp"
 #include "messages.pb.h"
 #include "messages/Address.hpp"
+#include "messages/Message.hpp"
 
 namespace neuro {
 namespace po = boost::program_options;
@@ -50,9 +51,7 @@ int main(int argc, char *argv[]) {
     std::cout << "private exponent:\n" << std::hex << ecc.key_priv().exponent() << std::endl;
   }
 
-  Buffer buf;
-  ecc.key_pub().save(&buf);
-  messages::Address addr(buf);
+  messages::Address addr(ecc.key_pub());
   std::cout << "address : " << std::endl << addr << std::endl;
 
   return 0;
