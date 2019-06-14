@@ -24,8 +24,7 @@ Tcp::Tcp(const Port port, messages::Queue *queue, messages::Peers *peers,
       _io_context(),
       _resolver(_io_context),
       _acceptor(_io_context,
-                bai::tcp::endpoint(bai::tcp::v4(), _listening_port)),
-      _peers(peers) {
+                bai::tcp::endpoint(bai::tcp::v4(), _listening_port)) {
   assert(peers);
 
   while (!_acceptor.is_open()) {
@@ -90,7 +89,7 @@ void Tcp::new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
   auto msg_body = message->add_bodies();
 
   if (!error) {
-    _current_id++;
+    ++_current_id;
 
     msg_header->set_connection_id(_current_id);
     auto connection =
@@ -120,7 +119,7 @@ void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
   auto msg_body = message->add_bodies();
 
   if (!error) {
-    _current_id++;
+    ++_current_id;
 
     msg_header->set_connection_id(_current_id);
     auto connection =
