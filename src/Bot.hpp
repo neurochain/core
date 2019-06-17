@@ -22,6 +22,13 @@ namespace tests {
 class BotTest;
 }
 
+namespace tooling {
+class FullSimulator;
+namespace tests {
+class FullSimulator;
+}
+}  // namespace tooling
+
 class Bot {
  public:
  private:
@@ -35,6 +42,7 @@ class Bot {
   networking::Networking _networking;
   std::shared_ptr<ledger::Ledger> _ledger;
   boost::asio::steady_timer _update_timer;
+  std::optional<consensus::Config> _consensus_config;
   std::shared_ptr<consensus::Consensus> _consensus;
   std::unique_ptr<api::Api> _api;
   std::unordered_set<int32_t> _request_ids;
@@ -83,10 +91,10 @@ class Bot {
   void update_peerlist();
 
  public:
-  explicit Bot(const messages::config::Config &config);
+  explicit Bot(const messages::config::Config &config,
+      const consensus::Config &consensus_config = consensus::Config());
   explicit Bot(const std::string &config_path);
   Bot(const Bot &) = delete;
-  Bot(Bot &&) = delete;
 
   void join();
 
@@ -103,6 +111,8 @@ class Bot {
   ledger::Ledger* ledger();
   
   friend class neuro::tests::BotTest;
+  friend class neuro::tooling::FullSimulator;
+  friend class neuro::tooling::tests::FullSimulator;
 };
 
 std::ostream &operator<<(std::ostream &os, const neuro::Bot &b);

@@ -14,20 +14,21 @@
 namespace neuro {
 using namespace std::chrono_literals;
 
-Bot::Bot(const messages::config::Config &config)
+Bot::Bot(const messages::config::Config &config,
+         const consensus::Config &consensus_config)
     : _config(config),
       _io_context(std::make_shared<boost::asio::io_context>()),
       _queue(),
       _subscriber(&_queue),
-      _keys(_config.networking().key_priv_path(),
-            _config.networking().key_pub_path()),
+      _keys(_config.networking()),
       _me(_config.networking().tcp().endpoint(),
           _config.networking().tcp().port(), _keys.at(0).key_pub()),
       _peers(_me.key_pub(), _config.networking().tcp().peers().begin(),
              _config.networking().tcp().peers().end()),
       _networking(&_queue, &_keys.at(0), &_peers, _config.mutable_networking()),
       _ledger(std::make_shared<ledger::LedgerMongodb>(_config.database())),
-      _update_timer(std::ref(*_io_context)) {
+      _update_timer(std::ref(*_io_context)),
+      _consensus_config(consensus_config) {
   LOG_DEBUG << this << " hello from bot " << &_queue << " "
             << _keys.at(0).key_pub() << std::endl
             << _peers << std::endl;
@@ -217,7 +218,7 @@ bool Bot::init() {
   _update_timer.async_wait(boost::bind(&Bot::regular_update, this));
 
   _consensus = std::make_shared<consensus::Consensus>(
-      _ledger, _keys,
+      _ledger, _keys, _consensus_config,
       [this](const messages::Block &block) { publish_block(block); });
 
   _io_context_thread = std::thread([this]() { _io_context->run(); });
@@ -226,7 +227,9 @@ bool Bot::init() {
     std::this_thread::sleep_for(1s);
   }
 
-  _api = std::make_unique<api::Rest>(_config.rest(), this);
+  if (_config.has_rest()) {
+    _api = std::make_unique<api::Rest>(_config.rest(), this);
+  }
   
   update_ledger();
   this->keep_max_connections();
@@ -258,9 +261,12 @@ void Bot::send_random_transaction() {
   const auto recipient = peers[rand() % peers.size()];
   const auto transaction = _ledger->send_ncc(
       _keys[0].key_priv(), messages::Address(recipient->key_pub()), 0.5);
-
-  LOG_DEBUG << "Sending random transaction" << transaction;
-  publish_transaction(transaction);
+  if (_consensus->add_transaction(transaction)) {
+    LOG_DEBUG << "Sending random transaction " << transaction;
+    publish_transaction(transaction);
+  } else {
+    LOG_WARNING << "Random transaction is not valid " << transaction;
+  }
 }
 
 void Bot::update_peerlist() {

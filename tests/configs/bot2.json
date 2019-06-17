@@ -9,34 +9,37 @@
       "port": 1339,
       "endpoint": "localhost",
       "peers": [
-		{
-		    "endpoint": "localhost",
-		    "port": 1337,
-		    "keyPub": {
-			"type": "ECP256K1",
-			"rawData":"Awqh/GaK+zXAydO8h4sDf4apFNmW8SFaIqRqXioYDXy8"
-		    }
-		},
-		{
-		    "endpoint": "localhost",
-		    "port": 1338,
-		    "keyPub": {
-			"type": "ECP256K1",
-			"rawData":"A+BPdJmNMRu7dZ0O4+b/jG5CyuLeI870VKYu0DrtJ8I8"
-		    }
-		}
-	    ]
+        {
+          "endpoint": "localhost",
+          "port": 1337,
+          "keyPub": {
+            "type": "ECP256K1",
+            "rawData": "Awqh/GaK+zXAydO8h4sDf4apFNmW8SFaIqRqXioYDXy8"
+          }
+        },
+        {
+          "endpoint": "localhost",
+          "port": 1338,
+          "keyPub": {
+            "type": "ECP256K1",
+            "rawData": "A+BPdJmNMRu7dZ0O4+b/jG5CyuLeI870VKYu0DrtJ8I8"
+          }
+        }
+      ]
     },
-    "keyPubPath": "key2.pub",
-    "keyPrivPath": "key2.priv"
+    "keysPaths": [
+      {
+        "keyPubPath": "key2.pub",
+        "keyPrivPath": "key2.priv"
+      }
+    ]
   },
   "database": {
     "url": "mongodb://localhost:27017/neuro",
     "dbName": "neuro1339",
-    "block0Format": "PROTO",
-    "block0Path": "data.0.testnet"
-  },
-  "rest": {
-    "port": 8082
+    "block0File": {
+      "blockFormat": "PROTO",
+      "blockPath": "data.0.testnet"
+    }
   }
 }

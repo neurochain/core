@@ -1,40 +1,46 @@
 {
-    "logs": {
-        "severity": "fatal",
-        "to_stdout": true
-    },
-    "networking": {
+  "logs": {
+    "severity": "fatal",
+    "to_stdout": true
+  },
+  "networking": {
+    "keys_paths": [
+      {
         "key_pub_path": "@CMAKE_CURRENT_BINARY_DIR@/key40.pub",
-        "key_priv_path": "@CMAKE_CURRENT_BINARY_DIR@/key40.priv",
-        "max_connections": 3,
-        "peers_update_time": 20,
-        "tcp": {
-            "port": 13340,
-            "endpoint": "localhost",
-            "peers": [
-                {
-                    "endpoint": "localhost",
-                    "keyPub": {
-                        "type": "ECP256K1",
-                        "rawData": "A+BPdJmNMRu7dZ0O4+b/jG5CyuLeI870VKYu0DrtJ8I8"
-                    },
-                    "port": 1338
-                },
-                {
-                    "endpoint": "localhost",
-                    "keyPub": {
-                        "type": "ECP256K1",
-                        "rawData": "AyMKGnZhazXAoXb0SJIqi4Ho+lk6bw0UttE34PDtDbya"
-                    },
-                    "port": 1339
-                }
-            ]
+        "key_priv_path": "@CMAKE_CURRENT_BINARY_DIR@/key40.priv"
+      }
+    ],
+    "max_connections": 3,
+    "peers_update_time": 20,
+    "tcp": {
+      "port": 13340,
+      "endpoint": "localhost",
+      "peers": [
+        {
+          "endpoint": "localhost",
+          "keyPub": {
+            "type": "ECP256K1",
+            "rawData": "A+BPdJmNMRu7dZ0O4+b/jG5CyuLeI870VKYu0DrtJ8I8"
+          },
+          "port": 1338
+        },
+        {
+          "endpoint": "localhost",
+          "keyPub": {
+            "type": "ECP256K1",
+            "rawData": "AyMKGnZhazXAoXb0SJIqi4Ho+lk6bw0UttE34PDtDbya"
+          },
+          "port": 1339
         }
-    },
-    "database": {
-        "url": "mongodb://localhost:27017/neuro",
-        "db_name": "neuro_tests_propa1339",
-        "block0_format": "PROTO",
-        "block0_path": "@CMAKE_CURRENT_BINARY_DIR@/data.0.testnet"
+      ]
     }
+  },
+  "database": {
+    "url": "mongodb://localhost:27017/neuro",
+    "db_name": "neuro_tests_propa1339",
+    "block0_file": {
+      "block_format": "PROTO",
+      "block_path": "@CMAKE_CURRENT_BINARY_DIR@/data.0.testnet"
+    }
+  }
 }

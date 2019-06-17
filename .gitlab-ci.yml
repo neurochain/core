@@ -5,12 +5,10 @@ stages:
   - release
   
 variables:
-  DOCKER_IMAGE_BASE: "${CI_REGISTRY_IMAGE}"
   DOCKER_IMAGE_BUILD: "${CI_REGISTRY_IMAGE}/build"
-  DOCKER_IMAGE_CORE: "${CI_REGISTRY_IMAGE}/core"
+  DOCKER_IMAGE_CORE: "${CI_REGISTRY_IMAGE}"
 
 services:
-  - docker:dind
   - mongo:3.6-stretch
 
 build_image_dev:debug:
@@ -18,8 +16,8 @@ build_image_dev:debug:
   stage: env_dev
   variables:
     DOCKER_DRIVER: overlay2
-  services:
-    - docker:stable-dind
+  tags:
+    - dind
   only:
     changes:
     - utils/dockers/Dockerfile.*
@@ -34,8 +32,8 @@ build_image_dev:release:
   stage: env_dev
   variables:
     DOCKER_DRIVER: overlay2
-  services:
-    - docker:stable-dind
+  tags:
+    - dind
   only:
     changes:
     - utils/dockers/Dockerfile.ubuntu
@@ -79,7 +77,7 @@ pages:
     - apk add doxygen
     - apk add ttf-freefont graphviz
   script:
-    - mkdir build && cd build && doxygen ../doc/Doxyfile
+    - mkdir build ||echo exist && cd build && doxygen ../doc/Doxyfile
     - mv html ../public
     - mv ../doc/img ../public 
 
@@ -113,13 +111,14 @@ build_image_prod:release:
 
 .build_bot: &build_bot |
   function build_bot() {
-    echo "Building in $1"
+    echo "Building in $1 from $(pwd)"
     set -ex 
     export BUILD_TYPE=$1
     mkdir build || echo k
+    pwd && ls -lahrt ~/
     cd build
-    cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/root -DCMAKE_BUILD_TYPE=$1 ..
-    make -j5
+    cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/root -DCMAKE_BUILD_TYPE=$1 -G Ninja ..
+    ninja 
     mkdir /tmp/db && nohup mongod --dbpath /tmp/db & 
     sleep 5
     python3 ../utils/dockers/times3.py ctest -V
@@ -128,18 +127,18 @@ build_image_prod:release:
 
 .build_docker: &build_docker |
   function build_docker() {
-    echo "Building docker image $1"
+    echo "Building docker image $1 from $(pwd)"
     set -ex 
     export DOCKER_FILE_NAME=$1
     export BUILD_TYPE=$2
     export IMAGE_SUFFIX=$(echo $BUILD_TYPE| tr '[:upper:]' '[:lower:]')
-
+  
     docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
     env
     docker container list -a 
-    docker build -f "utils/dockers/$DOCKER_FILE_NAME" --build-arg DOCKER_BUILD_TYPE=$BUILD_TYPE -t "${DOCKER_IMAGE_CORE}/$IMAGE_SUFFIX:latest" -t "${DOCKER_IMAGE_CORE}/$IMAGE_SUFFIX:$CI_COMMIT_SHA" .
-    docker push "$DOCKER_IMAGE_BUILD/$IMAGE_SUFFIX:latest"
-    docker push "$DOCKER_IMAGE_CORE/$IMAGE_SUFFIX:$CI_COMMIT_SHA"
+    docker build -f "utils/dockers/$DOCKER_FILE_NAME" --build-arg DOCKER_BUILD_TYPE=$BUILD_TYPE -t "${DOCKER_IMAGE_BUILD}/$IMAGE_SUFFIX:latest" -t "${DOCKER_IMAGE_BUILD}/$IMAGE_SUFFIX:$CI_COMMIT_SHA" .
+    docker push "${DOCKER_IMAGE_BUILD}/$IMAGE_SUFFIX:latest"
+    docker push "${DOCKER_IMAGE_BUILD}/$IMAGE_SUFFIX:$CI_COMMIT_SHA"
   }
  
 before_script:

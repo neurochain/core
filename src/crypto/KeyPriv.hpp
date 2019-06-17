@@ -19,6 +19,8 @@ class KeyPriv : public messages::_KeyPriv {
   explicit KeyPriv(std::shared_ptr<CryptoPP::AutoSeededRandomPool> prng);
   KeyPriv(std::shared_ptr<CryptoPP::AutoSeededRandomPool> prng,
           const std::string &filepath);
+  KeyPriv(std::shared_ptr<CryptoPP::AutoSeededRandomPool> prng,
+          const messages::_KeyPriv &key_priv);
   bool save(const std::string &filepath) const;
   bool save(Buffer *buffer) const;
   messages::_KeyPub save() const;

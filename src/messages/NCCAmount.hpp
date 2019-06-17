@@ -10,7 +10,7 @@ class NCCAmount : public _NCCAmount {
 public:
   NCCAmount() = default;
   explicit NCCAmount(const _NCCAmount &nccsdf) : _NCCAmount(nccsdf) {}
-  explicit NCCAmount(const uint64_t amount) { set_value(amount); }
+  explicit NCCAmount(const uint64_t nccamount) { set_value(nccamount); }
 };
 
 } // namespace messages
