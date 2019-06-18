@@ -57,6 +57,8 @@ add_library(core
   ./tooling/blockgen.cpp
   ./tooling/Simulator.hpp
   ./tooling/Simulator.cpp
+  ./tooling/FullSimulator.hpp
+  ./tooling/FullSimulator.cpp
   ./messages/Queue.hpp
   ./messages/Queue.cpp
   ./messages/Message.hpp
@@ -69,6 +71,8 @@ add_library(core
   ./messages/Peer.hpp
   ./messages/Peer.cpp
   ./messages/NCCAmount.hpp
+  ./messages/config/Config.hpp
+  ./messages/config/Config.cpp
   ./ledger/Parser.hpp
   ./ledger/Filter.hpp
   ./ledger/mongo.hpp

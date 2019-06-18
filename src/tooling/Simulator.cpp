@@ -24,19 +24,16 @@ consensus::Config config{
 Simulator::Simulator(const std::string &db_url, const std::string &db_name,
                      const int32_t nb_keys,
                      const messages::NCCAmount &ncc_block0,
-                     const int32_t time_delta)
+                     const int32_t time_delta, const bool start_threads)
     : _ncc_block0(ncc_block0),
       keys(nb_keys),
       ledger(std::make_shared<ledger::LedgerMongodb>(
           db_url, db_name,
           tooling::blockgen::gen_block0(keys, _ncc_block0, time_delta)
               .block())),
-
-      // time_delta >=0 means that we have a RealtimeConsensus and should
-      // therefore start the threads
       consensus(std::make_shared<consensus::Consensus>(
           ledger, keys, config, [](const messages::Block &block) {},
-          time_delta >= 0)) {
+          start_threads)) {
   for (size_t i = 0; i < keys.size(); i++) {
     auto &address = addresses.emplace_back(keys[i].key_pub());
     addresses_indexes.insert({address, i});
@@ -49,14 +46,17 @@ Simulator Simulator::RealtimeSimulator(const std::string &db_url,
                                        const messages::NCCAmount ncc_block0) {
   // Put the block0 2 seconds in the future so that we have time to create the
   // database and still be ready to write block 1
-  return Simulator(db_url, db_name, nb_keys, ncc_block0, 2);
+  bool start_threads = true;
+  return Simulator(db_url, db_name, nb_keys, ncc_block0, 2, start_threads);
 }
 
 Simulator Simulator::StaticSimulator(const std::string &db_url,
                                      const std::string &db_name,
                                      const int nb_keys,
                                      const messages::NCCAmount ncc_block0) {
-  return Simulator(db_url, db_name, nb_keys, ncc_block0, -100000);
+  bool start_threads = false;
+  return Simulator(db_url, db_name, nb_keys, ncc_block0, -100000,
+                   start_threads);
 }
 
 messages::Transaction Simulator::random_transaction() const {

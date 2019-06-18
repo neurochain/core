@@ -6,6 +6,7 @@
 #include "common/types.hpp"
 #include "crypto/KeyPriv.hpp"
 #include "crypto/KeyPub.hpp"
+#include "messages/config/Config.hpp"
 
 namespace neuro {
 namespace crypto {
@@ -27,11 +28,9 @@ class Ecc {
  public:
   Ecc();
   Ecc(Ecc &&ecc) = default;
-
   Ecc(const Ecc &) = delete;
   Ecc(const std::string &filepath_private, const std::string &filepath_public);
-
-  Ecc(const KeyPriv &ecc_priv, const KeyPub &ecc_pub);
+  Ecc(const messages::_KeyPriv &key_priv, const messages::_KeyPub &key_pub);
 
   const KeyPriv &key_priv() const;
   const KeyPub &key_pub() const;
@@ -52,9 +51,13 @@ class Ecc {
 
 class Eccs : public std::vector<Ecc> {
  public:
-  Eccs(const std::string &filepath_private,
-       const std::string &filepath_public) {
-    emplace_back(filepath_private, filepath_public);
+  Eccs(const messages::config::Networking &networking) {
+    for (const auto &keys_paths : networking.keys_paths()) {
+      emplace_back(keys_paths.key_priv_path(), keys_paths.key_pub_path());
+    }
+    for (const auto &keys : networking.keys()) {
+      emplace_back(keys.key_priv(), keys.key_pub());
+    }
   }
 };
 

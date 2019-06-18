@@ -27,10 +27,10 @@ Ecc::Ecc(const std::string &filepath_private,
   }
 }
 
-Ecc::Ecc(const KeyPriv &ecc_priv, const KeyPub &ecc_pub)
+Ecc::Ecc(const messages::_KeyPriv &key_priv, const messages::_KeyPub &key_pub)
     : _prng(std::make_shared<CryptoPP::AutoSeededRandomPool>()),
-      _key_private(std::make_unique<KeyPriv>(_prng)),
-      _key_public(std::make_unique<KeyPub>(_key_private->make_key_pub())) {}
+      _key_private(std::make_unique<KeyPriv>(_prng, key_priv)),
+      _key_public(std::make_unique<KeyPub>(key_pub)) {}
 
 bool Ecc::load_keys(const std::string &keypath_priv,
                     const std::string &keypath_pub) {
@@ -63,11 +63,6 @@ bool Ecc::load_keys(const std::string &keypath_priv,
 
   return true;
 }
-
-// Ecc::Ecc(const EccPriv &ecc_priv, const EccPub &ecc_pub)
-//     : _prng(std::make_shared<CryptoPP::AutoSeededRandomPool>()),
-//       _key_private(ecc_priv),
-//       _key_public(ecc_pub) {}
 
 const KeyPriv &Ecc::key_priv() const { return *_key_private.get(); }
 const KeyPub &Ecc::key_pub() const { return *_key_public.get(); }

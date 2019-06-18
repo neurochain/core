@@ -239,10 +239,11 @@ TEST_F(Consensus, add_transaction) {
   // t1 is also invalid because it tries to double spend
   ASSERT_FALSE(consensus->add_transaction(t1));
 
-  // Now that t1 has been added to the transaction pool. t2 should be build with
+  // Now that t0 has been added to the transaction pool. t2 should be build with
   // a different input so there should be no double spending
   auto t2 = ledger->send_ncc(simulator.keys[0].key_priv(),
                              simulator.addresses[0], 0.5);
+
   ASSERT_TRUE(consensus->add_transaction(t2));
 }
 
