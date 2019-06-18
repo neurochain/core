@@ -24,7 +24,8 @@ class Rest : public Api {
 
   void init() {
     auto opts = Http::Endpoint::options()
-                .threads(1);
+                .threads(1)
+                .maxPayload(1048576);
     httpEndpoint->init(opts);
     setupRoutes();
     start();
