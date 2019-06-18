@@ -20,7 +20,7 @@ build_image_dev:debug:
     - dind
   only:
     refs:
-      - refs/tags/build_dev
+      - build_dev
   script:
     - build_docker "Dockerfile.ubuntu" "Debug"
 
@@ -33,7 +33,7 @@ build_image_dev:release:
     - dind
   only:
     refs:
-      - refs/tags/build_dev
+      - tags/build_dev
   script:
     - build_docker "Dockerfile.ubuntu" "Release"
 
