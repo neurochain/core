@@ -19,11 +19,8 @@ build_image_dev:debug:
   tags:
     - dind
   only:
-    changes:
-    - utils/dockers/Dockerfile.*
-    - CMakeLists.txt
-    - src/CMakeLists.txt
-    - .gitlab-ci.yml
+    refs:
+      - refs/tags/build_dev
   script:
     - build_docker "Dockerfile.ubuntu" "Debug"
 
@@ -35,11 +32,8 @@ build_image_dev:release:
   tags:
     - dind
   only:
-    changes:
-    - utils/dockers/Dockerfile.ubuntu
-    - ./CMakeLists.txt 
-    - ./**/CMakeLists.txt 
-    - .gitlab-ci.yml
+    refs:
+      - refs/tags/build_dev
   script:
     - build_docker "Dockerfile.ubuntu" "Release"
 
