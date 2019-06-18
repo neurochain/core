@@ -19,6 +19,8 @@ class KeyPriv : public messages::_KeyPriv {
   KeyPriv(std::shared_ptr<CryptoPP::AutoSeededRandomPool> prng);
   KeyPriv(std::shared_ptr<CryptoPP::AutoSeededRandomPool> prng,
           const std::string &filepath);
+  KeyPriv(std::shared_ptr<CryptoPP::AutoSeededRandomPool> prng,
+          const messages::_KeyPriv &key_priv);
   bool save(const std::string &filepath) const;
   bool save(Buffer *buffer) const;
   messages::_KeyPub save() const;
@@ -33,6 +35,7 @@ class KeyPriv : public messages::_KeyPriv {
 
   KeyPub make_key_pub() const;
   bool operator==(const KeyPriv &key) const;
+  CryptoPP::Integer exponent() const;
   friend std::ostream &operator<<(std::ostream &os, const KeyPriv &priv);
 };
 

@@ -5,6 +5,7 @@
 #include "ledger/Ledger.hpp"
 #include "messages.pb.h"
 #include "messages/Address.hpp"
+#include "messages/Message.hpp"
 
 namespace neuro {
 namespace consensus {

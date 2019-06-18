@@ -12,6 +12,7 @@
 #include "messages/Subscriber.hpp"
 #include "networking/tcp/Connection.hpp"
 #include "networking/tcp/Tcp.hpp"
+#include "networking/TransportLayer.hpp"
 
 namespace neuro {
 namespace networking {

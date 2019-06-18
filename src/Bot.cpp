@@ -9,24 +9,26 @@
 #include "common/logger.hpp"
 #include "common/types.hpp"
 #include "messages/Subscriber.hpp"
+#include "api/Rest.hpp"
 
 namespace neuro {
 using namespace std::chrono_literals;
 
-Bot::Bot(const messages::config::Config &config)
+Bot::Bot(const messages::config::Config &config,
+         const consensus::Config &consensus_config)
     : _config(config),
       _io_context(std::make_shared<boost::asio::io_context>()),
       _queue(),
       _subscriber(&_queue),
-      _keys(_config.networking().key_priv_path(),
-            _config.networking().key_pub_path()),
+      _keys(_config.networking()),
       _me(_config.networking(), _keys.at(0).key_pub()),
       _peers(_me.key_pub(), _config.networking()),
       _networking(&_queue, &_keys.at(0), &_peers, _config.mutable_networking()),
       _ledger(std::make_shared<ledger::LedgerMongodb>(_config.database())),
-      _update_timer(std::ref(*_io_context)) {
-  LOG_DEBUG << this << " hello from bot " << _me.port() << " : " << &_queue
-            << " " << _keys.at(0).key_pub() << std::endl
+      _update_timer(std::ref(*_io_context)),
+      _consensus_config(consensus_config) {
+  LOG_DEBUG << this << " hello from bot " << _me.port() << " "
+            << _keys.at(0).key_pub() << std::endl
             << _peers << std::endl;
 
   if (!init()) {
@@ -121,8 +123,6 @@ bool Bot::update_ledger() {
 
   const auto id = last_header.id();
 
-  LOG_DEBUG << "Search Block -" << id;
-
   auto get_block = message->add_bodies()->mutable_get_block();
   get_block->mutable_hash()->CopyFrom(id);
   get_block->set_count(1);
@@ -216,7 +216,7 @@ bool Bot::init() {
   _update_timer.async_wait(boost::bind(&Bot::regular_update, this));
 
   _consensus = std::make_shared<consensus::Consensus>(
-      _ledger, _keys,
+      _ledger, _keys, _consensus_config,
       [this](const messages::Block &block) { publish_block(block); });
 
   _io_context_thread = std::thread([this]() { _io_context->run(); });
@@ -225,6 +225,10 @@ bool Bot::init() {
     std::this_thread::sleep_for(1s);
   }
 
+  if (_config.has_rest()) {
+    _api = std::make_unique<api::Rest>(_config.rest(), this);
+  }
+  
   update_ledger();
   this->keep_max_connections();
 
@@ -254,9 +258,12 @@ void Bot::send_random_transaction() {
   const auto recipient = peers[rand() % peers.size()];
   const auto transaction = _ledger->send_ncc(
       _keys[0].key_priv(), messages::Address(recipient->key_pub()), 0.5);
-
-  LOG_DEBUG << "Sending random transaction" << transaction;
-  publish_transaction(transaction);
+  if (_consensus->add_transaction(transaction)) {
+    LOG_DEBUG << _me.port() << " Sending random transaction " << transaction;
+    publish_transaction(transaction);
+  } else {
+    LOG_WARNING << _me.port() << " Random transaction is not valid " << transaction;
+  }
 }
 
 void Bot::update_peerlist() {
@@ -282,7 +289,7 @@ void Bot::update_peerlist() {
 //       continue;
 //     }
 //     crypto::EccPub ecc_pub;
-//     ecc_pub.load(peer.key_pub());
+//     ecc_pub.load_from_point(peer.key_pub());
 //     graph.add_peers_addresses()->CopyFrom(messages::Address(ecc_pub));
 //   }
 
@@ -323,6 +330,8 @@ void Bot::handler_peers(const messages::Header &header,
 
 void Bot::handler_connection(const messages::Header &header,
                              const messages::Body &body) {
+  LOG_DEBUG << this << " It entered in handler_connection in bot " << body;
+
   auto connection_ready = body.connection_ready();
 
   if (connection_ready.from_remote()) {
@@ -489,7 +498,7 @@ void Bot::subscribe(const messages::Type type,
   _subscriber.subscribe(type, callback);
 }
 
-void Bot::publish_transaction(const messages::Transaction &transaction) const {
+bool Bot::publish_transaction(const messages::Transaction &transaction) const {
   // Add the transaction to the transaction pool
   _consensus->add_transaction(transaction);
 
@@ -498,7 +507,7 @@ void Bot::publish_transaction(const messages::Transaction &transaction) const {
   messages::fill_header(message->mutable_header());
   auto body = message->add_bodies();
   body->mutable_transaction()->CopyFrom(transaction);
-  _networking.send(message);
+  return (_networking.send(message) != networking::TransportLayer::SendResult::FAILED);
 }
 
 void Bot::publish_block(const messages::Block &block) const {
@@ -510,6 +519,10 @@ void Bot::publish_block(const messages::Block &block) const {
   _networking.send(message);
 }
 
+ledger::Ledger *Bot::ledger() {
+  return _ledger.get();
+}
+  
 void Bot::join() { _networking.join(); }
 
 Bot::~Bot() {

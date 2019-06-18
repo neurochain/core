@@ -65,20 +65,19 @@ void Buffer::append(const Buffer &buffer) {
 }
 
 std::string Buffer::str() const {
+  return std::string(begin(), end());
+}
+
+std::string Buffer::to_hex() const {
   std::stringstream ss;
-  ss << this;
+  std::ios_base::fmtflags f(ss.flags());
+  for (const auto &x : *this) {
+    ss << std::setfill('0') << std::setw(2) << std::hex << (unsigned int)x;
+  }
+  ss.flags(f);
   return ss.str();
 }
-
-std::ostream &operator<<(std::ostream &os, const Buffer &buffer) {
-  std::ios_base::fmtflags f(os.flags());
-  for (const auto &x : buffer) {
-    os << std::setfill('0') << std::setw(2) << std::hex << (unsigned int)x;
-  }
-  os.flags(f);
-  return os;
-}
-
+  
 bool Buffer::read_hex(const std::string &str) {
   if ((str.size() % 2) == 1) {
     return false;
@@ -92,5 +91,11 @@ bool Buffer::read_hex(const std::string &str) {
   }
   return true;
 }
+
+std::ostream &operator<<(std::ostream &os, const Buffer &buffer) {
+  os << buffer.to_hex();
+  return os;
+}
+
 
 }  // namespace neuro

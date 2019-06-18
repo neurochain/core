@@ -3,6 +3,7 @@
 
 #include <memory>
 #include "Bot.hpp"
+#include "api/Api.hpp"
 #include "crypto/Ecc.hpp"
 #include "ledger/LedgerMongodb.hpp"
 #include "messages/Message.hpp"
@@ -21,6 +22,13 @@ namespace tests {
 class BotTest;
 }
 
+namespace tooling {
+class FullSimulator;
+namespace tests {
+class FullSimulator;
+}
+}  // namespace tooling
+
 class Bot {
  public:
  private:
@@ -34,8 +42,9 @@ class Bot {
   networking::Networking _networking;
   std::shared_ptr<ledger::Ledger> _ledger;
   boost::asio::steady_timer _update_timer;
+  std::optional<consensus::Config> _consensus_config;
   std::shared_ptr<consensus::Consensus> _consensus;
-  // std::shared_ptr<rest::Rest> _rest;
+  std::unique_ptr<api::Api> _api;
   std::unordered_set<int32_t> _request_ids;
   std::thread _io_context_thread;
 
@@ -82,10 +91,10 @@ class Bot {
   void update_peerlist();
 
  public:
-  Bot(const messages::config::Config &config);
+  Bot(const messages::config::Config &config,
+      const consensus::Config &consensus_config = consensus::Config());
   Bot(const std::string &config_path);
   Bot(const Bot &) = delete;
-  Bot(Bot &&) = delete;
 
   void join();
 
@@ -97,10 +106,13 @@ class Bot {
   void subscribe(const messages::Type type,
                  messages::Subscriber::Callback callback);
 
-  void publish_transaction(const messages::Transaction &transaction) const;
+  bool publish_transaction(const messages::Transaction &transaction) const;
   void publish_block(const messages::Block &block) const;
-
+  ledger::Ledger* ledger();
+  
   friend class neuro::tests::BotTest;
+  friend class neuro::tooling::FullSimulator;
+  friend class neuro::tooling::tests::FullSimulator;
 };
 
 std::ostream &operator<<(std::ostream &os, const neuro::Bot &b);

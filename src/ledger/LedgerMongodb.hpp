@@ -36,7 +36,7 @@ class LedgerMongodb : public Ledger {
   mutable mongocxx::collection _assemblies;
   mutable mongocxx::collection _double_mining;
 
-  mutable std::mutex _ledger_mutex;
+  static std::recursive_mutex _ledger_mutex;
 
   messages::TaggedBlock _main_branch_tip;
 
@@ -52,8 +52,6 @@ class LedgerMongodb : public Ledger {
   bool load_block0(const messages::config::Database &config,
                    messages::Block *block0);
 
-  void init_database(const messages::Block &block0);
-
   bool is_ancestor(const messages::BranchPath &ancestor_path,
                    const messages::BranchPath &block_path) const;
 
@@ -64,23 +62,6 @@ class LedgerMongodb : public Ledger {
       const messages::TaggedTransaction &tagged_transaction) const;
 
   int fill_block_transactions(messages::Block *block) const;
-
-  bool unsafe_get_block(const messages::BlockID &id,
-                        messages::TaggedBlock *tagged_block,
-                        bool include_transactions = true) const;
-
-  bool unsafe_get_block(const messages::BlockHeight height,
-                        messages::Block *block,
-                        bool include_transactions = true) const;
-
-  bool unsafe_get_block(const messages::BlockHeight height,
-                        messages::TaggedBlock *tagged_block,
-                        bool include_transaction = true) const;
-
-  bool unsafe_get_blocks_by_previd(
-      const messages::BlockID &previd,
-      std::vector<messages::TaggedBlock> *tagged_blocks,
-      bool include_transactions = true) const;
 
   bool get_block(const messages::BlockHeight height,
                  const messages::BranchPath &branch_path,
@@ -94,25 +75,8 @@ class LedgerMongodb : public Ledger {
 
   bool set_branch_path(const messages::BlockHeader &block_header);
 
-  bool unsafe_insert_block(const messages::TaggedBlock &tagged_block);
-
-  messages::BranchPath unsafe_fork_from(
-      const messages::BranchPath &branch_path) const;
-
-  messages::BranchPath unsafe_first_child(
-      const messages::BranchPath &branch_path) const;
-
   bool update_branch_tag(const messages::BlockID &id,
                          const messages::Branch &branch);
-
-  bool unsafe_get_block_by_previd(const messages::BlockID &previd,
-                                  messages::Block *block,
-                                  bool include_transactions = true) const;
-
-  messages::BlockHeight unsafe_height() const;
-
-  bool unsafe_get_assembly(const messages::AssemblyID &assembly_id,
-                           messages::Assembly *assembly) const;
 
   void create_indexes();
 
@@ -120,17 +84,7 @@ class LedgerMongodb : public Ledger {
 
   bool cleanup_transaction_pool(const messages::BlockID &block_id);
 
-  bool unsafe_set_integrity(const messages::Integrity &integrity);
-
-  messages::IntegrityScore unsafe_get_integrity(
-      const messages::Address &address,
-      const messages::AssemblyHeight &assembly_height,
-      const messages::BranchPath &branch_path) const;
-
-  bool unsafe_denunciation_exists(
-      const messages::Denunciation &denunciation,
-      const messages::BlockHeight &max_block_height,
-      const messages::BranchPath &branch_path) const;
+  std::size_t cleanup_transaction_pool();
 
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);
@@ -215,7 +169,9 @@ class LedgerMongodb : public Ledger {
 
   bool delete_transaction(const messages::TransactionID &id);
 
-  std::size_t get_transaction_pool(messages::Block *block);
+  std::vector<messages::TaggedTransaction> get_transaction_pool() const;
+
+  std::size_t get_transaction_pool(messages::Block *block) const;
 
   bool get_unverified_blocks(
       std::vector<messages::TaggedBlock> *tagged_blocks) const;
@@ -238,6 +194,8 @@ class LedgerMongodb : public Ledger {
                          std::vector<messages::Pii> *piis);
 
   void empty_database();
+
+  void init_database(const messages::Block &block0);
 
   bool get_assembly(const messages::AssemblyID &assembly_id,
                     messages::Assembly *assembly) const;

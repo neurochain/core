@@ -187,5 +187,6 @@ std::ostream &operator<<(std::ostream &os, const KeyPub &pub) {
   os << k;
   return os;
 }
+
 }  // namespace crypto
 }  // namespace neuro

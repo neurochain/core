@@ -64,12 +64,16 @@ message Signature {
 }
 
 message Transaction {
-  required Hash id = 1;
+  optional Hash id = 1;
   repeated Input inputs = 2;
   repeated Output outputs = 3;
   repeated Signature signatures = 4;
   optional _NCCAmount fees = 5;
   optional int32 coinbase_height = 6;
+}
+
+message Transactions {
+  repeated Transaction transactions = 1;
 }
 
 message BlockHeader {
@@ -176,7 +180,6 @@ message Header {
   optional int32 id = 11; 
   optional int32 request_id = 12;
   optional _KeyPub key_pub = 13;
-
 }
 
 message _Message {
