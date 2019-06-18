@@ -99,6 +99,7 @@ build_image_prod:release:
   only:
     refs:
       - refs/tags/build_prod
+      - refs/branch/feature/157/build-release-image
       
     changes:
       - utils/dockers/Dockerfile.ubuntu
