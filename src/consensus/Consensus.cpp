@@ -667,7 +667,7 @@ bool Consensus::compute_assembly_pii(const messages::Assembly &assembly) {
       break;
     }
     if (!_ledger->get_block(tagged_block.block().header().previous_block_hash(),
-                            &tagged_block, false)) {
+                            &tagged_block)) {
       LOG_WARNING << "During Pii computation missing block "
                   << tagged_block.block().header().previous_block_hash();
       return false;
