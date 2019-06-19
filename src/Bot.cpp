@@ -423,7 +423,7 @@ void Bot::handler_hello(const messages::Header &header,
               << std::boolalpha << accepted << " " << **remote_peer
               << std::endl << _peers;
   } else {
-    (*remote_peer)->set_status(messages::Peer::UNREACHABLE);
+    (*remote_peer)->set_status(messages::Peer::DISCONNECTED);
   }
 
   auto header_reply = message->mutable_header();

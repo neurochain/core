@@ -82,7 +82,7 @@ void Connection::read_body(std::size_t body_size) {
 
         // validate the MessageVersion from the header
         if (header->version() != neuro::MessageVersion) {
-          LOG_INFO << "Killing connection because received message from wrong version";
+          LOG_INFO << "Killing connection because received message from wrong version (" << header->version() << ")";
           _this->terminate();
           return;
         }
