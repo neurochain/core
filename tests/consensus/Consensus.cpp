@@ -200,6 +200,25 @@ class Consensus : public testing::Test {
       ASSERT_EQ(blocks.size(), 1);
     }
   }
+
+  uint64_t total_money() {
+    uint64_t total = 0;
+    for (const auto &address : simulator.addresses) {
+      total += ledger->balance(address).value();
+    }
+    return total;
+  }
+
+  void test_money_supply() {
+    ASSERT_EQ(total_money(), nb_keys * ncc_block0.value());
+    for (int i = 0; i < 10; i++) {
+      simulator.run(1, 5);
+      ASSERT_EQ(
+          total_money(),
+          nb_keys * ncc_block0.value() +
+              (i + 1) * simulator.consensus->config().block_reward.value());
+    }
+  }
 };
 
 TEST_F(Consensus, is_valid_transaction) { test_is_valid_transaction(); }
@@ -266,6 +285,8 @@ TEST_F(Consensus, add_denunciations) {
   ASSERT_EQ(denunciation.block_author(), block1_bis.header().author());
   ASSERT_EQ(denunciation.block_height(), block1_bis.header().height());
 }
+
+TEST_F(Consensus, money_supply) { test_money_supply(); }
 
 }  // namespace tests
 }  // namespace consensus
