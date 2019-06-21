@@ -193,6 +193,7 @@ bool Tcp::serialize(std::shared_ptr<messages::Message> message,
 
 TransportLayer::SendResult Tcp::send(
     std::shared_ptr<messages::Message> message) const {
+  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   if (_connections.size() == 0) {
     LOG_ERROR << "Could not send message because there is no connection "
               << message;
