@@ -91,7 +91,7 @@ build_image_prod:release:
     - docker:stable-dind
   only:
     changes:
-      - utils/dockers/Dockerfile.ubuntu
+      - utils/dockers/Dockerfile.core
   script:
     - build_docker "Dockerfile.core" "Release"
 
