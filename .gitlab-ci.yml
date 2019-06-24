@@ -5,7 +5,7 @@ stages:
   - release
   
 variables:
-  DOCKER_IMAGE_BUILD: "${CI_REGISTRY_IMAGE}/build"
+  DOCKER_IMAGE_BUILD: "${CI_REGISTRY_IMAGE}/env_dev"
   DOCKER_IMAGE_CORE: "${CI_REGISTRY_IMAGE}"
 
 services:
