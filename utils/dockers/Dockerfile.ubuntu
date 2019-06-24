@@ -26,7 +26,7 @@ RUN pwd && ls -lahrt && whoami && \
     mkdir build && \
     cd build && \
     cmake -G Ninja -DCMAKE_BUILD_TYPE=${DOCKER_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=~/root/lib/cmake/pistache .. && \
-    ninja && ninja install 
+    ninja && ninja install
 
 # Pre compiling hunter dependencies
 RUN pwd && ls -lahrt && git clone --single-branch --depth 1 https://gitlab.com/neurochaintech/core.git && \
