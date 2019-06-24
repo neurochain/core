@@ -19,8 +19,8 @@ build_image_dev:debug:
   tags:
     - dind
   only:
-    refs:
-      - build_dev
+    changes:
+      - utils/dockers/Dockerfile.ubuntu
   script:
     - build_docker "Dockerfile.ubuntu" "Debug"
 
@@ -32,8 +32,8 @@ build_image_dev:release:
   tags:
     - dind
   only:
-    refs:
-      - tags/build_dev
+    changes:
+      - utils/dockers/Dockerfile.ubuntu
   script:
     - build_docker "Dockerfile.ubuntu" "Release"
 
@@ -76,9 +76,8 @@ pages:
     - mv ../doc/img ../public
 
   only:
-    - feaeture/109/documentation
-    - feature/ledger
-    - tags/build_doc
+    changes:
+      - doc/*
   artifacts:
     paths:
       - public
@@ -91,14 +90,8 @@ build_image_prod:release:
   services:
     - docker:stable-dind
   only:
-    refs:
-      - refs/tags/build_prod
-      - refs/heads/feature/157/build-release-image
-
     changes:
       - utils/dockers/Dockerfile.ubuntu
-      - ./CMakeLists.txt
-      - ./**/CMakeLists.txt
   script:
     - build_docker "Dockerfile.ubuntu" "Release"
 
