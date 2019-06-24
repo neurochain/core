@@ -1,0 +1,18 @@
+ARG DOCKER_BUILD_TYPE=registry.gitlab.com/neurochaintech/core/build/release:latest
+FROM $DOCKER_BUILD_TYPE
+
+MAINTAINER trax Omar Givernaud
+LABEL Description "Generic Bot Image"
+
+USER neuro
+COPY build/src/main main
+COPY testnet/data.0.testnet /home/neuro/data.0.testnet
+COPY entrypoint.sh entrypoint.sh
+
+# cleanup
+RUN du -sh /
+RUN rm -r ./build
+RUN rm -r ~/.hunter
+RUN du -sh /
+
+CMD ["./entrypoint.sh"]
