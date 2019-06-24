@@ -25,7 +25,7 @@ class Rest : public Api {
   void init() {
     auto opts = Http::Endpoint::options()
                 .threads(1)
-                .maxPayload(1048576)  // 1Mio
+                .maxRequestSize(1048576)  // 1Mio
                 .flags(Tcp::Options::InstallSignalHandler);
     httpEndpoint->init(opts);
     setupRoutes();
