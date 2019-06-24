@@ -1,7 +1,7 @@
 FROM ubuntu:18.10
 
 MAINTAINER trax Omar Givernaud
-LABEL Description "compile linux ubuntu"
+LABEL Description "dev env linux ubuntu"
 ARG DOCKER_BUILD_TYPE=Release
 
 RUN apt-get update -y
