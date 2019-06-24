@@ -4,6 +4,7 @@ build_*/
 build/
 .vscode
 .ycm_extra_conf.py
+compile_commands.json
 *.priv
 !tests/configs/key*.priv
 testnet/b*.log

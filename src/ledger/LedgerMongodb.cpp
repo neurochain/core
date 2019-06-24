@@ -1,8 +1,8 @@
 #include "ledger/LedgerMongodb.hpp"
 #include <chrono>
 #include "common/logger.hpp"
-#include "messages/Hasher.hpp"
 #include "messages.pb.h"
+#include "messages/Hasher.hpp"
 
 namespace neuro {
 namespace ledger {
@@ -1192,6 +1192,18 @@ bool LedgerMongodb::get_assembly(const messages::AssemblyID &assembly_id,
                                  messages::Assembly *assembly) const {
   std::lock_guard lock(_ledger_mutex);
   auto query = bss::document{} << ID << to_bson(assembly_id) << bss::finalize;
+  const auto result = _assemblies.find_one(std::move(query), remove_OID());
+  if (!result) {
+    return false;
+  }
+  from_bson(result->view(), assembly);
+  return true;
+}
+
+bool LedgerMongodb::get_assembly(const messages::AssemblyHeight &height,
+                                 messages::Assembly *assembly) const {
+  std::lock_guard lock(_ledger_mutex);
+  auto query = bss::document{} << HEIGHT << height << bss::finalize;
   const auto result = _assemblies.find_one(std::move(query), remove_OID());
   if (!result) {
     return false;

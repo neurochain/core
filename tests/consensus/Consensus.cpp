@@ -219,6 +219,48 @@ class Consensus : public testing::Test {
               (i + 1) * simulator.consensus->config().block_reward.value());
     }
   }
+
+  void test_send_ncc() {
+    bool did_throw = false;
+    try {
+      auto transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
+                                          simulator.addresses[1], -2);
+    } catch (std::runtime_error) {
+      did_throw = true;
+    }
+    ASSERT_TRUE(did_throw);
+    did_throw = false;
+    try {
+      auto transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
+                                          simulator.addresses[1], 2);
+    } catch (std::runtime_error) {
+      did_throw = true;
+    }
+    ASSERT_TRUE(did_throw);
+
+    auto fees = messages::NCCAmount(100);
+    auto transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
+                                        simulator.addresses[1], 0.5, fees);
+    ASSERT_TRUE(consensus->add_transaction(transaction));
+
+    transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
+                                   simulator.addresses[1], 0, fees);
+    ASSERT_TRUE(consensus->add_transaction(transaction));
+
+    transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
+                                   simulator.addresses[1], 1, fees);
+    ASSERT_TRUE(consensus->add_transaction(transaction));
+
+    // The fee is higher than the inputs
+    did_throw = false;
+    try {
+      transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
+                                     simulator.addresses[1], 1, fees);
+    } catch (std::runtime_error) {
+      did_throw = true;
+    }
+    ASSERT_TRUE(did_throw);
+  }
 };
 
 TEST_F(Consensus, is_valid_transaction) { test_is_valid_transaction(); }
@@ -287,6 +329,98 @@ TEST_F(Consensus, add_denunciations) {
 }
 
 TEST_F(Consensus, money_supply) { test_money_supply(); }
+
+TEST_F(Consensus, send_ncc) { test_send_ncc(); }
+
+TEST_F(Consensus, fake_signature) {
+  auto fees = messages::NCCAmount(100);
+  auto transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
+                                      simulator.addresses[1], 0.5, fees);
+  auto data =
+      transaction.mutable_signatures(0)->mutable_signature()->mutable_data();
+  (*data)[0] += 1;
+  ASSERT_FALSE(consensus->add_transaction(transaction));
+}
+
+TEST_F(Consensus, fees_on_coinbase) {
+  messages::Assembly assembly;
+  ledger->get_assembly(-2, &assembly);
+  messages::Address address;
+  ASSERT_TRUE(consensus->get_block_writer(assembly, 1, &address));
+  int address_index = -1;
+  for (size_t i = 0; i < simulator.addresses.size(); i++) {
+    if (address == simulator.addresses[i]) {
+      address_index = i;
+      break;
+    }
+  }
+  ASSERT_NE(address_index, -1);
+  const auto &keys = simulator.keys[address_index];
+  auto block = simulator.new_block();
+  auto coinbase = block.mutable_coinbase();
+  coinbase->mutable_fees()->set_value(100);
+  messages::set_transaction_hash(coinbase);
+  messages::set_block_hash(&block);
+  crypto::sign(keys, &block);
+  ASSERT_FALSE(consensus->add_block(block));
+}
+
+TEST_F(Consensus, change_data) {
+  auto fees = messages::NCCAmount(100);
+  auto transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
+                                      simulator.addresses[1], 0.5, fees);
+  transaction.mutable_outputs(0)->set_data("totoro");
+  std::vector<const crypto::Ecc *> keys = {&simulator.keys[0]};
+  LOG_DEBUG << "TRANSACTION " << transaction;
+  crypto::sign(keys, &transaction);
+  messages::set_transaction_hash(&transaction);
+  LOG_DEBUG << "TRANSACTION " << transaction;
+  ASSERT_TRUE(consensus->add_transaction(transaction));
+}
+
+TEST_F(Consensus, outputs_too_high) {
+  auto fees = messages::NCCAmount(100);
+  auto transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
+                                      simulator.addresses[1], 1, fees);
+  auto amount = transaction.outputs(0).value().value();
+  transaction.mutable_outputs(0)->mutable_value()->set_value(amount + 1);
+  std::vector<const crypto::Ecc *> keys = {&simulator.keys[0]};
+  crypto::sign(keys, &transaction);
+  messages::set_transaction_hash(&transaction);
+  ASSERT_FALSE(consensus->add_transaction(transaction));
+}
+
+TEST_F(Consensus, fees_too_high) {
+  auto fees = messages::NCCAmount(100);
+  auto transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
+                                      simulator.addresses[1], 1, fees);
+  transaction.mutable_fees()->CopyFrom(messages::NCCAmount(101));
+  std::vector<const crypto::Ecc *> keys = {&simulator.keys[0]};
+  crypto::sign(keys, &transaction);
+  messages::set_transaction_hash(&transaction);
+  ASSERT_FALSE(consensus->add_transaction(transaction));
+}
+
+TEST_F(Consensus, transaction_overflow) {
+  auto fees = messages::NCCAmount(-1);
+  auto did_throw = false;
+  try {
+    auto transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
+                                        simulator.addresses[1], 1, fees);
+  } catch (std::runtime_error) {
+    did_throw = true;
+  }
+  ASSERT_TRUE(did_throw);
+
+  fees = messages::NCCAmount(100);
+  auto transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
+                                      simulator.addresses[1], 1, fees);
+  transaction.mutable_outputs(0)->mutable_value()->set_value(-1);
+  std::vector<const crypto::Ecc *> keys = {&simulator.keys[0]};
+  crypto::sign(keys, &transaction);
+  messages::set_transaction_hash(&transaction);
+  ASSERT_FALSE(consensus->add_transaction(transaction));
+}
 
 }  // namespace tests
 }  // namespace consensus

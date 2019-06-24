@@ -165,6 +165,9 @@ class Ledger {
   virtual bool get_assembly(const messages::AssemblyID &assembly_id,
                             messages::Assembly *assembly) const = 0;
 
+  virtual bool get_assembly(const messages::AssemblyHeight &height,
+                            messages::Assembly *assembly) const = 0;
+
   virtual bool add_assembly(const messages::TaggedBlock &tagged_block,
                             const messages::AssemblyHeight height) = 0;
 
@@ -617,34 +620,41 @@ class Ledger {
       const crypto::KeyPriv &sender_key_priv,
       const messages::Address &recipient_address, const float ratio_to_send,
       const std::optional<messages::NCCAmount> &fees = {}) const {
-    assert(ratio_to_send <= 1);
+    if (ratio_to_send > 1 || ratio_to_send < 0) {
+      throw std::runtime_error("Cannot send_ncc with a ratio of " +
+                               std::to_string(ratio_to_send));
+    }
     std::lock_guard<std::mutex> lock(_send_ncc_mutex);
     auto sender_address = messages::Address(sender_key_priv.make_key_pub());
 
     std::vector<messages::Transaction> unspent_outputs =
         list_unspent_outputs(sender_address);
 
-    int32_t inputs_total = 0;
+    messages::NCCValue inputs_total = 0;
     for (const auto &transaction : unspent_outputs) {
       for (const auto output : transaction.outputs()) {
         inputs_total += output.value().value();
       }
+    }
+    if (fees) {
+      if (inputs_total < fees.value().value()) {
+        throw std::runtime_error("Fee is higher than inputs_total.");
+      }
+      inputs_total -= fees.value().value();
     }
 
     // Set outputs
     std::vector<messages::Output> outputs;
     auto &output = outputs.emplace_back();
     output.mutable_address()->CopyFrom(recipient_address);
-    uint64_t amount_to_send = (uint64_t)(inputs_total * ratio_to_send);
+    messages::NCCValue amount_to_send =
+        (uint64_t)(inputs_total * ratio_to_send);
     output.mutable_value()->CopyFrom(messages::NCCAmount(amount_to_send));
     auto inputs = build_inputs_from_outputs(unspent_outputs);
     if (inputs_total - amount_to_send > 0) {
       auto &change = outputs.emplace_back();
       change.mutable_address()->CopyFrom(sender_address);
       messages::NCCValue change_value = inputs_total - amount_to_send;
-      if (fees) {
-        change_value -= fees->value();
-      }
       change.mutable_value()->CopyFrom(messages::NCCAmount(change_value));
     }
 
