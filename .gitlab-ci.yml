@@ -93,7 +93,7 @@ build_image_prod:release:
     changes:
       - utils/dockers/Dockerfile.ubuntu
   script:
-    - build_docker "Dockerfile.ubuntu" "Release"
+    - build_docker "Dockerfile.core" "Release"
 
 
 
@@ -120,13 +120,14 @@ build_image_prod:release:
     export DOCKER_FILE_NAME=$1
     export BUILD_TYPE=$2
     export IMAGE_SUFFIX=$(echo $BUILD_TYPE| tr '[:upper:]' '[:lower:]')
+    export IMAGE_FULL_NAME="${CI_REGISTRY_IMAGE}/${CI_JOB_STAGE}/${IMAGE_SUFFIX}"
 
     docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
     env
     docker container list -a
-    docker build -f "utils/dockers/$DOCKER_FILE_NAME" --build-arg DOCKER_BUILD_TYPE=$BUILD_TYPE -t "${DOCKER_IMAGE_BUILD}/$IMAGE_SUFFIX:latest" -t "${DOCKER_IMAGE_BUILD}/$IMAGE_SUFFIX:$CI_COMMIT_SHA" .
-    docker push "${DOCKER_IMAGE_BUILD}/$IMAGE_SUFFIX:latest"
-    docker push "${DOCKER_IMAGE_BUILD}/$IMAGE_SUFFIX:$CI_COMMIT_SHA"
+    docker build -f "utils/dockers/$DOCKER_FILE_NAME" --build-arg DOCKER_BUILD_TYPE=$BUILD_TYPE -t "${IMAGE_FULL_NAME}:latest" -t "${IMAGE_FULL_NAME}:$CI_COMMIT_SHA" .
+    docker push "${IMAGE_FULL_NAME}:latest"
+    docker push "${IMAGE_FULL_NAME}:$CI_COMMIT_SHA"
   }
 
 before_script:

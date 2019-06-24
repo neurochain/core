@@ -1,4 +1,4 @@
-ARG DOCKER_BUILD_TYPE=registry.gitlab.com/neurochaintech/build/debug:latest
+ARG DOCKER_BUILD_TYPE=registry.gitlab.com/neurochaintech/build/release:latest
 FROM $DOCKER_BUILD_TYPE
 
 MAINTAINER trax Omar Givernaud
@@ -7,4 +7,10 @@ LABEL Description "Generic bot"
 USER neuro
 COPY build/src/main main
 COPY testnet/data.0.testnet /home/neuro/data.0.testnet
+
+# cleanup 
+RUN du -sh /
+RUN rm -r ./build
+RUN rm -r ~/.hunter
+RUN du -sh /
 CMD ["./main", "-c", "testnet/bot.json"]
