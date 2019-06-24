@@ -28,7 +28,6 @@ class Networking {
  public:
   Networking(messages::Queue *_queue, crypto::Ecc *keys, messages::Peers *peers,
              messages::config::Networking *config);
-  ~Networking();
 
   TransportLayer::SendResult send(
       std::shared_ptr<messages::Message> message) const;

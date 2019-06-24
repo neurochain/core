@@ -14,7 +14,7 @@ namespace log {
 bool _STDOUT_ADDED{false};
 
 logging::formatter neuro_formatter() {
-  return expr::stream << expr::format_date_time(timestamp, "%Y-%m-%d %H:%M:%S")
+  return expr::stream << expr::format_date_time(timestamp, "%Y-%m-%d %H:%M:%S.%f")
                       << " "
                       << "[" << logging::trivial::severity << "]"
                       << " - " << expr::smessage;

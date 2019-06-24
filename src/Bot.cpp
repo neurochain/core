@@ -21,15 +21,13 @@ Bot::Bot(const messages::config::Config &config,
       _queue(),
       _subscriber(&_queue),
       _keys(_config.networking()),
-      _me(_config.networking().tcp().endpoint(),
-          _config.networking().tcp().port(), _keys.at(0).key_pub()),
-      _peers(_me.key_pub(), _config.networking().tcp().peers().begin(),
-             _config.networking().tcp().peers().end()),
+      _me(_config.networking(), _keys.at(0).key_pub()),
+      _peers(_me.key_pub(), _config.networking()),
       _networking(&_queue, &_keys.at(0), &_peers, _config.mutable_networking()),
       _ledger(std::make_shared<ledger::LedgerMongodb>(_config.database())),
       _update_timer(std::ref(*_io_context)),
       _consensus_config(consensus_config) {
-  LOG_DEBUG << this << " hello from bot " << &_queue << " "
+  LOG_DEBUG << this << " hello from bot " << _me.port() << " "
             << _keys.at(0).key_pub() << std::endl
             << _peers << std::endl;
 
@@ -43,7 +41,7 @@ Bot::Bot(const std::string &config_path)
 
 void Bot::handler_get_block(const messages::Header &header,
                             const messages::Body &body) {
-  LOG_DEBUG << this << " Got a get_block message";
+  LOG_DEBUG << _me.port() << " Got a get_block message";
   const auto get_block = body.get_block();
 
   auto message = std::make_shared<messages::Message>();
@@ -56,7 +54,7 @@ void Bot::handler_get_block(const messages::Header &header,
     if (!_ledger->get_block_by_previd(previd, block)) {
       std::stringstream sstr;  // TODO operator <<
       sstr << previd;
-      LOG_ERROR << this << " get_block by prev id not found " << sstr.str();
+      LOG_ERROR << _me.port() << " get_block by prev id not found " << sstr.str();
       return;
     }
 
@@ -65,12 +63,12 @@ void Bot::handler_get_block(const messages::Header &header,
     for (auto i = 0u; i < get_block.count(); ++i) {
       auto block = message->add_bodies()->mutable_block();
       if (!_ledger->get_block(height + i, block)) {
-        LOG_ERROR << this << " get_block by height not found";
+        LOG_ERROR << _me.port() << " get_block by height not found";
         return;
       }
     }
   } else {
-    LOG_ERROR << this << " get_block message ill-formed";
+    LOG_ERROR << _me.port() << " get_block message ill-formed";
     return;
   }
 
@@ -242,7 +240,6 @@ void Bot::regular_update() {
   update_peerlist();
   keep_max_connections();
   update_ledger();
-  keep_max_connections();
 
   if (_config.has_random_transaction() &&
       rand() < _config.random_transaction() * RAND_MAX) {
@@ -262,10 +259,10 @@ void Bot::send_random_transaction() {
   const auto transaction = _ledger->send_ncc(
       _keys[0].key_priv(), messages::Address(recipient->key_pub()), 0.5);
   if (_consensus->add_transaction(transaction)) {
-    LOG_DEBUG << "Sending random transaction " << transaction;
+    LOG_DEBUG << _me.port() << " Sending random transaction " << transaction;
     publish_transaction(transaction);
   } else {
-    LOG_WARNING << "Random transaction is not valid " << transaction;
+    LOG_WARNING << _me.port() << " Random transaction is not valid " << transaction;
   }
 }
 
@@ -304,29 +301,29 @@ void Bot::update_peerlist() {
 
 void Bot::handler_get_peers(const messages::Header &header,
                             const messages::Body &body) {
-  LOG_DEBUG << this << " Got a Get_Peers message";
-  // build list of peers reachabe && connected to send
+  // build list of peers reachable && connected to send
+  LOG_DEBUG << this << " : " << _me.port() << " Got a Get_Peers message";
   auto msg = std::make_shared<messages::Message>();
   auto header_reply = msg->mutable_header();
   messages::fill_header_reply(header, header_reply);
   auto peers_body = msg->add_bodies()->mutable_peers();
 
-  auto peers = _tcp_config->mutable_peers();
-  for (const auto &peer_conn : *peers) {
+  for (const auto peer_conn : peers().peers_copy()) {
     auto tmp_peer = peers_body->add_peers();
     tmp_peer->mutable_key_pub()->CopyFrom(peer_conn.key_pub());
     tmp_peer->set_endpoint(peer_conn.endpoint());
     tmp_peer->set_port(peer_conn.port());
   }
-
+  LOG_DEBUG << _me.port() << " got a get_peers message : " << peers_body;
   _networking.send_unicast(msg);
 }
 
 void Bot::handler_peers(const messages::Header &header,
                         const messages::Body &body) {
-  LOG_DEBUG << this << " Got a Peers message";
   const auto &peers = body.peers().peers();
-  for (const auto &peer : peers) {
+  LOG_DEBUG << _me.port() << " got a peers message, receiving : " << peers;
+  for (const auto &remote_peer : peers) {
+    messages::Peer peer(_config.networking(), remote_peer);
     _peers.insert(peer);
   }
 }
@@ -349,7 +346,11 @@ void Bot::handler_connection(const messages::Header &header,
   auto hello = message->add_bodies()->mutable_hello();
   hello->mutable_peer()->CopyFrom(_me);
 
-  _networking.send_unicast(message);
+  if (!_networking.send_unicast(message)) {
+    LOG_DEBUG << this << " : " << _me << " can't send hello message "
+              << message;
+  }
+  keep_max_connections();
 }
 
 void Bot::handler_deconnection(const messages::Header &header,
@@ -358,9 +359,13 @@ void Bot::handler_deconnection(const messages::Header &header,
     auto remote_peer = _networking.find_peer(header.connection_id());
     if (remote_peer) {
       (*remote_peer)->set_status(messages::Peer::UNREACHABLE);
+      LOG_DEBUG << _me.port() << " disconnected from " << (*remote_peer)->port();
     }
     _networking.terminate(header.connection_id());
   }
+
+  LOG_DEBUG << this << " " << __LINE__
+            << " _networking.peer_count(): " << _networking.peer_count();
 
   this->keep_max_connections();
 }
@@ -374,7 +379,8 @@ void Bot::handler_world(const messages::Header &header,
     return;
   }
   if (!world.accepted()) {
-    LOG_DEBUG << this << " Not accepted, disconnecting ...";
+    LOG_DEBUG << _me.port() << " Not accepted from "
+              << (*remote_peer)->port() << ", disconnecting";
     _networking.terminate(header.connection_id());
     (*remote_peer)->set_status(messages::Peer::UNREACHABLE);
   } else {
@@ -387,20 +393,22 @@ void Bot::handler_world(const messages::Header &header,
 void Bot::handler_hello(const messages::Header &header,
                         const messages::Body &body) {
   if (!body.has_hello()) {
-    LOG_WARNING << this
+    LOG_WARNING << this << " : " << _me.port()
                 << " SomeThing wrong. Got a call to handler_hello with "
                    "different type of body on the msg";
     return;
   }
   auto hello = body.hello();
-
-  LOG_DEBUG << this << " Got a HELLO message in bot";
-  auto remote_peer = _peers.insert(hello.peer());
+  messages::Peer peer(_config.networking(), hello.peer());
+  auto remote_peer = _peers.insert(peer);
 
   if (!remote_peer) {
-    LOG_WARNING << "Received a message from ourself (from the futuru?)";
+    LOG_WARNING << this << " : " << _me.port() << "Received a message from ourself (from the futuru?)";
     return;
   }
+
+  LOG_DEBUG << this << " : " << _me.port() << " Got a HELLO message from "
+            << (*remote_peer)->port();
 
   // == Create world message for replying ==
   auto message = std::make_shared<messages::Message>();
@@ -411,10 +419,9 @@ void Bot::handler_hello(const messages::Header &header,
   // update peer status
   if (accepted) {
     (*remote_peer)->set_status(messages::Peer::CONNECTED);
-    LOG_DEBUG << this << " Accept status " << std::boolalpha << accepted << " "
-              << **remote_peer << std::endl
-              << _peers;
-
+    LOG_DEBUG << this << " : " << _me.port() << " Accept status "
+              << std::boolalpha << accepted << " " << **remote_peer
+              << std::endl << _peers;
   } else {
     (*remote_peer)->set_status(messages::Peer::DISCONNECTED);
   }
@@ -426,7 +433,8 @@ void Bot::handler_hello(const messages::Header &header,
   _peers.fill(peers);
 
   if (!_networking.send_unicast(message)) {
-    LOG_ERROR << this << " Failed to send world message.";
+    LOG_ERROR << this << " : " << _me.port() << " Failed to send world message";
+    (*remote_peer)->set_status(messages::Peer::UNREACHABLE);
   }
 }
 
@@ -462,10 +470,10 @@ std::vector<messages::Peer *> Bot::connected_peers() {
 }
 
 void Bot::keep_max_connections() {
-  if (const auto peer_count = _peers.used_peers_count();
-      peer_count >= _max_connections) {
-    LOG_INFO << this << " Already connected to " << peer_count << " / "
-             << _max_connections << std::endl
+  const auto peer_count = _peers.used_peers_count();
+  if (peer_count >= _max_connections) {
+    LOG_INFO << this << " : " << _me.port() << " Already connected to "
+             << peer_count << " / " << _max_connections << std::endl
              << _peers;
     return;
   }
@@ -476,9 +484,12 @@ void Bot::keep_max_connections() {
     return;
   }
 
-  LOG_DEBUG << this << " Asking to connect to " << **peer_it;
+  LOG_DEBUG << this << " : " << _me.port()
+            << " Asking to connect to " << **peer_it;
   (*peer_it)->set_status(messages::Peer::CONNECTING);
-  _networking.connect(*peer_it);
+  if (!_networking.connect(*peer_it)) {
+    (*peer_it)->set_status(messages::Peer::UNREACHABLE);
+  }
 }
 
 const messages::Peers &Bot::peers() const { return _peers; }
@@ -519,14 +530,15 @@ Bot::~Bot() {
   _io_context->stop();
 
   while (!_io_context->stopped()) {
-    LOG_INFO << this << " waiting ...";
+    LOG_INFO << this << " : " << _me.port() << " waiting ...";
     std::this_thread::sleep_for(10ms);
   }
   _subscriber.unsubscribe();
   if (_io_context_thread.joinable()) {
     _io_context_thread.join();
   }
-  LOG_DEBUG << this << " From Bot destructor " << &_subscriber;
+  LOG_DEBUG << this << " : " << _me.port()
+            << " From Bot destructor " << &_subscriber;
 }
 
 }  // namespace neuro

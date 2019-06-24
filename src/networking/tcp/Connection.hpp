@@ -34,7 +34,8 @@ class Connection : public networking::Connection,
 
  public:
   Connection(const ID id, messages::Queue* queue,
-             const std::shared_ptr<tcp::socket>& socket);
+             const std::shared_ptr<tcp::socket>& socket,
+             const messages::config::Networking &config);
   Connection(const ID id, messages::Queue* queue,
              const std::shared_ptr<tcp::socket>& socket,
              const messages::Peer& remote_peer);

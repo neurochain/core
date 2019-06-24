@@ -71,12 +71,10 @@ class Peers {
     Peer *operator->() { return *_it; }
   };
 
-  Peers(const _KeyPub &own_key) : _own_key(own_key) {}
-
-  template <typename It>
-  Peers(const _KeyPub &own_key, It it, It end) : Peers(own_key) {
-    for (; it != end; ++it) {
-      insert(*it);
+  Peers(const _KeyPub &own_key, const messages::config::Networking &config) : _own_key(own_key) {
+    for (auto configured_peer : config.tcp().peers()) {
+      messages::Peer peer(config, configured_peer);
+      insert(peer);
     }
   }
 
@@ -89,12 +87,12 @@ class Peers {
   bool fill(_Peers *peers, uint8_t peer_count = 10);
   std::size_t used_peers_count() const;
   void update_unreachable();
-  bool update_peer_status(const Peer &peer, const Peer::Status status);
   std::optional<Peer *> find(const _KeyPub &key_pub);
   std::vector<Peer *> by_status(const Peer::Status status);
   std::vector<Peer *> used_peers();
   std::vector<Peer *> connected_peers();
   std::vector<Peer> peers_copy() const;
+  std::optional<Peer* >peer_by_port(const Port port) const;
   iterator begin();
   iterator begin(const Peer::Status);
   iterator end();

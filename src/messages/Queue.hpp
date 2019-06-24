@@ -83,7 +83,7 @@ class Queue {
   bool publish(std::shared_ptr<const messages::Message>);
   void subscribe(Subscriber *subscriber);
   void unsubscribe(Subscriber *subscriber);
-
+  std::size_t size() const;
   /*!
     \fn void Queue::run()
     \brief Public method that need to me called in order for the Queue to
