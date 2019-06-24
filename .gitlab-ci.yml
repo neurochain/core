@@ -3,7 +3,7 @@ stages:
   - build
   - doxygen
   - release
-  
+
 variables:
   DOCKER_IMAGE_BUILD: "${CI_REGISTRY_IMAGE}/build"
   DOCKER_IMAGE_CORE: "${CI_REGISTRY_IMAGE}"
@@ -37,7 +37,7 @@ build_image_dev:release:
   script:
     - build_docker "Dockerfile.ubuntu" "Release"
 
-  
+
 build_job:dev:
   image: "${DOCKER_IMAGE_BUILD}/debug:latest" # change that with sha after first run
 
@@ -73,7 +73,7 @@ pages:
   script:
     - mkdir build ||echo exist && cd build && doxygen ../doc/Doxyfile
     - mv html ../public
-    - mv ../doc/img ../public 
+    - mv ../doc/img ../public
 
   only:
     - feaeture/109/documentation
@@ -94,27 +94,27 @@ build_image_prod:release:
     refs:
       - refs/tags/build_prod
       - refs/heads/feature/157/build-release-image
-      
+
     changes:
       - utils/dockers/Dockerfile.ubuntu
-      - ./CMakeLists.txt 
-      - ./**/CMakeLists.txt 
+      - ./CMakeLists.txt
+      - ./**/CMakeLists.txt
   script:
     - build_docker "Dockerfile.ubuntu" "Release"
 
-      
+
 
 .build_bot: &build_bot |
   function build_bot() {
     echo "Building in $1 from $(pwd)"
-    set -ex 
+    set -ex
     export BUILD_TYPE=$1
     mkdir build || echo k
     pwd && ls -lahrt ~/
     cd build
     cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/root -DCMAKE_BUILD_TYPE=$1 -G Ninja ..
-    ninja 
-    mkdir /tmp/db && nohup mongod --dbpath /tmp/db & 
+    ninja
+    mkdir /tmp/db && nohup mongod --dbpath /tmp/db &
     sleep 5
     python3 ../utils/dockers/times3.py ctest -V
     cd .. && python3 -m gcovr -p -r . --html -o coverage.html
@@ -123,19 +123,19 @@ build_image_prod:release:
 .build_docker: &build_docker |
   function build_docker() {
     echo "Building docker image $1 from $(pwd)"
-    set -ex 
+    set -ex
     export DOCKER_FILE_NAME=$1
     export BUILD_TYPE=$2
     export IMAGE_SUFFIX=$(echo $BUILD_TYPE| tr '[:upper:]' '[:lower:]')
-  
+
     docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
     env
-    docker container list -a 
+    docker container list -a
     docker build -f "utils/dockers/$DOCKER_FILE_NAME" --build-arg DOCKER_BUILD_TYPE=$BUILD_TYPE -t "${DOCKER_IMAGE_BUILD}/$IMAGE_SUFFIX:latest" -t "${DOCKER_IMAGE_BUILD}/$IMAGE_SUFFIX:$CI_COMMIT_SHA" .
     docker push "${DOCKER_IMAGE_BUILD}/$IMAGE_SUFFIX:latest"
     docker push "${DOCKER_IMAGE_BUILD}/$IMAGE_SUFFIX:$CI_COMMIT_SHA"
   }
- 
+
 before_script:
   - *build_bot
   - *build_docker
