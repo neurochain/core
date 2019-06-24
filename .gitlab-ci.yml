@@ -19,11 +19,8 @@ build_image_dev:debug:
   tags:
     - dind
   only:
-    changes:
-    - utils/dockers/Dockerfile.*
-    - CMakeLists.txt
-    - src/CMakeLists.txt
-    - .gitlab-ci.yml
+    refs:
+      - refs/tags/build_dev_images
   script:
     - build_docker "Dockerfile.ubuntu" "Debug"
 
@@ -35,11 +32,8 @@ build_image_dev:release:
   tags:
     - dind
   only:
-    changes:
-    - utils/dockers/Dockerfile.ubuntu
-    - ./CMakeLists.txt 
-    - ./**/CMakeLists.txt 
-    - .gitlab-ci.yml
+    refs:
+      - refs/tags/build_dev_images
   script:
     - build_docker "Dockerfile.ubuntu" "Release"
 
@@ -94,18 +88,13 @@ build_image_prod:release:
   stage: release
   variables:
     DOCKER_DRIVER: overlay2
-  services:
-    - docker:stable-dind
+  tags:
+    - dind
   only:
     refs:
-      - refs/tags/build_prod
-      
-    changes:
-      - utils/dockers/Dockerfile.ubuntu
-      - ./CMakeLists.txt 
-      - ./**/CMakeLists.txt 
+      - refs/tags/build_prod_image
   script:
-    - build_docker "Dockerfile.ubuntu" "Release"
+    - build_docker "Dockerfile.core" "Release"
 
       
 
