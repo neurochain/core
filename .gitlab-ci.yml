@@ -2,7 +2,7 @@ stages:
   - env_dev
   - build
   - doxygen
-  - release
+  - prod
   
 variables:
   DOCKER_IMAGE_BUILD: "${CI_REGISTRY_IMAGE}/env_dev"
@@ -85,7 +85,7 @@ pages:
 
 build_image_prod:release:
   image: docker:stable
-  stage: release
+  stage: prod
   variables:
     DOCKER_DRIVER: overlay2
   tags:
