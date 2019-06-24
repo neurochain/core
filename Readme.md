@@ -32,26 +32,26 @@ sustainable network requires rewarding the actors. The second reason for the cry
 applications (e.g. filesharing, traceability).
 
 
-# Build and Run 
+# Install and Run 
 
-## Targets: 
+# Docker (recommended)
 
-Officially supported now (in the CI): 
-* debian:sid
-* ubuntu:18.04
-* fedora:28 
+## Requirements
 
-Best effort (we tried, it worked): 
-* mac osX
+* Install docker: https://docs.docker.com/install/ (x86 processor)
+* Run the docker
 
-Coming:
-* Windows X
+```
 
+```
+
+# Source 
 
 ## Requirements: 
 * cmake >=3.0
 * g++7/clang++6
 * libmpfrc++-dev >=3.6
+* pistache >= 
 
 Nothing else is needed (\o/). The rest of the dependencies will be downloaded and compiled by [hunter](http://www.hunter.sh/). 
 It makes it easier to cover different platform by having the same version of the dependencies.
