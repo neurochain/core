@@ -8,17 +8,17 @@ namespace neuro {
 namespace tooling {
 
 consensus::Config config{
-    5,       // blocks_per_assembly
-    10,      // members_per_assembly
-    1,       // block_period
-    uint64_t{100},     // block_reward
-    128000,  // max_block_size
-    1s,      // update_heights_sleep
-    1s,      // compute_pii_sleep
-    100ms,   // miner_sleep
-    1,       // integrity_block_reward
-    -40,     // integrity_double_mining
-    1        // integrity_denunciation_reward
+    5,              // blocks_per_assembly
+    10,             // members_per_assembly
+    1,              // block_period
+    uint64_t{100},  // block_reward
+    128000,         // max_block_size
+    1s,             // update_heights_sleep
+    1s,             // compute_pii_sleep
+    100ms,          // miner_sleep
+    1,              // integrity_block_reward
+    -40,            // integrity_double_mining
+    1               // integrity_denunciation_reward
 };
 
 Simulator::Simulator(const std::string &db_url, const std::string &db_name,
@@ -63,7 +63,8 @@ messages::Transaction Simulator::random_transaction() const {
   int sender_index = rand() % keys.size();
   int recipient_index = rand() % keys.size();
   return ledger->send_ncc(keys[sender_index].key_priv(),
-                          addresses[recipient_index], RATIO_TO_SEND);
+                          addresses[recipient_index], RATIO_TO_SEND,
+                          messages::NCCAmount(1));
 }
 
 /*
@@ -105,12 +106,22 @@ messages::Block Simulator::new_block(
       last_block.block().header().id());
   header->set_height(height);
 
-  // Block reward
-  blockgen::coinbase({keys[miner_index].key_pub()},
-                     consensus->config().block_reward, block.mutable_coinbase(),
-                     height);
-
   ledger->get_transaction_pool(&block);
+
+  messages::NCCValue total_fees = 0;
+  for (const auto &transaction : block.transactions()) {
+    if (transaction.has_fees()) {
+      total_fees += transaction.fees().value();
+    }
+  }
+
+  auto block_reward = messages::NCCAmount(
+      consensus->config().block_reward.value() + total_fees);
+
+  // Block reward
+  blockgen::coinbase({keys[miner_index].key_pub()}, block_reward,
+                     block.mutable_coinbase(), height);
+
   ledger->add_denunciations(&block, last_block.branch_path());
   messages::sort_transactions(&block);
   messages::set_block_hash(&block);

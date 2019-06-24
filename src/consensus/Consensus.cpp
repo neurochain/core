@@ -209,8 +209,7 @@ bool Consensus::check_coinbase(
     const messages::TaggedTransaction &tagged_transaction) const {
   messages::TaggedBlock tagged_block;
   if (!tagged_transaction.has_block_id() ||
-      !_ledger->get_block(tagged_transaction.block_id(), &tagged_block,
-                          false)) {
+      !_ledger->get_block(tagged_transaction.block_id(), &tagged_block)) {
     LOG_INFO << "Invalid coinbase for transaction "
              << tagged_transaction.transaction().id();
     return false;
@@ -225,17 +224,28 @@ bool Consensus::check_coinbase(
     return false;
   }
 
+  messages::NCCValue total_fees = 0;
+  for (const auto &transaction : tagged_block.block().transactions()) {
+    if (transaction.has_fees()) {
+      total_fees += transaction.fees().value();
+    }
+  }
+
   // Check total spent
   if (tagged_block.block().header().height() != 0) {
     messages::NCCValue to_spend =
-        block_reward(tagged_block.block().header().height()).value();
+        block_reward(tagged_block.block().header().height(), total_fees)
+            .value();
     messages::NCCValue total_spent = 0;
     for (const auto &output : tagged_transaction.transaction().outputs()) {
       total_spent += output.value().value();
     }
     if (to_spend != total_spent) {
       LOG_INFO << "Failed check_coinbase for transaction "
-               << tagged_transaction.transaction().id();
+               << tagged_transaction.transaction().id()
+               << " expected coinbase was " << to_spend << " and got "
+               << total_spent;
+
       return false;
     }
   }
@@ -251,9 +261,9 @@ bool Consensus::check_coinbase(
 }
 
 messages::NCCAmount Consensus::block_reward(
-    const messages::BlockHeight height) const {
+    const messages::BlockHeight height, const messages::NCCValue fees) const {
   // TODO use some sort of formula here
-  return _config.block_reward;
+  return messages::NCCAmount(_config.block_reward.value() + fees);
 }
 
 bool Consensus::check_block_id(
@@ -667,7 +677,7 @@ bool Consensus::compute_assembly_pii(const messages::Assembly &assembly) {
       break;
     }
     if (!_ledger->get_block(tagged_block.block().header().previous_block_hash(),
-                            &tagged_block, false)) {
+                            &tagged_block)) {
       LOG_WARNING << "During Pii computation missing block "
                   << tagged_block.block().header().previous_block_hash();
       return false;
@@ -859,11 +869,19 @@ bool Consensus::build_block(const crypto::Ecc &keys,
   header->mutable_previous_block_hash()->CopyFrom(last_block_header.id());
   header->mutable_timestamp()->set_data(std::time(nullptr));
 
-  // Block reward
-  tooling::blockgen::coinbase({keys.key_pub()}, block_reward(height),
-                              block->mutable_coinbase(), height);
-
   _ledger->get_transaction_pool(block);
+
+  messages::NCCValue total_fees = 0;
+  for (const auto &transaction : block->transactions()) {
+    if (transaction.has_fees()) {
+      total_fees += transaction.fees().value();
+    }
+  }
+
+  // Block reward
+  tooling::blockgen::coinbase({keys.key_pub()},
+                              block_reward(height, total_fees),
+                              block->mutable_coinbase(), height);
 
   _ledger->add_denunciations(block, last_block.branch_path());
 
