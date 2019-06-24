@@ -8,7 +8,7 @@ USER neuro
 COPY build/src/main main
 COPY testnet/data.0.testnet /home/neuro/data.0.testnet
 
-# cleanup 
+# cleanup
 RUN du -sh /
 RUN rm -r ./build
 RUN rm -r ~/.hunter
