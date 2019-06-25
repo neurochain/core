@@ -220,7 +220,7 @@ bool Consensus::check_coinbase(
       tagged_transaction.transaction().coinbase_height() !=
           tagged_block.block().header().height()) {
     LOG_INFO << "Invalid coinbase for transaction "
-             << tagged_transaction.transaction().id();
+             << tagged_transaction.transaction().id() << " wrong height.";
     return false;
   }
 
