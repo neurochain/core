@@ -52,6 +52,10 @@ messages::Transaction Api::transaction(const messages::TransactionID &id){
   return transaction;
 }
 
+const messages::UnspentTransactions Api::list_unspent_transaction(const messages::Address &address) {
+  return _bot->ledger()->list_unspent_transactions(address);
+}
+
 bool
 Api::set_inputs(messages::Transaction *transaction,
 		const messages::Address &sender,
@@ -80,10 +84,6 @@ Api::set_inputs(messages::Transaction *transaction,
 bool Api::transaction_publish(const messages::Transaction &transaction) {
   return _bot->publish_transaction(transaction);
 }
-
-
-
-  
 
 }  // api
 

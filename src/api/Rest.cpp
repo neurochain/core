@@ -6,14 +6,6 @@
 
 namespace neuro::api {
 
-//  const auto list_transactions_route = [this](Onion::Request &req,
-//                                              Onion::Response &res) {
-//    const auto address = req.query("address", "");
-//    LOG_INFO << "ADDRESS " << address;
-//    res << list_transactions(address);
-//    return OCS_PROCESSED;
-//  };
-//
 //  const auto generate_keys_route = [this](Onion::Request &req,
 //                                          Onion::Response &res) {
 //    messages::GeneratedKeys generated_keys = generate_keys();
@@ -97,7 +89,6 @@ namespace neuro::api {
 //    return OCS_PROCESSED;
 //  };
 //
-//  _root->add("list_transactions", list_transactions_route);
 //  _root->add("generate_keys", generate_keys_route);
 //  if (_config.has_faucet_amount()) {
 //    _root->add("faucet_send", faucet_send_route);
@@ -133,12 +124,13 @@ void Rest::setupRoutes() {
   Post(_router, "/create_transaction/:address/:fees",
        bind(&Rest::get_create_transaction, this));
   Post(_router, "/publish", bind(&Rest::publish, this));
+  Get(_router, "/list_transactions:address", bind(&Rest::get_unspent_transaction_list, this));
 }
 
-void Rest::get_balance(const Pistache::Rest::Request& request, Pistache::Http::ResponseWriter response) {
-  const messages::Address address (request.param(":address").as<std::string>());
+void Rest::get_balance(const Request& req, Response res) {
+  const messages::Address address(req.param(":address").as<std::string>());
   const auto balance_amount = balance(address);
-  response.send(Pistache::Http::Code::Ok, to_json(balance_amount));
+  res.send(Pistache::Http::Code::Ok, to_json(balance_amount));
 }
 
 void  Rest::get_ready(const Request& req, Response res) {
@@ -208,6 +200,12 @@ void Rest::publish(const Request &req, Response res) {
   res.send(Pistache::Http::Code::Ok);
 }
 
+void Rest::get_unspent_transaction_list(const Request& req, Response res) {
+  const messages::Address address(req.param(":address").as<std::string>());
+  auto unspent_transaction_list = list_unspent_transaction(address);
+  res.send(Pistache::Http::Code::Ok, to_json(unspent_transaction_list));
+}
+
 Rest::Rest(const messages::config::Rest &config, Bot *bot)
     : Api::Api(bot), _httpEndpoint(std::make_shared<Http::Endpoint>(
                          Address(Ipv4::any(), config.port()))) {
@@ -219,23 +217,6 @@ Rest::~Rest() {
   shutdown();
 }
 
-//std::string Rest::list_transactions(const std::string &address_str) const {
-//  const messages::Address address(address_str);
-//  std::vector<messages::UnspentTransaction> unspent_transactions =
-//      _ledger->list_unspent_transactions(address);
-//  messages::RestUnspentTransactions rest_unspent_transactions;
-//  for (auto unspent_transaction : unspent_transactions) {
-//    auto rest_unspent_transaction =
-//        rest_unspent_transactions.add_unspent_transactions();
-//    rest_unspent_transaction->set_transaction_id(
-//        unspent_transaction.transaction_id().data());
-//    rest_unspent_transaction->set_value(
-//        std::to_string(unspent_transaction.value().value()));
-//  }
-//  std::string result;
-//  messages::to_json(rest_unspent_transactions, &result);
-//  return result;
-//}
 //
 //messages::Transaction Rest::build_transaction(
 //    const messages::TransactionToPublish &transaction_to_publish) const {

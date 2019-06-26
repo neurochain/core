@@ -198,3 +198,7 @@ message UnspentTransaction {
   required Hash transaction_id = 1;
   required _NCCAmount value = 2;
 }
+
+message UnspentTransactions {
+  repeated UnspentTransaction unspent_transactions = 1;
+}

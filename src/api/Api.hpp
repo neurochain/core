@@ -28,6 +28,7 @@ class Api {
   virtual Buffer transaction(const messages::Transaction &transaction) const final;
   virtual std::optional<messages::Transaction> transaction_from_json(const std::string &json) final;
   virtual messages::Transaction transaction(const messages::TransactionID &id) final;
+  virtual const std::vector<messages::UnspentTransaction> list_unspent_transaction(const messages::Address &address);
   virtual bool
   set_inputs(messages::Transaction *transaction,
 	     const messages::Address &sender,
