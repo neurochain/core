@@ -1,8 +1,9 @@
+#include "api/Rest.hpp"
 #include "Bot.hpp"
 #include "common/logger.hpp"
 #include "ledger/Ledger.hpp"
 #include "messages/Address.hpp"
-#include "api/Rest.hpp"
+#include <messages/Hasher.hpp>
 
 namespace neuro::api {
 
@@ -32,16 +33,6 @@ namespace neuro::api {
 //      res << transaction;
 //      return OCS_PROCESSED;
 //    }
-//  };
-//
-//  const auto get_transaction_route = [this](Onion::Request &req,
-//                                            Onion::Response &res) {
-//    const auto transaction_id_str = req.query("transaction_id", "");
-//    const messages::Hasher transaction_id (transaction_id_str);
-//    messages::Transaction transaction;
-//    _ledger->get_transaction(transaction_id, &transaction);
-//    res << transaction;
-//    return OCS_PROCESSED;
 //  };
 //
 //  const auto get_block_route = [this](Onion::Request &req,
@@ -93,7 +84,6 @@ namespace neuro::api {
 //  if (_config.has_faucet_amount()) {
 //    _root->add("faucet_send", faucet_send_route);
 //  }
-//  _root->add("get_transaction", get_transaction_route);
 //  _root->add("get_block", get_block_route);
 //  _root->add("get_last_blocks", get_last_blocks_route);
 //  _root->add("total_nb_transactions", total_nb_transactions_route);
@@ -124,7 +114,8 @@ void Rest::setupRoutes() {
   Post(_router, "/create_transaction/:address/:fees",
        bind(&Rest::get_create_transaction, this));
   Post(_router, "/publish", bind(&Rest::publish, this));
-  Get(_router, "/list_transactions:address", bind(&Rest::get_unspent_transaction_list, this));
+  Get(_router, "/list_transactions/:address", bind(&Rest::get_unspent_transaction_list, this));
+  Get(_router, "/get_transaction/:id", bind(&Rest::get_transaction, this));
 }
 
 void Rest::get_balance(const Request& req, Response res) {
@@ -135,6 +126,12 @@ void Rest::get_balance(const Request& req, Response res) {
 
 void  Rest::get_ready(const Request& req, Response res) {
   res.send(Pistache::Http::Code::Ok, "{ok: 1}");
+}
+
+void Rest::get_transaction(const Request& req, Response res) {
+  messages::Hasher transaction_id(req:param(":id").as<std::string>());
+  messages::Transaction transaction = Api::transaction(transaction_id);
+  res.send(Pistache::Http::Code::Ok, to_json(transaction));
 }
 
 void Rest::get_create_transaction(const Request& req, Response res) {

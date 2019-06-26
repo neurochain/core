@@ -23,6 +23,11 @@ class Hasher : public messages::Hash {
 
   explicit Hasher(const Buffer &data) { from_buffer(data); }
 
+  explicit Hasher(const std::string &hash) {
+    this->set_type(Hash::SHA256);
+    this->set_data(hash);
+  }
+
   explicit Hasher(const crypto::KeyPub &ecc_pub) {
     Buffer data;
     ecc_pub.save(&data);
