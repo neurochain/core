@@ -390,6 +390,140 @@ class Consensus : public testing::Test {
     messages::set_transaction_hash(tagged_coinbase.mutable_transaction());
     ASSERT_FALSE(consensus->check_coinbase(tagged_coinbase));
   }
+
+  void test_check_transactions_order() {
+    messages::TaggedBlock last_block, tagged_block;
+    ASSERT_TRUE(ledger->get_last_block(&last_block));
+    auto block = simulator.new_block(2, last_block);
+    ASSERT_TRUE(consensus->check_transactions_order(block));
+
+    block = simulator.new_block(2, last_block);
+    auto transaction0 = block.transactions(0);
+    auto transaction1 = block.transactions(1);
+    block.mutable_transactions(0)->CopyFrom(transaction1);
+    block.mutable_transactions(1)->CopyFrom(transaction0);
+
+    // Get the author keys
+    int address_index = -1;
+    for (size_t i = 0; i < simulator.addresses.size(); i++) {
+      if (block.coinbase().outputs(0).address() == simulator.addresses[i]) {
+        address_index = i;
+        break;
+      }
+    }
+    ASSERT_NE(address_index, -1);
+    const auto &keys = simulator.keys[address_index];
+
+    // Rehash and resign
+    messages::set_block_hash(&block);
+    crypto::sign(keys, &block);
+    ASSERT_FALSE(consensus->check_transactions_order(block));
+  }
+
+  void test_check_block_id() {
+    messages::TaggedBlock last_block, tagged_block;
+    ASSERT_TRUE(ledger->get_last_block(&last_block));
+    auto block = simulator.new_block(2, last_block);
+    tagged_block.mutable_block()->CopyFrom(block);
+    ASSERT_TRUE(consensus->check_block_id(tagged_block));
+
+    // Change the id
+    auto data = tagged_block.mutable_block()
+                    ->mutable_header()
+                    ->mutable_id()
+                    ->mutable_data();
+    (*data)[0] += 1;
+    ASSERT_FALSE(consensus->check_block_id(tagged_block));
+
+    // Change something in a transaction
+    tagged_block.mutable_block()->CopyFrom(block);
+    tagged_block.mutable_block()
+        ->mutable_transactions(0)
+        ->mutable_outputs(0)
+        ->set_data("toto");
+    ASSERT_FALSE(consensus->check_block_id(tagged_block));
+
+    // Change something in the coinbase
+    tagged_block.mutable_block()->CopyFrom(block);
+    tagged_block.mutable_block()
+        ->mutable_coinbase()
+        ->mutable_outputs(0)
+        ->set_data("toto");
+    ASSERT_FALSE(consensus->check_block_id(tagged_block));
+
+    // Change something in the header
+    tagged_block.mutable_block()->CopyFrom(block);
+    data = tagged_block.mutable_block()
+               ->mutable_header()
+               ->mutable_previous_block_hash()
+               ->mutable_data();
+    (*data)[0] += 1;
+    ASSERT_FALSE(consensus->check_block_id(tagged_block));
+
+    // Change the author but this should not have an impact because the author
+    // is set after the hash to facilitate denunciations
+    tagged_block.mutable_block()->CopyFrom(block);
+    tagged_block.mutable_block()->mutable_header()->mutable_author()->Clear();
+    ASSERT_TRUE(consensus->check_block_id(tagged_block));
+  }
+
+  void test_check_block_size() {
+    messages::TaggedBlock last_block, tagged_block;
+    ASSERT_TRUE(ledger->get_last_block(&last_block));
+    auto block = simulator.new_block(2, last_block);
+    tagged_block.mutable_block()->CopyFrom(block);
+    ASSERT_TRUE(consensus->check_block_size(tagged_block));
+
+    std::stringstream ss;
+    for (int i = 0; i < consensus->_config.max_block_size; i++) {
+      ss << "a";
+    }
+    tagged_block.mutable_block()
+        ->mutable_coinbase()
+        ->mutable_outputs(0)
+        ->set_data(ss.str());
+    ASSERT_FALSE(consensus->check_block_size(tagged_block));
+  }
+
+  void test_check_block_timestamp() {
+    messages::TaggedBlock last_block, tagged_block;
+    ASSERT_TRUE(ledger->get_last_block(&last_block));
+    auto block = simulator.new_block(2, last_block);
+    tagged_block.mutable_block()->CopyFrom(block);
+    ASSERT_TRUE(consensus->check_block_timestamp(tagged_block));
+
+    auto timestamp = tagged_block.block().header().timestamp().data();
+    tagged_block.mutable_block()
+        ->mutable_header()
+        ->mutable_timestamp()
+        ->set_data(timestamp + consensus->_config.block_period + 1);
+    ASSERT_FALSE(consensus->check_block_timestamp(tagged_block));
+  }
+
+  void test_check_block_transactions() {
+    messages::TaggedBlock last_block, tagged_block;
+    ASSERT_TRUE(ledger->get_last_block(&last_block));
+    auto block = simulator.new_block(2, last_block);
+    ledger->insert_block(block);
+    ledger->get_block(block.header().id(), &tagged_block);
+    ASSERT_TRUE(consensus->check_block_transactions(tagged_block));
+
+    block = simulator.new_block(2, last_block);
+    ledger->insert_block(block);
+    ledger->get_block(block.header().id(), &tagged_block);
+    messages::NCCValue value =
+        tagged_block.block().transactions(0).outputs(0).value().value();
+    tagged_block.mutable_block()
+        ->mutable_transactions(0)
+        ->mutable_outputs(0)
+        ->mutable_value()
+        ->set_value(value + 1);
+    ASSERT_FALSE(consensus->check_block_transactions(tagged_block));
+  }
+
+  void test_check_block_height() {}
+
+  void test_check_block_author() {}
 };
 
 TEST_F(Consensus, is_valid_transaction) { test_is_valid_transaction(); }
@@ -568,6 +702,20 @@ TEST_F(Consensus, check_transaction_double_inputs) {
 }
 
 TEST_F(Consensus, check_coinbase) { test_check_coinbase(); }
+
+TEST_F(Consensus, check_transactions_order) { test_check_transactions_order(); }
+
+TEST_F(Consensus, check_block_id) { test_check_block_id(); }
+
+TEST_F(Consensus, check_block_size) { test_check_block_size(); }
+
+TEST_F(Consensus, check_block_timestamp) { test_check_block_timestamp(); }
+
+TEST_F(Consensus, check_block_transactions) { test_check_block_transactions(); }
+
+TEST_F(Consensus, check_block_height) { test_check_block_height(); }
+
+TEST_F(Consensus, check_block_author) { test_check_block_author(); }
 
 }  // namespace tests
 }  // namespace consensus
