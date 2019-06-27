@@ -35,20 +35,6 @@ namespace neuro::api {
 //    }
 //  };
 //
-//  const auto get_last_blocks_route = [this](Onion::Request &req,
-//                                            Onion::Response &res) {
-//    const auto nb_blocks_str = req.query("nb_blocks", "10");
-//    int nb_blocks = std::stoi(nb_blocks_str);
-//    std::vector<messages::Block> blocks_vector =
-//        _ledger->get_last_blocks(nb_blocks);
-//    messages::Blocks blocks;
-//    for (auto block : blocks_vector) {
-//      blocks.add_blocks()->CopyFrom(block);
-//    }
-//    res << blocks;
-//    return OCS_PROCESSED;
-//  };
-//
 //  const auto total_nb_transactions_route = [this](Onion::Request &req,
 //                                                  Onion::Response &res) {
 //    res << "{\"totalNbTransactions\":" << _ledger->total_nb_transactions()
@@ -98,6 +84,7 @@ void Rest::setupRoutes() {
   Get(_router, "/list_transactions/:address", bind(&Rest::get_unspent_transaction_list, this));
   Get(_router, "/get_transaction/:id", bind(&Rest::get_transaction, this));
   Get(_router, "/get_block/:id", bind(&Rest::get_block, this));
+  Get(_router, "/get_last_blocks/:nb_blocks", bind(&Rest::get_last_blocks, this));
 }
 
 void Rest::get_balance(const Request& req, Response res) {
@@ -189,6 +176,12 @@ void Rest::get_block(const Rest::Request &req, Rest::Response res) {
   messages::Hasher block_id(req.param(":id").as<std::string>());
   auto block = Api::block(block_id);
   res.send(Pistache::Http::Code::Ok, to_json(block));
+}
+
+void Rest::get_last_blocks(const Rest::Request &req, Rest::Response res) {
+  auto nb_blocks = req.param(":nb_blocks").as<std::size_t>();
+  auto blocks = Api::last_blocks(nb_blocks);
+  res.send(Pistache::Http::Code::Ok, to_json(blocks));
 }
 
 Rest::Rest(const messages::config::Rest &config, Bot *bot)
