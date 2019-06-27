@@ -35,26 +35,12 @@ namespace neuro::api {
 //    }
 //  };
 //
-//  const auto total_nb_transactions_route = [this](Onion::Request &req,
-//                                                  Onion::Response &res) {
-//    res << "{\"totalNbTransactions\":" << _ledger->total_nb_transactions()
-//        << "}\n";
-//    return OCS_PROCESSED;
-//  };
-//
-//  const auto total_nb_blocks_route = [this](Onion::Request &req,
-//                                            Onion::Response &res) {
-//    res << "{\"totalNbBlocks\":" << _ledger->total_nb_blocks() << "}\n";
-//    return OCS_PROCESSED;
-//  };
-//
 //  _root->add("generate_keys", generate_keys_route);
+//
 //  if (_config.has_faucet_amount()) {
 //    _root->add("faucet_send", faucet_send_route);
 //  }
-//  _root->add("get_last_blocks", get_last_blocks_route);
-//  _root->add("total_nb_transactions", total_nb_transactions_route);
-//  _root->add("total_nb_blocks", total_nb_blocks_route);
+
 
 void Rest::init() {
   auto opts =
@@ -85,6 +71,8 @@ void Rest::setupRoutes() {
   Get(_router, "/get_transaction/:id", bind(&Rest::get_transaction, this));
   Get(_router, "/get_block/:id", bind(&Rest::get_block, this));
   Get(_router, "/get_last_blocks/:nb_blocks", bind(&Rest::get_last_blocks, this));
+  Get(_router, "/get_total_nb_transactions", bind(&Rest::get_total_nb_transactions, this));
+  Get(_router, "/get_total_nb_blocks", bind(&Rest::get_total_nb_blocks, this));
 }
 
 void Rest::get_balance(const Request& req, Response res) {
@@ -182,6 +170,14 @@ void Rest::get_last_blocks(const Rest::Request &req, Rest::Response res) {
   auto nb_blocks = req.param(":nb_blocks").as<std::size_t>();
   auto blocks = Api::last_blocks(nb_blocks);
   res.send(Pistache::Http::Code::Ok, to_json(blocks));
+}
+
+void Rest::get_total_nb_transactions(const Rest::Request &req, Rest::Response res) {
+  res.send(Pistache::Http::Code::Ok, std::to_string(Api::total_nb_transactions()));
+}
+
+void Rest::get_total_nb_blocks(const Rest::Request &req, Rest::Response res) {
+  res.send(Pistache::Http::Code::Ok, std::to_string(Api::total_nb_blocks()));
 }
 
 Rest::Rest(const messages::config::Rest &config, Bot *bot)

@@ -44,6 +44,13 @@ messages::Blocks Api::last_blocks(std::size_t nb_blocks) {
   return blocks;
 }
 
+std::size_t Api::total_nb_transactions() const {
+  return _bot->ledger()->total_nb_transactions();
+}
+std::size_t Api::total_nb_blocks() const {
+  return _bot->ledger()->total_nb_blocks();
+}
+
 
 bool Api::is_ledger_uptodate() const {
   // TODO 
