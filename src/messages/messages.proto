@@ -102,6 +102,10 @@ message Block {
   repeated _Denunciation denunciations = 40;
 }
 
+message Blocks {
+  repeated Block block = 1;
+}
+
 enum Branch {
   MAIN = 0;
   FORK = 1;

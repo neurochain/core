@@ -22,13 +22,15 @@ class Api {
   virtual messages::NCCAmount balance(const messages::Address &address) final;
   virtual messages::Addresses previous_recipients(const messages::Address &address) final;
 
+  virtual messages::Block block(messages::BlockID id) final;
+  virtual messages::Blocks last_blocks(std::size_t nb_blocks) final;
   virtual messages::BlockHeight height() const final;
-  virtual bool is_ledger_uptodate() const final;
 
+  virtual bool is_ledger_uptodate() const final;
   virtual Buffer transaction(const messages::Transaction &transaction) const final;
   virtual std::optional<messages::Transaction> transaction_from_json(const std::string &json) final;
   virtual messages::Transaction transaction(const messages::TransactionID &id) final;
-  virtual const std::vector<messages::UnspentTransaction> list_unspent_transaction(const messages::Address &address) final;
+  virtual const messages::UnspentTransactions list_unspent_transaction(const messages::Address &address) final;
   virtual bool
   set_inputs(messages::Transaction *transaction,
 	     const messages::Address &sender,

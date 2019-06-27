@@ -35,24 +35,6 @@ namespace neuro::api {
 //    }
 //  };
 //
-//  const auto get_block_route = [this](Onion::Request &req,
-//                                      Onion::Response &res) {
-//    const auto block_id_str = req.query("block_id", "");
-//    const messages::Hasher block_id = load_hash(block_id_str);
-//    messages::Block block;
-//    if (block_id_str != "") {
-//      _ledger->get_block(block_id, &block);
-//    } else {
-//      const auto block_height_str = req.query("height", "");
-//      if (block_height_str != "") {
-//        int block_height = std::stoi(block_height_str);
-//        _ledger->get_block(block_height, &block);
-//      }
-//    }
-//    res << block;
-//    return OCS_PROCESSED;
-//  };
-//
 //  const auto get_last_blocks_route = [this](Onion::Request &req,
 //                                            Onion::Response &res) {
 //    const auto nb_blocks_str = req.query("nb_blocks", "10");
@@ -84,7 +66,6 @@ namespace neuro::api {
 //  if (_config.has_faucet_amount()) {
 //    _root->add("faucet_send", faucet_send_route);
 //  }
-//  _root->add("get_block", get_block_route);
 //  _root->add("get_last_blocks", get_last_blocks_route);
 //  _root->add("total_nb_transactions", total_nb_transactions_route);
 //  _root->add("total_nb_blocks", total_nb_blocks_route);
@@ -116,6 +97,7 @@ void Rest::setupRoutes() {
   Post(_router, "/publish", bind(&Rest::publish, this));
   Get(_router, "/list_transactions/:address", bind(&Rest::get_unspent_transaction_list, this));
   Get(_router, "/get_transaction/:id", bind(&Rest::get_transaction, this));
+  Get(_router, "/get_block/:id", bind(&Rest::get_block, this));
 }
 
 void Rest::get_balance(const Request& req, Response res) {
@@ -129,7 +111,7 @@ void  Rest::get_ready(const Request& req, Response res) {
 }
 
 void Rest::get_transaction(const Request& req, Response res) {
-  messages::Hasher transaction_id(req:param(":id").as<std::string>());
+  messages::Hasher transaction_id(req.param(":id").as<std::string>());
   messages::Transaction transaction = Api::transaction(transaction_id);
   res.send(Pistache::Http::Code::Ok, to_json(transaction));
 }
@@ -203,13 +185,18 @@ void Rest::get_unspent_transaction_list(const Request& req, Response res) {
   res.send(Pistache::Http::Code::Ok, to_json(unspent_transaction_list));
 }
 
+void Rest::get_block(const Rest::Request &req, Rest::Response res) {
+  messages::Hasher block_id(req.param(":id").as<std::string>());
+  auto block = Api::block(block_id);
+  res.send(Pistache::Http::Code::Ok, to_json(block));
+}
+
 Rest::Rest(const messages::config::Rest &config, Bot *bot)
     : Api::Api(bot), _httpEndpoint(std::make_shared<Http::Endpoint>(
                          Address(Ipv4::any(), config.port()))) {
   init();
   start();
 }
-
 Rest::~Rest() {
   shutdown();
 }
