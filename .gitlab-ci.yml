@@ -71,7 +71,7 @@ pages:
     - apk add doxygen
     - apk add ttf-freefont graphviz
   dependencies:
-    - build_image_dev:release
+    - build_job:release
   script:
     - mkdir build ||echo exist && cd build && doxygen ../doc/Doxyfile
     - mv html ../public
@@ -90,7 +90,7 @@ build_image_prod:release:
   tags:
     - dind
   dependencies:
-    - build_image_dev:release
+    - build_job:release
   only:
     changes:
       - utils/dockers/Dockerfile.core
