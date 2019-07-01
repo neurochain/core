@@ -12,5 +12,5 @@ COPY utils/dockers/entrypoint.sh entrypoint.sh
 RUN rm -r ./build
 RUN rm -r ~/.hunter
 RUN du -sh /
-
+RUN ./main --version
 CMD ["./entrypoint.sh"]
