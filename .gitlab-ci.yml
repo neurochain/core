@@ -2,10 +2,10 @@ stages:
   - env_dev
   - build
   - doxygen
-  - release
+  - prod
   
 variables:
-  DOCKER_IMAGE_BUILD: "${CI_REGISTRY_IMAGE}/build"
+  DOCKER_IMAGE_BUILD: "${CI_REGISTRY_IMAGE}/env_dev"
   DOCKER_IMAGE_CORE: "${CI_REGISTRY_IMAGE}"
 
 services:
@@ -20,10 +20,7 @@ build_image_dev:debug:
     - dind
   only:
     changes:
-    - utils/dockers/Dockerfile.*
-    - CMakeLists.txt
-    - src/CMakeLists.txt
-    - .gitlab-ci.yml
+      - utils/dockers/Dockerfile.ubuntu
   script:
     - build_docker "Dockerfile.ubuntu" "Debug"
 
@@ -36,14 +33,11 @@ build_image_dev:release:
     - dind
   only:
     changes:
-    - utils/dockers/Dockerfile.ubuntu
-    - ./CMakeLists.txt 
-    - ./**/CMakeLists.txt 
-    - .gitlab-ci.yml
+      - utils/dockers/Dockerfile.ubuntu
   script:
     - build_docker "Dockerfile.ubuntu" "Release"
 
-  
+
 build_job:dev:
   image: "${DOCKER_IMAGE_BUILD}/debug:latest" # change that with sha after first run
 
@@ -79,47 +73,41 @@ pages:
   script:
     - mkdir build ||echo exist && cd build && doxygen ../doc/Doxyfile
     - mv html ../public
-    - mv ../doc/img ../public 
+    - mv ../doc/img ../public
 
   only:
-    - feaeture/109/documentation
-    - feature/ledger
-    - tags/build_doc
+    changes:
+      - doc/*
   artifacts:
     paths:
       - public
 
 build_image_prod:release:
   image: docker:stable
-  stage: release
+  stage: prod
   variables:
     DOCKER_DRIVER: overlay2
-  services:
-    - docker:stable-dind
+  tags:
+    - dind
   only:
-    refs:
-      - refs/tags/build_prod
-      
     changes:
-      - utils/dockers/Dockerfile.ubuntu
-      - ./CMakeLists.txt 
-      - ./**/CMakeLists.txt 
+      - utils/dockers/Dockerfile.core
   script:
-    - build_docker "Dockerfile.ubuntu" "Release"
+    - build_docker "Dockerfile.core" "Release"
 
-      
+
 
 .build_bot: &build_bot |
   function build_bot() {
     echo "Building in $1 from $(pwd)"
-    set -ex 
+    set -ex
     export BUILD_TYPE=$1
     mkdir build || echo k
     pwd && ls -lahrt ~/
     cd build
     cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/root -DCMAKE_BUILD_TYPE=$1 -G Ninja ..
-    ninja 
-    mkdir /tmp/db && nohup mongod --dbpath /tmp/db & 
+    ninja
+    mkdir /tmp/db && nohup mongod --dbpath /tmp/db &
     sleep 5
     python3 ../utils/dockers/times3.py ctest -V
     cd .. && python3 -m gcovr -p -r . --html -o coverage.html
@@ -128,19 +116,20 @@ build_image_prod:release:
 .build_docker: &build_docker |
   function build_docker() {
     echo "Building docker image $1 from $(pwd)"
-    set -ex 
+    set -ex
     export DOCKER_FILE_NAME=$1
     export BUILD_TYPE=$2
     export IMAGE_SUFFIX=$(echo $BUILD_TYPE| tr '[:upper:]' '[:lower:]')
-  
+    export IMAGE_FULL_NAME="${CI_REGISTRY_IMAGE}/${CI_JOB_STAGE}/${IMAGE_SUFFIX}"
+
     docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
     env
-    docker container list -a 
-    docker build -f "utils/dockers/$DOCKER_FILE_NAME" --build-arg DOCKER_BUILD_TYPE=$BUILD_TYPE -t "${DOCKER_IMAGE_BUILD}/$IMAGE_SUFFIX:latest" -t "${DOCKER_IMAGE_BUILD}/$IMAGE_SUFFIX:$CI_COMMIT_SHA" .
-    docker push "${DOCKER_IMAGE_BUILD}/$IMAGE_SUFFIX:latest"
-    docker push "${DOCKER_IMAGE_BUILD}/$IMAGE_SUFFIX:$CI_COMMIT_SHA"
+    docker container list -a
+    docker build -f "utils/dockers/$DOCKER_FILE_NAME" --build-arg DOCKER_BUILD_TYPE=$BUILD_TYPE -t "${IMAGE_FULL_NAME}:latest" -t "${IMAGE_FULL_NAME}:$CI_COMMIT_SHA" .
+    docker push "${IMAGE_FULL_NAME}:latest"
+    docker push "${IMAGE_FULL_NAME}:$CI_COMMIT_SHA"
   }
- 
+
 before_script:
   - *build_bot
   - *build_docker
