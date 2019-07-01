@@ -94,6 +94,7 @@ build_image_prod:release:
   only:
     changes:
       - utils/dockers/Dockerfile.core
+      - .gitlab-ci.yml
   script:
     - build_docker "Dockerfile.core" "Release"
 
