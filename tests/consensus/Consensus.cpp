@@ -150,16 +150,7 @@ class Consensus : public testing::Test {
     for (uint32_t i = 1; i < consensus->config().blocks_per_assembly; i++) {
       messages::Address address;
       ASSERT_TRUE(consensus->get_block_writer(assembly_minus_2, i, &address));
-      int address_index = -1;
-      for (size_t i = 0; i < simulator.addresses.size(); i++) {
-        if (address == simulator.addresses[i]) {
-          address_index = i;
-          break;
-        }
-      }
-      ASSERT_NE(address_index, -1);
-
-      const auto &keys = simulator.keys[address_index];
+      const auto &keys = get_author_keys(address);
       messages::Block block;
       ASSERT_TRUE(consensus->build_block(keys, i, &block));
       ASSERT_EQ(block.header().height(), i);
@@ -403,21 +394,30 @@ class Consensus : public testing::Test {
     block.mutable_transactions(0)->CopyFrom(transaction1);
     block.mutable_transactions(1)->CopyFrom(transaction0);
 
-    // Get the author keys
-    int address_index = -1;
-    for (size_t i = 0; i < simulator.addresses.size(); i++) {
-      if (block.coinbase().outputs(0).address() == simulator.addresses[i]) {
-        address_index = i;
-        break;
-      }
-    }
-    ASSERT_NE(address_index, -1);
-    const auto &keys = simulator.keys[address_index];
+    const auto &keys = get_author_keys(block);
 
     // Rehash and resign
     messages::set_block_hash(&block);
     crypto::sign(keys, &block);
     ASSERT_FALSE(consensus->check_transactions_order(block));
+  }
+
+  const crypto::Ecc &get_author_keys(const messages::Address &address) {
+    int address_index = -1;
+    for (size_t i = 0; i < simulator.addresses.size(); i++) {
+      if (address == simulator.addresses[i]) {
+        address_index = i;
+        break;
+      }
+    }
+    if (address_index == -1) {
+      throw std::runtime_error("Failed to get the block author");
+    }
+    return simulator.keys[address_index];
+  }
+
+  const crypto::Ecc &get_author_keys(const messages::Block &block) {
+    return get_author_keys(block.coinbase().outputs(0).address());
   }
 
   void test_check_block_id() {
@@ -521,9 +521,40 @@ class Consensus : public testing::Test {
     ASSERT_FALSE(consensus->check_block_transactions(tagged_block));
   }
 
-  void test_check_block_height() {}
+  void test_check_block_height() {
+    messages::TaggedBlock last_block, tagged_block;
+    ASSERT_TRUE(ledger->get_last_block(&last_block));
+    auto block = simulator.new_block(2, last_block);
+    ASSERT_EQ(block.header().height(), 1);
+    tagged_block.mutable_block()->CopyFrom(block);
+    ASSERT_TRUE(consensus->check_block_height(tagged_block));
 
-  void test_check_block_author() {}
+    // Set wrong height
+    tagged_block.mutable_block()->mutable_header()->set_height(0);
+    ASSERT_FALSE(consensus->check_block_height(tagged_block));
+  }
+
+  void test_check_block_author() {
+    messages::TaggedBlock last_block, tagged_block;
+    ASSERT_TRUE(ledger->get_last_block(&last_block));
+    auto block = simulator.new_block(2, last_block);
+    tagged_block.mutable_block()->CopyFrom(block);
+    tagged_block.mutable_previous_assembly_id()->CopyFrom(
+        last_block.previous_assembly_id());
+    ASSERT_TRUE(consensus->check_block_author(tagged_block));
+
+    const auto &author_keys = get_author_keys(block);
+    int non_author_index = 0;
+    for (const auto &keys : simulator.keys) {
+      if (keys != author_keys) {
+        break;
+      }
+      non_author_index++;
+    }
+    const auto &non_author_keys = simulator.keys[non_author_index];
+    crypto::sign(non_author_keys, tagged_block.mutable_block());
+    ASSERT_FALSE(consensus->check_block_author(tagged_block));
+  }
 };
 
 TEST_F(Consensus, is_valid_transaction) { test_is_valid_transaction(); }
@@ -610,15 +641,7 @@ TEST_F(Consensus, fees_on_coinbase) {
   ledger->get_assembly(-2, &assembly);
   messages::Address address;
   ASSERT_TRUE(consensus->get_block_writer(assembly, 1, &address));
-  int address_index = -1;
-  for (size_t i = 0; i < simulator.addresses.size(); i++) {
-    if (address == simulator.addresses[i]) {
-      address_index = i;
-      break;
-    }
-  }
-  ASSERT_NE(address_index, -1);
-  const auto &keys = simulator.keys[address_index];
+  const auto &keys = get_author_keys(address);
   auto block = simulator.new_block();
   auto coinbase = block.mutable_coinbase();
   coinbase->mutable_fees()->set_value(100);
@@ -634,10 +657,8 @@ TEST_F(Consensus, change_data) {
                                       simulator.addresses[1], 0.5, fees);
   transaction.mutable_outputs(0)->set_data("totoro");
   std::vector<const crypto::Ecc *> keys = {&simulator.keys[0]};
-  LOG_DEBUG << "TRANSACTION " << transaction;
   crypto::sign(keys, &transaction);
   messages::set_transaction_hash(&transaction);
-  LOG_DEBUG << "TRANSACTION " << transaction;
   ASSERT_TRUE(consensus->add_transaction(transaction));
 }
 
