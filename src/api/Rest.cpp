@@ -59,7 +59,7 @@ void Rest::shutdown() {
 }
 
 void Rest::setupRoutes() {
-  using namespace Rest::Routes;
+  using namespace ::Pistache::Rest::Routes;
   // Routes::Post(router, "/record/:name/:value?",
   // Routes::bind(&StatsEndpoint::doRecordMetric, this));
   Get(_router, "/balance/:address", bind(&Rest::get_balance, this));
