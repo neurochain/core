@@ -1,5 +1,4 @@
-ARG DOCKER_BUILD_TYPE=registry.gitlab.com/neurochaintech/core/build/release:latest
-FROM $DOCKER_BUILD_TYPE
+FROM registry.gitlab.com/neurochaintech/core/env_dev/release:latest
 
 MAINTAINER trax Omar Givernaud
 LABEL Description "Generic Bot Image."
