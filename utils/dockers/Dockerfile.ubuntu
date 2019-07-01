@@ -16,7 +16,7 @@ RUN /usr/bin/ssh-keygen -A
 #WORKDIR /home/neuro
 USER neuro
 RUN chown neuro:neuro -R ~/
-RUN chmod 700 -R .
+RUN chmod 700 -R ~/
 
 RUN pwd && ls -lahrt && whoami && \
     git clone -n https://github.com/oktal/pistache.git && \
