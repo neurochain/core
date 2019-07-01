@@ -146,6 +146,15 @@ target_link_libraries(keygen
   Boost::program_options
   )
 
+add_executable(boots
+  tooling/boots.cpp
+  )
+
+target_link_libraries(boots
+  core
+  Boost::program_options
+  )
+
 add_executable(confgen
   tooling/confgen.cpp
   )

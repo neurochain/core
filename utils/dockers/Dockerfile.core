@@ -9,7 +9,6 @@ COPY build/src/main main
 COPY testnet/data.0.testnet /home/neuro/data.0.testnet
 COPY utils/dockers/entrypoint.sh entrypoint.sh
 # cleanup
-RUN du -sh /
 RUN rm -r ./build
 RUN rm -r ~/.hunter
 RUN du -sh /
