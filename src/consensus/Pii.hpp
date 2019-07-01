@@ -1,118 +1,88 @@
-#ifndef NEURO_SRC_CONCENSUS_PII_HPP
-#define NEURO_SRC_CONCENSUS_PII_HPP
+#ifndef NEURO_SRC_CONSENSUS_PII_HPP
+#define NEURO_SRC_CONSENSUS_PII_HPP
 
-#include <algorithm>
-#include <cmath>
-#include <iostream>
-#include <memory>
-#include <tuple>
-#include <unordered_map>
-#include <vector>
-
-#include "common/types.hpp"
+#include "consensus/Config.hpp"
+#include "ledger/Ledger.hpp"
+#include "messages.pb.h"
 #include "messages/Address.hpp"
 #include "messages/Message.hpp"
 
 namespace neuro {
 namespace consensus {
-///
-/// \class pii class
-///
+namespace tests {
+class Pii;
+}
+
+class Addresses {
+ public:
+  struct Counters {
+    size_t nb_transactions;
+    Double enthalpy;
+    Counters() : nb_transactions(0), enthalpy(0) {}
+  };
+
+  struct Transactions {
+    std::unordered_map<messages::Address, Counters> _in;
+    std::unordered_map<messages::Address, Counters> _out;
+  };
+
+ private:
+  std::unordered_map<messages::Address, Transactions> _addresses;
+
+ public:
+  void add_enthalpy(const messages::Address &sender,
+                    const messages::Address &recipient, const Double &enthalpy);
+
+  Double get_entropy(const messages::Address &address) const;
+
+  std::vector<messages::Address> addresses() const;
+
+  friend class tests::Pii;
+};
+
 class Pii {
- public:
-  ///
-  /// \struct piiThx "pii.h"
-  /// \brief a simple struct of "transaction interaction" between 2 addr
-  ///
-  struct Transaction {
-   public:
-    std::string from; /*!< from the addr sender*/
-    std::string to;   /*!< to the addr recever*/
-    double ncc;       /*!< ncc the nombre of ncc*/
-    uint64_t timencc; /*!< timencc time of ncc*/
+ private:
+  Addresses _addresses;
+  std::shared_ptr<ledger::Ledger> _ledger;
+  Config _config;
 
-    friend std::ostream& operator<<(std::ostream& os, const Transaction& a) {
-      os << a.from << ":" << a.to << "[" << a.ncc << "," << a.timencc << "]";
-      return os;
-    }
-  };
+  bool get_enthalpy(const messages::Transaction &transaction,
+                    const messages::TaggedBlock &tagged_block,
+                    const messages::Address &sender,
+                    const messages::Address &recipient, Double *enthalpy) const;
 
-  /**
-   *   \brief a help structure to store intermediate results
-   */
-  struct Calculus {
-   public:
-    struct PiiData {
-      double nbinput, nboutput, mtin, mtout;
-      PiiData() : nbinput(0), nboutput(0), mtin(0), mtout(0) {}
-    };
+  bool get_recipients(const messages::Transaction &transaction,
+                      std::unordered_set<messages::Address> *recipients) const;
 
-    double entropie;  ///<! Ei (-1)
-    // std::vector<std::tuple<double,double,double>> Erps;
-    double sum_inputs, sum_outputs;
+  bool get_senders(const messages::Transaction &transaction,
+                   const messages::TaggedBlock &tagged_block,
+                   std::unordered_set<messages::Address> *senders) const;
 
-    std::unordered_map<Address, PiiData> entropie_Tij;
+  bool add_transaction(const messages::Transaction &transaction,
+                       const messages::TaggedBlock &tagged_block);
 
-    Calculus() : entropie(1), sum_inputs(0), sum_outputs(0) {}
-    Calculus(const Calculus&) = default;
-
-    void update(const double new_entropie) {
-      entropie = new_entropie;
-      sum_inputs = sum_outputs = 0;
-      entropie_Tij.clear();
-    }
-
-    friend bool operator>(const Calculus& l, const Calculus& r) {
-      return l.entropie > r.entropie;
-    }
-  };
-
- protected:
-  std::unordered_map<std::string, Calculus> _entropies;
-  std::vector<std::string> _owner_ordered;
-  int _assembly_owners = ASSEMBLY_MEMBERS_COUNT;
-  int32_t _assembly_blocks;
+  Double enthalpy_n() const;
+  Double enthalpy_c() const;
+  Double enthalpy_lambda() const;
 
  public:
-  /**
-   *   \brief
-   */
-  Pii() {}
+  Pii(std::shared_ptr<ledger::Ledger> ledger, const consensus::Config &config)
+      : _ledger(ledger), _config(config) {}
 
-  /**
-   * \brief add new piiThx
-   * \param ptx the transaction interaction
-   */
-  void addBlock(const Transaction& piitransaction);
+  ~Pii();
 
-  /**
-   *  \brief add more piiThx
-   *  \param [in] vpt vector of piiTHx
-   */
-  void addBlocks(const std::vector<Transaction>& piitransactions);
+  Config config() const;
 
-  /**
-   *   \brief Run the calcule of PII ( last step :) )
-   */
-  void calcul();
+  bool add_block(const messages::TaggedBlock &tagged_block);
 
-  /**
-   *   \brief
-   */
-  std::string operator()(uint32_t index) const;
+  std::vector<messages::Pii> get_addresses_pii(
+      const messages::AssemblyHeight &assembly_height,
+      const messages::BranchPath &branch_path);
 
-  void show_results() const;
-
-  std::string humaineaddre(const std::string message) const {
-    messages::Address addr;
-    addr.ParseFromString(message);
-    std::string t;
-    messages::to_json(addr, &t);
-    return t;
-  }
-  virtual ~Pii(){};
+  friend class tests::Pii;
 };
 
 }  // namespace consensus
 }  // namespace neuro
-#endif  // NEURO_SRC_CONCENSUS_PII_HPP
+
+#endif /* NEURO_SRC_CONSENSUS_PII_HPP */

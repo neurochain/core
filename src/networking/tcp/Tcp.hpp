@@ -6,8 +6,8 @@
 #include <unordered_map>
 
 #include "common/types.hpp"
-#include "networking/Connection.hpp"
 #include "networking/TransportLayer.hpp"
+#include "networking/tcp/Connection.hpp"
 
 namespace neuro {
 namespace messages {
@@ -21,52 +21,56 @@ class Tcp;
 }  // namespace test
 
 class Tcp : public TransportLayer {
+ public:
+  using ID = tcp::Connection::ID;
+
  private:
-  bool _started{false};
-  boost::asio::io_service _io_service;
+  using ConnectionById =
+      std::unordered_map<ID, std::shared_ptr<tcp::Connection>>;
+
+  ID _current_id{0};
+  std::atomic<bool> _stopped;
+  Port _listening_port;
+  boost::asio::io_context _io_context;
   bai::tcp::resolver _resolver;
-  Connection::ID _current_connection_id;
-  std::unordered_map<Connection::ID, std::shared_ptr<tcp::Connection>>
-      _connections;
-  mutable std::mutex _connection_mutex;
-  std::atomic<bool> _stopping{false};
-  Port _listening_port{0};
-  IP _local_ip{};
-  mutable std::mutex _stopping_mutex;
+  bai::tcp::acceptor _acceptor;
+  std::shared_ptr<bai::tcp::socket> _new_socket;
+  std::thread _io_context_thread;
+  messages::Peers *_peers;
+  ConnectionById _connections;
+  mutable std::mutex _connections_mutex;
+  const messages::config::Networking &_config;
 
-  void _run();
-  void _stop();
-  void new_connection(std::shared_ptr<bai::tcp::socket> socket,
-                      const boost::system::error_code &error,
-                      std::shared_ptr<messages::Peer> peer,
-                      const bool from_remote);
-  void accept(std::shared_ptr<bai::tcp::acceptor> acceptor, const Port port);
+  void new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
+                                  const boost::system::error_code &error);
 
-  bool serialize(std::shared_ptr<messages::Message> message,
-                 const ProtocolType protocol_type, Buffer *header_tcp,
-                 Buffer *body_tcp);
+  void new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
+                            const boost::system::error_code &error,
+                            messages::Peer *peer);
+
+  bool serialize(std::shared_ptr<messages::Message> message, Buffer *header_tcp,
+                 Buffer *body_tcp) const;
+
+  void start_accept();
+  void accept(const boost::system::error_code &error);
 
  public:
+  Tcp() = delete;
   Tcp(Tcp &&) = delete;
   Tcp(const Tcp &) = delete;
 
-  Tcp(std::shared_ptr<messages::Queue> queue,
-      std::shared_ptr<crypto::Ecc> keys);
-  void accept(const Port port);
-  void connect(const std::string &host, const std::string &service);
-  void connect(std::shared_ptr<messages::Peer> peer);
-  bool connect(const bai::tcp::endpoint host, const Port port);
-  bool send(std::shared_ptr<messages::Message> message,
-            ProtocolType protocol_type);
-  bool send_unicast(std::shared_ptr<messages::Message> message,
-                    ProtocolType protocol_type);
-  bool disconnected(const Connection::ID id, std::shared_ptr<Peer> remote_peer);
+  Tcp(messages::Queue *queue, messages::Peers *peers,
+      crypto::Ecc *keys, const messages::config::Networking &config);
+  bool connect(messages::Peer *peer);
+  SendResult send(std::shared_ptr<messages::Message> message) const;
+  bool send_unicast(std::shared_ptr<messages::Message> message) const;
   Port listening_port() const;
   IP local_ip() const;
-  void terminated(const Connection::ID id);
+  bool terminate(const Connection::ID id);
+  std::optional<messages::Peer *> find_peer(const Connection::ID id);
   std::size_t peer_count() const;
-  std::shared_ptr<tcp::Connection> connection(const Connection::ID id,
-                                              bool &found) const;
+  void stop();
+  void join();
   ~Tcp();
 
   friend class neuro::networking::test::Tcp;

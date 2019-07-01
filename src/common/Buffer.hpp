@@ -12,7 +12,7 @@ namespace neuro {
 
 class Buffer : public std::vector<uint8_t> {
  public:
-  enum class InputType { RAW, HEX/*, B64*/ };
+  enum class InputType { RAW, HEX /*, B64*/ };
 
  private:
   inline uint8_t char2uint(const char c) {
@@ -48,10 +48,12 @@ class Buffer : public std::vector<uint8_t> {
   void copy(const uint8_t *data, const std::size_t size);
   void copy(const std::string &string);
   void copy(const Buffer &buffer);
+  void append(const Buffer &buffer);
   bool operator==(const Buffer &other);
 
   std::string str() const;
-};
+  std::string to_hex() const;
+  };
 
 std::ostream &operator<<(std::ostream &os, const Buffer &buffer);
 

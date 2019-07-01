@@ -3,6 +3,7 @@ syntax = "proto2";
 package neuro.messages.config;
 
 import "common.proto";
+import "messages.proto";
 
 message Logs {
   enum Severity {
@@ -26,27 +27,50 @@ message Rest {
   optional uint64 faucet_amount = 3;
 }
 
-message _Database {
-  enum Block0Format {
+message BlockFile {
+  enum BlockFormat {
     PROTO = 1;
     BSON = 2;
     JSON = 3;
   }
+  required BlockFormat block_format = 1 [default = PROTO];
+  required string block_path = 2;
+}
+
+message _Database {
   required string url = 1;
   required string db_name = 2;
-  required Block0Format block0_format = 3 [default = PROTO];
-  required string block0_path = 4;
+  oneof block0_types {
+    BlockFile block0_file = 3;
+    Block block0 = 4;
+  }
+  optional bool empty_database = 5 [default=false];
 }
 
 message Tcp {
   required int32 port = 1;
-  repeated Peer peers = 2;
+  required string endpoint = 2;
+  repeated _Peer peers = 3;
+}
+
+message KeysPaths {
+  required string key_pub_path = 1;
+  required string key_priv_path = 2;
+}
+
+message Keys {
+  required _KeyPriv key_priv = 1;
+  required _KeyPub key_pub = 2;
 }
 
 message Networking {
   optional int32 max_connections = 1;
   required Tcp tcp = 2;
-  optional int32 peers_update_time = 3;
+  optional int32 peers_update_time = 3 [default = 2];
+  repeated KeysPaths keys_paths = 4;
+  repeated Keys keys = 5;
+  optional int32 connecting_next_update_time = 6 [default = 3];
+  optional int32 default_next_update_time = 7 [default = 7];
 }
 
 message _Config {
@@ -56,13 +80,14 @@ message _Config {
     RANDOM = 2;
   }
 
-  optional string key_pub_path = 1;
-  optional string key_priv_path = 2;
-  optional Logs logs = 3;
-  required Networking networking = 4;
-  optional _Database database = 5;
-  optional Peer.Status keep_status = 6 [default = CONNECTED]; 
-  optional SelectionMethod selection_method = 7 [default = RANDOM];
-  optional Rest rest = 8;
-  optional string connection_graph_uri = 9;
+  optional Logs logs = 1;
+  required Networking networking = 2;
+  optional _Database database = 3;
+  optional _Peer.Status keep_status = 4 [default = CONNECTED]; 
+  optional SelectionMethod selection_method = 5 [default = RANDOM];
+  optional Rest rest = 6;
+  optional string connection_graph_uri = 7;
+
+  // Probability of doing a random transaction during regular_update
+  optional float random_transaction = 8;
 }

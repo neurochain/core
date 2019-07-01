@@ -1,0 +1,50 @@
+{
+  "random_transaction": 0.8,
+  "logs": {
+    "severity": "trace",
+    "toStdout": true
+  },
+  "networking": {
+    "peersUpdateTime": 1,
+    "maxConnections": 3,
+    "tcp": {
+      "port": 1338,
+      "endpoint": "localhost",
+      "peers": [
+        {
+          "endpoint": "localhost",
+          "port": 1337,
+          "keyPub": {
+            "type": "ECP256K1",
+            "rawData": "Awqh/GaK+zXAydO8h4sDf4apFNmW8SFaIqRqXioYDXy8"
+          }
+        },
+        {
+          "endpoint": "localhost",
+          "port": 1339,
+          "keyPub": {
+            "type": "ECP256K1",
+            "rawData": "AyMKGnZhazXAoXb0SJIqi4Ho+lk6bw0UttE34PDtDbya"
+          }
+        }
+      ]
+    },
+    "keysPaths": [
+      {
+        "keyPubPath": "key1.pub",
+        "keyPrivPath": "key1.priv"
+      }
+    ]
+  },
+  "database": {
+    "url": "mongodb://localhost:27017/",
+    "dbName": "neuro1338",
+    "block0File": {
+      "blockFormat": "PROTO",
+      "blockPath": "data.0.testnet"
+    }
+  },
+  "rest": {
+    "port": 8081
+  }
+}

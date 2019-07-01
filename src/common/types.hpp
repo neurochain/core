@@ -1,10 +1,13 @@
 #ifndef NEURO_SRC_COMMON_TYPES_HPP
 #define NEURO_SRC_COMMON_TYPES_HPP
 
+#include <mpreal.h>
 #include <boost/asio.hpp>
 #include <boost/filesystem/path.hpp>
 #include <cassert>
+#include <chrono>
 #include <cstdint>
+#include <random>
 #include <vector>
 
 #include "common/Buffer.hpp"
@@ -12,6 +15,15 @@
 #include "common.pb.h"
 
 namespace neuro {
+extern bool _fake_time;
+std::time_t time();
+std::time_t time(const std::time_t increment);
+
+static std::random_device _rd;  // TODO make global
+
+using namespace std::chrono_literals;
+
+using namespace std::chrono_literals;
 
 namespace networking {
 class Peer;
@@ -40,15 +52,22 @@ using std::uint32_t;
 using std::uint64_t;
 using std::uint8_t;
 
+using Duration = std::chrono::seconds;
+
+using Endpoint = std::string;
 using Port = uint16_t;
 using Ports = std::vector<Port>;
 const int32_t MessageVersion = 1;
-const int32_t BLOCK_PERIODE = 15;
-const int32_t ASSEMBLY_MEMBERS_COUNT = 557;
-const int32_t ASSEMBLY_BLOCKS_COUNT = 2000;
 const int32_t MESSAGE_TTL = 60;
 const int32_t MAX_MESSAGE_SIZE = 256 * 1024;
+
 // using Peers = google::protobuf::RepeatedPtrField<neuro::messages::Peer>;
+
+// This is used both in the ledger and the consensus
+using Double = mpfr::mpreal;
+
+// Useful debug utilities
+using Timer = std::chrono::high_resolution_clock;
 
 namespace crypto {
 namespace keys {

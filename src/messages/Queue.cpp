@@ -46,7 +46,6 @@ void Queue::unsubscribe(Subscriber *subscriber) {
 void Queue::run() {
   _started = true;
   _main_thread = std::thread([this]() { this->do_work(); });
-  _main_thread.detach();
 }
 
 bool Queue::is_empty() {
@@ -61,31 +60,34 @@ std::shared_ptr<const messages::Message> Queue::next_message() {
   return message;
 }
 
+std::size_t Queue::size() const { return _queue.size(); }
+
+  
 void Queue::quit() {
   if (!_started) {
     return;
   }
   _quitting = true;
   _condition.notify_all();
+  if (_main_thread.joinable()) {
+    _main_thread.join();
+  }
 }
 
 void Queue::do_work() {
   do {
     while (!_quitting && this->is_empty()) {  // avoid spurious wakeups
       std::unique_lock<std::mutex> lock_queue(_queue_mutex);
-      LOG_TRACE << "waiting";
-      _condition.wait(lock_queue);
+      _condition.wait_for(lock_queue, 1s);
     }
     // we validate again that the woke up call was not because it is quitting
     if (_quitting) {
       break;
     }
-    LOG_TRACE << "getting next message";
     auto message = this->next_message();
     // for every body in the message we get the type
     {
       std::lock_guard<std::mutex> lock_callbacks(_callbacks_mutex);
-      LOG_TRACE << "sending to subscribers";
       for (auto &subscriber : _subscribers) {
         subscriber->handler(message);
       }
@@ -93,7 +95,9 @@ void Queue::do_work() {
   } while (!_quitting);
 }
 
-Queue::~Queue() { quit(); }
+Queue::~Queue() {
+  quit();
+}
 
 }  // namespace messages
 }  // namespace neuro

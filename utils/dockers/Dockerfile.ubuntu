@@ -1,24 +1,34 @@
 FROM ubuntu:18.10
 
 MAINTAINER trax Omar Givernaud
-LABEL Description "compile linux ubuntu"
+LABEL Description "Dev env image"
+ARG DOCKER_BUILD_TYPE=Release
 
 RUN apt-get update -y
 RUN adduser  --disabled-password --gecos "" neuro
 
 # Install Packages
-RUN apt-get install -y build-essential git cmake subversion  pkg-config wget tar python3 python3-pip mongodb-server
+RUN apt-get install -y build-essential git cmake subversion  pkg-config wget tar python3 python3-pip mongodb-server libmpfrc++-dev ninja-build
 RUN python3 -m pip install requests
 RUN python3 -m pip install gcovr
 RUN /usr/bin/ssh-keygen -A
 
 WORKDIR /home/neuro
+USER neuro
 RUN chown neuro:neuro -R .
 RUN chmod 700 -R .
 
-WORKDIR /home/neuro/
-USER neuro
+RUN pwd && ls -lahrt && whoami && \
+    git clone -n https://github.com/oktal/pistache.git && \
+    cd pistache && \
+    git checkout c5927e1a12b96492198ab85101912d5d84445f67 && \
+    mkdir build && \
+    cd build && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=${DOCKER_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=~/root/lib/cmake/pistache .. && \
+    ninja && ninja install 
 
-RUN git clone https://gitlab.com/neurochaintech/core.git && mkdir core/build && cd core/build && cmake -DCMAKE_BUILD_TYPE=Debug ..
+RUN pwd && ls -lahrt && git clone --single-branch --depth 1 https://gitlab.com/neurochaintech/core.git && \
+    mkdir core/build && cd core/build && \
+    cmake -DCMAKE_BUILD_TYPE=${DOCKER_BUILD_TYPE} -G Ninja ..
 
 EXPOSE 22

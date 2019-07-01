@@ -3,10 +3,11 @@ set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake")
 include(HunterGate)
 
 HunterGate(
-  URL "https://gitlab.com/traxncc/hunter/-/archive/pr.onion/hunter-pr.onion.tar.bz2"
-  SHA1 "dfc0c230e491ef7abf6a628d7d5c71d32dd05b6e"
+  URL "https://gitlab.com/traxncc/hunter/-/archive/f4397f73231e9e476ea971418834e4537141e161/hunter-f4397f73231e9e476ea971418834e4537141e161.tar.bz2"
+  SHA1 "a96d2e54ee8218f0248da804f2b4f4234f66d612"
   )
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CPACK_PACKAGE_VERSION_MAJOR "0")
 set(CPACK_PACKAGE_VERSION_MINOR "0")
 set(CPACK_PACKAGE_VERSION_PATCH "1")
@@ -36,15 +37,17 @@ configure_file(
 enable_testing ()
 
 
-set(CMAKE_CXX_FLAGS "-Wall  ${CMAKE_CXX_FLAGS} -std=c++17 -Wno-ignored-qualifiers -pipe")
-set(CMAKE_CXX_FLAGS_RELEASE " -O3 -Werror")
-set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 --coverage -fsanitize=address ")
+set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};~/root/lib/cmake/pistache")
+set(CMAKE_CXX_FLAGS "-Wall ${CMAKE_CXX_FLAGS} -std=c++17 -Wno-ignored-qualifiers -pipe -Werror")
+set(CMAKE_CXX_FLAGS_RELEASE " -O3")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 --coverage -fsanitize=address")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g -O2 -fsanitize=address")
 
 include(GNUInstallDirs)
 include(FindPkgConfig)
 
-hunter_add_package(Boost COMPONENTS program_options system filesystem log thread )
-find_package(Boost 1.65 CONFIG REQUIRED program_options system filesystem log thread )
+hunter_add_package(Boost COMPONENTS program_options system filesystem log thread)
+find_package(Boost 1.68 CONFIG REQUIRED program_options system filesystem log thread)
 
 hunter_add_package(GTest)
 find_package(GTest CONFIG REQUIRED)
@@ -56,12 +59,12 @@ find_package(Protobuf CONFIG REQUIRED)
 hunter_add_package(cryptopp)
 find_package(cryptopp CONFIG REQUIRED)
 
+#hunter_add_package(Pistache)
+find_package(Pistache REQUIRED pistache_shared)
+
 hunter_add_package(mongo-cxx-driver)
 find_package(libbsoncxx-static CONFIG REQUIRED)
 find_package(libmongocxx-static CONFIG REQUIRED)
-
-hunter_add_package(libonion)
-find_package(libonion CONFIG REQUIRED)
 
 hunter_add_package(cpr)
 find_package(cpr CONFIG REQUIRED)

@@ -1,0 +1,35 @@
+syntax = "proto2";
+
+package neuro.messages;
+
+import "common.proto";
+import "messages.proto";
+
+extend Input {
+  optional uint32 height = 100;
+  optional _NCCAmount amount = 101;
+}
+
+message Pii {
+  required _Address address = 1;
+  required Hash assembly_id = 2;
+  required string score = 3;
+  required int32 rank = 4;
+}
+
+message Integrity {
+  required _Address address = 1;
+  required Hash assembly_id = 2;
+  required string score = 3;
+  required int32 assembly_height = 4;
+  required BranchPath branch_path = 5;
+}
+
+message Assembly {
+  required Hash id = 1;  // This id is the hash of the last block of the assembly
+  required bool finished_computation = 2;
+  required int32 height = 3;
+  optional Hash previous_assembly_id = 4;
+  optional int32 seed = 5;
+  optional int32 nb_addresses = 6;
+}

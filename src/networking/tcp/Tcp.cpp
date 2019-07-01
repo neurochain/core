@@ -4,6 +4,7 @@
 #include <sstream>
 #include <thread>
 #include <tuple>
+#include <utility>
 
 #include "common/logger.hpp"
 #include "crypto/Ecc.hpp"
@@ -15,155 +16,164 @@ namespace neuro {
 namespace networking {
 using namespace std::chrono_literals;
 
-Tcp::Tcp(std::shared_ptr<messages::Queue> queue,
-         std::shared_ptr<crypto::Ecc> keys)
-    : TransportLayer(queue, keys),
-      _io_service(),
-      _resolver(_io_service),
-      _current_connection_id(0) {}
+Tcp::Tcp(messages::Queue *queue, messages::Peers *peers,
+         crypto::Ecc *keys, const messages::config::Networking &config)
+    : TransportLayer(queue, peers, keys),
+      _stopped(false),
+      _listening_port(config.tcp().port()),
+      _io_context(),
+      _resolver(_io_context),
+      _acceptor(_io_context,
+                bai::tcp::endpoint(bai::tcp::v4(), _listening_port)),
+      _peers(peers),
+      _config(config) {
+  assert(peers);
 
-bool Tcp::connect(const bai::tcp::endpoint host, const Port port) {
-  throw std::runtime_error("connect host:port not implemented");
-  return false;  // TODO
+  while (!_acceptor.is_open()) {
+    std::this_thread::yield();
+    LOG_DEBUG << "Waiting for acceptor to be open";
+  }
+  start_accept();
+  _io_context_thread = std::thread([this]() {
+    boost::system::error_code ec;
+    this->_io_context.run(ec);
+    LOG_INFO << __FILE__ << ":" << __LINE__ << "> io_context exited " << ec;
+  });
 }
 
-void Tcp::connect(std::shared_ptr<messages::Peer> peer) {
-  bai::tcp::resolver resolver(_io_service);
+void Tcp::start_accept() {
+  if (!_stopped) {
+    _new_socket = std::make_shared<bai::tcp::socket>(_io_context);
+    _acceptor.async_accept(
+        *_new_socket.get(),
+        boost::bind(&Tcp::accept, this, boost::asio::placeholders::error));
+  }
+}
+
+void Tcp::accept(const boost::system::error_code &error) {
+  if (!error) {
+    const auto remote_endpoint =
+        _new_socket->remote_endpoint().address().to_string();
+
+    this->new_connection_from_remote(_new_socket, error);
+  } else {
+    LOG_WARNING << "Rejected connection " << error.message();
+  }
+  _new_socket.reset();  // TODO why?
+  start_accept();
+}
+
+bool Tcp::connect(messages::Peer *peer) {
+  if (_stopped) {
+    return false;
+  }
+
+  bai::tcp::resolver resolver(_io_context);
   bai::tcp::resolver::query query(peer->endpoint(),
                                   std::to_string(peer->port()));
   bai::tcp::resolver::iterator endpoint_iterator = resolver.resolve(query);
 
-  auto socket = std::make_shared<bai::tcp::socket>(_io_service);
+  auto socket = std::make_shared<bai::tcp::socket>(_io_context);
   auto handler = [this, socket, peer](boost::system::error_code error,
                                       bai::tcp::resolver::iterator iterator) {
-    this->new_connection(socket, error, peer, false);
+    this->new_connection_local(socket, error, peer);
   };
   boost::asio::async_connect(*socket, endpoint_iterator, handler);
-}
-
-void Tcp::connect(const std::string &host, const std::string &service) {}
-
-void Tcp::accept(const Port port) {
-  auto acceptor = std::make_shared<bai::tcp::acceptor>(
-      _io_service, bai::tcp::endpoint(bai::tcp::v4(), port));
-  accept(acceptor, port);
-}
-
-void Tcp::accept(std::shared_ptr<bai::tcp::acceptor> acceptor,
-                 const Port port) {
-  _listening_port = port;
-
-  auto socket = std::make_shared<bai::tcp::socket>(acceptor->get_io_service());
-  acceptor->async_accept(*socket, [this, acceptor, socket, port](
-                                      const boost::system::error_code &error) {
-    const auto remote_endpoint =
-        socket->remote_endpoint().address().to_string();
-
-    auto peer = std::make_shared<messages::Peer>();
-    peer->set_endpoint(remote_endpoint);
-    peer->set_port(socket->remote_endpoint().port());
-    peer->set_status(messages::Peer::CONNECTING);
-    peer->set_transport_layer_id(_id);
-
-    this->new_connection(socket, error, peer, true);
-    this->accept(acceptor, port);
-  });
-  while (!acceptor->is_open()) {
-    std::this_thread::yield();
-    LOG_DEBUG << "Waiting for acceptor to be open";
-  }
+  return true;
 }
 
 Port Tcp::listening_port() const { return _listening_port; }
-IP Tcp::local_ip() const { return _local_ip; }
 
-void Tcp::new_connection(std::shared_ptr<bai::tcp::socket> socket,
-                         const boost::system::error_code &error,
-                         std::shared_ptr<messages::Peer> peer,
-                         const bool from_remote) {
-  LOG_DEBUG << this << " It entered new_connection on TCP";
-  std::lock_guard<std::mutex> lock_queue(_connection_mutex);
-  LOG_DEBUG << this << " It passed the lock on new_connection TCP";
-
+void Tcp::new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
+                                     const boost::system::error_code &error) {
+  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   auto message = std::make_shared<messages::Message>();
-  auto header = message->mutable_header();
-  auto peer_tmp = header->mutable_peer();
-  auto body = message->add_bodies();
+  auto msg_header = message->mutable_header();
+  auto msg_body = message->add_bodies();
 
   if (!error) {
-    _current_connection_id++;
-    peer->set_connection_id(_current_connection_id);
+    _current_id++;
 
-    auto connection = std::make_shared<tcp::Connection>(
-        _current_connection_id, this->id(), _queue, socket, peer, from_remote);
-    auto inserted = _connections.insert({_current_connection_id, connection});
+    msg_header->set_connection_id(_current_id);
+    auto connection =
+        std::make_shared<tcp::Connection>(_current_id, _queue, socket, _config);
+    _connections.insert(std::make_pair(_current_id, connection));
 
-    auto connection_ready = body->mutable_connection_ready();
+    auto connection_ready = msg_body->mutable_connection_ready();
 
-    connection_ready->set_from_remote(from_remote);
+    connection_ready->set_from_remote(true);
 
-    peer_tmp->CopyFrom(*peer);
     _queue->publish(message);
-    inserted.first->second->read();
+    connection->read();
   } else {
-    LOG_WARNING << "Could not create new connection to " << *peer << " due to "
+    LOG_WARNING << "Could not create new connection : "
                 << error.message();
 
-    body->mutable_connection_closed();
-    peer_tmp->CopyFrom(*peer);
+    msg_body->mutable_connection_closed();
     _queue->publish(message);
   }
 }
 
-std::shared_ptr<tcp::Connection> Tcp::connection(const Connection::ID id,
-                                                 bool &found) const {
-  std::lock_guard<std::mutex> lock_queue(_connection_mutex);
+void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
+                               const boost::system::error_code &error,
+                               messages::Peer *peer) {
+  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
+  auto message = std::make_shared<messages::Message>();
+  auto msg_header = message->mutable_header();
+  auto msg_body = message->add_bodies();
+
+  if (!error) {
+    _current_id++;
+
+    msg_header->set_connection_id(_current_id);
+    auto connection = std::make_shared<tcp::Connection>(_current_id,
+                                                        _queue,
+                                                        socket,
+                                                        *peer);
+    _connections.insert(std::make_pair(_current_id, connection));
+
+    auto connection_ready = msg_body->mutable_connection_ready();
+
+    connection_ready->set_from_remote(false);
+
+    _queue->publish(message);
+    connection->read();
+  } else {
+    LOG_WARNING << "Could not create new connection to " << *peer << " : "
+                << error.message();
+
+    auto connection_closed = msg_body->mutable_connection_closed();
+    connection_closed->mutable_peer()->CopyFrom(*peer);
+    _queue->publish(message);
+  }
+}
+
+bool Tcp::terminate(const Connection::ID id) {
+  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   auto got = _connections.find(id);
   if (got == _connections.end()) {
-    LOG_ERROR << this << " " << __LINE__ << " Connection not found";
-    found = false;
-    return _connections.end()->second;
+    return false;
   }
-  found = true;
-  return got->second;
-}
-
-void Tcp::_run() {
-  boost::system::error_code ec;
-  if (_stopping) {
-    return;
-  }
-  LOG_INFO << this << " Starting io_service";
-  _io_service.run(ec);
-  if (ec) {
-    LOG_ERROR << "service run failed (" << ec.message() << ")";
-  }
-}
-
-void Tcp::_stop() {
-  std::lock_guard<std::mutex> lock_queue(_stopping_mutex);
-  _stopping = true;
-  _io_service.stop();
-  while (!_io_service.stopped()) {
-    LOG_INFO << this << " waiting ...";
-    std::this_thread::sleep_for(10ms);
-  }
-  LOG_DEBUG << this << " Finished the _stop() in tcp";
-}
-
-void Tcp::terminated(const Connection::ID id) {
-  std::lock_guard<std::mutex> lock_queue(_connection_mutex);
-  auto got = _connections.find(id);
-  if (got == _connections.end()) {
-    LOG_ERROR << this << " " << __LINE__ << " Connection not found " << id;
-    return;
-  }
+  got->second->terminate();
   _connections.erase(got);
+  return true;
+}
+
+std::optional<messages::Peer *> Tcp::find_peer(const Connection::ID id) {
+  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
+  auto got = _connections.find(id);
+  if (got == _connections.end()) {
+    return std::nullopt;
+  }
+
+  auto &connection = got->second;
+  auto remote_peer = connection->remote_peer();
+  return _peers->find(remote_peer.key_pub());
 }
 
 bool Tcp::serialize(std::shared_ptr<messages::Message> message,
-                    const ProtocolType protocol_type, Buffer *header_tcp,
-                    Buffer *body_tcp) {
+                    Buffer *header_tcp, Buffer *body_tcp) const {
+  // TODO: use 1 output buffer
   LOG_DEBUG << this << " Before reinterpret and signing";
   auto header_pattern =
       reinterpret_cast<tcp::HeaderPattern *>(header_tcp->data());
@@ -177,78 +187,119 @@ bool Tcp::serialize(std::shared_ptr<messages::Message> message,
   header_pattern->size = body_tcp->size();
   _keys->sign(body_tcp->data(), body_tcp->size(),
               reinterpret_cast<uint8_t *>(&header_pattern->signature));
-  header_pattern->type = protocol_type;
 
   return true;
 }
 
-bool Tcp::send(std::shared_ptr<messages::Message> message,
-               ProtocolType protocol_type) {
-  std::lock_guard<std::mutex> lock_queue(_connection_mutex);
-
+TransportLayer::SendResult Tcp::send(
+    std::shared_ptr<messages::Message> message) const {
+  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   if (_connections.size() == 0) {
-    LOG_ERROR << "Could not send message because there is no connection";
-    return false;
+    LOG_ERROR << "Could not send message because there is no connection "
+              << message;
+    return SendResult::FAILED;
   }
 
-  Buffer header_tcp(sizeof(networking::tcp::HeaderPattern), 0);
-  Buffer body_tcp;
+  if (_stopped) {
+    return SendResult::FAILED;
+  }
+  auto header_tcp =
+      std::make_shared<Buffer>(sizeof(networking::tcp::HeaderPattern), 0);
+  auto body_tcp = std::make_shared<Buffer>();
 
-  LOG_DEBUG << "\033[1;34mSending message: >>" << *message << "<<\033[0m\n";
-  serialize(message, protocol_type, &header_tcp, &body_tcp);
+  if (!serialize(message, header_tcp.get(), body_tcp.get())) {
+    LOG_WARNING << "Could not serialize message";
+    return SendResult::FAILED;
+  }
 
-  bool res = true;
-  for (auto &connection : _connections) {
-    res &= connection.second->send(header_tcp);
-    res &= connection.second->send(body_tcp);
+  LOG_DEBUG << "Sending message[" << this->listening_port() << "]: >>"
+            << *message;
+
+  uint16_t res_count = 0;
+  for (auto &[_, connection] : _connections) {
+    bool res_send = true;
+    res_send &= connection->send(header_tcp);
+    res_send &= connection->send(body_tcp);
+    if (res_send) {
+      res_count++;
+    }
+  }
+
+  SendResult res;
+  if (res_count == 0) {
+    res = SendResult::FAILED;
+  } else if (res_count == _connections.size()) {
+    res = SendResult::FAILED;
+  } else {
+    res = SendResult::ALL_GOOD;
   }
 
   return res;
 }
 
-bool Tcp::send_unicast(std::shared_ptr<messages::Message> message,
-                       ProtocolType protocol_type) {
-  std::lock_guard<std::mutex> lock_queue(_connection_mutex);
-  assert(message->header().has_peer());
-  auto got = _connections.find(message->header().peer().connection_id());
-  if (got == _connections.end()) {
+bool Tcp::send_unicast(std::shared_ptr<messages::Message> message) const {
+  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
+  if (_stopped || !message->header().has_connection_id()) {
+    LOG_WARNING << "not sending message " << _stopped;
     return false;
   }
 
-  Buffer header_tcp(sizeof(networking::tcp::HeaderPattern), 0);
-  Buffer body_tcp;
-
-  LOG_DEBUG << "\033[1;34mSending unicast : >>" << *message << "<<\033[0m";
-  serialize(message, protocol_type, &header_tcp, &body_tcp);
-
-  got->second->send(header_tcp);
-  got->second->send(body_tcp);
-
-  return true;
-}
-
-std::size_t Tcp::peer_count() const {
-  std::lock_guard<std::mutex> lock_queue(_connection_mutex);
-  return _connections.size();
-}
-
-bool Tcp::disconnected(const Connection::ID id, std::shared_ptr<Peer> peer) {
-  {
-    std::lock_guard<std::mutex> lock_queue(_connection_mutex);
-    auto got = _connections.find(id);
-    if (got == _connections.end()) {
-      LOG_WARNING << __LINE__ << " Connection not found";
-      return false;
-    }
-    _connections.erase(got);
+  auto got = _connections.find(message->header().connection_id());
+  if (got == _connections.end()) {
+    LOG_WARNING << "not sending message because could not find connection";
+    return false;
   }
 
-  return true;
+  const auto port_opt = got->second->remote_port();
+  if (!port_opt) {
+    return false;
+  }
+  LOG_DEBUG << "Sending unicast [" << this->listening_port() << " -> "
+            << *port_opt << "]: >>" << *message;
+
+  auto header_tcp =
+      std::make_shared<Buffer>(sizeof(networking::tcp::HeaderPattern), 0);
+  auto body_tcp = std::make_shared<Buffer>();
+  if (!serialize(message, header_tcp.get(), body_tcp.get())) {
+    return false;
+  }
+
+  bool res = true;
+  res &= got->second->send(header_tcp);
+  res &= got->second->send(body_tcp);
+
+  return res;
+}
+
+/**
+ * count the number of active TCP connexion
+ * (either accepted one or attempting one)
+ * \return the number of active connexion
+ */
+std::size_t Tcp::peer_count() const { return _connections.size(); }
+
+void Tcp::stop() {
+  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
+  if (!_stopped) {
+    _stopped = true;
+    _io_context.post([this]() { _acceptor.close(); });
+    for (auto &[_, connection] : _connections) {
+      connection->terminate();
+    }
+    join();
+  }
+  LOG_DEBUG << this << " TCP stopped";
+}
+
+void Tcp::join() {
+  if (_io_context_thread.joinable()) {
+    _io_context_thread.join();
+  }
+  LOG_DEBUG << this << " TCP joined";
 }
 
 Tcp::~Tcp() {
-  std::lock_guard<std::mutex> lock_queue(_connection_mutex);
-  _stop();
+  stop();
   LOG_DEBUG << this << " TCP killed";
 }
 

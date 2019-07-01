@@ -3,85 +3,63 @@
 #include <string>
 
 #include "common/logger.hpp"
+#include "crypto/Ecc.hpp"
 #include "networking/Networking.hpp"
 
 namespace neuro {
 namespace networking {
 
-Networking::Networking(std::shared_ptr<messages::Queue> queue)
-    : _queue(queue), _dist(0, std::numeric_limits<uint32_t>::max()) {
+Networking::Networking(messages::Queue *queue, crypto::Ecc *keys,
+                       messages::Peers *peers,
+                       messages::config::Networking *config)
+    : _queue(queue),
+      _keys(keys),
+      _dist(0, std::numeric_limits<uint32_t>::max()) {
   _queue->run();
-
-  // _subscriber.subscribe(
-  //     messages::Type::kConnectionClosed,
-  //     [this](const messages::Header &header, const messages::Body &body) {
-  //       this->remove_connection(header, body);
-  //     });
+  _transport_layer =
+      std::make_unique<Tcp>(queue, peers, _keys, *config);
 }
 
-void Networking::remove_connection(const messages::Header &header,
-                                   const messages::Body &body) {
-  // from header get the peer and then the transport layer id and connection id
-  // auto peer = header.peer();
-  // if (!peer.has_transport_layer_id() || !peer.has_connection_id()) {
-  //   LOG_WARNING << this << " Traying to remove connection but not necessary
-  //   info in message::Header"; return;
-  // }
-
-  // _transport_layers[peer.transport_layer_id()]->terminated(peer.connection_id());
-}
-
-void Networking::send(std::shared_ptr<messages::Message> message,
-                      ProtocolType type) {
+TransportLayer::SendResult Networking::send(
+    std::shared_ptr<messages::Message> message) const {
   message->mutable_header()->set_id(_dist(_rd));
-  for (auto &transport_layer : _transport_layers) {
-    transport_layer->send(message, type);
-  }
+  return _transport_layer->send(message);
 }
 
-void Networking::send_unicast(std::shared_ptr<messages::Message> message,
-                              ProtocolType type) {
-  assert(message->header().has_peer());
-  _transport_layers[message->header().peer().transport_layer_id()]
-      ->send_unicast(message, type);
+bool Networking::send_unicast(
+    std::shared_ptr<messages::Message> message) const {
+  return _transport_layer->send_unicast(message);
 }
 
-TransportLayer::ID Networking::push(
-    std::shared_ptr<TransportLayer> transport_layer) {
-  _transport_layers.push_back(transport_layer);
-  transport_layer->run();
-  const auto id = _transport_layers.size() - 1;
-  transport_layer->id(id);
-  return id;
-}
-
-void Networking::stop() {
-  for (const auto transport_layer : _transport_layers) {
-    transport_layer->stop();
-  }
-}
-
-void Networking::join() {
-  for (const auto &transport_layer : _transport_layers) {
-    transport_layer->join();
-  }
-}
-
+/**
+ * count the number of active connexion (either accepted one or attempting one)
+ * \return the number of active connexion
+ */
 std::size_t Networking::peer_count() const {
-  std::size_t r = 0;
-  for (const auto &transport_layer : _transport_layers) {
-    r += transport_layer->peer_count();
-  }
-
-  return r;
+  return _transport_layer->peer_count();
 }
 
-Networking::~Networking() {
-  LOG_DEBUG << this << " Networking killing";
-  stop();
-  LOG_DEBUG << this << " Networking killing2";
-  _queue->quit();
-  LOG_DEBUG << this << " Networking killed";
+void Networking::join() { _transport_layer->join(); }
+
+bool Networking::terminate(const Connection::ID id) {
+  return _transport_layer->terminate(id);
+}
+
+Port Networking::listening_port() const {
+  return _transport_layer->listening_port();
+}
+
+bool Networking::connect(messages::Peer *peer) {
+  return _transport_layer->connect(peer);
+}
+
+/**
+ * Find a peer associated with a connection
+ * \param id an identifiant of a connection
+ * \return the associated peer for the connection
+ */
+std::optional<messages::Peer*> Networking::find_peer(Connection::ID id) {
+  return _transport_layer->find_peer(id);
 }
 
 }  // namespace networking

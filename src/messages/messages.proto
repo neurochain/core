@@ -4,24 +4,29 @@ package neuro.messages;
 
 import "common.proto";
 
+
+// Handshake
+// =========
 message Hello {
-  required KeyPub key_pub = 1;
-  optional int32 listen_port = 2;
+  required _Peer peer = 1;
 }
 
 message World {
   required bool accepted = 1;
-  required KeyPub key_pub = 2;
-  repeated Peer peers = 3;
 }
+
+// Update 
+// ======
 
 message GetPeers {
 }
 
-message Peers {
-  repeated Peer peers = 1;
+message _Peers {
+  repeated _Peer peers = 1;
 }
 
+// Ask for block hash
+// ------------------
 message GetRoots {
   optional Hash last_known_root = 1;
   optional int32 count = 2; // ask for count last roots 
@@ -42,47 +47,104 @@ message GetBlock {
 message Input {
   required Hash id = 1;
   required int32 output_id = 2;
-  required int32 key_id = 3;
-  optional Hash block_id = 4;
-  optional int32 signature_id = 5;
+  required int32 signature_id = 4;
+  extensions 100 to 120;
 }
 
 message Output {
-  required Hash address = 1;
-  required NCCSDF value = 2;
+  required _Address address = 1;
+  required _NCCAmount value = 2;
   optional bytes data = 3;
   optional int32 output_id = 4;
 }
 
 message Signature {
   required Hash signature = 1;
-  required KeyPub key_pub = 2;
+  required _KeyPub key_pub = 2;
 }
 
 message Transaction {
-  repeated Input inputs = 1;
-  repeated Output outputs = 2;
-  repeated Signature signatures = 3;
-  repeated KeyPub key_pubs = 4;
-  optional NCCSDF fees = 5;
-  optional Hash id = 6;
-  optional Hash block_id = 7;
+  optional Hash id = 1;
+  repeated Input inputs = 2;
+  repeated Output outputs = 3;
+  repeated Signature signatures = 4;
+  optional _NCCAmount fees = 5;
+  optional int32 coinbase_height = 6;
+}
+
+message Transactions {
+  repeated Transaction transactions = 1;
 }
 
 message BlockHeader {
   required Hash id = 1;
   required Timestamp timestamp = 2;
   required Hash previous_block_hash = 3;
-  required KeyPub author = 5;
-  optional int32 height = 6;
+  required Signature author = 4;
+  required int32 height = 6;
+}
+
+message _Denunciation {
+  required Hash block_id = 1;
+  required int32 block_height = 2;
+  required Signature block_author = 3;
+  optional BranchPath branch_path = 4;
 }
 
 message Block {
   required BlockHeader header = 1;
   repeated Transaction transactions = 20;
+
+  // The coinbase field is optional because we empty the transactions before
+  // storing the blocks in mongoDB, and if the field was not optional the block
+  // would not be serializable
+  optional Transaction coinbase = 30;
+  repeated _Denunciation denunciations = 40;
+}
+
+enum Branch {
+  MAIN = 0;
+  FORK = 1;
+  UNVERIFIED = 3;
+  DETACHED = 2;
+}
+
+// The branch path is a strange beast.
+// It should tell you where a block is in the block tree.
+// The block0 has this branch path: {branch_ids: [0], block_numbers: [0]}.
+// This indicates that the block0 is the block number 0 of the branch 0.
+// The block at height 1 gets {branch_ids: [0], block_numbers: [1]}.
+// It indicates that this block is the block number 1 of the branch 0.
+// As long as you don't have a fork all blocks will stay in the branch 0.
+// But let's say that you then add 2 blocks at height 2
+// The first one you receive will have this branch path
+// {branch_ids: [0], block_numbers: [2]}.
+// And the second one will have {branch_ids: [1, 0], block_numbers: [0, 1]}
+// This indicates that this block is the block number 0 of the branch 1
+// and that it forked from the branch 0 at block number 1.
+// If another block arrives which also has height 1 it gets
+// {branch_ids: [2, 0], block_numbers: [0, 1]}.
+message BranchPath {
+  repeated int32 branch_ids = 1;
+  repeated int32 block_numbers = 2;
+}
+
+message TaggedBlock {
+  required Block block = 1;
+  required Branch branch = 2;
+  optional BranchPath branch_path = 3;
+  optional int64 score = 4;
+  optional Hash previous_assembly_id = 5;
+}
+
+message TaggedTransaction {
+  required Transaction transaction = 1;
+  required bool is_coinbase = 2;
+  optional Hash block_id = 3;
 }
 
 message ConnectionClosed {
+  optional _Peer peer = 1;
 }
 
 message ConnectionReady {
@@ -91,12 +153,18 @@ message ConnectionReady {
 
 message BodyCount {}
 
+message Publish {
+  required string transaction = 1;
+  required string signature = 2;
+  required _KeyPub key_pub = 3;
+}
+
 message Body {
   oneof body {
     Hello hello = 1;
     World world = 2;
     GetPeers get_peers = 3;
-    Peers peers = 4;
+    _Peers peers = 4;
     GetRoots get_roots = 5;
     Roots roots = 6;
     Transaction transaction = 7;
@@ -105,6 +173,7 @@ message Body {
     ConnectionClosed connection_closed = 10;
     ConnectionReady connection_ready = 11;
     BodyCount body_count = 12;
+    Publish publish = 13;
   }
 }
 
@@ -112,9 +181,12 @@ message Header {
   required int32 version = 1;
   required Timestamp ts = 2;
   optional Hash signature = 3;
-  optional int32 id = 11;
+
+  // req/rep pattern 
+  optional int32 connection_id = 10;
+  optional int32 id = 11; 
   optional int32 request_id = 12;
-  optional Peer peer = 13;
+  optional _KeyPub key_pub = 13;
 }
 
 message _Message {
@@ -124,5 +196,5 @@ message _Message {
 
 message UnspentTransaction {
   required Hash transaction_id = 1;
-  required NCCSDF value = 2;
+  required _NCCAmount value = 2;
 }

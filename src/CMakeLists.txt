@@ -2,7 +2,7 @@ set(ProtoFiles
   "${CMAKE_CURRENT_SOURCE_DIR}/messages/common.proto"
   "${CMAKE_CURRENT_SOURCE_DIR}/messages/config.proto"
   "${CMAKE_CURRENT_SOURCE_DIR}/messages/messages.proto"
-  "${CMAKE_CURRENT_SOURCE_DIR}/messages/rest.proto"
+  "${CMAKE_CURRENT_SOURCE_DIR}/messages/consensus.proto"
   )
 
 PROTOBUF_GENERATE_CPP(ProtoSources ProtoHeaders ${ProtoFiles})
@@ -26,28 +26,26 @@ target_link_libraries(protos
 
 add_library(core
   ./crypto/Hash.hpp
-  ./crypto/EccPub.cpp
+  ./crypto/KeyPub.cpp
   ./crypto/Ecc.cpp
-  ./crypto/EccPub.hpp
+  ./crypto/KeyPub.hpp
   ./crypto/Sign.cpp
   ./crypto/Sign.hpp
-  ./crypto/EccPriv.hpp
+  ./crypto/KeyPriv.hpp
   ./crypto/Ecc.hpp
   ./crypto/Hash.cpp
-  ./crypto/EccPriv.cpp
+  ./crypto/KeyPriv.cpp
   ./common/Buffer.cpp
   ./common/Buffer.hpp
   ./common/logger.hpp
   ./common/logger.cpp
   ./common/types.hpp
-  ./mongo/mongo.hpp
+  ./common/types.cpp
   ./networking/tcp/HeaderPattern.hpp
   ./networking/tcp/Tcp.hpp
   ./networking/tcp/Connection.cpp
   ./networking/tcp/Connection.hpp
-  ./networking/tcp/client.hpp
   ./networking/tcp/Tcp.cpp
-  ./networking/tcp/Client.hpp
   ./networking/Networking.cpp
   ./networking/TransportLayer.hpp
   ./networking/Networking.hpp
@@ -55,13 +53,26 @@ add_library(core
   ./networking/Connection.hpp
   ./networking/TransportLayer.cpp
   ./Bot.cpp
-  ./tooling/genblock.hpp
+  ./tooling/blockgen.hpp
+  ./tooling/blockgen.cpp
+  ./tooling/Simulator.hpp
+  ./tooling/Simulator.cpp
+  ./tooling/FullSimulator.hpp
+  ./tooling/FullSimulator.cpp
   ./messages/Queue.hpp
   ./messages/Queue.cpp
   ./messages/Message.hpp
   ./messages/Subscriber.hpp
   ./messages/Message.cpp
+  ./messages/Address.cpp
   ./messages/Hasher.hpp
+  ./messages/Peers.hpp
+  ./messages/Peers.cpp
+  ./messages/Peer.hpp
+  ./messages/Peer.cpp
+  ./messages/NCCAmount.hpp
+  ./messages/config/Config.hpp
+  ./messages/config/Config.cpp
   ./ledger/Parser.hpp
   ./ledger/Filter.hpp
   ./ledger/mongo.hpp
@@ -70,19 +81,16 @@ add_library(core
   ./ledger/LedgerMongodb.cpp
   ./ledger/Transaction.hpp
   ./Bot.hpp
-  ./rest/Rest.cpp
-  ./rest/Rest.hpp
+#  ./rest/Rest.cpp
+#  ./rest/Rest.hpp
+  ./api/Api.hpp
+  ./api/Api.cpp
   ./consensus/Consensus.hpp
-  ./consensus/ForkTree.hpp
-  ./consensus/ForkTree.cpp
-  ./consensus/ForkManager.hpp
-  ./consensus/ForkManager.cpp
+  ./consensus/Consensus.cpp
   ./consensus/Pii.hpp
   ./consensus/Pii.cpp
-  ./consensus/PiiConsensus.hpp
-  ./consensus/PiiConsensus.cpp
-  ./consensus/TransactionPool.hpp
-  ./consensus/TransactionPool.cpp
+  ./consensus/Integrities.hpp
+  ./consensus/Integrities.cpp
   )
 
 target_link_libraries(core
@@ -100,6 +108,10 @@ target_link_libraries(core
 
   protobuf::libprotobuf
   ${LIBMONGOCXX_STATIC_LIBRARIES}
+
+  pistache
+  
+  mpfr
 )
 
 add_executable(main
@@ -115,13 +127,14 @@ target_link_libraries(main
   Boost::filesystem
   Boost::thread
 
-  libonion::onion
-  libonion::onioncpp
+  pistache
 
   cpr::cpr
 
   protobuf::libprotobuf
   ${LIBMONGOCXX_STATIC_LIBRARIES}
+
+  mpfr
   )
 
 add_executable(keygen
@@ -168,13 +181,21 @@ target_link_libraries(blockg
   Boost::program_options
   )
 
-add_executable(wallet
-  tooling/wallet.cpp
+add_executable(show_block0
+  tooling/show_block0.cpp
   )
-target_link_libraries(wallet
+target_link_libraries(show_block0
   core
   Boost::program_options
   )
+
+#add_executable(wallet
+#  tooling/wallet.cpp
+#  )
+#target_link_libraries(wallet
+#  core
+#  Boost::program_options
+#  )
 
 add_executable(transaction
   tooling/transaction.cpp

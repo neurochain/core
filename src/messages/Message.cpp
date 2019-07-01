@@ -15,7 +15,11 @@ bool from_json(const std::string &json, Packet *packet) {
   google::protobuf::util::JsonParseOptions options;
   auto r = google::protobuf::util::JsonStringToMessage(json, packet, options);
   if (!r.ok()) {
-    LOG_ERROR << "Could not parse json " << r;
+    std::stringstream error;
+    error << "Could not parse json " << r;
+    LOG_ERROR << error.str() << std::endl
+              << boost::stacktrace::stacktrace() << std::endl;
+    throw std::runtime_error(error.str());
   }
   return r.ok();
 }
@@ -37,16 +41,40 @@ bool from_bson(const bsoncxx::document::view &doc, Packet *packet) {
   return from_json(mongo_json, packet);
 }
 
-std::size_t to_buffer(const Packet &packet, Buffer *buffer) {
-  const auto size = packet.ByteSizeLong();
-  buffer->resize(size);
-  packet.SerializeToArray(buffer->data(), buffer->size());
+bool to_buffer(const Packet &packet, Buffer *buffer) {
+  try {
+    const auto size = packet.ByteSizeLong();
+    buffer->resize(size);
+    packet.SerializeToArray(buffer->data(), buffer->size());
+    return true;
+  } catch (...) {
+    std::cout << boost::stacktrace::stacktrace() << std::endl;
+    return false;
+  }
+}
 
-  return size;
+std::optional<Buffer> to_buffer(const Packet &packet) {
+  Buffer buffer;
+  if(!to_buffer(packet, &buffer)) {
+    return std::nullopt;
+  }
+  return std::make_optional(buffer);
 }
 
 void to_json(const Packet &packet, std::string *output) {
-  google::protobuf::util::MessageToJsonString(packet, output);
+  try {
+    google::protobuf::util::MessageToJsonString(packet, output);
+  } catch (...) {
+    LOG_ERROR << "Could not to_json packet " << boost::stacktrace::stacktrace()
+              << std::endl;
+    throw;
+  }
+}
+
+std::string to_json(const Packet &packet) {
+  std::string output;
+  to_json(packet, &output);
+  return output;
 }
 
 bsoncxx::document::value to_bson(const Packet &packet) {
@@ -62,24 +90,50 @@ std::ostream &operator<<(std::ostream &os, const Packet &packet) {
   return os;
 }
 
-bool operator==(const Packet &a, const Packet &b) {
-  std::string json_a, json_b;
-  to_json(a, &json_a);
-  to_json(b, &json_b);
-  bool res = json_a == json_b;
-
-  return res;
+void sort_transactions(Block *block) {
+  // We use to_json to sort because the order need to be the same as in mongodb.
+  // If we sorted by the raw content of the data field it would give a different
+  // order.
+  std::sort(
+      block->mutable_transactions()->begin(),
+      block->mutable_transactions()->end(),
+      [](const Transaction &transaction0, const Transaction &transaction1) {
+        return to_json(transaction0.id()) < to_json(transaction1.id());
+      });
 }
 
-bool operator==(const messages::Peer &a, const messages::Peer &b) {
-  LOG_TRACE << a.endpoint() << " " << b.endpoint();
-  return a.endpoint() == b.endpoint() && a.port() == b.port();
+void set_transaction_hash(Transaction *transaction) {
+  // Fill the id which is a required field. This makes the transaction
+  // serializable.
+  transaction->mutable_id()->set_type(messages::Hash::SHA256);
+  transaction->mutable_id()->set_data("");
+
+  const auto id = messages::Hasher(*transaction);
+  transaction->mutable_id()->CopyFrom(id);
 }
 
-void hash_transaction(Transaction *transaction) {
-  Buffer transaction_serialized;
-  messages::to_buffer(*transaction, &transaction_serialized);
-  transaction->mutable_id()->CopyFrom(Hasher(transaction_serialized));
+void set_default(messages::Signature *author) {
+  author->Clear();
+  author->mutable_key_pub()->set_raw_data("");
+  author->mutable_signature()->set_type(messages::Hash::SHA256);
+  author->mutable_signature()->set_data("");
+}
+
+void set_block_hash(Block *block) {
+  auto header = block->mutable_header();
+
+  // Fill the id which is a required field. This makes the block
+  // serializable.
+  header->mutable_id()->set_type(messages::Hash::SHA256);
+  header->mutable_id()->set_data("");
+
+  // The author should always be filled after the hash is set because the author
+  // field contains the signature of a denunciation that contains the hash of
+  // the block
+  set_default(header->mutable_author());
+
+  const auto id = messages::Hasher(*block);
+  header->mutable_id()->CopyFrom(id);
 }
 
 int32_t fill_header(messages::Header *header) {
@@ -93,8 +147,8 @@ int32_t fill_header(messages::Header *header) {
 int32_t fill_header_reply(const messages::Header &header_request,
                           messages::Header *header_reply) {
   const auto id = fill_header(header_reply);
+  header_reply->set_connection_id(header_request.connection_id());
   header_reply->set_request_id(header_request.id());
-  header_reply->mutable_peer()->CopyFrom(header_request.peer());
   return id;
 }
 

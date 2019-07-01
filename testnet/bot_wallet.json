@@ -40,12 +40,14 @@
   "database": {
     "url": "mongodb://localhost:27017/neuro",
     "dbName": "neuro",
-    "block0Format": "PROTO",
-    "block0Path": "/home/neuro/data.0.testnet"
+    "block0File": {
+      "blockFormat": "PROTO",
+      "blockPath": "/home/neuro/data.0.testnet"
+    }
   },
   "rest": {
     "port": 8080,
     "static_path": "wallet/"
-  },   
+  },
   "connectionGraphUri": "http://dashboard.test.neurochaintech.io"
 }

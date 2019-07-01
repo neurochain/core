@@ -6,38 +6,40 @@
 #include <vector>
 
 #include "common/types.hpp"
+#include "config.pb.h"
 #include "messages.pb.h"
 #include "messages/Queue.hpp"
 #include "messages/Subscriber.hpp"
-#include "networking/TransportLayer.hpp"
 #include "networking/tcp/Connection.hpp"
+#include "networking/tcp/Tcp.hpp"
+#include "networking/TransportLayer.hpp"
 
 namespace neuro {
 namespace networking {
 
 class Networking {
  private:
-  std::vector<std::shared_ptr<TransportLayer>> _transport_layers;
+  std::unique_ptr<TransportLayer> _transport_layer;
+  messages::Queue *_queue;
+  crypto::Ecc *_keys;
 
-  std::random_device _rd;
-  std::shared_ptr<messages::Queue> _queue;
-  std::uniform_int_distribution<int> _dist;
+  mutable std::uniform_int_distribution<int> _dist;
 
  public:
-  Networking(std::shared_ptr<messages::Queue> _queue);
-  ~Networking();
+  Networking(messages::Queue *_queue, crypto::Ecc *keys, messages::Peers *peers,
+             messages::config::Networking *config);
 
-  TransportLayer::ID push(std::shared_ptr<TransportLayer> transport_layer);
-  void send(std::shared_ptr<messages::Message> message, ProtocolType type);
-  void send_unicast(std::shared_ptr<messages::Message> message,
-                    ProtocolType type);
+  TransportLayer::SendResult send(
+      std::shared_ptr<messages::Message> message) const;
+  bool send_unicast(std::shared_ptr<messages::Message> message) const;
   messages::Peers connected_peers() const;
   std::size_t peer_count() const;
-  void remove_connection(const messages::Header &header,
-                         const messages::Body &body);
-
-  void stop();
   void join();
+
+  bool terminate(const Connection::ID id);
+  Port listening_port() const;
+  bool connect(messages::Peer *peer);
+  std::optional<messages::Peer*> find_peer(Connection::ID id);
 };
 
 }  // namespace networking

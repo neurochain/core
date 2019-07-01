@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
 
   messages::config::Config config;
   if (!messages::from_json_file(conf_path, &config)) {
-    std::cout << "Could not load configuration" << std::endl;
+    std::cout << "Could not load_from_point configuration" << std::endl;
     std::cout << desc << "\n";
     return 1;
   }
@@ -58,8 +58,8 @@ int main(int argc, char *argv[]) {
   auto itEndpoint = endpoints.cbegin();
 
   while (itKey != endKey) {
-    messages::KeyPub key_pub;
-    crypto::EccPub ecc_pub(*itKey);
+    messages::_KeyPub key_pub;
+    crypto::KeyPub ecc_pub(*itKey);
     ecc_pub.save(&key_pub);
     auto peer = config.mutable_networking()->mutable_tcp()->add_peers();
     peer->set_endpoint(*itEndpoint);

@@ -1,120 +1,68 @@
 stages:
+  - env_dev
   - build
-  - prod_image
   - doxygen
-
+  - prod
+  
 variables:
-  DOCKER_PROD_IMAGE: $CI_REGISTRY_IMAGE
-  DOCKER_WALLET_IMAGE: $CI_REGISTRY_IMAGE/wallet
-  DOCKER_FAUCET_IMAGE: $CI_REGISTRY_IMAGE/faucet
-  DOCKER_BLOCK_EXPLORER_IMAGE: $CI_REGISTRY_IMAGE/block_explorer
-
-  DOCKER_PROD_IMAGE_RELEASE: $CI_REGISTRY_IMAGE/release
-  DOCKER_WALLET_IMAGE_RELEASE: $CI_REGISTRY_IMAGE/release/wallet
-  DOCKER_FAUCET_IMAGE_RELEASE: $CI_REGISTRY_IMAGE/release/faucet
+  DOCKER_IMAGE_BUILD: "${CI_REGISTRY_IMAGE}/env_dev"
+  DOCKER_IMAGE_CORE: "${CI_REGISTRY_IMAGE}"
 
 services:
-  - docker:dind
   - mongo:3.6-stretch
 
-build_job:ubuntu_18_04:
-  image: registry.gitlab.com/neurochaintech/core/ubuntu:18.04
+build_image_dev:debug:
+  image: docker:stable
+  stage: env_dev
+  variables:
+    DOCKER_DRIVER: overlay2
+  tags:
+    - dind
+  only:
+    changes:
+      - utils/dockers/Dockerfile.ubuntu
+  script:
+    - build_docker "Dockerfile.ubuntu" "Debug"
+
+build_image_dev:release:
+  image: docker:stable
+  stage: env_dev
+  variables:
+    DOCKER_DRIVER: overlay2
+  tags:
+    - dind
+  only:
+    changes:
+      - utils/dockers/Dockerfile.ubuntu
+  script:
+    - build_docker "Dockerfile.ubuntu" "Release"
+
+
+build_job:dev:
+  image: "${DOCKER_IMAGE_BUILD}/debug:latest" # change that with sha after first run
+
   stage: build
   tags:
     - cpp
   script:
-    - bot_build "Debug"
+    - build_bot "Debug"
   artifacts:
     paths:
       - coverage.html
       - build
       - testnet/data.0.testnet
 
-build_job:ubuntu_18_04_release:
-  image: registry.gitlab.com/neurochaintech/core/ubuntu/release:18.04
+build_job:release:
+  image: "${DOCKER_IMAGE_BUILD}/release:latest" # change that with sha after first run
   stage: build
   tags:
     - cpp
   script:
-    - bot_build "Release"
+    - build_bot "Release"
   artifacts:
     paths:
       - build
 
-
-#build_job:debian_9:
-#  image: registry.gitlab.com/neurochaintech/core/debian:sid
-#  stage: build
-#  tags:
-#    - cpp
-#  script:
-#    - bot_build "Release"
-#  artifacts:
-#    paths:
-#      - build
-#
-#build_job:fedora_28:
-#  image: registry.gitlab.com/neurochaintech/core/fedora:28
-#  stage: build
-#  tags:
-#    - cpp
-#  script:
-#    - bot_build "Release"
-#  artifacts:
-#    paths:
-#      - build
-#
-prod_image_build:ubuntu_18_04:
-  image: docker:stable
-  stage: prod_image
-  variables:
-    DOCKER_DRIVER: overlay2
-  services:
-    - docker:stable-dind
-  dependencies:
-    - build_job:ubuntu_18_04
-  only:
-    - feature/ledger
-  script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
-    - docker build -f utils/dockers/Dockerfile.core -t $DOCKER_PROD_IMAGE:latest -t $DOCKER_PROD_IMAGE:$CI_COMMIT_SHA  .
-    - docker push $DOCKER_PROD_IMAGE:$CI_COMMIT_SHA
-    - docker push $DOCKER_PROD_IMAGE:latest
-    - docker build -f utils/dockers/Dockerfile.wallet -t $DOCKER_WALLET_IMAGE:latest -t $DOCKER_WALLET_IMAGE:$CI_COMMIT_SHA  .
-    - docker push $DOCKER_WALLET_IMAGE:$CI_COMMIT_SHA
-    - docker push $DOCKER_WALLET_IMAGE:latest
-    - docker build -f utils/dockers/Dockerfile.faucet -t $DOCKER_FAUCET_IMAGE:latest -t $DOCKER_FAUCET_IMAGE:$CI_COMMIT_SHA  .
-    - docker push $DOCKER_FAUCET_IMAGE:$CI_COMMIT_SHA
-    - docker push $DOCKER_FAUCET_IMAGE:latest
-    - docker build -f utils/dockers/Dockerfile.block -t $DOCKER_BLOCK_EXPLORER_IMAGE:latest -t $DOCKER_BLOCK_EXPLORER_IMAGE:$CI_COMMIT_SHA  .
-    - docker push $DOCKER_BLOCK_EXPLORER_IMAGE:$CI_COMMIT_SHA
-    - docker push $DOCKER_BLOCK_EXPLORER_IMAGE:latest
-
-
-
-prod_image_build:ubuntu_18_04_release:
-  image: docker:stable
-  stage: prod_image
-  variables:
-    DOCKER_DRIVER: overlay2
-  services:
-    - docker:stable-dind
-  dependencies:
-    - build_job:ubuntu_18_04_release
-  only:
-    - feature/ledger
-  script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
-    - docker build -f utils/dockers/Dockerfile.core -t $DOCKER_PROD_IMAGE_RELEASE:latest -t $DOCKER_PROD_IMAGE_RELEASE:$CI_COMMIT_SHA  .
-    - docker push $DOCKER_PROD_IMAGE_RELEASE:$CI_COMMIT_SHA
-    - docker push $DOCKER_PROD_IMAGE_RELEASE:latest
-    - docker build -f utils/dockers/Dockerfile.wallet -t $DOCKER_WALLET_IMAGE_RELEASE:latest -t $DOCKER_WALLET_IMAGE_RELEASE:$CI_COMMIT_SHA  .
-    - docker push $DOCKER_WALLET_IMAGE_RELEASE:$CI_COMMIT_SHA
-    - docker push $DOCKER_WALLET_IMAGE_RELEASE:latest
-    - docker build -f utils/dockers/Dockerfile.faucet -t $DOCKER_FAUCET_IMAGE_RELEASE:latest -t $DOCKER_FAUCET_IMAGE_RELEASE:$CI_COMMIT_SHA  .
-    - docker push $DOCKER_FAUCET_IMAGE_RELEASE:$CI_COMMIT_SHA
-    - docker push $DOCKER_FAUCET_IMAGE_RELEASE:latest
-    
 pages:
   image: alpine
   stage: doxygen
@@ -123,32 +71,65 @@ pages:
     - apk add doxygen
     - apk add ttf-freefont graphviz
   script:
-    - cd build && doxygen ../doc/Doxyfile
+    - mkdir build ||echo exist && cd build && doxygen ../doc/Doxyfile
     - mv html ../public
-    - mv ../coverage.html ../public
-  dependencies:
-    - build_job:ubuntu_18_04
+    - mv ../doc/img ../public
+
   only:
-    - feature/ledger
+    changes:
+      - doc/*
   artifacts:
     paths:
       - public
 
-.bot_build: &bot_build |
-  function bot_build() {
-    echo "Building in $1"
-    set -ex 
+build_image_prod:release:
+  image: docker:stable
+  stage: prod
+  variables:
+    DOCKER_DRIVER: overlay2
+  tags:
+    - dind
+  only:
+    changes:
+      - utils/dockers/Dockerfile.core
+  script:
+    - build_docker "Dockerfile.core" "Release"
+
+
+
+.build_bot: &build_bot |
+  function build_bot() {
+    echo "Building in $1 from $(pwd)"
+    set -ex
     export BUILD_TYPE=$1
     mkdir build || echo k
+    pwd && ls -lahrt ~/
     cd build
-    cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/root -DCMAKE_BUILD_TYPE=$1 ..
-    make -j5
-    mkdir /tmp/db && nohup mongod --dbpath /tmp/db & 
+    cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/root -DCMAKE_BUILD_TYPE=$1 -G Ninja ..
+    ninja
+    mkdir /tmp/db && nohup mongod --dbpath /tmp/db &
     sleep 5
-    python3 ../utils/dockers/times3.py ctest -V || echo ok
+    python3 ../utils/dockers/times3.py ctest -V
     cd .. && python3 -m gcovr -p -r . --html -o coverage.html
   }
 
+.build_docker: &build_docker |
+  function build_docker() {
+    echo "Building docker image $1 from $(pwd)"
+    set -ex
+    export DOCKER_FILE_NAME=$1
+    export BUILD_TYPE=$2
+    export IMAGE_SUFFIX=$(echo $BUILD_TYPE| tr '[:upper:]' '[:lower:]')
+    export IMAGE_FULL_NAME="${CI_REGISTRY_IMAGE}/${CI_JOB_STAGE}/${IMAGE_SUFFIX}"
+
+    docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+    env
+    docker container list -a
+    docker build -f "utils/dockers/$DOCKER_FILE_NAME" --build-arg DOCKER_BUILD_TYPE=$BUILD_TYPE -t "${IMAGE_FULL_NAME}:latest" -t "${IMAGE_FULL_NAME}:$CI_COMMIT_SHA" .
+    docker push "${IMAGE_FULL_NAME}:latest"
+    docker push "${IMAGE_FULL_NAME}:$CI_COMMIT_SHA"
+  }
+
 before_script:
-  - *bot_build
- 
+  - *build_bot
+  - *build_docker
