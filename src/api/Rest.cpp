@@ -41,6 +41,12 @@ namespace neuro::api {
 //    _root->add("faucet_send", faucet_send_route);
 //  }
 
+Rest::Rest(const messages::config::Rest &config, Bot *bot)
+    : Api::Api(bot), _httpEndpoint(std::make_shared<Http::Endpoint>(
+                         Address(Ipv4::any(), config.port()))) {
+  init();
+  start();
+}
 
 void Rest::init() {
   auto opts =
@@ -187,12 +193,10 @@ void Rest::get_total_nb_blocks(const Rest::Request &req, Rest::Response res) {
   res.send(Pistache::Http::Code::Ok, std::to_string(Api::total_nb_blocks()));
 }
 
-Rest::Rest(const messages::config::Rest &config, Bot *bot)
-    : Api::Api(bot), _httpEndpoint(std::make_shared<Http::Endpoint>(
-                         Address(Ipv4::any(), config.port()))) {
-  init();
-  start();
+void Rest::get_peers(const Rest::Request& request, Rest::Response res) {
+  res.send(Pistache::Http::Code::Ok, to_json(Api::peers()));
 }
+
 Rest::~Rest() {
   shutdown();
 }

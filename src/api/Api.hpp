@@ -3,6 +3,7 @@
 
 #include "messages/Message.hpp"
 #include "messages/Address.hpp"
+#include "messages/Peers.hpp"
 
 namespace neuro {
 class Bot;
@@ -40,6 +41,8 @@ class Api {
 	     const messages::Address &sender,
 	     const messages::NCCAmount &fees);
   virtual bool transaction_publish(const messages::Transaction &transaction) final;
+
+  virtual const messages::Peers& peers() const final;
 };
 
 

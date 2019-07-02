@@ -101,6 +101,10 @@ Api::set_inputs(messages::Transaction *transaction,
   
 }
 
+const messages::Peers& Api::peers() const {
+  return _bot->peers();
+}
+
 // messages::Transactions Api::transactions_in(const messages::Address &address) {
 
 // }
