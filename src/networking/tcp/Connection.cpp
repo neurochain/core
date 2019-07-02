@@ -91,6 +91,7 @@ void Connection::read_body(std::size_t body_size) {
           if (type == messages::Type::kHello) {
             const auto hello = body.hello();
             _remote_peer.CopyFrom(hello.peer());
+	    _remote_peer.set_endpoint(_socket->remote_endpoint().address().to_string());
           }
         }
 

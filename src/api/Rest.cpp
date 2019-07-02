@@ -80,6 +80,7 @@ void Rest::setupRoutes() {
   Get(_router, "/last_blocks/:nb_blocks", bind(&Rest::get_last_blocks, this));
   Get(_router, "/total_nb_transactions", bind(&Rest::get_total_nb_transactions, this));
   Get(_router, "/total_nb_blocks", bind(&Rest::get_total_nb_blocks, this));
+  Get(_router, "/peers", bind(&Rest::get_peers, this));
 }
 
 void Rest::get_balance(const Request& req, Response res) {
