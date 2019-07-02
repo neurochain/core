@@ -1,19 +1,19 @@
 FROM registry.gitlab.com/neurochaintech/core/env_dev/release:latest
 
 MAINTAINER trax Omar Givernaud
-LABEL Description "Generic Bot Image."
+LABEL Description "Generic Bot Image"
 
 # update this line to regen image: 000
 
 USER neuro
+WORKDIR /home/neuro/core
+RUN mkdir conf
 COPY build/src/main main
 COPY testnet/data.0.testnet /home/neuro/data.0.testnet
-COPY entrypoint.sh entrypoint.sh
+COPY utils/dockers/entrypoint.sh entrypoint.sh
 
 # cleanup
-RUN du -sh /
 RUN rm -r ./build
 RUN rm -r ~/.hunter
-RUN du -sh /
-
+RUN ./main --version
 CMD ["./entrypoint.sh"]

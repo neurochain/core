@@ -1,7 +1,7 @@
 FROM ubuntu:18.10
 
 MAINTAINER trax Omar Givernaud
-LABEL Description "compile linux ubuntu"
+LABEL Description "compile linux ubuntu release"
 
 RUN apt-get update -y
 RUN adduser  --disabled-password --gecos "" neuro

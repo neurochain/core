@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
 
   if (vm.count("version")) {
     std::cout << GIT_COMMIT_HASH << "\n";
-    return 1;
+    return 0;
   }
 
   const Path configuration_filepath = vm["configuration"].as<std::string>();

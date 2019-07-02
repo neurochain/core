@@ -70,14 +70,14 @@ pages:
     - apk update
     - apk add doxygen
     - apk add ttf-freefont graphviz
+  dependencies:
+    - build_job:release
   script:
     - mkdir build ||echo exist && cd build && doxygen ../doc/Doxyfile
     - mv html ../public
     - mv ../doc/img ../public
-
   only:
-    changes:
-      - doc/*
+    - feature/ledger
   artifacts:
     paths:
       - public
@@ -89,13 +89,14 @@ build_image_prod:release:
     DOCKER_DRIVER: overlay2
   tags:
     - dind
+  dependencies:
+    - build_job:release
   only:
     changes:
       - utils/dockers/Dockerfile.core
+      - .gitlab-ci.yml
   script:
     - build_docker "Dockerfile.core" "Release"
-
-
 
 .build_bot: &build_bot |
   function build_bot() {
