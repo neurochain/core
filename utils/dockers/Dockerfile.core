@@ -5,6 +5,7 @@ LABEL Description "Generic Bot Image"
 
 USER neuro
 WORKDIR /home/neuro/core
+RUN mkdir conf
 COPY build/src/main main
 COPY testnet/data.0.testnet /home/neuro/data.0.testnet
 COPY utils/dockers/entrypoint.sh entrypoint.sh

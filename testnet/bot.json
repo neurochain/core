@@ -29,8 +29,8 @@
     },
     "keysPaths": [
       {
-        "keyPubPath": "key.pub",
-        "keyPrivPath": "key.priv"
+        "keyPubPath": "conf/key.pub",
+        "keyPrivPath": "conf/key.priv"
       }
     ]
   },
