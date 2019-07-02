@@ -43,7 +43,7 @@ applications (e.g. filesharing, traceability).
 ### Basic 
 
 ```
-docker run -dit --name core --restart always registry.gitlab.com/neurochaintech/core/prod/release:latest
+docker run -dit --name core --restart always  -p 1337:1337 registry.gitlab.com/neurochaintech/core/prod/release:latest
 ```
 
 This will create and run a docker, running the bot and mongo db. Logs and ledger will be inside the docker, not giving the best performance.
@@ -54,7 +54,7 @@ This will create and run a docker, running the bot and mongo db. Logs and ledger
 docker network create neuro
 mkdir mongo # if possible make it an xfs filesystem
 docker run -dit --name mongo --network neuro --restart always --log-opt max-size=10m --log-opt max-file=5 -v ./mongo:/data/db  mongo:3.6.8
-docker run -dit --name core  --network neuro --restart always --log-opt max-size=10m --log-opt max-file=5 registry.gitlab.com/neurochaintech/core/prod/release:latest ./main -c bot.json
+docker run -dit --name core  --network neuro --restart always --log-opt max-size=10m --log-opt max-file=5  -p 1337:1337 registry.gitlab.com/neurochaintech/core/prod/release:latest ./main -c bot.json
 ```
 
 
