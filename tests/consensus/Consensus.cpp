@@ -475,7 +475,7 @@ class Consensus : public testing::Test {
     ASSERT_TRUE(consensus->check_block_size(tagged_block));
 
     std::stringstream ss;
-    for (auto i = 0; i < consensus->_config.max_block_size; i++) {
+    for (uint32_t i = 0; i < consensus->_config.max_block_size; i++) {
       ss << "a";
     }
     tagged_block.mutable_block()
