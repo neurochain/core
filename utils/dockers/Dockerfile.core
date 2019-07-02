@@ -5,7 +5,7 @@ LABEL Description "Generic Bot Image"
 
 USER neuro
 WORKDIR /home/neuro/core
-RUN pwd && ls -lahrt 
+RUN pwd && ls -lahrt
 COPY build/src/main main
 COPY testnet/data.0.testnet /home/neuro/data.0.testnet
 COPY utils/dockers/entrypoint.sh entrypoint.sh
@@ -13,6 +13,5 @@ COPY utils/dockers/entrypoint.sh entrypoint.sh
 # cleanup
 RUN rm -r ./build
 RUN rm -r ~/.hunter
-RUN du -sh /
 RUN ./main --version
 CMD ["./entrypoint.sh"]
