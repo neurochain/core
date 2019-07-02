@@ -10,7 +10,6 @@ Api::Api(Bot *bot) : _bot(bot) {
     _bot->ledger()->get_block(int32_t{0}, &block, true);
     std::cout << messages::to_json(block) << std::endl;
 }
-  
 
 bool Api::verify_address_format(const messages::Address &address) {
   // TODO
@@ -32,6 +31,12 @@ messages::BlockHeight Api::height() const {
 messages::Block Api::block(messages::BlockID id) {
   messages::Block block;
   _bot->ledger()->get_block(id, &block);
+  return block;
+}
+
+messages::Block Api::block(messages::BlockHeight height) {
+  messages::Block block;
+  _bot->ledger()->get_block(height, &block);
   return block;
 }
 

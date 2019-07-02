@@ -23,6 +23,7 @@ class Api {
   virtual messages::Addresses previous_recipients(const messages::Address &address) final;
 
   virtual messages::Block block(messages::BlockID id) final;
+  virtual messages::Block block(messages::BlockHeight height) final;
   virtual messages::Blocks last_blocks(std::size_t nb_blocks) final;
   virtual messages::BlockHeight height() const final;
 

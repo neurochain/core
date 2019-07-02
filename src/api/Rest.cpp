@@ -68,11 +68,12 @@ void Rest::setupRoutes() {
        bind(&Rest::get_create_transaction, this));
   Post(_router, "/publish", bind(&Rest::publish, this));
   Get(_router, "/list_transactions/:address", bind(&Rest::get_unspent_transaction_list, this));
-  Get(_router, "/get_transaction/:id", bind(&Rest::get_transaction, this));
-  Get(_router, "/get_block/:id", bind(&Rest::get_block, this));
-  Get(_router, "/get_last_blocks/:nb_blocks", bind(&Rest::get_last_blocks, this));
-  Get(_router, "/get_total_nb_transactions", bind(&Rest::get_total_nb_transactions, this));
-  Get(_router, "/get_total_nb_blocks", bind(&Rest::get_total_nb_blocks, this));
+  Get(_router, "/transaction/:id", bind(&Rest::get_transaction, this));
+  Get(_router, "/block/id/:id", bind(&Rest::get_block_by_id, this));
+  Get(_router, "/block/height/:height", bind(&Rest::get_block_by_height, this));
+  Get(_router, "/last_blocks/:nb_blocks", bind(&Rest::get_last_blocks, this));
+  Get(_router, "/total_nb_transactions", bind(&Rest::get_total_nb_transactions, this));
+  Get(_router, "/total_nb_blocks", bind(&Rest::get_total_nb_blocks, this));
 }
 
 void Rest::get_balance(const Request& req, Response res) {
@@ -160,9 +161,15 @@ void Rest::get_unspent_transaction_list(const Request& req, Response res) {
   res.send(Pistache::Http::Code::Ok, to_json(unspent_transaction_list));
 }
 
-void Rest::get_block(const Rest::Request &req, Rest::Response res) {
+void Rest::get_block_by_id(const Rest::Request &req, Rest::Response res) {
   messages::Hasher block_id(req.param(":id").as<std::string>());
   auto block = Api::block(block_id);
+  res.send(Pistache::Http::Code::Ok, to_json(block));
+}
+
+void Rest::get_block_by_height(const Rest::Request &req, Rest::Response res) {
+  const auto block_height(req.param(":height").as<messages::BlockHeight>());
+  auto block = Api::block(block_height);
   res.send(Pistache::Http::Code::Ok, to_json(block));
 }
 
