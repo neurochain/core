@@ -216,7 +216,7 @@ class Consensus : public testing::Test {
     try {
       auto transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
                                           simulator.addresses[1], -2);
-    } catch (std::runtime_error) {
+    } catch (std::runtime_error &) {
       did_throw = true;
     }
     ASSERT_TRUE(did_throw);
@@ -224,7 +224,7 @@ class Consensus : public testing::Test {
     try {
       auto transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
                                           simulator.addresses[1], 2);
-    } catch (std::runtime_error) {
+    } catch (std::runtime_error &) {
       did_throw = true;
     }
     ASSERT_TRUE(did_throw);
@@ -247,7 +247,7 @@ class Consensus : public testing::Test {
     try {
       transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
                                      simulator.addresses[1], 1, fees);
-    } catch (std::runtime_error) {
+    } catch (std::runtime_error &) {
       did_throw = true;
     }
     ASSERT_TRUE(did_throw);
@@ -691,7 +691,7 @@ TEST_F(Consensus, transaction_overflow) {
   try {
     auto transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
                                         simulator.addresses[1], 1, fees);
-  } catch (std::runtime_error) {
+  } catch (std::runtime_error &) {
     did_throw = true;
   }
   ASSERT_TRUE(did_throw);
