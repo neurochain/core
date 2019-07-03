@@ -91,10 +91,6 @@ build_image_prod:release:
     - dind
   dependencies:
     - build_job:release
-  only:
-    changes:
-      - utils/dockers/Dockerfile.core
-      - .gitlab-ci.yml
   script:
     - build_docker "Dockerfile.core" "Release"
 
