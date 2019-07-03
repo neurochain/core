@@ -86,12 +86,13 @@ void Connection::read_body(std::size_t body_size) {
           _this->terminate();
           return;
         }
-        for (const auto &body : message->bodies()) {
+        for (auto &body : *message->mutable_bodies()) {
           const auto type = get_type(body);
           if (type == messages::Type::kHello) {
-            const auto hello = body.hello();
-            _remote_peer.CopyFrom(hello.peer());
-	    _remote_peer.set_endpoint(_socket->remote_endpoint().address().to_string());
+	    auto* hello = body.mutable_hello();
+	    hello->mutable_peer()->set_endpoint(_socket->remote_endpoint().address().to_string());
+            _remote_peer.CopyFrom(hello->peer());
+	    LOG_TRACE  << "remote ip> " <<  _socket->remote_endpoint().address().to_string() << std::endl;
           }
         }
 
