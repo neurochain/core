@@ -39,7 +39,7 @@
     "dbName": "testnet",
     "block0File": {
       "blockFormat": "PROTO",
-      "blockPath": "data.0.testnet"
+      "blockPath": "testnet/data.0.testnet"
     }
   }
 }
