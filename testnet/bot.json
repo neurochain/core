@@ -35,7 +35,7 @@
     ]
   },
   "database": {
-    "url": "mongodb://mongo:27017/neuro",
+    "url": "mongodb://localhost:27017/neuro",
     "dbName": "testnet",
     "block0File": {
       "blockFormat": "PROTO",
