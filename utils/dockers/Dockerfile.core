@@ -7,6 +7,7 @@ LABEL Description "Generic Bot Image"
 
 USER neuro
 WORKDIR /home/neuro
+RUN cd /home/neuro
 RUN mkdir conf
 COPY core/build/src/main main
 COPY core/build/src/bot.json conf/bot.json
