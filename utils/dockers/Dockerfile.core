@@ -11,7 +11,7 @@ RUN mkdir conf
 COPY core/build/src/main main
 COPY core/build/src/bot.json conf/bot.json
 COPY core/build/src/testnet/data.0.testnet conf/data.0.testnet
-COPY utils/dockers/entrypoint.sh entrypoint.sh
+COPY core/utils/dockers/entrypoint.sh entrypoint.sh
 
 # cleanup
 RUN rm -r ~/core/build
