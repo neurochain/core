@@ -9,10 +9,11 @@ USER neuro
 WORKDIR /home/neuro
 RUN cd /home/neuro
 RUN mkdir conf
-COPY core/build/src/main main
-COPY core/build/src/bot.json conf/bot.json
-COPY core/build/src/testnet/data.0.testnet conf/data.0.testnet
-COPY core/utils/dockers/entrypoint.sh entrypoint.sh
+RUN pwd;ls -l;ls -l core; ls -l core/build; ls -l core/build/src; ls -lR
+COPY /home/neuro/core/build/src/main main
+COPY /home/neuro/core/build/src/bot.json conf/bot.json
+COPY /home/neuro/core/build/src/testnet/data.0.testnet conf/data.0.testnet
+COPY /home/neuro/core/utils/dockers/entrypoint.sh entrypoint.sh
 
 # cleanup
 RUN rm -r ~/core/build
