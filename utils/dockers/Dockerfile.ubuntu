@@ -1,11 +1,12 @@
 FROM ubuntu:18.10
 
-# change to recompile: 002
+# change to recompile: 000
 
 MAINTAINER trax Omar Givernaud
 LABEL Description "Dev env image"
 ARG DOCKER_BUILD_TYPE=Release
 
+ENV CPPFLAGS="-march=x86-64"
 RUN apt-get update -y
 RUN adduser  --disabled-password --gecos "" neuro
 

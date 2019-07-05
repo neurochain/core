@@ -99,6 +99,7 @@ build_image_prod:release:
     echo "Building in $1 from $(pwd)"
     set -ex
     export BUILD_TYPE=$1
+    export CPPFLAGS="-march=x86-64"
     mkdir build || echo k
     pwd && ls -lahrt ~/
     cd build
