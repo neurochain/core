@@ -6,14 +6,15 @@ LABEL Description "Generic Bot Image"
 # update this line to regen image: 000
 
 USER neuro
-WORKDIR /home/neuro/core
+WORKDIR /home/neuro
 RUN mkdir conf
-COPY build/src/main main
-COPY testnet/data.0.testnet /home/neuro/data.0.testnet
+COPY core/build/src/main main
+COPY core/build/src/bot.json conf/bot.json
+COPY core/build/src/testnet/data.0.testnet conf/data.0.testnet
 COPY utils/dockers/entrypoint.sh entrypoint.sh
 
 # cleanup
-RUN rm -r ./build
+RUN rm -r ~/core/build
 RUN rm -r ~/.hunter
 RUN ./main --version
 CMD ["./entrypoint.sh"]
