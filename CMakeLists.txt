@@ -38,7 +38,7 @@ enable_testing ()
 
 
 set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};~/root/lib/cmake/pistache")
-set(CMAKE_CXX_FLAGS "-Wall ${CMAKE_CXX_FLAGS} -std=c++17 -Wno-ignored-qualifiers -pipe -Werror -march=x86-64")
+set(CMAKE_CXX_FLAGS "-Wall ${CMAKE_CXX_FLAGS} -std=c++17 -Wno-ignored-qualifiers -pipe -Werror")
 set(CMAKE_CXX_FLAGS_RELEASE " -O3")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 --coverage -fsanitize=address")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g -O2 -fsanitize=address")
@@ -56,7 +56,7 @@ hunter_add_package(Protobuf)
 include(FindProtobuf)
 find_package(Protobuf CONFIG REQUIRED)
 
-set(CRYPTOPP_NATIVE_ARCH Off)
+set(CRYPTOPP_CROSS_COMPILE On)
 hunter_add_package(cryptopp)
 find_package(cryptopp CONFIG REQUIRED)
 
