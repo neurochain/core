@@ -1,6 +1,6 @@
 FROM ubuntu:18.10
 
-# change to recompile: 000
+# change to recompile: 001
 
 MAINTAINER trax Omar Givernaud
 LABEL Description "Dev env image"
@@ -15,6 +15,8 @@ RUN apt-get install -y build-essential git cmake subversion  pkg-config wget tar
 RUN python3 -m pip install requests
 RUN python3 -m pip install gcovr
 RUN /usr/bin/ssh-keygen -A
+
+RUN g++ -v
 
 WORKDIR /home/neuro
 USER neuro

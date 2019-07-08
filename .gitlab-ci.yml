@@ -97,6 +97,7 @@ build_image_prod:release:
 .build_bot: &build_bot |
   function build_bot() {
     echo "Building in $1 from $(pwd)"
+    g++ -v
     set -ex
     export BUILD_TYPE=$1
     export CPPFLAGS="-march=x86-64"
