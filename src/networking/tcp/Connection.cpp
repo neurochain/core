@@ -22,11 +22,13 @@ Connection::Connection(const ID id, messages::Queue *queue,
 }
 
 Connection::Connection(const ID id, messages::Queue *queue,
-                       const std::shared_ptr<tcp::socket> &socket)
+                       const std::shared_ptr<tcp::socket> &socket,
+                       const messages::config::Networking &config)
     : ::neuro::networking::Connection::Connection(id, queue),
       _header(sizeof(HeaderPattern), 0),
       _buffer(128, 0),
-      _socket(socket) {
+      _socket(socket),
+      _remote_peer(config){
   assert(_socket != nullptr);
 }
 
@@ -42,12 +44,8 @@ void Connection::read_header() {
       [_this = ptr()](const boost::system::error_code &error,
                       std::size_t bytes_read) {
         if (error) {
-          if (error == boost::asio::error::eof) {
-            _this->terminate();
-          } else {
-            LOG_ERROR << _this << " " << __LINE__ << " Killing connection "
-                      << error;
-          }
+          LOG_WARNING << "read header error " << error.message();
+          _this->terminate();
           return;
         }
         const auto header_pattern =
@@ -63,9 +61,8 @@ void Connection::read_body(std::size_t body_size) {
       [_this = ptr(), this](const boost::system::error_code &error,
                             std::size_t bytes_read) {
         if (error) {
-          if (error == boost::asio::error::eof) {
-            _this->terminate();
-          }
+          LOG_WARNING << "read body error " << error.message();
+          _this->terminate();
           return;
         }
         const auto header_pattern =
@@ -73,7 +70,8 @@ void Connection::read_body(std::size_t body_size) {
 
         auto message = std::make_shared<messages::Message>();
         messages::from_buffer(_this->_buffer, message.get());
-
+        LOG_DEBUG << "Receiving [" << _socket->local_endpoint().port() << " <- "
+                  << _remote_peer.port() << "]: <<" << *message;
         auto header = message->mutable_header();
 
         header->set_connection_id(_id);
@@ -84,6 +82,8 @@ void Connection::read_body(std::size_t body_size) {
 
         // validate the MessageVersion from the header
         if (header->version() != neuro::MessageVersion) {
+          LOG_INFO << "Killing connection because received message from wrong version (" << header->version() << ")";
+          _this->terminate();
           return;
         }
         for (const auto &body : message->bodies()) {
@@ -95,7 +95,8 @@ void Connection::read_body(std::size_t body_size) {
         }
 
         if (!_this->_remote_peer.has_key_pub()) {
-          _this->read_header();
+          LOG_INFO << "Killing connection because received message without key pub";
+          _this->terminate();
           return;
         }
         const auto key_pub = _this->_remote_peer.key_pub();
@@ -107,6 +108,11 @@ void Connection::read_body(std::size_t body_size) {
                            sizeof(header_pattern->signature));
 
         if (!check) {
+          LOG_INFO
+            << "Killing connection because received message with wrong signature"
+            << _this->_queue << " " << messages::to_json(*message) << " "
+            << _remote_peer << std::endl;
+          _this->terminate();
           return;
         }
         message->mutable_header()->mutable_key_pub()->CopyFrom(
@@ -122,7 +128,8 @@ bool Connection::send(std::shared_ptr<Buffer> &message) {
       [_this = ptr(), message](const boost::system::error_code &error,
                                std::size_t bytes_transferred) {
         if (error) {
-          _this->close();
+          LOG_WARNING << "send error " << error.message();
+          _this->terminate();
           return false;
         }
         return true;
@@ -133,7 +140,13 @@ bool Connection::send(std::shared_ptr<Buffer> &message) {
 void Connection::close() { _socket->close(); }
 
 void Connection::terminate() {
-  _socket->close();
+  LOG_INFO << this << " " << _id << " Killing connection";
+  boost::system::error_code ec;
+  _socket->shutdown(tcp::socket::shutdown_both, ec);
+  if (ec) {
+    LOG_DEBUG << "can't shutdown connection socket to : "
+              << remote_port().value_or(0) << " : " << ec.message();
+  }
   auto message = std::make_shared<messages::Message>();
   auto header = message->mutable_header();
   header->set_connection_id(_id);
@@ -162,7 +175,10 @@ const std::optional<Port> Connection::remote_port() const {
 }
 
 const messages::Peer Connection::remote_peer() const { return _remote_peer; }
-Connection::~Connection() { terminate(); }
+
+Connection::~Connection() {
+  close();
+}
 }  // namespace tcp
 }  // namespace networking
 }  // namespace neuro

@@ -16,15 +16,17 @@ namespace neuro {
 namespace networking {
 using namespace std::chrono_literals;
 
-Tcp::Tcp(const Port port, messages::Queue *queue, messages::Peers *peers,
-         crypto::Ecc *keys)
+Tcp::Tcp(messages::Queue *queue, messages::Peers *peers,
+         crypto::Ecc *keys, const messages::config::Networking &config)
     : TransportLayer(queue, peers, keys),
       _stopped(false),
-      _listening_port(port),
+      _listening_port(config.tcp().port()),
       _io_context(),
       _resolver(_io_context),
       _acceptor(_io_context,
-                bai::tcp::endpoint(bai::tcp::v4(), _listening_port)) {
+                bai::tcp::endpoint(bai::tcp::v4(), _listening_port)),
+      _peers(peers),
+      _config(config) {
   assert(peers);
 
   while (!_acceptor.is_open()) {
@@ -55,7 +57,7 @@ void Tcp::accept(const boost::system::error_code &error) {
 
     this->new_connection_from_remote(_new_socket, error);
   } else {
-    LOG_WARNING << "Rejected connection";
+    LOG_WARNING << "Rejected connection " << error.message();
   }
   _new_socket.reset();  // TODO why?
   start_accept();
@@ -84,16 +86,17 @@ Port Tcp::listening_port() const { return _listening_port; }
 
 void Tcp::new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
                                      const boost::system::error_code &error) {
+  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   auto message = std::make_shared<messages::Message>();
   auto msg_header = message->mutable_header();
   auto msg_body = message->add_bodies();
 
   if (!error) {
-    ++_current_id;
+    _current_id++;
 
     msg_header->set_connection_id(_current_id);
     auto connection =
-        std::make_shared<tcp::Connection>(_current_id, _queue, socket);
+        std::make_shared<tcp::Connection>(_current_id, _queue, socket, _config);
     _connections.insert(std::make_pair(_current_id, connection));
 
     auto connection_ready = msg_body->mutable_connection_ready();
@@ -103,8 +106,8 @@ void Tcp::new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
     _queue->publish(message);
     connection->read();
   } else {
-    LOG_WARNING << "Could not create new connection to "
-                << " due to " << error.message();
+    LOG_WARNING << "Could not create new connection : "
+                << error.message();
 
     msg_body->mutable_connection_closed();
     _queue->publish(message);
@@ -114,16 +117,19 @@ void Tcp::new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
 void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
                                const boost::system::error_code &error,
                                messages::Peer *peer) {
+  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   auto message = std::make_shared<messages::Message>();
   auto msg_header = message->mutable_header();
   auto msg_body = message->add_bodies();
 
   if (!error) {
-    ++_current_id;
+    _current_id++;
 
     msg_header->set_connection_id(_current_id);
-    auto connection =
-        std::make_shared<tcp::Connection>(_current_id, _queue, socket, *peer);
+    auto connection = std::make_shared<tcp::Connection>(_current_id,
+                                                        _queue,
+                                                        socket,
+                                                        *peer);
     _connections.insert(std::make_pair(_current_id, connection));
 
     auto connection_ready = msg_body->mutable_connection_ready();
@@ -133,7 +139,7 @@ void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
     _queue->publish(message);
     connection->read();
   } else {
-    LOG_WARNING << "Could not create new connection to " << *peer << " due to "
+    LOG_WARNING << "Could not create new connection to " << *peer << " : "
                 << error.message();
 
     auto connection_closed = msg_body->mutable_connection_closed();
@@ -143,6 +149,7 @@ void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
 }
 
 bool Tcp::terminate(const Connection::ID id) {
+  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   auto got = _connections.find(id);
   if (got == _connections.end()) {
     return false;
@@ -153,6 +160,7 @@ bool Tcp::terminate(const Connection::ID id) {
 }
 
 std::optional<messages::Peer *> Tcp::find_peer(const Connection::ID id) {
+  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   auto got = _connections.find(id);
   if (got == _connections.end()) {
     return std::nullopt;
@@ -185,6 +193,7 @@ bool Tcp::serialize(std::shared_ptr<messages::Message> message,
 
 TransportLayer::SendResult Tcp::send(
     std::shared_ptr<messages::Message> message) const {
+  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   if (_connections.size() == 0) {
     LOG_ERROR << "Could not send message because there is no connection "
               << message;
@@ -229,6 +238,7 @@ TransportLayer::SendResult Tcp::send(
 }
 
 bool Tcp::send_unicast(std::shared_ptr<messages::Message> message) const {
+  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   if (_stopped || !message->header().has_connection_id()) {
     LOG_WARNING << "not sending message " << _stopped;
     return false;
@@ -262,13 +272,14 @@ bool Tcp::send_unicast(std::shared_ptr<messages::Message> message) const {
 }
 
 /**
- * count the number of active TCP connexion (either accepted one or attempting
- * one)
- * @return the number of active connexion
+ * count the number of active TCP connexion
+ * (either accepted one or attempting one)
+ * \return the number of active connexion
  */
 std::size_t Tcp::peer_count() const { return _connections.size(); }
 
 void Tcp::stop() {
+  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   if (!_stopped) {
     _stopped = true;
     _io_context.post([this]() { _acceptor.close(); });

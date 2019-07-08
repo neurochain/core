@@ -61,7 +61,8 @@ class Consensus {
   bool check_coinbase(
       const messages::TaggedTransaction &tagged_transaction) const;
 
-  messages::NCCAmount block_reward(const messages::BlockHeight height) const;
+  messages::NCCAmount block_reward(const messages::BlockHeight height,
+                                   const messages::NCCValue fees) const;
 
   bool check_block_id(const messages::TaggedBlock &tagged_block) const;
 

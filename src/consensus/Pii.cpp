@@ -65,9 +65,13 @@ bool Pii::get_senders(const messages::Transaction &transaction,
     bool include_transaction_pool = false;
     if (!_ledger->get_transaction(input.id(), &tagged_transaction, tagged_block,
                                   include_transaction_pool)) {
+      LOG_WARNING << "Failed to get senders for transaction "
+                  << transaction.id();
       return false;
     }
     if (tagged_transaction.transaction().outputs_size() <= input.output_id()) {
+      LOG_WARNING << "Failed to get senders for transaction "
+                  << transaction.id();
       return false;
     }
     senders->insert(
@@ -89,6 +93,8 @@ bool Pii::add_transaction(const messages::Transaction &transaction,
       Double enthalpy;
       if (!get_enthalpy(transaction, tagged_block, sender, recipient,
                         &enthalpy)) {
+        LOG_WARNING << "Failed to get enthalpy in transaction "
+                    << transaction.id();
         return false;
       }
       if (sender != recipient) {

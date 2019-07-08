@@ -11,7 +11,6 @@
       }
     ],
     "max_connections": 3,
-    "peers_update_time": 20,
     "tcp": {
       "port": 1338,
       "endpoint": "localhost",

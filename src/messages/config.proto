@@ -69,6 +69,8 @@ message Networking {
   optional int32 peers_update_time = 3 [default = 2];
   repeated KeysPaths keys_paths = 4;
   repeated Keys keys = 5;
+  optional int32 connecting_next_update_time = 6 [default = 3];
+  optional int32 default_next_update_time = 7 [default = 7];
 }
 
 message _Config {

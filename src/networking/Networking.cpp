@@ -17,7 +17,7 @@ Networking::Networking(messages::Queue *queue, crypto::Ecc *keys,
       _dist(0, std::numeric_limits<uint32_t>::max()) {
   _queue->run();
   _transport_layer =
-      std::make_unique<Tcp>(config->tcp().port(), queue, peers, _keys);
+      std::make_unique<Tcp>(queue, peers, _keys, *config);
 }
 
 TransportLayer::SendResult Networking::send(
@@ -33,7 +33,7 @@ bool Networking::send_unicast(
 
 /**
  * count the number of active connexion (either accepted one or attempting one)
- * @return the number of active connexion
+ * \return the number of active connexion
  */
 std::size_t Networking::peer_count() const {
   return _transport_layer->peer_count();
@@ -55,14 +55,12 @@ bool Networking::connect(messages::Peer *peer) {
 
 /**
  * Find a peer associated with a connection
- * @param id an identifiant of a connection
- * @return the associated peer for the connection
+ * \param id an identifiant of a connection
+ * \return the associated peer for the connection
  */
 std::optional<messages::Peer*> Networking::find_peer(Connection::ID id) {
   return _transport_layer->find_peer(id);
 }
-
-Networking::~Networking() { LOG_DEBUG << this << " Networking killed"; }
 
 }  // namespace networking
 }  // namespace neuro

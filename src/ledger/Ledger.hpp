@@ -641,8 +641,11 @@ class Ledger {
     if (inputs_total - amount_to_send > 0) {
       auto &change = outputs.emplace_back();
       change.mutable_address()->CopyFrom(sender_address);
-      change.mutable_value()->CopyFrom(
-          messages::NCCAmount(inputs_total - amount_to_send));
+      messages::NCCValue change_value = inputs_total - amount_to_send;
+      if (fees) {
+        change_value -= fees->value();
+      }
+      change.mutable_value()->CopyFrom(messages::NCCAmount(change_value));
     }
 
     bool add_change_output = false;

@@ -63,7 +63,8 @@ messages::Transaction Simulator::random_transaction() const {
   int sender_index = rand() % keys.size();
   int recipient_index = rand() % keys.size();
   return ledger->send_ncc(keys[sender_index].key_priv(),
-                          addresses[recipient_index], RATIO_TO_SEND);
+                          addresses[recipient_index], RATIO_TO_SEND,
+                          messages::NCCAmount(1));
 }
 
 /*
@@ -105,12 +106,22 @@ messages::Block Simulator::new_block(
       last_block.block().header().id());
   header->set_height(height);
 
-  // Block reward
-  blockgen::coinbase({keys[miner_index].key_pub()},
-                     consensus->config().block_reward, block.mutable_coinbase(),
-                     height);
-
   ledger->get_transaction_pool(&block);
+
+  messages::NCCValue total_fees = 0;
+  for (const auto &transaction : block.transactions()) {
+    if (transaction.has_fees()) {
+      total_fees += transaction.fees().value();
+    }
+  }
+
+  auto block_reward = messages::NCCAmount(
+      consensus->config().block_reward.value() + total_fees);
+
+  // Block reward
+  blockgen::coinbase({keys[miner_index].key_pub()}, block_reward,
+                     block.mutable_coinbase(), height);
+
   ledger->add_denunciations(&block, last_block.branch_path());
   messages::sort_transactions(&block);
   messages::set_block_hash(&block);

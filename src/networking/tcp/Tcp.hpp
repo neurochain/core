@@ -38,6 +38,7 @@ class Tcp : public TransportLayer {
   std::thread _io_context_thread;
   ConnectionById _connections;
   mutable std::mutex _connections_mutex;
+  const messages::config::Networking &_config;
 
   void new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
                                   const boost::system::error_code &error);
@@ -57,8 +58,8 @@ class Tcp : public TransportLayer {
   Tcp(Tcp &&) = delete;
   Tcp(const Tcp &) = delete;
 
-  Tcp(const Port port, messages::Queue *queue, messages::Peers *peers,
-      crypto::Ecc *keys);
+  Tcp(messages::Queue *queue, messages::Peers *peers,
+      crypto::Ecc *keys, const messages::config::Networking &config);
   bool connect(messages::Peer *peer);
   SendResult send(std::shared_ptr<messages::Message> message) const;
   bool send_unicast(std::shared_ptr<messages::Message> message) const;

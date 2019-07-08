@@ -26,7 +26,7 @@ message Integrity {
 }
 
 message Assembly {
-  required Hash id = 1; // This id is the hash of the last block of the assembly
+  required Hash id = 1;  // This id is the hash of the last block of the assembly
   required bool finished_computation = 2;
   required int32 height = 3;
   optional Hash previous_assembly_id = 4;
