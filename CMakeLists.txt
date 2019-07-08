@@ -5,6 +5,7 @@ include(HunterGate)
 HunterGate(
   URL "https://gitlab.com/traxncc/hunter/-/archive/f4397f73231e9e476ea971418834e4537141e161/hunter-f4397f73231e9e476ea971418834e4537141e161.tar.bz2"
   SHA1 "a96d2e54ee8218f0248da804f2b4f4234f66d612"
+  LOCAL
   )
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -56,7 +57,6 @@ hunter_add_package(Protobuf)
 include(FindProtobuf)
 find_package(Protobuf CONFIG REQUIRED)
 
-set(CRYPTOPP_CROSS_COMPILE On)
 hunter_add_package(cryptopp)
 find_package(cryptopp CONFIG REQUIRED)
 
