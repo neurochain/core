@@ -24,8 +24,13 @@ Tcp::Tcp(messages::Queue *queue, messages::Peers *peers,
       _io_context(),
       _resolver(_io_context),
       _acceptor(_io_context,
+<<<<<<< HEAD
+                bai::tcp::endpoint(bai::tcp::v4(), _listening_port)) {
+=======
                 bai::tcp::endpoint(bai::tcp::v4(), _listening_port)),
+      _peers(peers),
       _config(config) {
+>>>>>>> feature/ledger
   assert(peers);
 
   while (!_acceptor.is_open()) {
