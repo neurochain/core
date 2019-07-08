@@ -3,7 +3,7 @@ FROM registry.gitlab.com/neurochaintech/core/env_dev/release:latest
 MAINTAINER trax Omar Givernaud
 LABEL Description "Generic Bot Image"
 
-# update this line to regen image: 003
+# update this line to regen image: 004
 
 USER neuro
 WORKDIR /home/neuro
