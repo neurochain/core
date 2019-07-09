@@ -7,13 +7,16 @@
 
 **method**: `GET`
 
+return the block with a the corresponding id
+
 ### Get block by height
 **URL**: `/block/height/:height`
 
-**URL Parameter**: `id` id of the block you want info on
+**URL Parameter**: `height` height of the block you want info on
 
 **method**: `GET`
 
+return the block corresponding to a certain height
 
 ### Get latest block
 **URL**: `/last_blocks/:number`
