@@ -89,10 +89,20 @@ void Connection::read_body(std::size_t body_size) {
         for (auto &body : *message->mutable_bodies()) {
           const auto type = get_type(body);
           if (type == messages::Type::kHello) {
-	    auto* hello = body.mutable_hello();
-	    hello->mutable_peer()->set_endpoint(_socket->remote_endpoint().address().to_string());
-            _remote_peer.CopyFrom(hello->peer());
-	    LOG_TRACE  << "remote ip> " <<  _socket->remote_endpoint().address().to_string() << std::endl;
+            boost::system::error_code ec;
+            const auto endpoint = _socket->remote_endpoint(ec);
+            if (ec) {
+              LOG_DEBUG << "got an hello message from disconnected endpoint "
+                        << ec.message()
+                        << std::endl;
+            } else {
+              auto *hello = body.mutable_hello();
+              hello->mutable_peer()->set_endpoint(endpoint.address().to_string());
+              _remote_peer.CopyFrom(hello->peer());
+              LOG_TRACE << "remote ip> "
+                        << _socket->remote_endpoint().address().to_string()
+                        << std::endl;
+            }
           }
         }
 
