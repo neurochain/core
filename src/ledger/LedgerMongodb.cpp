@@ -1,8 +1,8 @@
 #include "ledger/LedgerMongodb.hpp"
 #include <chrono>
 #include "common/logger.hpp"
-#include "messages/Hasher.hpp"
 #include "messages.pb.h"
+#include "messages/Hasher.hpp"
 
 namespace neuro {
 namespace ledger {
@@ -223,6 +223,7 @@ void LedgerMongodb::create_indexes() {
   _blocks.create_index(bss::document{}
                        << BLOCK + "." + HEADER + "." + PREVIOUS_BLOCK_HASH << 1
                        << bss::finalize);
+  _blocks.create_index(bss::document{} << BRANCH << 1 << bss::finalize);
   _blocks.create_index(bss::document{} << BRANCH_PATH + "." + BRANCH_IDS + ".0"
                                        << 1 << bss::finalize);
   _blocks.create_index(bss::document{} << BLOCK + "." + SCORE << 1
