@@ -74,7 +74,7 @@ class Subscriber {
         if (process) {
           cb(message->header(), body);
         } else {
-          LOG_ERROR << "Droppping message " << *message;
+          LOG_ERROR << "Dropping message ";
         }
       }
     }
