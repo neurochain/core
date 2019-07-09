@@ -1,6 +1,7 @@
 #include "messages/Address.hpp"
-#include "crypto/Hash.hpp"
+#include <cryptopp/config.h>
 #include <sstream>
+#include "crypto/Hash.hpp"
 
 namespace neuro {
 namespace messages {
@@ -35,7 +36,8 @@ std::string encode_base58(const Buffer &buffer, const std::string &version) {
 
 std::string encode_base58(const std::string &data, const std::string &version) {
   CryptoPP::Integer num;
-  num.Decode(reinterpret_cast<const byte *>(data.data()), data.size());
+  num.Decode(reinterpret_cast<const CryptoPP::byte *>(data.data()),
+             data.size());
   return encode_base58(num, version);
 }
 
@@ -58,9 +60,7 @@ Address::Address(const crypto::KeyPub &ecc_pub) {
 }
 
 Address::Address(const messages::_Address &address) : _Address(address) {}
-Address::Address(const std::string &str) {
-  set_data(str);
-}
+Address::Address(const std::string &str) { set_data(str); }
 
 Address Address::random() {
   crypto::Ecc ecc;

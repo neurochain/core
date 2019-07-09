@@ -1,10 +1,11 @@
 hunter_config(
     cryptopp
     VERSION
-    "5.6.5-neuro"
+    "8.2.0-neuro"
     URL
-    "https://github.com/hunter-packages/cryptopp/archive/v5.6.5-p0.tar.gz"
+    "https://github.com/hunter-packages/cryptopp/archive/v8.2.0-p0.tar.gz"
     SHA1
-    4258c9b49c48c433c4aa63629bc896ac9a3902e3
-    CMAKE_ARGS "CMAKE_CXX_FLAGS='-march=x86-64';CRYPTOPP_CROSS_COMPILE:BOOL=On;CRYPTOPP_NATIVE_ARCH:BOOL=Off;CRYPTOPP_CROSS_COMPILE:BOOL=On"
+    38a70c9ba970cc862b5cca0010fffdd4e56afcae
+    CMAKE_ARGS 
+    "CMAKE_CXX_FLAGS='-march=x86-64'"
 )
