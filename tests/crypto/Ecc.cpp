@@ -1,5 +1,5 @@
 #include "crypto/Ecc.hpp"
-#include <dsa.h>
+#include <cryptopp/dsa.h>
 #include <gtest/gtest.h>
 #include "common/logger.hpp"
 
@@ -78,7 +78,7 @@ TEST(Ecc, sign_verify) {
 
   Buffer signature(0x40 /*DSA_P1363 signature size*/, 0);
   CryptoPP::DSAConvertSignatureFormat(
-      (byte *)signature.data(), signature.size(), CryptoPP::DSA_P1363,
+      (CryptoPP::byte *)signature.data(), signature.size(), CryptoPP::DSA_P1363,
       derSignature, sizeof(derSignature), CryptoPP::DSA_DER);
 
   // Hola mundo desde NeuroChainTech
