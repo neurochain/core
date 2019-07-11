@@ -36,7 +36,7 @@ message Hash {
   enum Type { SHA256 = 0; }
 
   required Type type = 1 [ default = SHA256 ];
-  required string data = 2;
+  required bytes data = 2;
 }
 
 message _Address {
