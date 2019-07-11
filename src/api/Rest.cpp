@@ -64,6 +64,21 @@ void Rest::shutdown() {
   _httpEndpoint->shutdown();
 }
 
+void Rest::send(Response &response, const messages::Packet &packet) {
+  response.headers().add<Http::Header::AccessControlAllowOrigin>("*");
+  response.send(Pistache::Http::Code::Ok, messages::to_json(packet));
+}
+
+void Rest::send(Response &response, const std::string &value) {
+  response.headers().add<Http::Header::AccessControlAllowOrigin>("*");
+  response.send(Pistache::Http::Code::Ok, value);
+}
+
+void Rest::bad_request(Response &response, const std::string message) {
+  response.headers().add<Http::Header::AccessControlAllowOrigin>("*");
+  response.send(Pistache::Http::Code::Bad_Request, message);
+}
+
 void Rest::setupRoutes() {
   using namespace ::Pistache::Rest::Routes;
   // Routes::Post(router, "/record/:name/:value?",
@@ -86,17 +101,17 @@ void Rest::setupRoutes() {
 void Rest::get_balance(const Request& req, Response res) {
   const messages::Address address(req.param(":address").as<std::string>());
   const auto balance_amount = balance(address);
-  res.send(Pistache::Http::Code::Ok, to_json(balance_amount));
+  send(res, balance_amount);
 }
 
 void  Rest::get_ready(const Request& req, Response res) {
-  res.send(Pistache::Http::Code::Ok, "{ok: 1}");
+  send(res, "{ok: 1}");
 }
 
 void Rest::get_transaction(const Request& req, Response res) {
   messages::Hasher transaction_id(req.param(":id").as<std::string>());
   messages::Transaction transaction = Api::transaction(transaction_id);
-  res.send(Pistache::Http::Code::Ok, to_json(transaction));
+  send(res, transaction);
 }
 
 void Rest::get_create_transaction(const Request& req, Response res) {
@@ -106,7 +121,7 @@ void Rest::get_create_transaction(const Request& req, Response res) {
   messages::Transaction transaction;
   messages::from_json(req.body(), &transaction);
   if(!set_inputs(&transaction, address, messages::NCCAmount{fees})) {
-    res.send(Pistache::Http::Code::Bad_Request, "Could not set inputs, insuffisant funds?");
+    bad_request(res, "Could not set inputs, insuffisant funds?");
     return;
   }
 
@@ -115,17 +130,16 @@ void Rest::get_create_transaction(const Request& req, Response res) {
 
   const auto transaction_opt = messages::to_buffer(transaction);
   if(!transaction_opt) {
-    res.send(Pistache::Http::Code::Bad_Request, "Could not serialize transaction");
+    bad_request(res, "Could not serialize transaction");
     return;
   }
-  res.send(Pistache::Http::Code::Ok, transaction_opt->to_hex());
+  send(res, transaction_opt->to_hex());
 }
 
 void Rest::publish(const Request &req, Response res) {
   messages::Publish publish_message;
   if (!messages::from_json(req.body(), &publish_message)) {
-    res.send(Pistache::Http::Code::Bad_Request,
-                  "Could not parse body");
+    bad_request(res, "Could not parse body");
   }
 
   const auto transaction_bin =
@@ -136,8 +150,7 @@ void Rest::publish(const Request &req, Response res) {
 
   messages::Transaction transaction;
   if (!messages::from_buffer(transaction_bin, &transaction)) {
-    res.send(Pistache::Http::Code::Bad_Request,
-                  "Could not parse transaction");
+    bad_request(res, "Could not parse transaction");
     return;
   }
 
@@ -149,53 +162,53 @@ void Rest::publish(const Request &req, Response res) {
                                                  signature.size());
 
   if (!crypto::verify(transaction)) {
-    res.send(Pistache::Http::Code::Bad_Request, "Bad signature");
+    bad_request(res, "Bad signature");
     return;
   }
 
   if (!transaction_publish(transaction)) {
-    res.send(Pistache::Http::Code::Bad_Request,
-         "Could not publish transaction");
+    bad_request(res, "Could not publish transaction");
     return;
   }
 
+  res.headers().add<Http::Header::AccessControlAllowOrigin>("*");
   res.send(Pistache::Http::Code::Ok);
 }
 
 void Rest::get_unspent_transaction_list(const Request& req, Response res) {
   const messages::Address address(req.param(":address").as<std::string>());
   auto unspent_transaction_list = list_unspent_transaction(address);
-  res.send(Pistache::Http::Code::Ok, to_json(unspent_transaction_list));
+  send(res, unspent_transaction_list);
 }
 
 void Rest::get_block_by_id(const Rest::Request &req, Rest::Response res) {
   messages::Hasher block_id(req.param(":id").as<std::string>());
   auto block = Api::block(block_id);
-  res.send(Pistache::Http::Code::Ok, to_json(block));
+  send(res, block);
 }
 
 void Rest::get_block_by_height(const Rest::Request &req, Rest::Response res) {
   const auto block_height(req.param(":height").as<messages::BlockHeight>());
   auto block = Api::block(block_height);
-  res.send(Pistache::Http::Code::Ok, to_json(block));
+  send(res, block);
 }
 
 void Rest::get_last_blocks(const Rest::Request &req, Rest::Response res) {
   auto nb_blocks = req.param(":nb_blocks").as<std::size_t>();
   auto blocks = Api::last_blocks(nb_blocks);
-  res.send(Pistache::Http::Code::Ok, to_json(blocks));
+  send(res, blocks);
 }
 
 void Rest::get_total_nb_transactions(const Rest::Request &req, Rest::Response res) {
-  res.send(Pistache::Http::Code::Ok, std::to_string(Api::total_nb_transactions()));
+  send(res, std::to_string(Api::total_nb_transactions()));
 }
 
 void Rest::get_total_nb_blocks(const Rest::Request &req, Rest::Response res) {
-  res.send(Pistache::Http::Code::Ok, std::to_string(Api::total_nb_blocks()));
+  send(res, std::to_string(Api::total_nb_blocks()));
 }
 
 void Rest::get_peers(const Rest::Request& request, Rest::Response res) {
-  res.send(Pistache::Http::Code::Ok, to_json(Api::peers()));
+  send(res, to_json(Api::peers()));
 }
 
 Rest::~Rest() {

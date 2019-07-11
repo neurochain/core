@@ -27,6 +27,9 @@ class Rest : public Api {
   void init();
   void start();
   void shutdown();
+  void send(Response &response, const messages::Packet &packet);
+  void send(Response &response, const std::string &value);
+  void bad_request(Response &response, const std::string message);
   void setupRoutes();
 
   void get_balance(const Request& request, Response response);
