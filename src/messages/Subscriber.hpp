@@ -35,7 +35,7 @@ class Subscriber {
   void unsubscribe() { _queue->unsubscribe(this); }
 
   bool is_new_body(const std::time_t current_time, const messages::Body &body) {
-    // TOOD move this to the queue
+    // TODO move this to the queue
     Buffer serialized_body;
     to_buffer(body, &serialized_body);
 
@@ -74,7 +74,7 @@ class Subscriber {
         if (process) {
           cb(message->header(), body);
         } else {
-          LOG_ERROR << "Dropping message ";
+          LOG_ERROR << "Dropping message because message is old " << *message;
         }
       }
     }

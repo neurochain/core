@@ -35,11 +35,14 @@
     ]
   },
   "database": {
-    "url": "mongodb://localhost:27017/neuro",
+    "url": "mongodb://localhost:27017/testnet",
     "dbName": "testnet",
     "block0File": {
       "blockFormat": "PROTO",
       "blockPath": "conf/data.0.testnet"
     }
-  }
+  },
+    "rest": {
+	"port": 8080
+    }
 }
