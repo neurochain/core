@@ -76,6 +76,7 @@ void to_json(const Packet &packet, std::string *output) {
   }
 }
 
+void to_json(const BlockID &block_id, std::string *output) {
   const auto& type = messages::Hash_Type_Name(block_id.type());
   const auto& data = block_id.data();
   std::stringstream ss;
