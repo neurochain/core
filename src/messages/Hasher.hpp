@@ -18,7 +18,7 @@ class Hasher : public messages::Hash {
     Buffer hash;
     crypto::hash_sha3_256(data, &hash);
     this->set_type(Hash::SHA256);
-    this->set_data(hash.data(), hash.size());
+    this->set_data(hash.str());
   }
 
   explicit Hasher(const Buffer &data) { from_buffer(data); }
@@ -33,7 +33,7 @@ class Hasher : public messages::Hash {
     ecc_pub.save(&data);
     const auto tmp = crypto::hash_sha3_256(data);
     this->set_type(Hash::SHA256);
-    this->set_data(tmp.data(), tmp.size());
+    this->set_data(tmp.str());
   }
 
   explicit Hasher(const Packet &packet) {

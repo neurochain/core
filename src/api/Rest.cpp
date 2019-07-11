@@ -158,8 +158,7 @@ void Rest::publish(const Request &req, Response res) {
   auto input_signature = transaction.add_signatures();
   input_signature->mutable_signature()->set_type(messages::Hash::SHA256);
   key_pub.save(input_signature->mutable_key_pub());
-  input_signature->mutable_signature()->set_data(signature.data(),
-                                                 signature.size());
+  input_signature->mutable_signature()->set_data(signature.str());
 
   if (!crypto::verify(transaction)) {
     bad_request(res, "Bad signature");
