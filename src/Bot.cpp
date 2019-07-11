@@ -80,7 +80,10 @@ void Bot::handler_block(const messages::Header &header,
                         const messages::Body &body) {
   // bool reply_message = header.has_request_id();
   LOG_TRACE;
-  _consensus->add_block(body.block());
+  if (!_consensus->add_block(body.block())) {
+    LOG_WARNING << "Consensus rejected block";
+    return;
+  }
   update_ledger();
 
   if (header.has_request_id()) {
