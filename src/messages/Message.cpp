@@ -76,20 +76,6 @@ void to_json(const Packet &packet, std::string *output) {
   }
 }
 
-void to_json(const BlockID &block_id, std::string *output) {
-  const auto& type = messages::Hash_Type_Name(block_id.type());
-  const auto& data = block_id.data();
-  std::stringstream ss;
-  ss << R"({"type":")" << type << R"(","data":")" << data << "\"}";
-  *output = ss.str();
-}
-
-std::string to_json(const BlockID &block_id) {
-  std::string output;
-  to_json(block_id, &output);
-  return output;
-}
-
 std::string to_json(const Packet &packet) {
   std::string output;
   to_json(packet, &output);
@@ -100,13 +86,6 @@ bsoncxx::document::value to_bson(const Packet &packet) {
   std::string json;
   to_json(packet, &json);
   return bsoncxx::from_json(json);
-}
-
-std::ostream &operator<<(std::ostream &os, const BlockID &block_id) {
-  std::string buff;
-  to_json(block_id, &buff);
-  os << buff;
-  return os;
 }
 
 std::ostream &operator<<(std::ostream &os, const Packet &packet) {

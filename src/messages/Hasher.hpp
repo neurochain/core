@@ -3,9 +3,10 @@
 
 #include "common/Buffer.hpp"
 #include "crypto/Ecc.hpp"
-#include "crypto/KeyPub.hpp"
 #include "crypto/Hash.hpp"
+#include "crypto/KeyPub.hpp"
 #include "messages/Message.hpp"
+#include <boost/beast.hpp>
 
 namespace neuro {
 namespace messages {
@@ -23,9 +24,9 @@ class Hasher : public messages::Hash {
 
   explicit Hasher(const Buffer &data) { from_buffer(data); }
 
-  explicit Hasher(const std::string &hash) {
+  explicit Hasher(const std::string &base64hash) {
     this->set_type(Hash::SHA256);
-    this->set_data(hash);
+    this->set_data(boost::beast::detail::base64_decode(base64hash));
   }
 
   explicit Hasher(const crypto::KeyPub &ecc_pub) {

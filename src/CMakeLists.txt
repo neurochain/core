@@ -101,6 +101,7 @@ target_link_libraries(core
   Boost::system
   Boost::filesystem
   Boost::thread
+  Beast::Beast
 
   cpr::cpr
 

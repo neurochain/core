@@ -458,8 +458,7 @@ bool LedgerMongodb::get_block(const messages::BlockID &id,
                               messages::Block *block,
                               bool include_transactions) const {
   std::lock_guard lock(_ledger_mutex);
-  const auto bson_id = bsoncxx::from_json(to_json(id));
-  auto query = bss::document{} << BLOCK + "." + HEADER + "." + ID << bson_id
+  auto query = bss::document{} << BLOCK + "." + HEADER + "." + ID << to_bson(id)
                                << bss::finalize;
   auto result = _blocks.find_one(std::move(query), projection(BLOCK));
   if (!result) {
@@ -1118,7 +1117,7 @@ bool LedgerMongodb::update_main_branch() {
   }
   from_bson(bson_block->view(), &main_branch_tip);
 
-  assert(main_branch_tip.branch() != messages::Branch::DETACHED);
+//  assert(main_branch_tip.branch() != messages::Branch::DETACHED);
   if (main_branch_tip.branch() == messages::Branch::MAIN) {
     return true;
   }

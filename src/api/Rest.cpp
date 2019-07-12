@@ -7,40 +7,6 @@
 
 namespace neuro::api {
 
-//  const auto generate_keys_route = [this](Onion::Request &req,
-//                                          Onion::Response &res) {
-//    messages::GeneratedKeys generated_keys = generate_keys();
-//    res << generated_keys;
-//    return OCS_PROCESSED;
-//  };
-//
-//  const auto faucet_send_route = [this](Onion::Request &req,
-//                                        Onion::Response &res) {
-//    const auto faucet_amount = _config.faucet_amount();
-//    const auto address_str = req.query("address", "");
-//    LOG_INFO << "ADDRESS " << address_str;
-//    const messages::Address address(address_str);
-//    if (_ledger->has_received_transaction(address)) {
-//      res << "{\"error\": \"The given address has already received some "
-//             "coins.\"}";
-//      return OCS_PROCESSED;
-//    } else {
-//      messages::NCCAmount amount;
-//      amount.set_value(faucet_amount);
-//      messages::Transaction transaction =
-//          _ledger->build_transaction(address, amount, _keys->key_priv());
-//      _bot->publish_transaction(transaction);
-//      res << transaction;
-//      return OCS_PROCESSED;
-//    }
-//  };
-//
-//  _root->add("generate_keys", generate_keys_route);
-//
-//  if (_config.has_faucet_amount()) {
-//    _root->add("faucet_send", faucet_send_route);
-//  }
-
 Rest::Rest(const messages::config::Rest &config, Bot *bot)
     : Api::Api(bot), _httpEndpoint(std::make_shared<Http::Endpoint>(
                          Address(Ipv4::any(), config.port()))) {

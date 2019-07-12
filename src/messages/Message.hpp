@@ -49,12 +49,9 @@ bool from_bson(const bsoncxx::document::view &doc, Packet *packet);
 bool to_buffer(const Packet &packet, Buffer *buffer);
 std::optional<Buffer> to_buffer(const Packet &packet);
 void to_json(const Packet &packet, std::string *output);
-void to_json(const BlockID &block_id, std::string *output);
 std::string to_json(const Packet &packet);
-std::string to_json(const BlockID &block_id);
 bsoncxx::document::value to_bson(const Packet &packet);
 std::ostream &operator<<(std::ostream &os, const Packet &packet);
-std::ostream &operator<<(std::ostream &os, const BlockID &packet);
 
 template <typename T>
 std::ostream &operator<<(
