@@ -27,7 +27,11 @@ class Rest : public Api {
   void init();
   void start();
   void shutdown();
+  template<class T>
+  std::string to_json(const google::protobuf::RepeatedPtrField<T>& fields);
   void send(Response &response, const messages::Packet &packet);
+  void send(Response &response, const messages::Transaction &transaction);
+  void send(Response &response, const messages::Block &block);
   void send(Response &response, const std::string &value);
   void bad_request(Response &response, const std::string& message);
   void setupRoutes();

@@ -40,6 +40,46 @@ void Rest::send(Response &response, const std::string &value) {
   response.send(Pistache::Http::Code::Ok, value);
 }
 
+template<class T>
+std::string Rest::to_json(const google::protobuf::RepeatedPtrField<T>& fields) {
+  std::stringstream ss;
+  ss << "[";
+  for (auto i = 0; i < fields.size(); i++) {
+    ss << fields[i];
+    if (i+1 < fields.size()) {
+      ss << ',';
+    }
+  }
+  ss << "]";
+  return ss.str();
+}
+
+void Rest::send(Response &response, const messages::Transaction &transaction) {
+  std::stringstream ss;
+  ss << "{\"id\":" << R"({"type":"SHA256","data":")" + messages::encode_base58(transaction.id().data()) + "\"},";
+  ss << "\"inputs\":" << to_json(transaction.inputs()) << ",";
+  ss << "\"outputs\":" << to_json(transaction.outputs()) << ",";
+  ss << "\"signatures\":" << to_json(transaction.signatures()) << "}";
+
+  response.headers().add<Http::Header::AccessControlAllowOrigin>("*");
+  response.send(Pistache::Http::Code::Ok, ss.str());
+}
+
+void Rest::send(Response &response, const messages::Block &block) {
+  std::stringstream ss;
+  ss << R"({"header":)";
+  ss << "{\"id\":" << R"({"type":"SHA256","data":")" + messages::encode_base58(block.header().id().data()) + "\"},";
+  ss << "\"timestamp\":" << block.header().timestamp() << ",";
+  ss << "\"previousBlockHash\":" << block.header().previous_block_hash() << ",";
+  ss << "\"author\":" << block.header().author() << ",";
+  ss << "\"height\":" << block.header().height() << "},";
+  ss << "\"transactions\":" << to_json(block.transactions()) << ",";
+  ss << "\"coinbase\":" << block.coinbase() << "}";
+
+  response.headers().add<Http::Header::AccessControlAllowOrigin>("*");
+  response.send(Pistache::Http::Code::Ok, ss.str());
+}
+
 void Rest::bad_request(Response &response, const std::string& message) {
   response.headers().add<Http::Header::AccessControlAllowOrigin>("*");
   response.send(Pistache::Http::Code::Bad_Request, message);
@@ -179,7 +219,7 @@ void Rest::get_total_nb_blocks(const Rest::Request &req, Rest::Response res) {
 }
 
 void Rest::get_peers(const Rest::Request& request, Rest::Response res) {
-  send(res, to_json(Api::peers()));
+  send(res, messages::to_json(Api::peers()));
 }
 
 Rest::~Rest() {
