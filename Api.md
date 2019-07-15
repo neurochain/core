@@ -1,17 +1,23 @@
 # Rest API
 ## Block
 ### Get block by id
-**URL**: `/block/id/:id`
+**URL**: `/block/id`
 
-**URL Parameter**: `id` id of the block you want info on
+**method**: `POST`
 
-**method**: `GET`
+return the block with the corresponding id
 
-return the block with a the corresponding id
+**data**:
+```
+{
+    type: SHA256,
+    data: <block_id>
+}
+```
 
 **example**
 ```
-$ curl localhost:8080/block/id/ehLcF3IgQAOf2LqQtcIKnYsjdF4JQ5SgANSiHiqc3J4=
+$ curl localhost:8080/block/id -d '{"type":"SHA256", "data":"ehLcF3IgQAOf2LqQtcIKnYsjdF4JQ5SgANSiHiqc3J4="}'
 {"header":{"id":{"type":"SHA256","data":"ehLcF3IgQAOf2LqQtcIKnYsjdF4JQ5SgANSiHiqc3J4="},"timestamp":{"data":1562759886},"previousBlockHash":{"type":"SHA256","data":"QCUzO1SN+I+rkwn5VGv3npeH+JVqxLTqdo0u+W/jEHY="},"author":{"signature":{"type":"SHA256","data":"Q9/XCc/ka5AuUJ1wLJUvIkQjbqm/RyEtCN3TeMfwKEnWBu+mdWSV5XzK2gsGdIa6EDvpkPd9A6x2XVg8hPVf7Q=="},"keyPub":{"type":"ECP256K1","rawData":"Anjy3xeuFab7G1v7A8HBPPaTO/oYqVGdb0nOJevecP/h"}},"height":161616},"transactions":[{"id":{"type":"SHA256","data":"Z1+uk6pCAhahvafiiUvzNL8giag/Yw5VJUayXb+DMYc="},"inputs":[{"id":{"type":"SHA256","data":"T1u9AcC1e/tJfdP0laqAlzPZ+MB94/3KOLx5uNG3D+g="},"outputId":1,"signatureId":0},{"id":{"type":"SHA256","data":"7Ku6xw/kxD5aalMfm/T0OGC0t5ki2LyLO09NUhboAeE="},"outputId":0,"signatureId":0}],"outputs":[{"address":{"data":"N7kmiqPSAtzgzMLRFD6GbqamhdYXhq4ACD"},"value":{"value":"50"}},{"address":{"data":"NBjqvjJrgyh2M3BtQL1nBtsGf9ky384Eud"},"value":{"value":"51"}}],"signatures":[{"signature":{"type":"SHA256","data":"GjXQe9mfBUMON7Ams+tdTPjY2kD6jZt2siwtwucw02P1pYiG6jjEknI8zm72Ks6AG53EIQg0N/Rks1VGsQn8gw=="},"keyPub":{"type":"ECP256K1","rawData":"Anjy3xeuFab7G1v7A8HBPPaTO/oYqVGdb0nOJevecP/h"}},{"signature":{"type":"SHA256","data":"iL1fQZhODFVln4mZuN0Kh6cuDn1Ne28N7K6AdMWjW9yNug48ZeP7fnTxwhbRcAvUtsdCXUBHXN9zaISzn7Pxhg=="},"keyPub":{"type":"ECP256K1","rawData":"Anjy3xeuFab7G1v7A8HBPPaTO/oYqVGdb0nOJevecP/h"}}]}],"coinbase":{"id":{"type":"SHA256","data":"WJygVld/K9I4Nic71/v1rcKx2V+IGuQOCAEWLH6uY5I="},"outputs":[{"address":{"data":"NBjqvjJrgyh2M3BtQL1nBtsGf9ky384Eud"},"value":{"value":"100"},"data":""}],"coinbaseHeight":161616}}
 ```
 
@@ -59,19 +65,27 @@ $ curl http://52.47.129.155:8080/total_nb_blocks
 
 ## Transaction
 ### Get Transaction by id
-**URL**: `/transaction/:id`
+**URL**: `/transaction/`
 
-**URL Parameter**: `id` id of transaction you want info on
+**method**: `POST`
 
-**method**: `GET`
+**data**:
+```
+{
+    type: SHA256,
+    data: <transaction_id>
+}
+```
 
 **example**:
 ```
-$ curl localhost:8080/transaction/h75iSkWlN53Z78ejSHEy4wx5qV4glWnNwqK8q+ICBFQ=
+$ curl localhost:8080/transaction/ -d '{"type":"SHA256", "data":"h75iSkWlN53Z78ejSHEy4wx5qV4glWnNwqK8q+ICBFQ="}'
 {"id":{"type":"SHA256","data":"h75iSkWlN53Z78ejSHEy4wx5qV4glWnNwqK8q+ICBFQ="},"inputs":[{"id":{"type":"SHA256","data":"iN0DNP+1hOlA3CB2c15BUHfC8OVnFd4MDvfPPhZg78g="},"outputId":0,"signatureId":0},{"id":{"type":"SHA256","data":"tDfNuNuzlkuy3FYcVoCvDLMmifTeXEPbgah1xHHjHU0="},"outputId":1,"signatureId":0}],"outputs":[{"address":{"data":"NH5Sr4NDcLDdEd5Gc6byrA2Rxh6ndR5E2N"},"value":{"value":"1"}},{"address":{"data":"N5U2TQWMWfXF5z5bBVpnT4KzxpkYuFGnho"},"value":{"value":"2"}}],"signatures":[{"signature":{"type":"SHA256","data":"hOGo2sNhLVYgUmVLXGzUbaCvaP5xrqX9OmNpKmTsUC9T51MpA+mbf6XvkxfKD9euCMj7gvkYqFUH/k4+vs8sAw=="},"keyPub":{"type":"ECP256K1","rawData":"AgNEbgj8H4laaNQlIwH0rXiG+KQWEjDV5cBHCMkQ5X+i"}},{"signature":{"type":"SHA256","data":"NWGRS4rLxCf2sXCKFzMS7jt7nzH1DWy7PwVr+Jcn3dBFZCdRiE+9shSj5lXwgmzjnTqrhllGBjR0KAtsWrDJ+w=="},"keyPub":{"type":"ECP256K1","rawData":"AgNEbgj8H4laaNQlIwH0rXiG+KQWEjDV5cBHCMkQ5X+i"}}]}
 ```
 
 ### Get a list of transaction
+// slow -> need pagination N9i6KhU5mUPrS3uTQCtwTNeEztRM318Cik
+// can make bot crash
 **URL**: `/list_transactions/:address`
 
 **URL Parameter**: `address` address of wallet to list transaction

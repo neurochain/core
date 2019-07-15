@@ -40,7 +40,7 @@ void Rest::send(Response &response, const std::string &value) {
   response.send(Pistache::Http::Code::Ok, value);
 }
 
-void Rest::bad_request(Response &response, const std::string message) {
+void Rest::bad_request(Response &response, const std::string& message) {
   response.headers().add<Http::Header::AccessControlAllowOrigin>("*");
   response.send(Pistache::Http::Code::Bad_Request, message);
 }
@@ -55,8 +55,8 @@ void Rest::setupRoutes() {
        bind(&Rest::get_create_transaction, this));
   Post(_router, "/publish", bind(&Rest::publish, this));
   Get(_router, "/list_transactions/:address", bind(&Rest::get_unspent_transaction_list, this));
-  Get(_router, "/transaction/:id", bind(&Rest::get_transaction, this));
-  Get(_router, "/block/id/:id", bind(&Rest::get_block_by_id, this));
+  Post(_router, "/transaction/", bind(&Rest::get_transaction, this));
+  Post(_router, "/block/id", bind(&Rest::get_block_by_id, this));
   Get(_router, "/block/height/:height", bind(&Rest::get_block_by_height, this));
   Get(_router, "/last_blocks/:nb_blocks", bind(&Rest::get_last_blocks, this));
   Get(_router, "/total_nb_transactions", bind(&Rest::get_total_nb_transactions, this));
@@ -75,7 +75,10 @@ void  Rest::get_ready(const Request& req, Response res) {
 }
 
 void Rest::get_transaction(const Request& req, Response res) {
-  messages::Hasher transaction_id(req.param(":id").as<std::string>());
+  messages::Hasher transaction_id;
+  if (!messages::from_json(req.body(), &transaction_id)) {
+    bad_request(res, "could not parse body");
+  }
   messages::Transaction transaction = Api::transaction(transaction_id);
   send(res, transaction);
 }
@@ -147,7 +150,10 @@ void Rest::get_unspent_transaction_list(const Request& req, Response res) {
 }
 
 void Rest::get_block_by_id(const Rest::Request &req, Rest::Response res) {
-  messages::Hasher block_id(req.param(":id").as<std::string>());
+  messages::Hasher block_id;
+  if (!messages::from_json(req.body(), &block_id)) {
+    bad_request(res, "could not parse body");
+  }
   auto block = Api::block(block_id);
   send(res, block);
 }
