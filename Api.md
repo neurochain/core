@@ -84,8 +84,6 @@ $ curl localhost:8080/transaction/ -d '{"type":"SHA256", "data":"h75iSkWlN53Z78e
 ```
 
 ### Get a list of transaction
-// slow -> need pagination N9i6KhU5mUPrS3uTQCtwTNeEztRM318Cik
-// can make bot crash
 **URL**: `/list_transactions/:address`
 
 **URL Parameter**: `address` address of wallet to list transaction

@@ -12,7 +12,7 @@ namespace neuro {
 namespace messages {
 
 class Hasher : public messages::Hash {
- public:
+public:
   Hasher() {}
 
   void from_buffer(const Buffer &data) {
@@ -23,11 +23,6 @@ class Hasher : public messages::Hash {
   }
 
   explicit Hasher(const Buffer &data) { from_buffer(data); }
-
-  explicit Hasher(const std::string &base64hash) {
-    this->set_type(Hash::SHA256);
-    this->set_data(boost::beast::detail::base64_decode(base64hash));
-  }
 
   explicit Hasher(const crypto::KeyPub &ecc_pub) {
     Buffer data;

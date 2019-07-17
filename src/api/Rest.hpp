@@ -29,6 +29,7 @@ class Rest : public Api {
   void shutdown();
   template<class T>
   std::string to_json(const google::protobuf::RepeatedPtrField<T>& fields);
+  std::string to_json(const neuro::messages::Hash &hash);
   void send(Response &response, const messages::Packet &packet);
   void send(Response &response, const messages::Transaction &transaction);
   void send(Response &response, const messages::Block &block);

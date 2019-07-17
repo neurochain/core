@@ -15,8 +15,10 @@ Rest::Rest(const messages::config::Rest &config, Bot *bot)
 }
 
 void Rest::init() {
-  auto opts =
-      Http::Endpoint::options().threads(1).maxRequestSize(1024 * 1024); // 1Mio
+  auto opts = Http::Endpoint::options()
+                  .threads(1)
+                  .maxRequestSize(1024 * 1024) // 1Mio
+                  .flags(Tcp::Options::ReuseAddr);
   _httpEndpoint->init(opts);
   setupRoutes();
 }
@@ -40,6 +42,10 @@ void Rest::send(Response &response, const std::string &value) {
   response.send(Pistache::Http::Code::Ok, value);
 }
 
+std::string Rest::to_json(const neuro::messages::Hash &hash) {
+  return R"({"type":"SHA256","data":")" + messages::encode_base58(hash.data()) + "\"}";
+}
+
 template<class T>
 std::string Rest::to_json(const google::protobuf::RepeatedPtrField<T>& fields) {
   std::stringstream ss;
@@ -56,26 +62,34 @@ std::string Rest::to_json(const google::protobuf::RepeatedPtrField<T>& fields) {
 
 void Rest::send(Response &response, const messages::Transaction &transaction) {
   std::stringstream ss;
-  ss << "{\"id\":" << R"({"type":"SHA256","data":")" + messages::encode_base58(transaction.id().data()) + "\"},";
-  ss << "\"inputs\":" << to_json(transaction.inputs()) << ",";
-  ss << "\"outputs\":" << to_json(transaction.outputs()) << ",";
-  ss << "\"signatures\":" << to_json(transaction.signatures()) << "}";
-
+  ss << "{";
+  if (transaction.has_id()) {
+    ss << "\"id\":" << to_json(transaction.id()) << ",";
+    ss << "\"inputs\":" << to_json(transaction.inputs()) << ",";
+    ss << "\"outputs\":" << to_json(transaction.outputs()) << ",";
+    ss << "\"signatures\":" << to_json(transaction.signatures());
+  }
+  ss << "}";
   response.headers().add<Http::Header::AccessControlAllowOrigin>("*");
   response.send(Pistache::Http::Code::Ok, ss.str());
 }
 
 void Rest::send(Response &response, const messages::Block &block) {
   std::stringstream ss;
-  ss << R"({"header":)";
-  ss << "{\"id\":" << R"({"type":"SHA256","data":")" + messages::encode_base58(block.header().id().data()) + "\"},";
-  ss << "\"timestamp\":" << block.header().timestamp() << ",";
-  ss << "\"previousBlockHash\":" << block.header().previous_block_hash() << ",";
-  ss << "\"author\":" << block.header().author() << ",";
-  ss << "\"height\":" << block.header().height() << "},";
-  ss << "\"transactions\":" << to_json(block.transactions()) << ",";
-  ss << "\"coinbase\":" << block.coinbase() << "}";
+  ss << "{";
+  if (block.has_header()) {
+    ss << R"("header":)";
+    ss << "{\"id\":" << to_json(block.header().id()) << ",";
+    ss << "\"timestamp\":" << block.header().timestamp() << ",";
+    ss << "\"previousBlockHash\":" << block.header().previous_block_hash()
+       << ",";
+    ss << "\"author\":" << block.header().author() << ",";
+    ss << "\"height\":" << block.header().height() << "},";
 
+    ss << "\"transactions\":" << to_json(block.transactions()) << ",";
+    ss << "\"coinbase\":" << block.coinbase();
+  }
+  ss << "}";
   response.headers().add<Http::Header::AccessControlAllowOrigin>("*");
   response.send(Pistache::Http::Code::Ok, ss.str());
 }
@@ -110,12 +124,12 @@ void Rest::get_balance(const Request& req, Response res) {
   send(res, balance_amount);
 }
 
-void  Rest::get_ready(const Request& req, Response res) {
+void Rest::get_ready(const Request& req, Response res) {
   send(res, "{ok: 1}");
 }
 
 void Rest::get_transaction(const Request& req, Response res) {
-  messages::Hasher transaction_id;
+  messages::Hash transaction_id;
   if (!messages::from_json(req.body(), &transaction_id)) {
     bad_request(res, "could not parse body");
   }
