@@ -133,6 +133,9 @@ void Rest::get_transaction(const Request& req, Response res) {
   if (!messages::from_json(req.body(), &transaction_id)) {
     bad_request(res, "could not parse body");
   }
+
+  auto data = to_internal_id(transaction_id.data());
+  transaction_id.set_data(data);
   messages::Transaction transaction = Api::transaction(transaction_id);
   send(res, transaction);
 }
@@ -208,6 +211,8 @@ void Rest::get_block_by_id(const Rest::Request &req, Rest::Response res) {
   if (!messages::from_json(req.body(), &block_id)) {
     bad_request(res, "could not parse body");
   }
+  auto data = to_internal_id(block_id.data());
+  block_id.set_data(data);
   auto block = Api::block(block_id);
   send(res, block);
 }
@@ -234,6 +239,17 @@ void Rest::get_total_nb_blocks(const Rest::Request &req, Rest::Response res) {
 
 void Rest::get_peers(const Rest::Request& request, Rest::Response res) {
   send(res, messages::to_json(Api::peers()));
+}
+
+/**
+ * decode a base58 string encoded by protobuf to*
+ * a format usable by the ledger
+ * \param id an id comming from protobuf Hash
+ * \return an id to replace in an Hash
+ */
+std::string Rest::to_internal_id(const std::string &id) {
+  return boost::beast::detail::base64_decode(encode_base64(
+      messages::decode_base58(boost::beast::detail::base64_encode(id))));
 }
 
 Rest::~Rest() {
