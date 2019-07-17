@@ -700,10 +700,8 @@ bool LedgerMongodb::get_transaction(const messages::TransactionID &id,
   // TODO this will return a bad height if the transaction is in 2 blocks
   // but is the height really needed???
   std::lock_guard lock(_ledger_mutex);
-  const auto bson_id = bsoncxx::from_json(to_json(id));
   auto query_transaction = bss::document{} << TRANSACTION + "." + ID
-                                           << bson_id << bss::finalize;
-
+                                           << to_bson(id) << bss::finalize;
   auto bson_transactions =
       _transactions.find(std::move(query_transaction), remove_OID());
 

@@ -16,28 +16,18 @@ namespace neuro {
 class Bot;
 namespace api {
 
+namespace test {
+  class Rest;
+};
+
+std::string to_internal_id(const std::string &id);
+const std::string B64ALPHABET =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+std::string encode_base64(const CryptoPP::Integer &num);
+
+
 class Rest : public Api {
-  private:
-
-  const std::string B64ALPHABET =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
-  std::string encode_base64(const CryptoPP::Integer &num) {
-    CryptoPP::Integer padded_num = num << (6 - num.BitCount() % 6);
-    std::stringstream encoded_stream;
-    CryptoPP::Integer quotient;
-    CryptoPP::Integer remainder;
-    while (padded_num > 0) {
-      CryptoPP::Integer::DivideByPowerOf2(remainder, quotient, padded_num, 6);
-      encoded_stream << B64ALPHABET[remainder.ConvertToLong()];
-      padded_num = quotient;
-    }
-    std::string encoded = encoded_stream.str();
-    std::reverse(encoded.begin(), encoded.end());
-    encoded += std::string(4 - encoded.size() % 4, '=');
-    return encoded;
-  }
-
+private:
   using Request = Pistache::Rest::Request;
   using Response = Pistache::Http::ResponseWriter;
    //  Api *_api;
@@ -70,10 +60,11 @@ class Rest : public Api {
   void get_total_nb_blocks(const Request& request, Response response);
   void get_peers(const Request& request, Response response);
 
-  std::string to_internal_id(const std::string &id);
 public:
   Rest(const messages::config::Rest &config, Bot *bot);
   ~Rest();
+
+  friend class test::Rest;
 };
 
 }  // namespace api

@@ -242,14 +242,35 @@ void Rest::get_peers(const Rest::Request& request, Rest::Response res) {
 }
 
 /**
- * decode a base58 string encoded by protobuf to*
+ * decode a base58 string encoded by protobuf to
  * a format usable by the ledger
  * \param id an id comming from protobuf Hash
  * \return an id to replace in an Hash
  */
-std::string Rest::to_internal_id(const std::string &id) {
-  return boost::beast::detail::base64_decode(encode_base64(
-      messages::decode_base58(boost::beast::detail::base64_encode(id))));
+std::string to_internal_id(const std::string &id) {
+  try {
+    return boost::beast::detail::base64_decode(encode_base64(
+        messages::decode_base58(boost::beast::detail::base64_encode(id))));
+  } catch (std::exception& e) {
+    std::cerr << id << " is not a valid id " << e.what() << "\n";
+    return "";
+  }
+}
+
+std::string encode_base64(const CryptoPP::Integer &num) {
+  CryptoPP::Integer padded_num = num << (6 - num.BitCount() % 6);
+  std::stringstream encoded_stream;
+  CryptoPP::Integer quotient;
+  CryptoPP::Integer remainder;
+  while (padded_num > 0) {
+    CryptoPP::Integer::DivideByPowerOf2(remainder, quotient, padded_num, 6);
+    encoded_stream << B64ALPHABET[remainder.ConvertToLong()];
+    padded_num = quotient;
+  }
+  std::string encoded = encoded_stream.str();
+  std::reverse(encoded.begin(), encoded.end());
+  encoded += std::string(4 - encoded.size() % 4, '=');
+  return encoded;
 }
 
 Rest::~Rest() {
