@@ -156,9 +156,6 @@ void Rest::get_block_by_id(const Rest::Request &req, Rest::Response res) {
   if (!messages::from_json(req.body(), &block_id)) {
     bad_request(res, "could not parse body");
   }
-  std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": "
-            << block_id
-            << std::endl;
   auto block = Api::block(block_id);
   send(res, block);
 }
