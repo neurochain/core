@@ -74,14 +74,6 @@ bool Pii::add_block(const messages::TaggedBlock &tagged_block) {
   // Warning: this method only works for blocks that are already inserted in the
   // ledger.
   // Notice that for now coinbases don't give any entropy
-
-  // calculate the TODO
-  // TODO INPUT ENTHALPY
-  // for each input I need to know the total enthalpy spent
-  // and the total amount spent
-  // so that I can calculate the input quality
-  // difference between enthalpy after and enthalpy before
-  // multiplied by the ratio of this input and all the incoming totoro
   auto total_spent = get_total_spent(tagged_block.block());
   auto balances = get_balances(tagged_block);
 
