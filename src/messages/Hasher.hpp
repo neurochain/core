@@ -6,7 +6,6 @@
 #include "crypto/Hash.hpp"
 #include "crypto/KeyPub.hpp"
 #include "messages/Message.hpp"
-#include <boost/beast.hpp>
 
 namespace neuro {
 namespace messages {
