@@ -1,22 +1,22 @@
 #include "api/Rest.hpp"
+#include <messages/Hasher.hpp>
 #include "Bot.hpp"
 #include "common/logger.hpp"
 #include "ledger/Ledger.hpp"
-#include "messages/Address.hpp"
-#include <messages/Hasher.hpp>
 
 namespace neuro::api {
 
 Rest::Rest(const messages::config::Rest &config, Bot *bot)
-    : Api::Api(bot), _httpEndpoint(std::make_shared<Http::Endpoint>(
-                         Address(Ipv4::any(), config.port()))) {
+    : Api::Api(bot),
+      _httpEndpoint(std::make_shared<Http::Endpoint>(
+          Address(Ipv4::any(), config.port()))) {
   init();
   start();
 }
 
 void Rest::init() {
   auto opts =
-      Http::Endpoint::options().threads(1).maxRequestSize(1024 * 1024); // 1Mio
+      Http::Endpoint::options().threads(1).maxRequestSize(1024 * 1024);  // 1Mio
   _httpEndpoint->init(opts);
   setupRoutes();
 }
@@ -26,9 +26,7 @@ void Rest::start() {
   _httpEndpoint->serveThreaded();
 }
 
-void Rest::shutdown() {
-  _httpEndpoint->shutdown();
-}
+void Rest::shutdown() { _httpEndpoint->shutdown(); }
 
 void Rest::send(Response &response, const messages::Packet &packet) {
   response.headers().add<Http::Header::AccessControlAllowOrigin>("*");
@@ -49,53 +47,49 @@ void Rest::setupRoutes() {
   using namespace ::Pistache::Rest::Routes;
   // Routes::Post(router, "/record/:name/:value?",
   // Routes::bind(&StatsEndpoint::doRecordMetric, this));
-  Get(_router, "/balance/:address", bind(&Rest::get_balance, this));
+  Get(_router, "/balance/:key_pub", bind(&Rest::get_balance, this));
   Get(_router, "/ready", bind(&Rest::get_ready, this));
-  Post(_router, "/create_transaction/:address/:fees",
+  Post(_router, "/create_transaction/:key_pub/:fees",
        bind(&Rest::get_create_transaction, this));
   Post(_router, "/publish", bind(&Rest::publish, this));
-  Get(_router, "/list_transactions/:address", bind(&Rest::get_unspent_transaction_list, this));
   Get(_router, "/transaction/:id", bind(&Rest::get_transaction, this));
   Get(_router, "/block/id/:id", bind(&Rest::get_block_by_id, this));
   Get(_router, "/block/height/:height", bind(&Rest::get_block_by_height, this));
   Get(_router, "/last_blocks/:nb_blocks", bind(&Rest::get_last_blocks, this));
-  Get(_router, "/total_nb_transactions", bind(&Rest::get_total_nb_transactions, this));
+  Get(_router, "/total_nb_transactions",
+      bind(&Rest::get_total_nb_transactions, this));
   Get(_router, "/total_nb_blocks", bind(&Rest::get_total_nb_blocks, this));
   Get(_router, "/peers", bind(&Rest::get_peers, this));
 }
 
-void Rest::get_balance(const Request& req, Response res) {
-  const messages::Address address(req.param(":address").as<std::string>());
-  const auto balance_amount = balance(address);
+void Rest::get_balance(const Request &req, Response res) {
+  messages::_KeyPub key_pub;
+  key_pub.set_hex_data((req.param(":key_pub").as<std::string>()));
+  const auto balance_amount = balance(key_pub);
   send(res, balance_amount);
 }
 
-void  Rest::get_ready(const Request& req, Response res) {
-  send(res, "{ok: 1}");
-}
+void Rest::get_ready(const Request &req, Response res) { send(res, "{ok: 1}"); }
 
-void Rest::get_transaction(const Request& req, Response res) {
+void Rest::get_transaction(const Request &req, Response res) {
   messages::Hasher transaction_id(req.param(":id").as<std::string>());
   messages::Transaction transaction = Api::transaction(transaction_id);
   send(res, transaction);
 }
 
-void Rest::get_create_transaction(const Request& req, Response res) {
-  const messages::Address address(req.param(":address").as<std::string>());
-  const auto fees = req.param(":fees").as<uint64_t>();
+void Rest::get_create_transaction(const Request &req, Response res) {
+  messages::_KeyPub key_pub;
+  key_pub.set_hex_data(req.param(":key_pub").as<std::string>());
 
   messages::Transaction transaction;
   messages::from_json(req.body(), &transaction);
-  if(!set_inputs(&transaction, address, messages::NCCAmount{fees})) {
-    bad_request(res, "Could not set inputs, insuffisant funds?");
-    return;
-  }
+  transaction.add_inputs()->mutable_key_pub()->CopyFrom(key_pub);
 
   transaction.mutable_id()->set_type(messages::Hash::SHA256);
   transaction.mutable_id()->set_data("");
 
   const auto transaction_opt = messages::to_buffer(transaction);
-  if(!transaction_opt) {
+  if (!transaction_opt) {
     bad_request(res, "Could not serialize transaction");
     return;
   }
@@ -109,10 +103,9 @@ void Rest::publish(const Request &req, Response res) {
   }
 
   const auto transaction_bin =
-      Buffer(publish_message.transaction(),
-             Buffer::InputType::HEX);
-  const auto signature = Buffer(publish_message.signature(),
-                                Buffer::InputType::HEX);
+      Buffer(publish_message.transaction(), Buffer::InputType::HEX);
+  const auto signature =
+      Buffer(publish_message.signature(), Buffer::InputType::HEX);
 
   messages::Transaction transaction;
   if (!messages::from_buffer(transaction_bin, &transaction)) {
@@ -121,10 +114,11 @@ void Rest::publish(const Request &req, Response res) {
   }
 
   crypto::KeyPub key_pub(publish_message.key_pub());
-  auto input_signature = transaction.add_signatures();
-  input_signature->mutable_signature()->set_type(messages::Hash::SHA256);
-  key_pub.save(input_signature->mutable_key_pub());
-  input_signature->mutable_signature()->set_data(signature.str());
+  auto input = transaction.mutable_inputs(0);
+  auto input_signature = input->mutable_signature();
+  input_signature->set_type(messages::Hash::SHA256);
+  key_pub.save(input->mutable_key_pub());
+  input_signature->set_data(signature.str());
 
   if (!crypto::verify(transaction)) {
     bad_request(res, "Bad signature");
@@ -138,12 +132,6 @@ void Rest::publish(const Request &req, Response res) {
 
   res.headers().add<Http::Header::AccessControlAllowOrigin>("*");
   res.send(Pistache::Http::Code::Ok);
-}
-
-void Rest::get_unspent_transaction_list(const Request& req, Response res) {
-  const messages::Address address(req.param(":address").as<std::string>());
-  auto unspent_transaction_list = list_unspent_transaction(address);
-  send(res, unspent_transaction_list);
 }
 
 void Rest::get_block_by_id(const Rest::Request &req, Rest::Response res) {
@@ -164,7 +152,8 @@ void Rest::get_last_blocks(const Rest::Request &req, Rest::Response res) {
   send(res, blocks);
 }
 
-void Rest::get_total_nb_transactions(const Rest::Request &req, Rest::Response res) {
+void Rest::get_total_nb_transactions(const Rest::Request &req,
+                                     Rest::Response res) {
   send(res, std::to_string(Api::total_nb_transactions()));
 }
 
@@ -172,16 +161,14 @@ void Rest::get_total_nb_blocks(const Rest::Request &req, Rest::Response res) {
   send(res, std::to_string(Api::total_nb_blocks()));
 }
 
-void Rest::get_peers(const Rest::Request& request, Rest::Response res) {
+void Rest::get_peers(const Rest::Request &request, Rest::Response res) {
   send(res, to_json(Api::peers()));
 }
 
-Rest::~Rest() {
-  shutdown();
-}
+Rest::~Rest() { shutdown(); }
 
 //
-//messages::Transaction Rest::build_transaction(
+// messages::Transaction Rest::build_transaction(
 //    const messages::TransactionToPublish &transaction_to_publish) const {
 //  messages::Transaction transaction;
 //
@@ -198,15 +185,15 @@ Rest::~Rest() {
 //  }
 //
 //  const crypto::KeyPub key_pub = key_priv.make_key_pub();
-//  const auto address = messages::Address(key_pub);
+//  const auto key_pub = messages::_KeyPub(key_pub);
 //  const auto ecc = crypto::Ecc(key_priv, key_pub);
 //  std::vector<const crypto::Ecc *> keys = {&ecc};
 //
 //  // Process the outputs and lookup their output_id to build the inputs
-//  std::vector<messages::Address> transaction_ids;
+//  std::vector<messages::_KeyPub> transaction_ids;
 //  auto transaction_ids_str = transaction_to_publish.transactions_ids();
 //  for (auto transaction_id_str : transaction_ids_str) {
-//    messages::Address transaction_id;
+//    messages::_KeyPub transaction_id;
 //    transaction_id.set_type(messages::Hash_Type_SHA256);
 //    transaction_id.set_data(transaction_id_str);
 //    transaction_ids.push_back(transaction_id);
@@ -216,7 +203,7 @@ Rest::~Rest() {
 //                                    transaction_to_publish.fees());
 //}
 //
-//messages::GeneratedKeys Rest::generate_keys() const {
+// messages::GeneratedKeys Rest::generate_keys() const {
 //  messages::GeneratedKeys generated_keys;
 //  crypto::Ecc ecc;
 //  messages::_KeyPub key_pub;
@@ -225,10 +212,9 @@ Rest::~Rest() {
 //  ecc.key_priv().save(&key_priv);
 //  generated_keys.mutable_key_priv()->CopyFrom(key_priv);
 //  generated_keys.mutable_key_pub()->CopyFrom(key_pub);
-//  generated_keys.mutable_address()->CopyFrom(
+//  generated_keys.mutable_key_pub()->CopyFrom(
 //      messages::Hasher(ecc.key_pub()));
 //  return generated_keys;
 //}
-
 
 }  // namespace neuro::api

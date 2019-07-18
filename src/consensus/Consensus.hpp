@@ -23,18 +23,18 @@ class RealtimeConsensus;
 }  // namespace tests
 
 using PublishBlock = std::function<void(const messages::Block &block)>;
-using AddressIndex = uint32_t;
+using KeyPubIndex = uint32_t;
 
 class Consensus {
  private:
   const Config _config;
   std::shared_ptr<ledger::Ledger> _ledger;
   const std::vector<crypto::Ecc> &_keys;
-  std::vector<messages::Address> _addresses;
+  std::vector<messages::_KeyPub> _key_pubs;
   const PublishBlock _publish_block;
   std::atomic<bool> _stop_compute_pii;
   std::thread _compute_pii_thread;
-  std::vector<std::pair<messages::BlockHeight, AddressIndex>> _heights_to_write;
+  std::vector<std::pair<messages::BlockHeight, KeyPubIndex>> _heights_to_write;
   std::mutex _heights_to_write_mutex;
   std::recursive_mutex _verify_blocks_mutex;
   std::optional<messages::AssemblyID> _previous_assembly_id;
@@ -141,14 +141,14 @@ class Consensus {
 
   bool get_block_writer(const messages::Assembly &assembly,
                         const messages::BlockHeight &height,
-                        messages::Address *address) const;
+                        messages::_KeyPub *key_pub) const;
 
   messages::BlockHeight get_current_height() const;
   messages::AssemblyHeight get_current_assembly_height() const;
 
   bool get_heights_to_write(
-      const std::vector<messages::Address> &addresses,
-      std::vector<std::pair<messages::BlockHeight, AddressIndex>> *heights)
+      const std::vector<messages::_KeyPub> &key_pubs,
+      std::vector<std::pair<messages::BlockHeight, KeyPubIndex>> *heights)
       const;
 
   bool build_block(const crypto::Ecc &keys, const messages::BlockHeight &height,

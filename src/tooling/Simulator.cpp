@@ -35,8 +35,8 @@ Simulator::Simulator(const std::string &db_url, const std::string &db_name,
           ledger, keys, config, [](const messages::Block &block) {},
           start_threads)) {
   for (size_t i = 0; i < keys.size(); i++) {
-    auto &address = addresses.emplace_back(keys[i].key_pub());
-    addresses_indexes.insert({address, i});
+    auto &key_pub = key_pubs.emplace_back(keys[i].key_pub());
+    key_pubs_indexes.insert({key_pub, i});
   }
 }
 
@@ -63,7 +63,7 @@ messages::Transaction Simulator::random_transaction() const {
   int sender_index = rand() % keys.size();
   int recipient_index = rand() % keys.size();
   return ledger->send_ncc(keys[sender_index].key_priv(),
-                          addresses[recipient_index], RATIO_TO_SEND,
+                          key_pubs[recipient_index], RATIO_TO_SEND,
                           messages::NCCAmount(1));
 }
 
@@ -95,9 +95,9 @@ messages::Block Simulator::new_block(
                        ? assembly_n_minus_1
                        : assembly_n_minus_2;
 
-  messages::Address address;
-  assert(consensus->get_block_writer(assembly, height, &address));
-  uint32_t miner_index = addresses_indexes.at(address);
+  messages::_KeyPub key_pub;
+  assert(consensus->get_block_writer(assembly, height, &key_pub));
+  uint32_t miner_index = key_pubs_indexes.at(key_pub);
   auto header = block.mutable_header();
   header->mutable_timestamp()->set_data(block0.header().timestamp().data() +
                                         height *
@@ -107,6 +107,7 @@ messages::Block Simulator::new_block(
   header->set_height(height);
 
   ledger->get_transaction_pool(&block);
+  ledger->cleanup_transactions(&block);
 
   messages::NCCValue total_fees = 0;
   for (const auto &transaction : block.transactions()) {
@@ -120,7 +121,8 @@ messages::Block Simulator::new_block(
 
   // Block reward
   blockgen::coinbase({keys[miner_index].key_pub()}, block_reward,
-                     block.mutable_coinbase(), height);
+                     block.mutable_coinbase(),
+                     last_block.block().header().id());
 
   ledger->add_denunciations(&block, last_block.branch_path());
   messages::sort_transactions(&block);

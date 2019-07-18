@@ -69,7 +69,7 @@ class RealtimeSimulator : public testing::Test {
         auto t0 = Timer::now();
         auto transaction =
             ledger->send_ncc(simulator.keys[sender_index].key_priv(),
-                             simulator.addresses[recipient_index], 0.5);
+                             simulator.key_pubs[recipient_index], 0.5);
         LOG_DEBUG << "SEND_NCC TOOK " << (Timer::now() - t0).count() / 1E6
                   << " MS";
 
@@ -115,9 +115,9 @@ class RealtimeSimulator : public testing::Test {
         ASSERT_TRUE(ledger->get_assembly(tagged_block.previous_assembly_id(),
                                          &assembly));
         ASSERT_TRUE(assembly.finished_computation());
-        ASSERT_GT(assembly.nb_addresses(), 1);
+        ASSERT_GT(assembly.nb_key_pubs(), 1);
 
-        std::vector<std::pair<messages::BlockHeight, consensus::AddressIndex>>
+        std::vector<std::pair<messages::BlockHeight, consensus::KeyPubIndex>>
             heights;
         consensus->_heights_to_write_mutex.lock();
         ASSERT_GT(consensus->_heights_to_write.size(), 1);

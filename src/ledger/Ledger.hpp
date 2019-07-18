@@ -7,7 +7,6 @@
 #include "crypto/Sign.hpp"
 #include "ledger/Filter.hpp"
 #include "messages.pb.h"
-#include "messages/Address.hpp"
 #include "messages/Message.hpp"
 
 namespace neuro {
@@ -24,7 +23,7 @@ class Ledger {
 
   class Filter {
    private:
-    std::optional<messages::Address> _output_address;
+    std::optional<messages::_KeyPub> _output_key_pub;
     std::optional<messages::BlockID> _block_id;
     std::optional<messages::TransactionID> _input_transaction_id;
     std::optional<messages::TransactionID> _transaction_id;
@@ -54,11 +53,11 @@ class Ledger {
     }
     std::optional<const int32_t> output_id() const { return _output_id; }
 
-    void output_address(const messages::Address &addr) {
-      _output_address = std::make_optional<messages::Address>(addr);
+    void output_key_pub(const messages::_KeyPub &key_pub) {
+      _output_key_pub = std::make_optional<messages::_KeyPub>(key_pub);
     }
-    const std::optional<messages::Address> output_address() const {
-      return _output_address;
+    const std::optional<messages::_KeyPub> output_key_pub() const {
+      return _output_key_pub;
     }
 
     void block_id(const messages::BlockID &id) {
@@ -125,6 +124,10 @@ class Ledger {
                                messages::TaggedTransaction *tagged_transaction,
                                const messages::TaggedBlock &tip,
                                bool include_transaction_pool) const = 0;
+  virtual std::vector<messages::TaggedTransaction> get_transactions(
+      const messages::TransactionID &id, const messages::TaggedBlock &tip,
+      bool include_transaction_pool) const = 0;
+
   virtual bool add_transaction(
       const messages::TaggedTransaction &tagged_transaction) = 0;
   virtual bool add_to_transaction_pool(
@@ -168,7 +171,7 @@ class Ledger {
   virtual bool add_assembly(const messages::TaggedBlock &tagged_block,
                             const messages::AssemblyHeight height) = 0;
 
-  virtual bool get_pii(const messages::Address &address,
+  virtual bool get_pii(const messages::_KeyPub &key_pub,
                        const messages::AssemblyID &assembly_id,
                        Double *score) const = 0;
 
@@ -176,14 +179,14 @@ class Ledger {
 
   virtual bool set_integrity(const messages::Integrity &integrity) = 0;
 
-  virtual bool add_integrity(const messages::Address &address,
+  virtual bool add_integrity(const messages::_KeyPub &key_pub,
                              const messages::AssemblyID &assembly_id,
                              const messages::AssemblyHeight &assembly_height,
                              const messages::BranchPath &branch_path,
                              const messages::IntegrityScore &added_score) = 0;
 
   virtual messages::IntegrityScore get_integrity(
-      const messages::Address &address,
+      const messages::_KeyPub &key_pub,
       const messages::AssemblyHeight &assembly_height,
       const messages::BranchPath &branch_path) const = 0;
 
@@ -198,11 +201,11 @@ class Ledger {
       std::vector<messages::Assembly> *assemblies) const = 0;
 
   virtual bool get_block_writer(const messages::AssemblyID &assembly_id,
-                                int32_t address_rank,
-                                messages::Address *address) const = 0;
+                                int32_t key_pub_rank,
+                                messages::_KeyPub *key_pub) const = 0;
 
-  virtual bool set_nb_addresses(const messages::AssemblyID &assembly_id,
-                                int32_t nb_addresses) = 0;
+  virtual bool set_nb_key_pubs(const messages::AssemblyID &assembly_id,
+                               int32_t nb_key_pubs) = 0;
 
   virtual bool set_seed(const messages::AssemblyID &assembly_id,
                         int32_t seed) = 0;
@@ -232,10 +235,18 @@ class Ledger {
       messages::Block *block,
       const messages::BranchPath &branch_path) const = 0;
 
+  virtual messages::Balance get_balance(
+      const messages::_KeyPub &key_pub,
+      const messages::TaggedBlock &tagged_block) const = 0;
+
+  virtual bool add_balances(messages::TaggedBlock *tagged_block) = 0;
+
+  virtual bool cleanup_transactions(messages::Block *block) = 0;
+
   // helpers
 
   /*
-   * List transactions for an address that are either in the main branch or in
+   * List transactions for a key pub that are either in the main branch or in
    * the transaction pool
    */
   bool has_block(const messages::BlockID &id) const {
@@ -244,9 +255,9 @@ class Ledger {
   }
 
   messages::Transactions list_transactions(
-      const messages::Address &address) const {
+      const messages::_KeyPub &key_pub) const {
     Filter filter;
-    filter.output_address(address);
+    filter.output_key_pub(key_pub);
     messages::Transactions transactions;
     assert(get_main_branch_tip().branch() == messages::MAIN);
 
@@ -262,38 +273,15 @@ class Ledger {
     return transactions;
   }
 
-  bool is_unspent_output(const messages::TransactionID &transaction_id,
-                         int output_id) const {
-    bool include_transaction_pool = true;
-    return is_unspent_output(transaction_id, output_id, get_main_branch_tip(),
-                             include_transaction_pool);
-  }
-
-  bool is_unspent_output(const messages::TransactionID &transaction_id,
-                         int output_id, const messages::TaggedBlock &tip,
-                         bool include_transaction_pool) const {
-    Filter filter;
-    filter.input_transaction_id(transaction_id);
-    filter.output_id(output_id);
-
-    bool match = false;
-    for_each(filter, tip, include_transaction_pool,
-             [&](const messages::TaggedTransaction &) {
-               match = true;
-               return false;
-             });
-    return !match;
-  }
-
-  std::vector<messages::Output> get_outputs_for_address(
+  std::vector<messages::Output> get_outputs_for_key_pub(
       const messages::TransactionID &transaction_id,
-      const messages::Address &address) const {
+      const messages::_KeyPub &key_pub) const {
     messages::Transaction transaction;
     get_transaction(transaction_id, &transaction);
     std::vector<messages::Output> result;
     auto outputs = transaction.mutable_outputs();
     for (auto it(outputs->begin()); it != outputs->end(); it++) {
-      if (it->address() == address) {
+      if (it->key_pub() == key_pub) {
         it->set_output_id(std::distance(outputs->begin(), it));
         result.push_back(*it);
       }
@@ -301,9 +289,9 @@ class Ledger {
     return result;
   }
 
-  bool has_received_transaction(const messages::Address &address) const {
+  bool has_received_transaction(const messages::_KeyPub &key_pub) const {
     Filter filter;
-    filter.output_address(address);
+    filter.output_key_pub(key_pub);
 
     bool match = false;
     for_each(filter, [&](const messages::TaggedTransaction &) {
@@ -333,333 +321,74 @@ class Ledger {
     return blocks;
   }
 
-  std::vector<messages::UnspentTransaction> list_unspent_transactions(
-      const messages::Address &address) const {
-    std::vector<messages::UnspentTransaction> unspent_transactions;
-
-    auto transactions = list_transactions(address).transactions();
-    for (const auto &transaction : transactions) {
-      bool has_unspent_output = false;
-      int64_t amount = 0;
-      for (int i = 0; i < transaction.outputs_size(); i++) {
-        const auto &output = transaction.outputs(i);
-        if (output.address() == address &&
-            is_unspent_output(transaction.id(), i)) {
-          has_unspent_output = true;
-          amount += output.value().value();
-        }
-      }
-      if (has_unspent_output) {
-        auto &unspent_transaction = unspent_transactions.emplace_back();
-        unspent_transaction.mutable_transaction_id()->CopyFrom(
-            transaction.id());
-        unspent_transaction.mutable_value()->set_value(amount);
-      }
-    }
-    return unspent_transactions;
-  }
-
-  /**
-   * Return a list of transactions containing only the unspent outputs
-   * for a given address
-   */
-  std::vector<messages::Transaction> list_unspent_outputs(
-      const messages::Address &address) const {
-    std::vector<messages::Transaction> result_transactions;
-
-    auto transactions = list_transactions(address);
-    for (auto &transaction : *transactions.mutable_transactions()) {
-      std::vector<messages::Output> outputs;
-      for (int i = 0; i < transaction.outputs_size(); i++) {
-        auto output = transaction.outputs(i);
-        if (output.address() == address &&
-            is_unspent_output(transaction.id(), i)) {
-          output.set_output_id(i);
-          outputs.push_back(output);
-        }
-      }
-      if (outputs.size() == 0) {
-        continue;
-      }
-      transaction.mutable_outputs()->Clear();
-      for (const auto output : outputs) {
-        transaction.add_outputs()->CopyFrom(output);
-      }
-      result_transactions.push_back(transaction);
-    }
-    return result_transactions;
-  }
-
-  messages::NCCAmount balance(const messages::Address &address) {
-    uint64_t total = 0;
-    const auto unspent_transactions = list_unspent_transactions(address);
-    for (const auto &unspent_transaction : unspent_transactions) {
-      total += unspent_transaction.value().value();
-    }
-    return messages::NCCAmount(total);
-  }
-
-  void add_change(messages::Transaction *transaction,
-                  const messages::Address &change_address,
-                  uint64_t change_amount) const {
-    if (change_amount) {
-      auto change = transaction->add_outputs();
-      change->mutable_value()->set_value(change_amount);
-      change->mutable_address()->CopyFrom(change_address);
-    }
-  }
-
-  void add_change(messages::Transaction *transaction,
-                  const messages::Address &change_address) const {
-    uint64_t inputs_ncc = 0;
-    uint64_t outputs_ncc = 0;
-    for (auto output : transaction->outputs()) {
-      outputs_ncc += output.value().value();
-    }
-    if (transaction->has_fees()) {
-      outputs_ncc += transaction->fees().value();
-    }
-
-    for (auto input : transaction->inputs()) {
-      messages::Transaction transaction;
-      get_transaction(input.id(), &transaction);
-      auto output = transaction.outputs(input.output_id());
-      inputs_ncc += output.value().value();
-    }
-
-    add_change(transaction, change_address, inputs_ncc - outputs_ncc);
-  }
-
-  std::vector<messages::Input> build_inputs(
-      const std::vector<messages::TransactionID> &unspent_transactions_ids,
-      const messages::Address &address) const {
-    std::vector<messages::Input> inputs;
-
-    // Process the outputs and lookup their output_id to build the inputs
-    for (const auto &transaction_id : unspent_transactions_ids) {
-      auto transaction_outputs =
-          get_outputs_for_address(transaction_id, address);
-
-      for (const auto &output : transaction_outputs) {
-        auto &input = inputs.emplace_back();
-        input.mutable_id()->CopyFrom(transaction_id);
-        input.set_output_id(output.output_id());
-        input.set_signature_id(0);
-      }
-    }
-    return inputs;
-  }
-
-  void build_inputs(
-      const std::vector<messages::TransactionID> &unspent_transactions_ids,
-      const messages::Address &address,
-      messages::Transaction *transaction) const {
-    // Process the outputs and lookup their output_id to build the inputs
-    for (const auto &transaction_id : unspent_transactions_ids) {
-      auto transaction_outputs =
-          get_outputs_for_address(transaction_id, address);
-
-      for (const auto &output : transaction_outputs) {
-        auto *input = transaction->add_inputs();
-        input->mutable_id()->CopyFrom(transaction_id);
-        input->set_output_id(output.output_id());
-        input->set_signature_id(0);
-      }
-    }
-  }
-
-  /*
-   * Build inputs for a new transaction given a list of transactions containing
-   * only the unpsent output for the desired address.
-   */
-  std::vector<messages::Input> build_inputs_from_outputs(
-      const std::vector<messages::Transaction> &unspent_outputs) const {
-    std::vector<messages::Input> inputs;
-
-    // The list of transactions contains only the unspent outputs which makes it
-    // easier
-    for (const auto &transaction : unspent_outputs) {
-      for (const auto &output : transaction.outputs()) {
-        auto &input = inputs.emplace_back();
-        input.mutable_id()->CopyFrom(transaction.id());
-        input.set_output_id(output.output_id());
-        input.set_signature_id(0);
-      }
-    }
-    return inputs;
-  }
-
-  /*
-   * Build inputs for a new transaction given a list of transactions containing
-   * only the unpsent output for the desired address.
-   */
-  void build_inputs_from_outputs(
-      const std::vector<messages::Transaction> &unspent_outputs,
-      messages::Transaction *transaction) const {
-    // The list of transactions contains only the unspent outputs which makes it
-    // easier
-    for (const auto &unspent_output : unspent_outputs) {
-      for (const auto &output : unspent_output.outputs()) {
-        auto *input = transaction->add_inputs();
-        input->mutable_id()->CopyFrom(unspent_output.id());
-        input->set_output_id(output.output_id());
-        input->set_signature_id(0);
-      }
-    }
+  messages::NCCAmount balance(const messages::_KeyPub &key_pub) const {
+    auto last_balance = get_balance(key_pub, get_main_branch_tip());
+    return messages::NCCAmount(last_balance.value());
   }
 
   messages::Transaction build_transaction(
-      const std::vector<messages::TransactionID> &unspent_transactions_ids,
+      const messages::_KeyPub &sender,
       const std::vector<messages::Output> &outputs,
-      const messages::Address &address,
-      const std::optional<const messages::NCCAmount> &fees = {}) const {
-    auto inputs = build_inputs(unspent_transactions_ids, address);
-
-    return build_transaction(inputs, outputs, address, fees);
-  }
-
-  messages::Transaction build_transaction(
-      const std::vector<messages::Input> &inputs,
-      const std::vector<messages::Output> &outputs,
-      const messages::Address &sender,
-      const std::optional<messages::NCCAmount> &fees = {},
-      bool add_change_output = true) const {
+      const std::optional<messages::NCCAmount> &fees = {}) const {
     messages::Transaction transaction;
 
-    // Build keys
-
-    for (const auto &input : inputs) {
-      transaction.add_inputs()->CopyFrom(input);
-    }
+    messages::NCCValue total_spent = 0;
 
     for (const auto &output : outputs) {
       transaction.add_outputs()->CopyFrom(output);
+      total_spent += output.value().value();
     }
 
     if (fees) {
       transaction.mutable_fees()->CopyFrom(fees.value());
+      total_spent += fees->value();
     }
 
-    // Sign the transaction
+    auto input = transaction.add_inputs();
+    input->mutable_value()->set_value(total_spent);
+    input->mutable_key_pub()->CopyFrom(sender);
+
+    transaction.mutable_last_seen_block_id()->CopyFrom(
+        get_main_branch_tip().block().header().id());
 
     return transaction;
   }
 
   messages::Transaction build_transaction(
-      const messages::Address &address, const messages::NCCAmount &amount,
+      const messages::_KeyPub &sender_key_pub,
+      const messages::_KeyPub &recipient_key_pub,
+      const messages::NCCAmount &amount,
       const std::optional<messages::NCCAmount> &fees = {}) const {
-    std::vector<messages::UnspentTransaction> unspent_transactions =
-        list_unspent_transactions(address);
+    messages::Transaction transaction;
 
-    std::vector<messages::TransactionID> unspent_transactions_ids;
-    for (const auto &unspent_transaction : unspent_transactions) {
-      auto &unspent_transaction_id = unspent_transactions_ids.emplace_back();
-      unspent_transaction_id.CopyFrom(unspent_transaction.transaction_id());
-    }
+    auto outputs = std::vector<messages::Output>{1};
+    auto output = &outputs[0];
+    output->mutable_key_pub()->CopyFrom(recipient_key_pub);
+    output->mutable_value()->set_value(amount.value());
 
-    // Set outputs
-    std::vector<messages::Output> outputs;
-    auto &output = outputs.emplace_back();
-    output.mutable_address()->CopyFrom(address);
-    output.mutable_value()->CopyFrom(amount);
-    return build_transaction(unspent_transactions_ids, outputs, address, fees);
-  }
-
-  /*
-   * Build a transaction using all the unspent outputs of a given address and
-   * sending a ratio of all those coin to the recipient
-   */
-
-  bool set_inputs(messages::Transaction *transaction,
-                  const messages::Address &sender,
-                  const messages::NCCAmount &fees) {
-    auto unspent_outputs = list_unspent_outputs(sender);
-
-    messages::NCCValue inputs_total = 0;
-    for (const auto &transaction : unspent_outputs) {
-      for (const auto &output : transaction.outputs()) {
-        inputs_total += output.value().value();
-      }
-    }
-
-    build_inputs_from_outputs(unspent_outputs, transaction);
-
-    for (const auto &output : transaction->outputs()) {
-      if (inputs_total < output.value().value()) {
-        LOG_INFO
-            << "Could not create transaction because of insufficient funds";
-        return false;
-      }
-      inputs_total -= output.value().value();
-    }
-
-    if (inputs_total < fees.value()) {
-      LOG_INFO << "Could not create transaction because of insufficient funds "
-                  "to pay fees";
-      return false;
-    }
-
-    if (fees.value() > 0) {
-      transaction->mutable_fees()->CopyFrom(fees);
-      inputs_total -= fees.value();
-    }
-
-    if (inputs_total > 0) {
-      auto *output = transaction->add_outputs();
-      output->mutable_address()->CopyFrom(sender);
-      output->mutable_value()->set_value(inputs_total);
-    }
-
-    return true;
+    return build_transaction(sender_key_pub, outputs, fees);
   }
 
   messages::Transaction send_ncc(
       const crypto::KeyPriv &sender_key_priv,
-      const messages::Address &recipient_address, const float ratio_to_send,
+      const messages::_KeyPub &recipient_key_pub, const float ratio_to_send,
       const std::optional<messages::NCCAmount> &fees = {}) const {
     assert(ratio_to_send <= 1);
     std::lock_guard<std::mutex> lock(_send_ncc_mutex);
-    auto sender_address = messages::Address(sender_key_priv.make_key_pub());
+    const auto sender_key_pub = sender_key_priv.make_key_pub();
 
-    std::vector<messages::Transaction> unspent_outputs =
-        list_unspent_outputs(sender_address);
+    messages::NCCValue amount_to_send =
+        balance(sender_key_pub).value() * ratio_to_send;
 
-    int32_t inputs_total = 0;
-    for (const auto &transaction : unspent_outputs) {
-      for (const auto output : transaction.outputs()) {
-        inputs_total += output.value().value();
-      }
-    }
+    auto transaction = build_transaction(sender_key_pub, recipient_key_pub,
+                                         amount_to_send, fees);
 
-    // Set outputs
-    std::vector<messages::Output> outputs;
-    auto &output = outputs.emplace_back();
-    output.mutable_address()->CopyFrom(recipient_address);
-    uint64_t amount_to_send = (uint64_t)(inputs_total * ratio_to_send);
-    output.mutable_value()->CopyFrom(messages::NCCAmount(amount_to_send));
-    auto inputs = build_inputs_from_outputs(unspent_outputs);
-    if (inputs_total - amount_to_send > 0) {
-      auto &change = outputs.emplace_back();
-      change.mutable_address()->CopyFrom(sender_address);
-      messages::NCCValue change_value = inputs_total - amount_to_send;
-      if (fees) {
-        change_value -= fees->value();
-      }
-      change.mutable_value()->CopyFrom(messages::NCCAmount(change_value));
-    }
-
-    bool add_change_output = false;
-
-    auto result = build_transaction(inputs, outputs, sender_address, fees,
-                                    add_change_output);
-
-    const auto key_pub = sender_key_priv.make_key_pub();
-    const auto ecc = crypto::Ecc(sender_key_priv, key_pub);
+    const auto ecc = crypto::Ecc(sender_key_priv, sender_key_pub);
     std::vector<const crypto::Ecc *> keys = {&ecc};
 
-    crypto::sign(keys, &result);
-    messages::set_transaction_hash(&result);
-    return result;
+    crypto::sign(keys, &transaction);
+    messages::set_transaction_hash(&transaction);
+    return transaction;
   }
 
   virtual ~Ledger() {}

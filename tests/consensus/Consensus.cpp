@@ -29,16 +29,16 @@ class Consensus : public testing::Test {
  public:
   void check_assembly_pii(const messages::Assembly &assembly) {
     ASSERT_TRUE(assembly.has_seed());
-    ASSERT_TRUE(assembly.has_nb_addresses());
-    ASSERT_TRUE(assembly.nb_addresses() >= 1);
+    ASSERT_TRUE(assembly.has_nb_key_pubs());
+    ASSERT_TRUE(assembly.nb_key_pubs() >= 1);
     ASSERT_TRUE(assembly.finished_computation());
-    for (int i = 0; i < assembly.nb_addresses(); i++) {
-      messages::Address address;
-      ASSERT_TRUE(ledger->get_block_writer(assembly.id(), i, &address));
+    for (int i = 0; i < assembly.nb_key_pubs(); i++) {
+      messages::_KeyPub key_pub;
+      ASSERT_TRUE(ledger->get_block_writer(assembly.id(), i, &key_pub));
     }
     std::vector<messages::Pii> piis;
     ledger->get_assembly_piis(assembly.id(), &piis);
-    ASSERT_EQ(piis.size(), assembly.nb_addresses());
+    ASSERT_EQ(piis.size(), assembly.nb_key_pubs());
     for (const auto pii : piis) {
       ASSERT_GT(Double(pii.score()), 1);
     }
@@ -130,11 +130,11 @@ class Consensus : public testing::Test {
     messages::Assembly assembly;
     ASSERT_TRUE(ledger->get_assembly(assembly_id, &assembly));
     ASSERT_TRUE(assembly.has_seed());
-    ASSERT_TRUE(assembly.has_nb_addresses());
-    ASSERT_TRUE(assembly.nb_addresses() >= 1);
-    for (int i = 0; i < assembly.nb_addresses(); i++) {
-      messages::Address address;
-      ASSERT_TRUE(ledger->get_block_writer(assembly_id, i, &address));
+    ASSERT_TRUE(assembly.has_nb_key_pubs());
+    ASSERT_TRUE(assembly.nb_key_pubs() >= 1);
+    for (int i = 0; i < assembly.nb_key_pubs(); i++) {
+      messages::_KeyPub key_pub;
+      ASSERT_TRUE(ledger->get_block_writer(assembly_id, i, &key_pub));
     }
   }
 
@@ -148,18 +148,18 @@ class Consensus : public testing::Test {
     ledger->get_assembly(assembly_minus_1.previous_assembly_id(),
                          &assembly_minus_2);
     for (uint32_t i = 1; i < consensus->config().blocks_per_assembly; i++) {
-      messages::Address address;
-      ASSERT_TRUE(consensus->get_block_writer(assembly_minus_2, i, &address));
-      int address_index = -1;
-      for (size_t i = 0; i < simulator.addresses.size(); i++) {
-        if (address == simulator.addresses[i]) {
-          address_index = i;
+      messages::_KeyPub key_pub;
+      ASSERT_TRUE(consensus->get_block_writer(assembly_minus_2, i, &key_pub));
+      int key_pub_index = -1;
+      for (size_t i = 0; i < simulator.key_pubs.size(); i++) {
+        if (key_pub == simulator.key_pubs[i]) {
+          key_pub_index = i;
           break;
         }
       }
-      ASSERT_NE(address_index, -1);
+      ASSERT_NE(key_pub_index, -1);
 
-      const auto &keys = simulator.keys[address_index];
+      const auto &keys = simulator.keys[key_pub_index];
       messages::Block block;
       ASSERT_TRUE(consensus->build_block(keys, i, &block));
       ASSERT_EQ(block.header().height(), i);
@@ -203,8 +203,8 @@ class Consensus : public testing::Test {
 
   uint64_t total_money() {
     uint64_t total = 0;
-    for (const auto &address : simulator.addresses) {
-      total += ledger->balance(address).value();
+    for (const auto &key_pub : simulator.key_pubs) {
+      total += ledger->balance(key_pub).value();
     }
     return total;
   }
@@ -247,23 +247,16 @@ TEST_F(Consensus, start_computations) { test_start_computations(); }
 
 TEST_F(Consensus, add_transaction) {
   auto t0 = ledger->send_ncc(simulator.keys[0].key_priv(),
-                             simulator.addresses[1], 0.5);
-  auto t1 = ledger->send_ncc(simulator.keys[0].key_priv(),
-                             simulator.addresses[0], 0.5);
+                             simulator.key_pubs[1], 0.5);
   ASSERT_TRUE(consensus->add_transaction(t0));
 
-  // The second time the transaction should be valid but not inserted twice
+  // The second time the transaction should be not be valid because it already
+  // exists
   ASSERT_FALSE(consensus->add_transaction(t0));
 
-  // t1 is also invalid because it tries to double spend
-  ASSERT_FALSE(consensus->add_transaction(t1));
-
-  // Now that t0 has been added to the transaction pool. t2 should be build with
-  // a different input so there should be no double spending
-  auto t2 = ledger->send_ncc(simulator.keys[0].key_priv(),
-                             simulator.addresses[0], 0.5);
-
-  ASSERT_TRUE(consensus->add_transaction(t2));
+  auto t1 = ledger->send_ncc(simulator.keys[0].key_priv(),
+                             simulator.key_pubs[0], 0.5);
+  ASSERT_TRUE(consensus->add_transaction(t1));
 }
 
 TEST_F(Consensus, build_block) { test_build_block(); }

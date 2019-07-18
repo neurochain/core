@@ -80,7 +80,7 @@ class LedgerMongodb : public Ledger {
 
   void create_indexes();
 
-  void create_first_assemblies(const std::vector<messages::Address> &addresses);
+  void create_first_assemblies(const std::vector<messages::_KeyPub> &key_pubs);
 
   bool cleanup_transaction_pool(const messages::BlockID &block_id);
 
@@ -152,6 +152,10 @@ class LedgerMongodb : public Ledger {
                        const messages::TaggedBlock &tip,
                        bool include_transaction_pool) const;
 
+  std::vector<messages::TaggedTransaction> get_transactions(
+      const messages::TransactionID &id, const messages::TaggedBlock &tip,
+      bool include_transaction_pool) const;
+
   std::size_t total_nb_transactions() const;
 
   std::size_t total_nb_blocks() const;
@@ -187,7 +191,7 @@ class LedgerMongodb : public Ledger {
   messages::BranchPath first_child(
       const messages::BranchPath &branch_path) const;
 
-  bool get_pii(const messages::Address &address,
+  bool get_pii(const messages::_KeyPub &key_pub,
                const messages::AssemblyID &assembly_id, Double *score) const;
 
   bool get_assembly_piis(const messages::AssemblyID &assembly_id,
@@ -208,11 +212,11 @@ class LedgerMongodb : public Ledger {
   bool set_integrity(const messages::Integrity &integrity);
 
   messages::IntegrityScore get_integrity(
-      const messages::Address &address,
+      const messages::_KeyPub &key_pub,
       const messages::AssemblyHeight &assembly_height,
       const messages::BranchPath &branch_path) const;
 
-  bool add_integrity(const messages::Address &address,
+  bool add_integrity(const messages::_KeyPub &key_pub,
                      const messages::AssemblyID &assembly_id,
                      const messages::AssemblyHeight &assembly_height,
                      const messages::BranchPath &branch_path,
@@ -229,10 +233,10 @@ class LedgerMongodb : public Ledger {
       std::vector<messages::Assembly> *assemblies) const;
 
   bool get_block_writer(const messages::AssemblyID &assembly_id,
-                        int32_t address_rank, messages::Address *address) const;
+                        int32_t key_pub_rank, messages::_KeyPub *key_pub) const;
 
-  bool set_nb_addresses(const messages::AssemblyID &assembly_id,
-                        int32_t nb_addresses);
+  bool set_nb_key_pubs(const messages::AssemblyID &assembly_id,
+                       int32_t nb_key_pubs);
 
   bool set_seed(const messages::AssemblyID &assembly_id, int32_t seed);
 
@@ -257,6 +261,14 @@ class LedgerMongodb : public Ledger {
   void add_denunciations(
       messages::Block *block, const messages::BranchPath &branch_path,
       const std::vector<messages::Denunciation> &denunciations) const;
+
+  messages::Balance get_balance(
+      const messages::_KeyPub &key_pub,
+      const messages::TaggedBlock &tagged_block) const;
+
+  bool add_balances(messages::TaggedBlock *tagged_block);
+
+  bool cleanup_transactions(messages::Block *block);
 
   friend class neuro::ledger::tests::LedgerMongodb;
 };

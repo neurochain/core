@@ -16,7 +16,7 @@ namespace blockgen {
 void coinbase(const std::vector<crypto::KeyPub> &key_pub,
               const messages::NCCAmount &ncc,
               messages::Transaction *transaction,
-              const messages::BlockHeight &height,
+              const messages::BlockID &last_seen_block_id,
               const std::string output_data = "");
 
 messages::TaggedBlock gen_block0(const std::vector<crypto::Ecc> &keys,
