@@ -1202,6 +1202,7 @@ bool LedgerMongodb::get_pii(const messages::_KeyPub &key_pub,
                             const messages::AssemblyID &assembly_id,
                             Double *pii) const {
   std::lock_guard lock(_ledger_mutex);
+  std::lock_guard lock_mpfr(mpfr_mutex);
   auto query = bss::document{} << KEY_PUB << to_bson(key_pub) << ASSEMBLY_ID
                                << to_bson(assembly_id) << bss::finalize;
 
@@ -1548,6 +1549,7 @@ messages::Balance LedgerMongodb::get_balance(
     const messages::_KeyPub &key_pub,
     const messages::TaggedBlock &tagged_block) const {
   std::lock_guard lock(_ledger_mutex);
+  std::lock_guard lock_mpfr(mpfr_mutex);
   const messages::BranchPath &branch_path = tagged_block.branch_path();
   auto document = bss::document{};
   auto in_array = document << $OR << bss::open_array;
@@ -1595,14 +1597,10 @@ messages::Balance LedgerMongodb::get_balance(
   return balance;
 }
 
-struct Change {
-  messages::NCCValue positive = 0;
-  messages::NCCValue negative = 0;
-};
-
-void add_transaction_to_balances(
-    std::unordered_map<messages::_KeyPub, Change> *balance_changes,
+void LedgerMongodb::add_transaction_to_balances(
+    std::unordered_map<messages::_KeyPub, BalanceChange> *balance_changes,
     const messages::Transaction &transaction) {
+  std::lock_guard lock(_ledger_mutex);
   for (const auto &input : transaction.inputs()) {
     auto *change = &(*balance_changes)[input.key_pub()];
     change->negative += input.value().value();
@@ -1657,6 +1655,7 @@ bool LedgerMongodb::cleanup_transactions(messages::Block *block) {
 
 bool LedgerMongodb::add_balances(messages::TaggedBlock *tagged_block) {
   std::lock_guard lock(_ledger_mutex);
+  std::lock_guard lock_mpfr(mpfr_mutex);
   messages::TaggedBlock previous;
   bool is_block0 = tagged_block->block().header().height() == 0;
   if (!is_block0) {
@@ -1671,7 +1670,7 @@ bool LedgerMongodb::add_balances(messages::TaggedBlock *tagged_block) {
     }
   }
 
-  std::unordered_map<messages::_KeyPub, Change> balance_changes;
+  std::unordered_map<messages::_KeyPub, BalanceChange> balance_changes;
 
   for (const auto &transaction : tagged_block->block().transactions()) {
     add_transaction_to_balances(&balance_changes, transaction);
@@ -1679,12 +1678,13 @@ bool LedgerMongodb::add_balances(messages::TaggedBlock *tagged_block) {
   add_transaction_to_balances(&balance_changes,
                               tagged_block->block().coinbase());
 
+  Double enthalpy = 0;
   for (const auto &[key_pub, change] : balance_changes) {
     auto balance = tagged_block->add_balances();
+    enthalpy = 0;
     if (is_block0) {
       balance->mutable_key_pub()->CopyFrom(key_pub);
       balance->mutable_value()->set_value(0);
-      Double enthalpy = 0;
       balance->set_enthalpy_begin(enthalpy.toString());
       balance->set_enthalpy_end(enthalpy.toString());
       balance->set_block_height(0);
@@ -1692,7 +1692,7 @@ bool LedgerMongodb::add_balances(messages::TaggedBlock *tagged_block) {
       balance->CopyFrom(get_balance(key_pub, previous));
     }
 
-    Double enthalpy = balance->enthalpy_end();
+    enthalpy = balance->enthalpy_end();
 
     // Enthalpy has increased since the last balance change
     enthalpy +=
@@ -1710,6 +1710,10 @@ bool LedgerMongodb::add_balances(messages::TaggedBlock *tagged_block) {
 
     Double new_balance =
         Double{balance->value().value()} + change.positive - change.negative;
+
+    // This is a dirty workaround because of a memory leak in mpfr
+    // it could be problematic if mpfr_free_cache is not thread safe
+    mpfr_free_cache();
 
     if (new_balance < 0) {
       LOG_WARNING << "Block " << tagged_block->block().header().id()

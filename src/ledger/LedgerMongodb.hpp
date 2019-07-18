@@ -24,6 +24,11 @@ class LedgerMongodb;
 }
 
 class LedgerMongodb : public Ledger {
+  struct BalanceChange {
+    messages::NCCValue positive = 0;
+    messages::NCCValue negative = 0;
+  };
+
  private:
   static mongocxx::instance _instance;
   mutable mongocxx::uri _uri;
@@ -85,6 +90,10 @@ class LedgerMongodb : public Ledger {
   bool cleanup_transaction_pool(const messages::BlockID &block_id);
 
   std::size_t cleanup_transaction_pool();
+
+  void add_transaction_to_balances(
+      std::unordered_map<messages::_KeyPub, BalanceChange> *balance_changes,
+      const messages::Transaction &transaction);
 
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);

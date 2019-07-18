@@ -74,6 +74,7 @@ bool Pii::add_block(const messages::TaggedBlock &tagged_block) {
   // Warning: this method only works for blocks that are already inserted in the
   // ledger.
   // Notice that for now coinbases don't give any entropy
+  std::lock_guard lock(mpfr_mutex);
   auto total_spent = get_total_spent(tagged_block.block());
   auto balances = get_balances(tagged_block);
 
