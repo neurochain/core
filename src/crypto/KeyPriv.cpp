@@ -69,8 +69,9 @@ bool KeyPriv::load(const std::string &filepath) {
 }
 
 bool KeyPriv::load(const Buffer &buffer) {
-  CryptoPP::StringSource array(reinterpret_cast<const byte *>(buffer.data()),
-                               buffer.size(), true);
+  CryptoPP::StringSource array(
+      reinterpret_cast<const CryptoPP::byte *>(buffer.data()), buffer.size(),
+      true);
   _key.Load(array);
 
   // Fill protobuf

@@ -4,7 +4,6 @@
 #include <memory>
 
 #include "common/types.hpp"
-#include "crypto/KeyPriv.hpp"
 #include "crypto/KeyPub.hpp"
 #include "messages/config/Config.hpp"
 
@@ -45,7 +44,7 @@ class Ecc {
   Buffer sign(const Buffer &input);
   Buffer sign(const uint8_t *data, const std::size_t size);
   void sign(const uint8_t *data, const std::size_t size, uint8_t *dest);
-  static constexpr std::size_t sign_length() { return KeyPriv::sign_length(); }
+  static constexpr std::size_t sign_length();
   friend class test::Ecc;
 };
 

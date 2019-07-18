@@ -26,7 +26,8 @@ Bot::Bot(const messages::config::Config &config,
       _networking(&_queue, &_keys.at(0), &_peers, _config.mutable_networking()),
       _ledger(std::make_shared<ledger::LedgerMongodb>(_config.database())),
       _update_timer(std::ref(*_io_context)),
-      _consensus_config(consensus_config) {
+      _consensus_config(consensus_config),
+      _tcp_config(_config.mutable_networking()->mutable_tcp()) {
   LOG_DEBUG << this << " : " << _me.port() << " hello from bot " << _me.port() << " "
             << _keys.at(0).key_pub() << std::endl
             << _peers << std::endl;
@@ -80,7 +81,10 @@ void Bot::handler_block(const messages::Header &header,
                         const messages::Body &body) {
   // bool reply_message = header.has_request_id();
   LOG_TRACE;
-  _consensus->add_block(body.block());
+  if (!_consensus->add_block(body.block())) {
+    LOG_WARNING << "Consensus rejected block";
+    return;
+  }
   update_ledger();
 
   if (header.has_request_id()) {
@@ -203,8 +207,6 @@ bool Bot::init() {
     log::from_config(_config.logs());
   }
 
-  _tcp_config = _config.mutable_networking()->mutable_tcp();
-
   if (!_config.has_database()) {
     LOG_ERROR << "Missing db configuration";
     return false;
@@ -227,6 +229,7 @@ bool Bot::init() {
 
   if (_config.has_rest()) {
     _api = std::make_unique<api::Rest>(_config.rest(), this);
+    LOG_INFO << "api launched on : " << _config.rest().port();
   }
   
   update_ledger();

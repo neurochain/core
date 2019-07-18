@@ -102,6 +102,10 @@ message Block {
   repeated _Denunciation denunciations = 40;
 }
 
+message Blocks {
+  repeated Block block = 1;
+}
+
 enum Branch {
   MAIN = 0;
   FORK = 1;
@@ -197,4 +201,8 @@ message _Message {
 message UnspentTransaction {
   required Hash transaction_id = 1;
   required _NCCAmount value = 2;
+}
+
+message UnspentTransactions {
+  repeated UnspentTransaction unspent_transactions = 1;
 }

@@ -38,13 +38,21 @@ std::shared_ptr<const tcp::socket> Connection::socket() const {
 
 void Connection::read() { read_header(); }
 
+const std::string Connection::ip() const {
+  try {
+    return _socket->remote_endpoint().address().to_string();
+  }catch(...) {
+    return "(no ip)";
+  }
+}
+  
 void Connection::read_header() {
   boost::asio::async_read(
       *_socket, boost::asio::buffer(_header.data(), _header.size()),
       [_this = ptr()](const boost::system::error_code &error,
                       std::size_t bytes_read) {
         if (error) {
-          LOG_WARNING << "read header error " << error.message();
+          LOG_WARNING << "read header error " << error.message() << " " << _this->ip();
           _this->terminate();
           return;
         }
@@ -61,10 +69,11 @@ void Connection::read_body(std::size_t body_size) {
       [_this = ptr(), this](const boost::system::error_code &error,
                             std::size_t bytes_read) {
         if (error) {
-          LOG_WARNING << "read body error " << error.message();
+          LOG_WARNING << "read body error " << error.message() << " " << ip();
           _this->terminate();
           return;
         }
+
         const auto header_pattern =
             reinterpret_cast<HeaderPattern *>(_this->_header.data());
 
@@ -77,25 +86,37 @@ void Connection::read_body(std::size_t body_size) {
         header->set_connection_id(_id);
         auto signature = header->mutable_signature();
         signature->set_type(messages::Hash::SHA256);
-        signature->set_data(header_pattern->signature,
+        signature->set_data(reinterpret_cast<const char*>(header_pattern->signature),
                             sizeof(header_pattern->signature));
 
         // validate the MessageVersion from the header
         if (header->version() != neuro::MessageVersion) {
-          LOG_INFO << "Killing connection because received message from wrong version (" << header->version() << ")";
+          LOG_INFO << "Killing connection because received message from wrong version (" << header->version() << ") " << ip();
           _this->terminate();
           return;
         }
-        for (const auto &body : message->bodies()) {
+        for (auto &body : *message->mutable_bodies()) {
           const auto type = get_type(body);
           if (type == messages::Type::kHello) {
-            const auto& hello = body.hello();
-            _remote_peer.CopyFrom(hello.peer());
+            boost::system::error_code ec;
+            const auto endpoint = _socket->remote_endpoint(ec);
+            if (ec) {
+              LOG_DEBUG << "got an hello message from disconnected endpoint "
+                        << ec.message()
+                        << std::endl;
+            } else {
+              auto *hello = body.mutable_hello();
+              hello->mutable_peer()->set_endpoint(endpoint.address().to_string());
+              _remote_peer.CopyFrom(hello->peer());
+              LOG_TRACE << "remote ip> "
+                        << _socket->remote_endpoint().address().to_string()
+                        << std::endl;
+            }
           }
         }
 
         if (!_this->_remote_peer.has_key_pub()) {
-          LOG_INFO << "Killing connection because received message without key pub";
+          LOG_INFO << "Killing connection because received message without key pub " << ip();
           _this->terminate();
           return;
         }
@@ -109,12 +130,18 @@ void Connection::read_body(std::size_t body_size) {
 
         if (!check) {
           LOG_INFO
-            << "Killing connection because received message with wrong signature"
-            << _this->_queue << " " << messages::to_json(*message) << " "
-            << _remote_peer << std::endl;
+            << "Killing connection because received message with wrong signature "
+            << ip();
           _this->terminate();
           return;
         }
+	try{
+        LOG_DEBUG << "Receiving1 [" << _socket->local_endpoint().port() << " <- "
+                  << _remote_peer.port() << "]: <<" << *message;
+	} catch(...) {
+	  _this->_buffer.save("conf/crashed.proto");
+	  return;
+	}
         message->mutable_header()->mutable_key_pub()->CopyFrom(
             _remote_peer.key_pub());
         _this->_queue->publish(message);
@@ -140,7 +167,7 @@ bool Connection::send(std::shared_ptr<Buffer> &message) {
 void Connection::close() { _socket->close(); }
 
 void Connection::terminate() {
-  LOG_INFO << this << " " << _id << " Killing connection";
+  LOG_INFO << this << " " << _id << " Killing connection" << ip();
   boost::system::error_code ec;
   _socket->shutdown(tcp::socket::shutdown_both, ec);
   if (ec) {

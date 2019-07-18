@@ -94,7 +94,7 @@ add_executable(ut
   ./networking/TransportLayer.cpp
   ./networking/tcp/Tcp.cpp
   ./networking/tcp/Connection.cpp
-  )
+  ./api/Rest.cpp)
 
 target_link_libraries(ut
   GTest::main

@@ -1,8 +1,8 @@
 #include "ledger/LedgerMongodb.hpp"
 #include <chrono>
 #include "common/logger.hpp"
-#include "messages/Hasher.hpp"
 #include "messages.pb.h"
+#include "messages/Hasher.hpp"
 
 namespace neuro {
 namespace ledger {
@@ -229,6 +229,7 @@ void LedgerMongodb::create_indexes() {
   _blocks.create_index(bss::document{}
                        << BLOCK + "." + HEADER + "." + PREVIOUS_BLOCK_HASH << 1
                        << bss::finalize);
+  _blocks.create_index(bss::document{} << BRANCH << 1 << bss::finalize);
   _blocks.create_index(bss::document{} << BRANCH_PATH + "." + BRANCH_IDS + ".0"
                                        << 1 << bss::finalize);
   _blocks.create_index(bss::document{} << BLOCK + "." + SCORE << 1
@@ -707,7 +708,6 @@ bool LedgerMongodb::get_transaction(const messages::TransactionID &id,
   std::lock_guard lock(_ledger_mutex);
   auto query_transaction = bss::document{} << TRANSACTION + "." + ID
                                            << to_bson(id) << bss::finalize;
-
   auto bson_transactions =
       _transactions.find(std::move(query_transaction), remove_OID());
 
@@ -1121,7 +1121,7 @@ bool LedgerMongodb::update_main_branch() {
   }
   from_bson(bson_block->view(), &main_branch_tip);
 
-  assert(main_branch_tip.branch() != messages::Branch::DETACHED);
+//  assert(main_branch_tip.branch() != messages::Branch::DETACHED);
   if (main_branch_tip.branch() == messages::Branch::MAIN) {
     return true;
   }

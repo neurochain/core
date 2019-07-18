@@ -48,7 +48,7 @@ bool to_buffer(const Packet &packet, Buffer *buffer) {
     packet.SerializeToArray(buffer->data(), buffer->size());
     return true;
   } catch (...) {
-    std::cout << boost::stacktrace::stacktrace() << std::endl;
+    LOG_WARNING << boost::stacktrace::stacktrace() << std::endl;
     return false;
   }
 }
@@ -65,7 +65,12 @@ void to_json(const Packet &packet, std::string *output) {
   try {
     google::protobuf::util::MessageToJsonString(packet, output);
   } catch (...) {
-    LOG_ERROR << "Could not to_json packet " << boost::stacktrace::stacktrace()
+    auto buff = to_buffer(packet);
+    if(!buff) {
+      throw std::runtime_error("Could not parse packet");
+    }
+    buff->save("crashing.proto");
+    LOG_ERROR << "Could not to_json packet " << buff->size() << boost::stacktrace::stacktrace()
               << std::endl;
     throw;
   }
@@ -126,7 +131,7 @@ void set_block_hash(Block *block) {
   // serializable.
   header->mutable_id()->set_type(messages::Hash::SHA256);
   header->mutable_id()->set_data("");
-
+  
   // The author should always be filled after the hash is set because the author
   // field contains the signature of a denunciation that contains the hash of
   // the block

@@ -1,24 +1,48 @@
 {
-  "key_pub_path": "/home/neuro/conf/key.pub",
-  "key_priv_path": "/home/neuro/conf/key.priv",
   "logs": {
-    "severity": "debug",
-    "to_stdout": true
+    "severity": "trace",
+    "toStdout": true
   },
   "networking": {
-    "max_connections": 3,
+    "maxConnections": 3,
     "tcp": {
       "port": 1337,
-      "peers": []
-    }
+      "endpoint": "localhost",
+      "peers": [
+        {
+          "endpoint": "boot0.test.neurochaintech.io",
+          "keyPub": {
+            "type": "ECP256K1",
+            "rawData": "At2zvnKjc8FhInceEx4LWJ3Yy6DyD83MR3jlCneoZZpP"
+          },
+          "port": 1337
+        },
+        {
+          "endpoint": "boot1.test.neurochaintech.io",
+          "keyPub": {
+            "type": "ECP256K1",
+            "rawData": "A5mc7ff4DMn9DyLq2qcbAUMyHfmzlvKKbLWuXHlQmuCD"
+          },
+          "port": 1337
+        }
+      ]
+    },
+    "keysPaths": [
+      {
+        "keyPubPath": "conf/key.pub",
+        "keyPrivPath": "conf/key.priv"
+      }
+    ]
   },
   "database": {
-    "url": "mongodb://mongo:27017/neuro",
-    "db_name": "neuro",
-    "block0_file": {
-      "block_format": "PROTO",
-      "block_path": "/home/neuro/conf/data.0.testnet"
+    "url": "mongodb://localhost:27017/testnet",
+    "dbName": "testnet",
+    "block0File": {
+      "blockFormat": "PROTO",
+      "blockPath": "conf/data.0.testnet"
     }
   },
-  "connection_graph_uri": "http://dashboard.test.neurochaintech.io"
+    "rest": {
+	"port": 8080
+    }
 }

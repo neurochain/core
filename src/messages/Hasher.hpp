@@ -3,22 +3,22 @@
 
 #include "common/Buffer.hpp"
 #include "crypto/Ecc.hpp"
-#include "crypto/KeyPub.hpp"
 #include "crypto/Hash.hpp"
+#include "crypto/KeyPub.hpp"
 #include "messages/Message.hpp"
 
 namespace neuro {
 namespace messages {
 
 class Hasher : public messages::Hash {
- public:
+public:
   Hasher() = default;
 
   void from_buffer(const Buffer &data) {
     Buffer hash;
     crypto::hash_sha3_256(data, &hash);
     this->set_type(Hash::SHA256);
-    this->set_data(hash.data(), hash.size());
+    this->set_data(hash.str());
   }
 
   explicit Hasher(const Buffer &data) { from_buffer(data); }
@@ -28,7 +28,7 @@ class Hasher : public messages::Hash {
     ecc_pub.save(&data);
     const auto tmp = crypto::hash_sha3_256(data);
     this->set_type(Hash::SHA256);
-    this->set_data(tmp.data(), tmp.size());
+    this->set_data(tmp.str());
   }
 
   explicit Hasher(const Packet &packet) {

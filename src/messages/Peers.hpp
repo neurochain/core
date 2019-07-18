@@ -11,6 +11,7 @@
 #include <vector>
 #include "common.pb.h"
 #include "common/logger.hpp"
+#include "messages.pb.h"
 #include "messages/Message.hpp"
 #include "messages/Peer.hpp"
 
@@ -96,10 +97,12 @@ class Peers {
   iterator begin();
   iterator begin(const Peer::Status);
   iterator end();
+  operator _Peers () const;  
 };
 
 std::ostream &operator<<(std::ostream &os, const Peers &peers);
-
+std::string to_json(const Packet &packet);
+  
 }  // namespace messages
 }  // namespace neuro
 

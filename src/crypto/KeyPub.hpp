@@ -1,11 +1,11 @@
 #ifndef NEURO_SRC_CRYPTO_KEYPUB_HPP
 #define NEURO_SRC_CRYPTO_KEYPUB_HPP
 
-#include <eccrypto.h>
-#include <files.h>
-#include <filters.h>
-#include <oids.h>
-#include <osrng.h>
+#include <cryptopp/eccrypto.h>
+#include <cryptopp/files.h>
+#include <cryptopp/filters.h>
+#include <cryptopp/oids.h>
+#include <cryptopp/osrng.h>
 #include <memory>
 
 #include "common/Buffer.hpp"

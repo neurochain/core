@@ -70,14 +70,14 @@ pages:
     - apk update
     - apk add doxygen
     - apk add ttf-freefont graphviz
+  dependencies:
+    - build_job:release
   script:
     - mkdir build ||echo exist && cd build && doxygen ../doc/Doxyfile
     - mv html ../public
     - mv ../doc/img ../public
-
   only:
-    changes:
-      - doc/*
+    - feature/ledger
   artifacts:
     paths:
       - public
@@ -89,19 +89,18 @@ build_image_prod:release:
     DOCKER_DRIVER: overlay2
   tags:
     - dind
-  only:
-    changes:
-      - utils/dockers/Dockerfile.core
+  dependencies:
+    - build_job:release
   script:
     - build_docker "Dockerfile.core" "Release"
-
-
 
 .build_bot: &build_bot |
   function build_bot() {
     echo "Building in $1 from $(pwd)"
+    g++ -v
     set -ex
     export BUILD_TYPE=$1
+    export CPPFLAGS="-march=x86-64"
     mkdir build || echo k
     pwd && ls -lahrt ~/
     cd build

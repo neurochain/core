@@ -1,4 +1,5 @@
 #include "messages/Peers.hpp"
+#include <tuple>
 
 namespace neuro {
 namespace messages {
@@ -136,6 +137,14 @@ bool Peers::fill(_Peers *peers, uint8_t peer_count) {
   return true;
 }
 
+Peers::operator _Peers () const {
+  _Peers peers;
+  for (const auto &[foo, peer] : _peers) {
+    peers.add_peers()->CopyFrom(*peer.get());
+  }
+  return peers;
+}
+
 std::ostream &operator<<(std::ostream &os, const Peers &peers) {
   for (const auto &peer : peers.peers_copy()) {
     os << "peers> " << peer << std::endl;
@@ -143,6 +152,6 @@ std::ostream &operator<<(std::ostream &os, const Peers &peers) {
 
   return os;
 }
-
+  
 }  // namespace messages
 }  // namespace neuro

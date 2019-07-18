@@ -53,7 +53,6 @@ void Tcp::accept(const boost::system::error_code &error) {
   if (!error) {
     const auto remote_endpoint =
         _new_socket->remote_endpoint().address().to_string();
-
     this->new_connection_from_remote(_new_socket, error);
   } else {
     LOG_WARNING << "Rejected connection " << error.message();

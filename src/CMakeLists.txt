@@ -10,7 +10,7 @@ PROTOBUF_GENERATE_CPP(ProtoSources ProtoHeaders ${ProtoFiles})
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../testnet/data.0.testnet
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-configure_file("../testnet/bot_local.json.in" "${CMAKE_CURRENT_BINARY_DIR}/bot.json" @ONLY)
+configure_file("../testnet/bot.json" "${CMAKE_CURRENT_BINARY_DIR}/bot.json" @ONLY)
 
 add_library(protos
   ${ProtoSources}
@@ -25,16 +25,16 @@ target_link_libraries(protos
 
 
 add_library(core
+  ./crypto/KeyPriv.cpp
+  ./crypto/KeyPriv.hpp
+  ./crypto/Hash.cpp
   ./crypto/Hash.hpp
   ./crypto/KeyPub.cpp
-  ./crypto/Ecc.cpp
   ./crypto/KeyPub.hpp
   ./crypto/Sign.cpp
   ./crypto/Sign.hpp
-  ./crypto/KeyPriv.hpp
   ./crypto/Ecc.hpp
-  ./crypto/Hash.cpp
-  ./crypto/KeyPriv.cpp
+  ./crypto/Ecc.cpp
   ./common/Buffer.cpp
   ./common/Buffer.hpp
   ./common/logger.hpp
@@ -81,8 +81,8 @@ add_library(core
   ./ledger/LedgerMongodb.cpp
   ./ledger/Transaction.hpp
   ./Bot.hpp
-#  ./rest/Rest.cpp
-#  ./rest/Rest.hpp
+  ./api/Rest.cpp
+  ./api/Rest.hpp
   ./api/Api.hpp
   ./api/Api.cpp
   ./consensus/Consensus.hpp
