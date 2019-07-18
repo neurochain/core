@@ -44,41 +44,23 @@ TEST_F(Simulator, send_ncc) {
   auto transaction0 =
       ledger->send_ncc(sender_private_key, recipient_public_key, 0.5);
   ASSERT_EQ(transaction0.inputs_size(), 1);
-  ASSERT_EQ(transaction0.outputs_size(), 2);
+  ASSERT_EQ(transaction0.outputs_size(), 1);
   ASSERT_EQ(transaction0.outputs(0).value().value(), ncc_block0.value() * 0.5);
-  ASSERT_EQ(transaction0.outputs(1).value().value(), ncc_block0.value() * 0.5);
   ledger->add_to_transaction_pool(transaction0);
 
   auto transaction1 =
-      ledger->send_ncc(sender_private_key, recipient_public_key, 0.5);
+      ledger->send_ncc(sender_private_key, recipient_public_key, 0.25);
   ASSERT_EQ(transaction1.inputs_size(), 1);
-  ASSERT_EQ(transaction1.outputs_size(), 2);
   ASSERT_EQ(transaction1.outputs(0).value().value(), ncc_block0.value() * 0.25);
-  ASSERT_EQ(transaction1.outputs(1).value().value(), ncc_block0.value() * 0.25);
   ledger->add_to_transaction_pool(transaction1);
 
   sender_private_key = simulator.keys[1].key_priv();
   recipient_public_key = simulator.key_pubs[1];
   auto transaction2 =
-      ledger->send_ncc(sender_private_key, recipient_public_key, 0.5);
-  ASSERT_EQ(transaction2.inputs_size(), 3);
-  ASSERT_EQ(transaction2.outputs_size(), 2);
-  ASSERT_EQ(transaction2.outputs(0).value().value(),
-            ncc_block0.value() * 0.875);
-  ASSERT_EQ(transaction2.outputs(1).value().value(),
-            ncc_block0.value() * 0.875);
+      ledger->send_ncc(sender_private_key, recipient_public_key, 0.1);
+  ASSERT_EQ(transaction2.inputs_size(), 1);
+  ASSERT_EQ(transaction2.outputs(0).value().value(), ncc_block0.value() * 0.1);
   ledger->add_to_transaction_pool(transaction2);
-
-  sender_private_key = simulator.keys[1].key_priv();
-  recipient_public_key = simulator.key_pubs[3];
-  auto transaction3 =
-      ledger->send_ncc(sender_private_key, recipient_public_key, 0.5);
-  ASSERT_EQ(transaction3.inputs_size(), 2);
-  ASSERT_EQ(transaction3.outputs_size(), 2);
-  ASSERT_EQ(transaction3.outputs(0).value().value(),
-            ncc_block0.value() * 0.875);
-  ASSERT_EQ(transaction3.outputs(1).value().value(),
-            ncc_block0.value() * 0.875);
 }
 
 TEST_F(Simulator, random_transaction) {
@@ -96,7 +78,10 @@ TEST_F(Simulator, run) {
     messages::set_block_hash(&block);
     ASSERT_EQ(block.header().id(), block_id);
 
-    ASSERT_EQ(block.transactions_size(), 7);
+    // Some send_ncc transactions are invalid
+    // Because the balance does not use the transaction pool
+    ASSERT_GT(block.transactions_size(), 3);
+    ASSERT_LT(block.transactions_size(), 10);
     ASSERT_EQ(block.coinbase().outputs_size(), 1);
   }
 }

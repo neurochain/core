@@ -24,6 +24,8 @@ def update_config(config):
 
     database = config.get("database")
     if database:
+        if "empty_database" not in database:
+            database["empty_database"] = True
         if "block0Format" in database and "block0Path" in database:
             database["block0File"] = {
                 "blockFormat": database.pop("block0Format"),

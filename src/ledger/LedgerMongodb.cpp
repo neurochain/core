@@ -99,6 +99,8 @@ LedgerMongodb::LedgerMongodb(const messages::config::Database &config)
   set_main_branch_tip();
 }
 
+LedgerMongodb::~LedgerMongodb() { mpfr_free_cache(); }
+
 mongocxx::options::find LedgerMongodb::remove_OID() const {
   std::lock_guard lock(_ledger_mutex);
   mongocxx::options::find find_options;

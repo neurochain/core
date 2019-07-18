@@ -92,7 +92,7 @@ class LedgerMongodb : public Ledger {
                 const messages::Block &block0);
   LedgerMongodb(const messages::config::Database &config);
 
-  ~LedgerMongodb() {}
+  ~LedgerMongodb();
 
   void remove_all();
 
