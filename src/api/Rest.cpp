@@ -42,58 +42,6 @@ void Rest::send(Response &response, const std::string &value) {
   response.send(Pistache::Http::Code::Ok, value);
 }
 
-std::string Rest::to_json(const neuro::messages::Hash &hash) {
-  return R"({"type":"SHA256","data":")" + messages::encode_base58(hash.data()) + "\"}";
-}
-
-template<class T>
-std::string Rest::to_json(const google::protobuf::RepeatedPtrField<T>& fields) {
-  std::stringstream ss;
-  ss << "[";
-  for (auto i = 0; i < fields.size(); i++) {
-    ss << fields[i];
-    if (i+1 < fields.size()) {
-      ss << ',';
-    }
-  }
-  ss << "]";
-  return ss.str();
-}
-
-void Rest::send(Response &response, const messages::Transaction &transaction) {
-  std::stringstream ss;
-  ss << "{";
-  if (transaction.has_id()) {
-    ss << "\"id\":" << to_json(transaction.id()) << ",";
-    ss << "\"inputs\":" << to_json(transaction.inputs()) << ",";
-    ss << "\"outputs\":" << to_json(transaction.outputs()) << ",";
-    ss << "\"signatures\":" << to_json(transaction.signatures());
-  }
-  ss << "}";
-  response.headers().add<Http::Header::AccessControlAllowOrigin>("*");
-  response.send(Pistache::Http::Code::Ok, ss.str());
-}
-
-void Rest::send(Response &response, const messages::Block &block) {
-  std::stringstream ss;
-  ss << "{";
-  if (block.has_header()) {
-    ss << R"("header":)";
-    ss << "{\"id\":" << to_json(block.header().id()) << ",";
-    ss << "\"timestamp\":" << block.header().timestamp() << ",";
-    ss << "\"previousBlockHash\":" << block.header().previous_block_hash()
-       << ",";
-    ss << "\"author\":" << block.header().author() << ",";
-    ss << "\"height\":" << block.header().height() << "},";
-
-    ss << "\"transactions\":" << to_json(block.transactions()) << ",";
-    ss << "\"coinbase\":" << block.coinbase();
-  }
-  ss << "}";
-  response.headers().add<Http::Header::AccessControlAllowOrigin>("*");
-  response.send(Pistache::Http::Code::Ok, ss.str());
-}
-
 void Rest::bad_request(Response &response, const std::string& message) {
   response.headers().add<Http::Header::AccessControlAllowOrigin>("*");
   response.send(Pistache::Http::Code::Bad_Request, message);
@@ -133,9 +81,6 @@ void Rest::get_transaction(const Request& req, Response res) {
   if (!messages::from_json(req.body(), &transaction_id)) {
     bad_request(res, "could not parse body");
   }
-
-  auto data = to_internal_id(transaction_id.data());
-  transaction_id.set_data(data);
   messages::Transaction transaction = Api::transaction(transaction_id);
   send(res, transaction);
 }
@@ -207,12 +152,13 @@ void Rest::get_unspent_transaction_list(const Request& req, Response res) {
 }
 
 void Rest::get_block_by_id(const Rest::Request &req, Rest::Response res) {
-  messages::Hasher block_id;
+  messages::BlockID block_id;
   if (!messages::from_json(req.body(), &block_id)) {
     bad_request(res, "could not parse body");
   }
-  auto data = to_internal_id(block_id.data());
-  block_id.set_data(data);
+  std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": "
+            << block_id
+            << std::endl;
   auto block = Api::block(block_id);
   send(res, block);
 }
@@ -239,38 +185,6 @@ void Rest::get_total_nb_blocks(const Rest::Request &req, Rest::Response res) {
 
 void Rest::get_peers(const Rest::Request& request, Rest::Response res) {
   send(res, messages::to_json(Api::peers()));
-}
-
-/**
- * decode a base58 string encoded by protobuf to
- * a format usable by the ledger
- * \param id an id comming from protobuf Hash
- * \return an id to replace in an Hash
- */
-std::string to_internal_id(const std::string &id) {
-  try {
-    return boost::beast::detail::base64_decode(encode_base64(
-        messages::decode_base58(boost::beast::detail::base64_encode(id))));
-  } catch (std::exception& e) {
-    std::cerr << id << " is not a valid id " << e.what() << "\n";
-    return "";
-  }
-}
-
-std::string encode_base64(const CryptoPP::Integer &num) {
-  CryptoPP::Integer padded_num = num << (6 - num.BitCount() % 6);
-  std::stringstream encoded_stream;
-  CryptoPP::Integer quotient;
-  CryptoPP::Integer remainder;
-  while (padded_num > 0) {
-    CryptoPP::Integer::DivideByPowerOf2(remainder, quotient, padded_num, 6);
-    encoded_stream << B64ALPHABET[remainder.ConvertToLong()];
-    padded_num = quotient;
-  }
-  std::string encoded = encoded_stream.str();
-  std::reverse(encoded.begin(), encoded.end());
-  encoded += std::string(4 - encoded.size() % 4, '=');
-  return encoded;
 }
 
 Rest::~Rest() {

@@ -18,13 +18,7 @@ namespace api {
 
 namespace test {
   class Rest;
-};
-
-std::string to_internal_id(const std::string &id);
-const std::string B64ALPHABET =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-std::string encode_base64(const CryptoPP::Integer &num);
-
+}
 
 class Rest : public Api {
 private:
@@ -37,12 +31,7 @@ private:
   void init();
   void start();
   void shutdown();
-  template<class T>
-  std::string to_json(const google::protobuf::RepeatedPtrField<T>& fields);
-  std::string to_json(const neuro::messages::Hash &hash);
   void send(Response &response, const messages::Packet &packet);
-  void send(Response &response, const messages::Transaction &transaction);
-  void send(Response &response, const messages::Block &block);
   void send(Response &response, const std::string &value);
   void bad_request(Response &response, const std::string& message);
   void setupRoutes();
