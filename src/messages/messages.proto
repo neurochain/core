@@ -163,6 +163,13 @@ message Publish {
   required _KeyPub key_pub = 3;
 }
 
+message Event {
+  enum Type {
+    BLOCKMINED = 0;
+  }
+  required Type type = 1;
+}
+
 message Body {
   oneof body {
     Hello hello = 1;
@@ -178,6 +185,7 @@ message Body {
     ConnectionReady connection_ready = 11;
     BodyCount body_count = 12;
     Publish publish = 13;
+    Event event = 14;
   }
 }
 

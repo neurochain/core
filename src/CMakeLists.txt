@@ -85,6 +85,8 @@ add_library(core
   ./api/Rest.hpp
   ./api/Api.hpp
   ./api/Api.cpp
+  ./api/Monitoring.cpp
+  ./api/Monitoring.h
   ./consensus/Consensus.hpp
   ./consensus/Consensus.cpp
   ./consensus/Pii.hpp
