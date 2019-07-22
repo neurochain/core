@@ -852,6 +852,121 @@ TEST_F(LedgerMongodb, send_ncc) {
 
 TEST_F(LedgerMongodb, clean_transaction_pool) { test_clean_transaction_pool(); }
 
+TEST_F(LedgerMongodb, get_balance) {
+  // Write 5 blocks in the main branch
+  // with 1 address on block 1, 2 on block 2, 3 on block 3 ...
+  // the balance is equal to the height of the block
+  std::vector<crypto::Ecc> eccs{5};
+  std::vector<messages::TaggedBlock> tagged_blocks;
+  ASSERT_TRUE(ledger->get_last_block(&tagged_blocks.emplace_back()));
+  for (int i = 1; i < 6; i++) {
+    auto &previous = tagged_blocks[i - 1];
+    messages::TaggedBlock tagged_block;
+    tooling::blockgen::blockgen_from_block(tagged_block.mutable_block(),
+                                           previous.block(), i);
+    auto branch_path = tagged_block.mutable_branch_path();
+    branch_path->add_branch_ids(0);
+    branch_path->add_block_numbers(i);
+    branch_path->set_branch_id(0);
+    branch_path->set_block_number(i);
+    tagged_block.set_branch(messages::Branch::MAIN);
+    for (int j = 0; j < i; j++) {
+      auto balance = tagged_block.add_balances();
+      balance->mutable_key_pub()->CopyFrom(eccs[j].key_pub());
+      balance->mutable_value()->set_value(i);
+      balance->set_enthalpy_begin("0");
+      balance->set_enthalpy_end("0");
+    }
+    ASSERT_TRUE(ledger->insert_block(tagged_block));
+    tagged_blocks.push_back(tagged_block);
+  }
+  for (int i = 0; i < 6; i++) {
+    for (int j = 0; j < 5; j++) {
+      auto balance = ledger->get_balance(eccs[j].key_pub(), tagged_blocks[i]);
+      if (i > 0 && j < i) {
+        ASSERT_EQ(balance.value().value(), i);
+      } else {
+        ASSERT_EQ(balance.value().value(), 0);
+      }
+    }
+  }
+
+  // Write 5 blocks in a new branch starting at block 3
+  std::vector<messages::TaggedBlock> fork;
+  std::vector<crypto::Ecc> fork_eccs{5};
+  fork.push_back(tagged_blocks[3]);
+  for (int i = 0; i < 5; i++) {
+    auto &previous = fork[i];
+    messages::TaggedBlock tagged_block;
+    tooling::blockgen::blockgen_from_block(tagged_block.mutable_block(),
+                                           previous.block(), 3 + i + 1);
+
+    // Sadly the block has the same id as the block in the main branch
+    // let's fix that
+    tagged_block.mutable_block()
+        ->mutable_coinbase()
+        ->mutable_last_seen_block_id()
+        ->CopyFrom(previous.block().header().id());
+    auto output =
+        tagged_block.mutable_block()->mutable_coinbase()->add_outputs();
+    output->mutable_value()->set_value(i);
+    output->mutable_key_pub()->CopyFrom(eccs[0].key_pub());
+    messages::set_block_hash(tagged_block.mutable_block());
+
+    auto branch_path = tagged_block.mutable_branch_path();
+    branch_path->add_branch_ids(1);
+    branch_path->add_branch_ids(0);
+    branch_path->add_block_numbers(i);
+    branch_path->add_block_numbers(3);
+    branch_path->set_branch_id(1);
+    branch_path->set_block_number(i);
+    tagged_block.set_branch(messages::Branch::FORK);
+    for (int j = 0; j <= i; j++) {
+      auto balance = tagged_block.add_balances();
+      balance->mutable_key_pub()->CopyFrom(fork_eccs[j].key_pub());
+      balance->mutable_value()->set_value(17 + i);
+      balance->set_enthalpy_begin("0");
+      balance->set_enthalpy_end("0");
+    }
+    ASSERT_TRUE(ledger->insert_block(tagged_block));
+    fork.push_back(tagged_block);
+  }
+
+  // Check the balances in the main branch
+  for (int i = 0; i < 6; i++) {
+    for (int j = 0; j < 5; j++) {
+      auto balance = ledger->get_balance(eccs[j].key_pub(), tagged_blocks[i]);
+      if (i > 0 && j < i) {
+        ASSERT_EQ(balance.value().value(), i);
+      } else {
+        ASSERT_EQ(balance.value().value(), 0);
+      }
+      auto fork_balance =
+          ledger->get_balance(fork_eccs[j].key_pub(), tagged_blocks[i]);
+      ASSERT_EQ(fork_balance.value().value(), 0);
+    }
+  }
+
+  // Check the balances in the fork branch
+  for (int i = 0; i < 5; i++) {
+    for (int j = 0; j < 5; j++) {
+      auto balance = ledger->get_balance(eccs[j].key_pub(), fork[i + 1]);
+      if (j < 3) {
+        ASSERT_EQ(balance.value().value(), 3);
+      } else {
+        ASSERT_EQ(balance.value().value(), 0);
+      }
+      auto fork_balance =
+          ledger->get_balance(fork_eccs[j].key_pub(), fork[i + 1]);
+      if (j <= i) {
+        ASSERT_EQ(fork_balance.value().value(), 17 + i);
+      } else {
+        ASSERT_EQ(fork_balance.value().value(), 0);
+      }
+    }
+  }
+}
+
 }  // namespace tests
 }  // namespace ledger
 }  // namespace neuro
