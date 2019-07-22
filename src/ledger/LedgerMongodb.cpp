@@ -1550,10 +1550,10 @@ messages::Balance LedgerMongodb::get_balance(
     const messages::TaggedBlock &tagged_block) const {
   std::lock_guard lock(_ledger_mutex);
   std::lock_guard lock_mpfr(mpfr_mutex);
-  const messages::BranchPath &branch_path = tagged_block.branch_path();
+  const auto &branch_path = tagged_block.branch_path();
+  const auto bson_key_pub = to_bson(key_pub);
   auto document = bss::document{};
   auto in_array = document << $OR << bss::open_array;
-  const auto bson_key_pub = to_bson(key_pub);
   for (int i = 0; i < branch_path.branch_ids_size(); i++) {
     in_array = in_array << bss::open_document << BALANCES + "." + KEY_PUB
                         << bson_key_pub << BRANCH_PATH + "." + BRANCH_ID

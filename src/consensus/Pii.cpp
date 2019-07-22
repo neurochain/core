@@ -23,23 +23,23 @@ bool Pii::add_transaction(const messages::Transaction &transaction,
   }
 
   for (const auto &input : transaction.inputs()) {
-    auto spent_in_transaction = input.value().value();
-    auto spent_in_block = total_spent.at(input.key_pub());
-    Double input_ratio = Double{spent_in_transaction} / spent_in_block;
+    const auto spent_in_transaction = input.value().value();
+    const auto spent_in_block = total_spent.at(input.key_pub());
+    const Double input_ratio = Double{spent_in_transaction} / spent_in_block;
     const auto &balance = balances.at(input.key_pub());
-    Double enthalpy_spent_block =
+    const Double enthalpy_spent_block =
         Double{balance.enthalpy_begin()} - balance.enthalpy_end();
-    Double enthalpy_spent_transaction = input_ratio * enthalpy_spent_block;
+    const Double enthalpy_spent_transaction = input_ratio * enthalpy_spent_block;
     Double previous_pii;
     _ledger->get_pii(input.key_pub(), tagged_block.previous_assembly_id(),
                      &previous_pii);
     for (const auto &output : transaction.outputs()) {
       if (output.key_pub() != input.key_pub()) {
-        Double output_ratio = Double{output.value().value()} / total_outputs;
-        Double raw_enthalpy = output_ratio * enthalpy_spent_transaction;
+        const Double output_ratio = Double{output.value().value()} / total_outputs;
+        const Double raw_enthalpy = output_ratio * enthalpy_spent_transaction;
 
         // TODO reference to a pdf in english that contains the formula
-        Double enthalpy =
+        const Double enthalpy =
             mpfr::pow(mpfr::log(mpfr::fmax(1, previous_pii * enthalpy_lambda() *
                                                   enthalpy_c() * raw_enthalpy /
                                                   _config.blocks_per_assembly)),
@@ -74,7 +74,7 @@ bool Pii::add_block(const messages::TaggedBlock &tagged_block) {
   // Warning: this method only works for blocks that are already inserted in the
   // ledger.
   // Notice that for now coinbases don't give any entropy
-  std::lock_guard lock(mpfr_mutex);
+  std::lock_guard lock(mpfr_mutex); // TODO trax, is it really needed?
   auto total_spent = get_total_spent(tagged_block.block());
   auto balances = get_balances(tagged_block);
 

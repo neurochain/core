@@ -54,7 +54,7 @@ This will create and run a docker, running the bot and mongo db. Logs and ledger
 docker network create neuro
 mkdir {mongo,conf} # if possible make it an xfs filesystem
 docker run -dit --name mongo --network neuro --restart always --log-opt max-size=10m --log-opt max-file=5 -v $(pwd)/mongo:/data/db  mongo:3.6.11
-docker run -dit --name core  --network neuro --restart always --log-opt max-size=10m --log-opt max-file=5 -p 1337:1337 registry.gitlab.com/neurochaintech/core/prod/release:latest
+docker run -dit --name core  --network neuro --restart always --log-opt max-size=10m --log-opt max-file=5 -p 1337:1337 registry.gitlab.com/neurochaintech/core/prod/release:c1ed8a9a214f7164fa550eb489b571f4a1c9d5f8
 ```
 
 

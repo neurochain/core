@@ -19,7 +19,7 @@ bool sign(const std::vector<const crypto::Ecc *> keys,
 
   for (int i = 0; i < transaction->inputs_size(); i++) {
     const auto &input = transaction->mutable_inputs(i);
-    const auto key = keys[i];
+    const auto &key = keys[i];
     const auto signature = key->key_priv().sign(serialized_transaction);
 
     input->mutable_signature()->set_data(signature.str());

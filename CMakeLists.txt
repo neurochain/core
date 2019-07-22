@@ -50,9 +50,6 @@ include(FindPkgConfig)
 hunter_add_package(Boost COMPONENTS program_options system filesystem log thread)
 find_package(Boost 1.68 CONFIG REQUIRED program_options system filesystem log thread)
 
-hunter_add_package(Beast)
-find_package(Beast CONFIG REQUIRED)
-
 hunter_add_package(GTest)
 find_package(GTest CONFIG REQUIRED)
 

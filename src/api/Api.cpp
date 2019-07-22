@@ -42,7 +42,7 @@ messages::Block Api::block(messages::BlockHeight height) {
 messages::Blocks Api::last_blocks(std::size_t nb_blocks) {
   messages::Blocks blocks;
   auto last_blocks = _bot->ledger()->get_last_blocks(nb_blocks);
-  for (auto &last_block : last_blocks) {
+  for (const auto &last_block : last_blocks) {
     blocks.add_block()->CopyFrom(last_block);
   }
   return blocks;
