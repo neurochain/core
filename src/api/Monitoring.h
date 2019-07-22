@@ -5,15 +5,15 @@
 namespace neuro {
 
 class Monitoring {
-  using TimePoint = std::chrono::time_point<std::chrono::system_clock>;
   Bot& _bot;
+  using TimePoint = std::chrono::time_point<std::chrono::system_clock>;
   const TimePoint _starting_time = std::chrono::system_clock::now();
-  TimePoint _last_block_timestamp;
 
 public:
   Monitoring(Bot& b);
   double uptime();
-  double time_since_last_block();
+  int last_block_ts();
+  int current_height();
 };
 
 }

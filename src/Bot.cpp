@@ -86,11 +86,6 @@ void Bot::handler_block(const messages::Header &header,
   }
   update_ledger();
 
-  auto block_added_message = std::make_shared<messages::Message>();
-  messages::fill_header(block_added_message->mutable_header());
-  block_added_message->add_bodies()->mutable_event()->set_type(messages::Event_Type_BLOCKMINED);
-  _queue.publish(block_added_message);
-
   if (header.has_request_id()) {
     auto got = _request_ids.find(header.request_id());
     if (got != _request_ids.end()) {
@@ -227,10 +222,6 @@ bool Bot::init() {
       _ledger, _keys, _consensus_config,
       [this](const messages::Block &block) {
         publish_block(block);
-        auto message = std::make_shared<messages::Message>();
-        messages::fill_header(message->mutable_header());
-        message->add_bodies()->mutable_event()->set_type(messages::Event_Type_BLOCKMINED);
-        _queue.publish(message);
       });
 
   _io_context_thread = std::thread([this]() { _io_context->run(); });

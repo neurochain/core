@@ -3,13 +3,15 @@
 #include "common/logger.hpp"
 #include "ledger/Ledger.hpp"
 #include "messages/Address.hpp"
-#include <messages/Hasher.hpp>
+#include "messages/Hasher.hpp"
+#include <rest.pb.h>
 
 namespace neuro::api {
 
 Rest::Rest(const messages::config::Rest &config, Bot *bot)
     : Api::Api(bot), _httpEndpoint(std::make_shared<Http::Endpoint>(
-                         Address(Ipv4::any(), config.port()))) {
+                         Address(Ipv4::any(), config.port()))),
+      _monitor(*bot) {
   init();
   start();
 }
@@ -64,6 +66,7 @@ void Rest::setupRoutes() {
   Get(_router, "/total_nb_transactions", bind(&Rest::get_total_nb_transactions, this));
   Get(_router, "/total_nb_blocks", bind(&Rest::get_total_nb_blocks, this));
   Get(_router, "/peers", bind(&Rest::get_peers, this));
+  Get(_router, "/status", bind(&Rest::get_status, this));
 }
 
 void Rest::get_balance(const Request& req, Response res) {
@@ -182,6 +185,14 @@ void Rest::get_total_nb_blocks(const Rest::Request &req, Rest::Response res) {
 
 void Rest::get_peers(const Rest::Request& request, Rest::Response res) {
   send(res, messages::to_json(Api::peers()));
+}
+
+void Rest::get_status(const Rest::Request &req, Rest::Response res) {
+  messages::Status status;
+  status.set_uptime(_monitor.uptime());
+  status.set_last_block_ts(_monitor.last_block_ts());
+  status.set_current_height(_monitor.current_height());
+  send(res, messages::to_json(status));
 }
 
 Rest::~Rest() {

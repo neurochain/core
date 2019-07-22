@@ -3,6 +3,7 @@ set(ProtoFiles
   "${CMAKE_CURRENT_SOURCE_DIR}/messages/config.proto"
   "${CMAKE_CURRENT_SOURCE_DIR}/messages/messages.proto"
   "${CMAKE_CURRENT_SOURCE_DIR}/messages/consensus.proto"
+  "${CMAKE_CURRENT_SOURCE_DIR}/messages/rest.proto"
   )
 
 PROTOBUF_GENERATE_CPP(ProtoSources ProtoHeaders ${ProtoFiles})

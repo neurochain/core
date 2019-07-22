@@ -2,37 +2,11 @@ syntax = "proto2";
 
 package neuro.messages;
 
-import "messages.proto";
 import "common.proto";
 
 
-message RestUnspentTransaction {
-  required bytes transaction_id = 1;
-  required string value = 2;
-}
-
-message RestUnspentTransactions {
-  repeated RestUnspentTransaction unspent_transactions = 1;
-}
-
-message TransactionToPublish {
-  repeated bytes transactions_ids = 1;
-  repeated Output outputs = 2;
-  required bytes key_priv = 3;
-  optional _NCCAmount fees = 4;
-}
-
-message GeneratedKeys {
-  required _KeyPriv key_priv = 1;
-  required _KeyPub key_pub = 2;
-  required Hash address = 3;
-}
-
-message Blocks {
-  repeated Block blocks = 1;
-}
-
-message ConnectionsGraph {
-  required Hash own_address = 1;
-  repeated Hash peers_addresses = 2;
+message Status {
+  optional int32 uptime = 1;
+  optional int32 last_block_ts = 2;
+  optional int32 current_height = 3;
 }
