@@ -26,7 +26,7 @@ class RealtimeSimulator : public testing::Test {
     if (empty_assemblies) {
       // Lets put it in the past so that there are some empty assemblies
       nb_empty_assemblies = 5;
-      time_delta = -nb_empty_assemblies * 5 + 4;
+      time_delta = -nb_empty_assemblies * 5 + 3;
     } else {
       // Lets put it in the future sa that we have time to prepare ourselves for
       // block1
@@ -81,8 +81,7 @@ class RealtimeSimulator : public testing::Test {
 
       if (!started_miner) {
         milliseconds sleep_time =
-            (milliseconds)(1000 * (begin_timestamp + config.block_period) +
-                           100) -
+            (milliseconds)(1000 * (begin_timestamp + config.block_period)) -
             duration_cast<milliseconds>(system_clock::now().time_since_epoch());
         LOG_DEBUG << "WAITING " << sleep_time.count()
                   << " MS BEFORE STARTING MINER THREAD " << std::endl;
@@ -94,7 +93,7 @@ class RealtimeSimulator : public testing::Test {
 
       milliseconds sleep_time =
           (milliseconds)(1000 * (begin_timestamp + i * config.block_period) +
-                         500 * config.block_period) -
+                         800 * config.block_period) -
           duration_cast<milliseconds>(system_clock::now().time_since_epoch());
       LOG_DEBUG << "WAITING " << sleep_time.count() << " MS FOR BLOCK "
                 << i + config.blocks_per_assembly * nb_empty_assemblies
@@ -131,7 +130,9 @@ class RealtimeSimulator : public testing::Test {
         ASSERT_EQ(tagged_block.block().header().height(), i);
       }
 
-      ASSERT_EQ(tagged_block.block().transactions_size(), nb_transactions);
+      if (!empty_assemblies) {
+        ASSERT_EQ(tagged_block.block().transactions_size(), nb_transactions);
+      }
       ASSERT_EQ(tagged_block.block().coinbase().outputs_size(), 1);
     }
   }
