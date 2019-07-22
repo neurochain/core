@@ -2,6 +2,7 @@
 #define CORE_MONITORING_H
 
 #include "Bot.hpp"
+#include <rest.pb.h>
 namespace neuro {
 
 class Monitoring {
@@ -14,6 +15,8 @@ public:
   double uptime();
   int last_block_ts();
   int current_height();
+  messages::Rest::Bot resource_usage();
+  messages::Rest::Status complete_status();
 };
 
 }

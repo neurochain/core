@@ -1,12 +1,23 @@
 syntax = "proto2";
 
-package neuro.messages;
+package neuro.messages.Rest;
 
-import "common.proto";
+message BlockChain {
+  optional int32 last_block_ts = 1;
+  optional int32 current_height = 2;
+}
 
+message Bot {
+  optional int32 uptime = 1;
+  optional int32 utime = 2;
+  optional int32 stime = 3;
+  optional float cpu_usage = 4;
+  optional int32 memory = 5;
+  optional int32 net_in = 6;
+  optional int32 net_out = 7;
+}
 
 message Status {
-  optional int32 uptime = 1;
-  optional int32 last_block_ts = 2;
-  optional int32 current_height = 3;
+  optional Bot bot = 1;
+  optional BlockChain blockchain = 2;
 }
