@@ -184,18 +184,23 @@ $ curl http://52.47.129.155:8080/peers
 
 **method**: `GET`
 
-* uptime: time the bot is alive 
-* utime: cpu time used by the bot
-* stime: cpu time used by the system
-* cpuUsage: percentage of cpu used
-* memory: max resident memory used
+* uptime: time the bot is alive (sec)
+* utime: cpu time used by the bot (sec)
+* stime: cpu time used by the system (sec)
+* cpuUsage: percentage of cpu used (%)
+* memory: max resident memory used (bytes)
 * netIn: messages received
 * netOut: messages sent
-* lastBlockTs: time since last block
+* lastBlockTs: time since last block (sec)
 * currentHeight: current height in blockchain
+* totalSpace: remaining space on disk (bytes)
+* usedSpace: space used on disk (bytes)
+* totalInode: remaining inode on disk
+* usedInode: inode used on disk
+
 
 **exemple**:
 ```
 $ curl localhost:8080/status
-{"bot":{"uptime":32,"utime":1,"stime":0,"cpuUsage":3.09266448,"memory":370368,"netIn":0,"netOut":0},"blockchain":{"lastBlockTs":1562759946,"currentHeight":161620}}
+{"bot":{"uptime":2,"utime":0,"stime":0,"cpuUsage":0,"memory":357984,"netIn":0,"netOut":0},"blockchain":{"lastBlockTs":1562759946,"currentHeight":161620},"fs":{"totalSpace":1473970176,"usedSpace":515731456,"totalInode":15073280,"usedInode":1243960}}
 ```

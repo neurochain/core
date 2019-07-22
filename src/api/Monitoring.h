@@ -15,8 +15,8 @@ public:
   double uptime();
   int last_block_ts();
   int current_height();
-  messages::Rest::Bot resource_usage();
-  messages::Rest::Status complete_status();
+  messages::Status::Bot resource_usage();
+  messages::Status complete_status();
 };
 
 }

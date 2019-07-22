@@ -188,7 +188,7 @@ void Rest::get_peers(const Rest::Request& request, Rest::Response res) {
 }
 
 void Rest::get_status(const Rest::Request &req, Rest::Response res) {
-  messages::Rest::Status status = _monitor.complete_status();
+  auto status = _monitor.complete_status();
   send(res, messages::to_json(status));
 }
 
