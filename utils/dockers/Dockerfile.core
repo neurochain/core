@@ -8,11 +8,10 @@ LABEL Description "Generic Bot Image"
 USER neuro
 WORKDIR /home/neuro
 RUN mkdir conf
-COPY build/src/{main,keygen,showkey,show_block0} main
+COPY build/src/* ./
 COPY testnet/bot.json conf/bot.json
 COPY testnet/data.0.testnet conf/data.0.testnet
 COPY utils/dockers/entrypoint.sh entrypoint.sh
-RUN chmod +x xentrypoint.sh
 # cleanup 
 RUN ./main --version
 CMD ["./entrypoint.sh"]
