@@ -197,10 +197,10 @@ $ curl http://52.47.129.155:8080/peers
 * usedSpace: space used on disk (bytes)
 * totalInode: remaining inode on disk
 * usedInode: inode used on disk
-
+* peer: count of peer indexed by status
 
 **exemple**:
 ```
 $ curl localhost:8080/status
-{"bot":{"uptime":2,"utime":0,"stime":0,"cpuUsage":0,"memory":357984,"netIn":0,"netOut":0},"blockchain":{"lastBlockTs":1562759946,"currentHeight":161620},"fs":{"totalSpace":1473970176,"usedSpace":515731456,"totalInode":15073280,"usedInode":1243960}}
+{"bot":{"uptime":8,"utime":0,"stime":0,"cpuUsage":0,"memory":94456,"netIn":0,"netOut":0},"blockchain":{"lastBlockTs":1562759946,"currentHeight":161620},"fs":{"totalSpace":1473970176,"usedSpace":1033154560,"totalInode":15073280,"usedInode":1246545},"peer":{"connected":0,"connecting":0,"disconnected":0,"unreachable":1}}
 ```
