@@ -44,7 +44,7 @@ class Peers {
     }
 
    public:
-    iterator() : _status(ALLSTATUS) {}
+    iterator() = default;
 
     iterator(const PeersByKey &peers, const Peer::Status status)
         : _status(status) {
@@ -56,7 +56,7 @@ class Peers {
       shuffle();
     }
 
-    iterator(const PeersByKey &peers) {
+    iterator(const PeersByKey &peers) : _status(ALLSTATUS) {
       for (const auto &pair : peers) {
         _peers.push_back(pair.second.get());
       }
