@@ -6,12 +6,11 @@ LABEL Description "Generic Bot Image."
 USER neuro
 COPY build/src/main main
 COPY testnet/data.0.testnet /home/neuro/data.0.testnet
-COPY entrypoint.sh entrypoint.sh
+COPY utils/dockers/entrypoint.sh entrypoint.sh
 
 # cleanup
-RUN du -sh /
-RUN rm -r ./build
-RUN rm -r ~/.hunter
-RUN du -sh /
+# RUN du -sh /
+# RUN rm -r ./build
+# RUN rm -r ~/.hunter
 
 CMD ["./entrypoint.sh"]
