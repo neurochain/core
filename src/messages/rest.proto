@@ -25,7 +25,15 @@ message Status {
     optional int32 used_inode = 4;
   }
 
+  message PeerCount {
+    optional int32 connected = 1;
+    optional int32 connecting = 2;
+    optional int32 disconnected = 3;
+    optional int32 unreachable = 4;
+  }
+
   optional Bot bot = 1;
   optional BlockChain blockchain = 2;
   optional FileSystem fs = 3;
+  optional PeerCount peer = 4;
 }

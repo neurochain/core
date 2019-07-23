@@ -56,7 +56,7 @@ messages::Status::Bot Monitoring::resource_usage() {
   return bot;
 }
 
-messages::Status::FileSystem filesystem_usage() {
+messages::Status::FileSystem Monitoring::filesystem_usage() {
   messages::Status::FileSystem fs;
   Statfs stat;
   statfs("/", &stat);
@@ -68,12 +68,45 @@ messages::Status::FileSystem filesystem_usage() {
   return fs;
 }
 
+messages::Status::PeerCount Monitoring::peer_count() const {
+  messages::Status::PeerCount peerCount;
+  auto connected = 0;
+  auto connecting = 0;
+  auto disconnected = 0;
+  auto unreachable = 0;
+
+  for (const auto peer : _bot.peers()) {
+    switch (peer->status()) {
+    case messages::Peer::CONNECTED:
+      connected++;
+      break;
+    case messages::Peer::CONNECTING:
+      connecting++;
+      break;
+    case messages::Peer::DISCONNECTED:
+      disconnected++;
+      break;
+    case messages::Peer::UNREACHABLE:
+      unreachable++;
+      break;
+    default:
+      break;
+    }
+  }
+  peerCount.set_connected(connected);
+  peerCount.set_connecting(connecting);
+  peerCount.set_disconnected(disconnected);
+  peerCount.set_unreachable(unreachable);
+  return peerCount;
+}
+
 messages::Status Monitoring::complete_status() {
   messages::Status status;
   status.mutable_blockchain()->set_last_block_ts(last_block_ts());
   status.mutable_blockchain()->set_current_height(current_height());
   status.mutable_bot()->CopyFrom(resource_usage());
   status.mutable_fs()->CopyFrom(filesystem_usage());
+  status.mutable_peer()->CopyFrom(peer_count());
   return status;
 }
 } // namespace neuro

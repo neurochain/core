@@ -95,9 +95,11 @@ class Peers {
   std::vector<Peer> peers_copy() const;
   std::optional<Peer* >peer_by_port(const Port port) const;
   iterator begin();
+  const iterator begin() const;
   iterator begin(const Peer::Status);
   iterator end();
-  operator _Peers () const;  
+  const iterator end() const;
+  operator _Peers () const;
 };
 
 std::ostream &operator<<(std::ostream &os, const Peers &peers);

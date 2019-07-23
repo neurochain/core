@@ -17,6 +17,8 @@ public:
   int current_height();
   messages::Status::Bot resource_usage();
   messages::Status complete_status();
+  messages::Status::FileSystem filesystem_usage();
+  messages::Status::PeerCount peer_count() const;
 };
 
 }
