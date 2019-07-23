@@ -33,6 +33,9 @@ class Peers {
     Peer::Status _status;
     Indexes _peers;
     Indexes::iterator _it;
+    static constexpr auto ALLSTATUS =
+        static_cast<Peer::Status>(Peer::CONNECTED | Peer::CONNECTED |
+                                  Peer::UNREACHABLE | Peer::DISCONNECTED);
 
     void shuffle() {
       std::mt19937 g(_rd());
@@ -41,7 +44,7 @@ class Peers {
     }
 
    public:
-    iterator() = default;
+    iterator() : _status(ALLSTATUS) {}
 
     iterator(const PeersByKey &peers, const Peer::Status status)
         : _status(status) {
