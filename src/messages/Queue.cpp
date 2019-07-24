@@ -10,7 +10,7 @@ Queue::Queue() {}
 
 bool Queue::has_drifted(std::shared_ptr<const messages::Message> message) {
   const auto raw_ts = message->header().ts().data();
-  return (std::abs(std::time(nullptr) - raw_ts) > MESSAGE_TTL;
+  return (std::abs(std::time(nullptr) - raw_ts) > MESSAGE_TTL);
 }
 
 bool Queue::publish(std::shared_ptr<const messages::Message> message) {
