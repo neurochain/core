@@ -41,6 +41,7 @@ class Subscriber {
 
     const auto hash = crypto::hash_sha3_256(serialized_body);
     const auto pair = _seen_messages_hash.emplace(hash);
+    std::cout << "hash> " << body << std::endl;
     if (!pair.second) {
       return false;
     }
@@ -52,6 +53,7 @@ class Subscriber {
     for (auto it = _message_hash_by_ts.begin(),
               end = _message_hash_by_ts.lower_bound(current_time - MESSAGE_TTL);
          it != end; ++it) {
+      std::cout << "clean> " << it->second << std::endl;
       _seen_messages_hash.erase(it->second);
       _message_hash_by_ts.erase(it);
     }

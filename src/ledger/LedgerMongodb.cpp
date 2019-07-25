@@ -1457,6 +1457,35 @@ bool LedgerMongodb::denunciation_exists(
   return false;
 }
 
+mongocxx::cursor LedgerMongodb::find(mongocxx::collection &collection,
+                      bsoncxx::document::view_or_value query,
+                      const mongocxx::options::find &options) const {
+    std::lock_guard lock(_ledger_mutex);
+    return collection.find(std::move(query), options);
+  }
+
+
+messages::TaggedBlocks LedgerMongodb::get_blocks(mongocxx::cursor &cursor,
+                                                 bool include_transactions) const {
+
+  messages::TaggedBlocks tagged_blocks;
+  for (const auto &bson_tagged_block : cursor) {
+    auto &tagged_block = tagged_blocks.emplace_back();
+    from_bson(bson_tagged_block, &tagged_block);
+    if (include_transactions) {
+      fill_block_transactions(tagged_block.mutable_block());
+    }
+  }
+
+  return tagged_blocks;
+}
+
+messages::TaggedBlocks LedgerMongodb::get_blocks(const messages::Branch name) const {
+  auto query = bss::document{} << BRANCH << name << bss::finalize;
+  auto cursor = find(_blocks, std::move(query));
+  return get_blocks(cursor, false);
+}
+  
 std::vector<messages::TaggedBlock> LedgerMongodb::get_blocks(
     const messages::BlockHeight height, const messages::_KeyPub &author,
     bool include_transactions) const {
@@ -1466,15 +1495,8 @@ std::vector<messages::TaggedBlock> LedgerMongodb::get_blocks(
                << BLOCK + "." + HEADER + "." + HEIGHT << height
                << BLOCK + "." + HEADER + "." + AUTHOR + "." + KEY_PUB
                << to_bson(author) << bss::finalize;
-  auto cursor = _blocks.find(std::move(query), remove_OID());
-  for (const auto &bson_tagged_block : cursor) {
-    auto &tagged_block = tagged_blocks.emplace_back();
-    from_bson(bson_tagged_block, &tagged_block);
-    if (include_transactions) {
-      fill_block_transactions(tagged_block.mutable_block());
-    }
-  }
-  return tagged_blocks;
+  auto cursor = find(_blocks, std::move(query));
+  return get_blocks(cursor, include_transactions);
 }
 
 void LedgerMongodb::add_double_mining(

@@ -130,9 +130,9 @@ void Connection::read_body(std::size_t body_size) {
           _this->terminate();
           return;
         }
-	try{
-        LOG_DEBUG << "Receiving1 [" << _socket->local_endpoint().port() << " <- "
-                  << _remote_peer.port() << "]: <<" << *message;
+	try{      
+	  LOG_DEBUG << "Receiving ["
+		    << _socket->remote_endpoint() << ":" << _remote_peer.port() << "]: " << *message;
 	} catch(...) {
 	  _this->_buffer.save("conf/crashed.proto");
 	  return;

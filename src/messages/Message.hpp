@@ -33,7 +33,6 @@ using AssemblyID = std::remove_reference<decltype(
 using TransactionID = std::remove_reference<decltype(
     *(((Transaction *)nullptr)->mutable_id()))>::type;
 using Packet = google::protobuf::Message;
-
 using Type = Body::BodyCase;
 using BranchID = int32_t;
 using IntegrityScore = Double;
