@@ -25,6 +25,7 @@ namespace messages {
 using NCCValue = decltype(((_NCCAmount *)nullptr)->value());
 using BlockHeight = decltype(((BlockHeader *)nullptr)->height());
 using BlockScore = decltype(((TaggedBlock *)nullptr)->score());
+using TaggedBlocks = std::vector<messages::TaggedBlock>;
 using AssemblyHeight = decltype(((Assembly *)nullptr)->height());
 using BlockID = std::remove_reference<decltype(
     *(((BlockHeader *)nullptr)->mutable_id()))>::type;
