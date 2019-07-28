@@ -135,18 +135,18 @@ Double Addresses::get_entropy(const messages::Address &address) const {
   Double entropy = 0;
   uint32_t total_nb_transactions = 0;
   auto transactions = &_addresses.at(address);
-  for (const auto &[_, counters] : transactions->_in) {
+  for (const auto &[std::ignore, counters] : transactions->_in) {
     total_nb_transactions += counters.nb_transactions;
   }
-  for (const auto &[_, counters] : transactions->_in) {
+  for (const auto &[std::ignore, counters] : transactions->_in) {
     Double p = (Double)counters.nb_transactions / (Double)total_nb_transactions;
     entropy -= counters.enthalpy * p * log2(p);
   }
   total_nb_transactions = 0;
-  for (const auto &[_, counters] : transactions->_out) {
+  for (const auto &[std::ignore, counters] : transactions->_out) {
     total_nb_transactions += counters.nb_transactions;
   }
-  for (const auto &[_, counters] : transactions->_out) {
+  for (const auto &[std::ignore, counters] : transactions->_out) {
     Double p = (Double)counters.nb_transactions / (Double)total_nb_transactions;
     entropy -= counters.enthalpy * p * log2(p);
   }

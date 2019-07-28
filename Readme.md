@@ -75,6 +75,20 @@ It makes it easier to cover different platform by having the same version of the
 
 sudo apt install -y git cmake build-essential libssl-dev mongodb-server libmpfrc++-dev
 
+# install pistache
+export NCC_WORKDIR=$(pwd)
+git clone -n https://github.com/oktal/pistache.git
+cd pistache
+git checkout c5927e1a12b96492198ab85101912d5d84445f67
+mkdir build
+cd build
+cmake -G Ninja -DCMAKE_BUILD_TYPE=${DOCKER_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=~/root/lib/cmake/pistache ..
+ninja 
+ninja install 
+
+
+# install bot
+cv $NCC_WORKDIR
 git clone --branch feature/ledger https://gitlab.com/neurochaintech/core.git
 cd core
 mkdir build

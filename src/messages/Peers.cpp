@@ -74,7 +74,7 @@ std::vector<Peer *> Peers::by_status(const Peer::Status status) {
 
   const auto time = ::neuro::time();
 
-  for (const auto &[_, peer] : _peers) {
+  for (const auto &[std::ignore, peer] : _peers) {
     peer->update_unreachable(time);
     if (peer->status() & status) {
       res.push_back(peer.get());
@@ -97,7 +97,7 @@ std::vector<Peer> Peers::peers_copy() const {
   std::shared_lock<std::shared_mutex> lock(_mutex);
   std::vector<Peer> res;
 
-  for (const auto &[_, peer] : _peers) {
+  for (const auto &[std::ignore, peer] : _peers) {
     res.push_back(*peer);
   }
 
@@ -113,7 +113,7 @@ void Peers::update_unreachable() {
 
 std::optional<Peer* > Peers::peer_by_port(const Port port) const {
   std::shared_lock<std::shared_mutex> lock(_mutex);
-  for (auto &[_, peer] : _peers) {
+  for (auto &[std::ignore, peer] : _peers) {
     if (peer->port() == port) {
       return std::make_optional(peer.get());
     }
