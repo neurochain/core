@@ -215,7 +215,7 @@ TransportLayer::SendResult Tcp::send(
             << *message;
 
   uint16_t res_count = 0;
-  for (auto &[_, connection] : _connections) {
+  for (auto &[std::ignore, connection] : _connections) {
     bool res_send = true;
     res_send &= connection->send(header_tcp);
     res_send &= connection->send(body_tcp);
@@ -282,7 +282,7 @@ void Tcp::stop() {
   if (!_stopped) {
     _stopped = true;
     _io_context.post([this]() { _acceptor.close(); });
-    for (auto &[_, connection] : _connections) {
+    for (auto &[std::ignore, connection] : _connections) {
       connection->terminate();
     }
     join();
