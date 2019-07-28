@@ -89,7 +89,7 @@ void Connection::read_body(std::size_t body_size) {
         for (const auto &body : message->bodies()) {
           const auto type = get_type(body);
           if (type == messages::Type::kHello) {
-            const auto hello = body.hello();
+            const auto& hello = body.hello();
             _remote_peer.CopyFrom(hello.peer());
           }
         }

@@ -7,7 +7,17 @@ HunterGate(
   SHA1 "a96d2e54ee8218f0248da804f2b4f4234f66d612"
   )
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+option(CPPCHECK "use cppcheck" OFF)
+
+if (CPPCHECK)
+    find_program(CMAKE_CXX_CPPCHECK NAMES cppcheck)
+    list(APPEND CMAKE_CXX_CPPCHECK
+            --enable=warning,performance
+            -DGOOGLE_PROTOBUF_MIN_PROTOC_VERSION=3005000
+            -DGOOGLE_PROTOBUF_VERSION=3005001
+            --suppressions-list=${CMAKE_SOURCE_DIR}/cppcheck_suppression.txt)
+endif ()
+
 set(CPACK_PACKAGE_VERSION_MAJOR "0")
 set(CPACK_PACKAGE_VERSION_MINOR "0")
 set(CPACK_PACKAGE_VERSION_PATCH "1")
@@ -42,6 +52,8 @@ set(CMAKE_CXX_FLAGS "-Wall ${CMAKE_CXX_FLAGS} -std=c++17 -Wno-ignored-qualifiers
 set(CMAKE_CXX_FLAGS_RELEASE " -O3")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 --coverage -fsanitize=address")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g -O2 -fsanitize=address")
+
+
 
 include(GNUInstallDirs)
 include(FindPkgConfig)

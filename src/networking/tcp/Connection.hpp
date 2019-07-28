@@ -1,7 +1,7 @@
 #ifndef NEURO_SRC_NETWORKING_TCP_CONNECTION_HPP
 #define NEURO_SRC_NETWORKING_TCP_CONNECTION_HPP
 
-#include <stdio.h>
+#include <cstdio>
 #include <boost/asio.hpp>
 #include <cmath>
 #include <iostream>

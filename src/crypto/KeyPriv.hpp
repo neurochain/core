@@ -16,7 +16,7 @@ class KeyPriv : public messages::_KeyPriv {
   CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA256>::PrivateKey _key;
 
  public:
-  KeyPriv(std::shared_ptr<CryptoPP::AutoSeededRandomPool> prng);
+  explicit KeyPriv(std::shared_ptr<CryptoPP::AutoSeededRandomPool> prng);
   KeyPriv(std::shared_ptr<CryptoPP::AutoSeededRandomPool> prng,
           const std::string &filepath);
   KeyPriv(std::shared_ptr<CryptoPP::AutoSeededRandomPool> prng,

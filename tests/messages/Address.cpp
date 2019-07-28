@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 #include <random>
 #include "crypto/KeyPub.hpp"
+#include "messages/Message.hpp"
 
 namespace neuro {
 namespace messages {
@@ -34,10 +35,10 @@ TEST(Address, address) {
     ASSERT_EQ(address.data()[0], 'N');
     ASSERT_TRUE(address.verify());
   }
-  ASSERT_EQ(address0.data(), address1.data());
-  ASSERT_NE(address0.data(), address2.data());
-  ASSERT_NE(address1.data(), address2.data());
 
+  ASSERT_EQ(address0, address1);
+  ASSERT_NE(address0, address2);
+  ASSERT_NE(address1, address2);
 }
 
 TEST(Address, verify) {

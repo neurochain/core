@@ -64,8 +64,8 @@ bool Ecc::load_keys(const std::string &keypath_priv,
   return true;
 }
 
-const KeyPriv &Ecc::key_priv() const { return *_key_private.get(); }
-const KeyPub &Ecc::key_pub() const { return *_key_public.get(); }
+const KeyPriv &Ecc::key_priv() const { return *_key_private; }
+const KeyPub &Ecc::key_pub() const { return *_key_public; }
 KeyPriv *Ecc::mutable_key_priv() { return _key_private.get(); }
 KeyPub *Ecc::mutable_key_pub() { return _key_public.get(); }
 
@@ -95,8 +95,8 @@ void Ecc::sign(const uint8_t *data, const std::size_t size, uint8_t *dest) {
 }
 
 bool Ecc::operator==(const Ecc &ecc) const {
-  return (ecc.key_priv() == *_key_private.get() &&
-          ecc.key_pub() == *_key_public.get());
+  return (ecc.key_priv() == *_key_private &&
+          ecc.key_pub() == *_key_public);
 }
 
 }  // namespace crypto

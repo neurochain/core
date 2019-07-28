@@ -36,7 +36,6 @@ class Tcp : public TransportLayer {
   bai::tcp::acceptor _acceptor;
   std::shared_ptr<bai::tcp::socket> _new_socket;
   std::thread _io_context_thread;
-  messages::Peers *_peers;
   ConnectionById _connections;
   mutable std::mutex _connections_mutex;
   const messages::config::Networking &_config;

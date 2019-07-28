@@ -6,7 +6,7 @@
 namespace neuro {
 namespace messages {
 
-Queue::Queue() {}
+Queue::Queue() = default;
 
 bool Queue::expired(std::shared_ptr<const messages::Message> message) {
   const auto raw_ts = message->header().ts().data();

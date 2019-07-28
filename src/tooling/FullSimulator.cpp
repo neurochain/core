@@ -7,7 +7,7 @@ consensus::Config consensus_config{
     5,       // blocks_per_assembly
     10,      // members_per_assembly
     1,       // block_period
-    100,     // block_reward
+    messages::NCCAmount(100ull),  // block_reward
     128000,  // max_block_size
     1s,      // update_heights_sleep
     1s,      // compute_pii_sleep

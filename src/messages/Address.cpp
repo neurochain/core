@@ -1,4 +1,5 @@
 #include "messages/Address.hpp"
+#include "messages/Message.hpp"
 #include "crypto/Hash.hpp"
 #include <sstream>
 
@@ -88,8 +89,6 @@ bool Address::verify() const {
 
   return true;
 }
-
-Address::operator bool() const { return verify(); }
 
 }  // namespace messages
 }  // namespace neuro

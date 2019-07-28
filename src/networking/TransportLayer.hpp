@@ -42,7 +42,7 @@ class TransportLayer {
   virtual Port listening_port() const = 0;
   virtual bool connect(messages::Peer* peer) = 0;
 
-  virtual ~TransportLayer(){};
+  virtual ~TransportLayer() = default;
   virtual void join() = 0;
 };
 

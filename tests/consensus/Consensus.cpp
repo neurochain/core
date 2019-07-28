@@ -17,7 +17,7 @@ class Consensus : public testing::Test {
 
  protected:
   tooling::Simulator simulator;
-  std::shared_ptr<neuro::ledger::LedgerMongodb> ledger;
+  std::shared_ptr<neuro::ledger::LedgerMongodb> ledger{};
   std::shared_ptr<consensus::Consensus> consensus;
 
   Consensus()

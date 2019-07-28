@@ -48,7 +48,7 @@ class Consensus {
       const messages::TaggedTransaction &tagged_transaction) const;
 
   bool check_outputs(
-      const messages::TaggedTransaction tagged_transaction) const;
+      const messages::TaggedTransaction& tagged_transaction) const;
 
   bool check_signatures(
       const messages::TaggedTransaction &tagged_transaction) const;

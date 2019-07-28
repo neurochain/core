@@ -46,11 +46,20 @@ int main(int argc, char *argv[]) {
   } else {
     std::cout << "public:\n" << ecc.key_pub() << std::endl;
     std::cout << "private:\n" << ecc.key_priv() << std::endl;
-    std::cout << "private exponent:\n" << std::hex << ecc.key_priv().exponent() << std::endl;
+    std::cout << "private exponent:\n"
+              << std::hex << ecc.key_priv().exponent() << std::endl;
   }
 
+<<<<<<< HEAD
   messages::Address addr(ecc.key_pub());
   std::cout << "address : " << std::endl << addr << std::endl;
+=======
+  Buffer buf;
+  ecc.key_pub().save(&buf);
+  messages::Address addr(buf);
+  std::cout << "address : " << std::endl
+            << messages::to_json(addr) << std::endl;
+>>>>>>> feature/ledger
 
   return 0;
 }
