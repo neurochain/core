@@ -3,6 +3,7 @@
 
 #include "common/types.hpp"
 #include "api/Api.hpp"
+#include "api/Monitoring.h"
 
 #include <memory>
 #include <pistache/endpoint.h>
@@ -27,6 +28,7 @@ private:
    //  Api *_api;
   std::shared_ptr<Http::Endpoint> _httpEndpoint;
   Pistache::Rest::Router _router;
+  Monitoring _monitor;
 
   void init();
   void start();
@@ -41,13 +43,14 @@ private:
   void get_transaction(const Request& request, Response response);
   void get_create_transaction (const Request& request, Response response);
   void publish(const Request &request, Response response);
-  void get_unspent_transaction_list(const Request &request, Response response);
   void get_block_by_id(const Request& request, Response response);
   void get_block_by_height(const Request& request, Response response);
   void get_last_blocks(const Request& request, Response response);
   void get_total_nb_transactions(const Request& request, Response response);
   void get_total_nb_blocks(const Request& request, Response response);
   void get_peers(const Request& request, Response response);
+
+  void get_status(const Request& request, Response response);
 
 public:
   Rest(const messages::config::Rest &config, Bot *bot);

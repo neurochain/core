@@ -74,7 +74,7 @@ class Queue {
   std::thread _main_thread;
   std::condition_variable _condition;
 
-  bool expired(std::shared_ptr<const messages::Message> message);
+  bool has_drifted(std::shared_ptr<const messages::Message> message);
 
  public:
   Queue();

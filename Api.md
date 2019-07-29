@@ -166,7 +166,7 @@ $ curl http://52.47.129.155:8080/ready
 {ok: 1}
 ```
 
-### Get info from a bot
+### Get peers list from a bot
 **URL**: `/peers`
 
 **method**: `GET`
@@ -177,4 +177,30 @@ get the status of peer which are connected to the bot
 ```
 $ curl http://52.47.129.155:8080/peers
 {"peers":[{"endpoint":"41.92.67.146","keyPub":{"type":"ECP256K1","rawData":"A07LyMvHZ48vtxuTPOE2uxBHJKAG0cLgCr3yzXYVN6Lz"},"port":1337,"status":"DISCONNECTED","nextUpdate":{"data":1562758223}},{"endpoint":"196.118.236.185","keyPub":{"type":"ECP256K1","rawData":"A7v3gWeIDJqJ3iM0bPNBRVi4JcY0I5dVRN8afG0d+Y/6"},"port":1337,"status":"DISCONNECTED","nextUpdate":{"data":1562756598}},{"endpoint":"35.181.53.31","keyPub":{"type":"ECP256K1","rawData":"Axp4mijnbySixTwaBvToR62oW+CeZZnNTOgjsoE8wB8o"},"port":1337,"status":"CONNECTED","nextUpdate":{"data":1562709102}},{"endpoint":"35.180.92.249","keyPub":{"type":"ECP256K1","rawData":"A+zB96s6y26rZ0yzOKxftNZdsByILW8RfT4f9gjzrzKE"},"port":1337,"status":"CONNECTED","nextUpdate":{"data":1562751678}},{"endpoint":"52.47.181.178","keyPub":{"type":"ECP256K1","rawData":"A5mc7ff4DMn9DyLq2qcbAUMyHfmzlvKKbLWuXHlQmuCD"},"port":1337,"status":"DISCONNECTED","nextUpdate":{"data":1562758223}},{"endpoint":"52.47.188.185","keyPub":{"type":"ECP256K1","rawData":"A5roo8If5GXf7mFY6tTcD2K/8oDi7BL2nhXvyC4fKlAC"},"port":1337,"status":"CONNECTED","nextUpdate":{"data":1562754365}},{"endpoint":"35.180.230.24","keyPub":{"type":"ECP256K1","rawData":"A8RPy0+a+/sO4/mKRA42Q2iBMArV6QAPddbajx2ZeHkg"},"port":1337,"status":"DISCONNECTED","nextUpdate":{"data":1562732201}},{"endpoint":"35.180.243.45","keyPub":{"type":"ECP256K1","rawData":"Anjy3xeuFab7G1v7A8HBPPaTO/oYqVGdb0nOJevecP/h"},"port":1337,"status":"CONNECTED","nextUpdate":{"data":1562756626}},{"endpoint":"35.180.97.219","keyPub":{"type":"ECP256K1","rawData":"AutRIkzh0XWicHr/eVNN9Y4vVWdEj0r14qJfuBdIZRh6"},"port":1337,"status":"DISCONNECTED","nextUpdate":{"data":1562706691}},{"endpoint":"35.180.58.83","keyPub":{"type":"ECP256K1","rawData":"Ah9nY/qXNsYnBayPVqzmEoAKCI7H9eslkuZDHg/J0cjE"},"port":1337,"status":"DISCONNECTED","nextUpdate":{"data":1562754438}},{"endpoint":"35.180.254.136","keyPub":{"type":"ECP256K1","rawData":"Am4regJZ+i3Z7QVhreQ05qVKxis00ib2l98I/T+dx/ZE"},"port":1337,"status":"CONNECTED","nextUpdate":{"data":1562750776}},{"endpoint":"35.181.59.241","keyPub":{"type":"ECP256K1","rawData":"AjEwX5KpArTEEpDSeeXAhKRQ1IlpV1IVTPzvxOoPio4u"},"port":1337,"status":"DISCONNECTED","nextUpdate":{"data":1562754438}},{"endpoint":"52.47.208.228","keyPub":{"type":"ECP256K1","rawData":"At2zvnKjc8FhInceEx4LWJ3Yy6DyD83MR3jlCneoZZpP"},"port":1337,"status":"CONNECTED","nextUpdate":{"data":1562754865}},{"endpoint":"15.188.8.94","keyPub":{"type":"ECP256K1","rawData":"AgNEbgj8H4laaNQlIwH0rXiG+KQWEjDV5cBHCMkQ5X+i"},"port":1337,"status":"DISCONNECTED","nextUpdate":{"data":1562754438}},{"endpoint":"35.180.198.126","keyPub":{"type":"ECP256K1","rawData":"AjASMFMjkbRWV4DBtU064FFSH0bgHFW/xhrg9pUNbc9D"},"port":1337,"status":"DISCONNECTED","nextUpdate":{"data":1562706681}}]}
+```
+
+### Get info from a bot
+**URL**: `/status`
+
+**method**: `GET`
+
+* uptime: time the bot is alive (sec)
+* utime: cpu time used by the bot (sec)
+* stime: cpu time used by the system (sec)
+* cpuUsage: percentage of cpu used (%)
+* memory: max resident memory used (bytes)
+* netIn: messages received
+* netOut: messages sent
+* lastBlockTs: time since last block (sec)
+* currentHeight: current height in blockchain
+* totalSpace: remaining space on disk (bytes)
+* usedSpace: space used on disk (bytes)
+* totalInode: remaining inode on disk
+* usedInode: inode used on disk
+* peer: count of peer indexed by status
+
+**exemple**:
+```
+$ curl localhost:8080/status
+{"bot":{"uptime":8,"utime":0,"stime":0,"cpuUsage":0,"memory":94456,"netIn":0,"netOut":0},"blockchain":{"lastBlockTs":1562759946,"currentHeight":161620},"fs":{"totalSpace":1473970176,"usedSpace":1033154560,"totalInode":15073280,"usedInode":1246545},"peer":{"connected":0,"connecting":0,"disconnected":0,"unreachable":1}}
 ```

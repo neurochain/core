@@ -7,9 +7,9 @@
 namespace neuro::api {
 
 Rest::Rest(const messages::config::Rest &config, Bot *bot)
-    : Api::Api(bot),
-      _httpEndpoint(std::make_shared<Http::Endpoint>(
-          Address(Ipv4::any(), config.port()))) {
+    : Api::Api(bot), _httpEndpoint(std::make_shared<Http::Endpoint>(
+                         Address(Ipv4::any(), config.port()))),
+      _monitor(*bot) {
   init();
   start();
 }
@@ -47,13 +47,12 @@ void Rest::bad_request(Response &response, const std::string &message) {
 
 void Rest::setupRoutes() {
   using namespace ::Pistache::Rest::Routes;
-  // Routes::Post(router, "/record/:name/:value?",
-  // Routes::bind(&StatsEndpoint::doRecordMetric, this));
   Get(_router, "/balance/:key_pub", bind(&Rest::get_balance, this));
   Get(_router, "/ready", bind(&Rest::get_ready, this));
   Post(_router, "/create_transaction/:key_pub/:fees",
        bind(&Rest::get_create_transaction, this));
   Post(_router, "/publish", bind(&Rest::publish, this));
+  // Post(_router, "/list_transactions/:key_pub", bind(&Rest::get_unspent_transaction_list, this));
   Post(_router, "/transaction/", bind(&Rest::get_transaction, this));
   Post(_router, "/block/id", bind(&Rest::get_block_by_id, this));
   Get(_router, "/block/height/:height", bind(&Rest::get_block_by_height, this));
@@ -62,6 +61,7 @@ void Rest::setupRoutes() {
       bind(&Rest::get_total_nb_transactions, this));
   Get(_router, "/total_nb_blocks", bind(&Rest::get_total_nb_blocks, this));
   Get(_router, "/peers", bind(&Rest::get_peers, this));
+  Get(_router, "/status", bind(&Rest::get_status, this));
 }
 
 void Rest::get_balance(const Request &req, Response res) {
@@ -173,56 +173,11 @@ void Rest::get_peers(const Rest::Request &request, Rest::Response res) {
   send(res, messages::to_json(Api::peers()));
 }
 
-Rest::~Rest() { shutdown(); }
+void Rest::get_status(const Rest::Request &req, Rest::Response res) {
+  auto status = _monitor.complete_status();
+  send(res, messages::to_json(status));
+}
 
-//
-// messages::Transaction Rest::build_transaction(
-//    const messages::TransactionToPublish &transaction_to_publish) const {
-//  messages::Transaction transaction;
-//
-//  // Load keys
-//  auto buffer = Buffer(transaction_to_publish.key_priv());
-//  const auto random_pool = std::make_shared<CryptoPP::AutoSeededRandomPool>();
-//  auto key_priv = crypto::KeyPriv(random_pool);
-//  key_priv.load(buffer);
-//
-//  std::vector<messages::Output> outputs;
-//  auto outputs_to_publish = transaction_to_publish.outputs();
-//  for (auto output : outputs_to_publish) {
-//    outputs.push_back(output);
-//  }
-//
-//  const crypto::KeyPub key_pub = key_priv.make_key_pub();
-//  const auto key_pub = messages::_KeyPub(key_pub);
-//  const auto ecc = crypto::Ecc(key_priv, key_pub);
-//  std::vector<const crypto::Ecc *> keys = {&ecc};
-//
-//  // Process the outputs and lookup their output_id to build the inputs
-//  std::vector<messages::_KeyPub> transaction_ids;
-//  auto transaction_ids_str = transaction_to_publish.transactions_ids();
-//  for (auto transaction_id_str : transaction_ids_str) {
-//    messages::_KeyPub transaction_id;
-//    transaction_id.set_type(messages::Hash_Type_SHA256);
-//    transaction_id.set_data(transaction_id_str);
-//    transaction_ids.push_back(transaction_id);
-//  }
-//
-//  return _ledger->build_transaction(transaction_ids, outputs, key_priv,
-//                                    transaction_to_publish.fees());
-//}
-//
-// messages::GeneratedKeys Rest::generate_keys() const {
-//  messages::GeneratedKeys generated_keys;
-//  crypto::Ecc ecc;
-//  messages::_KeyPub key_pub;
-//  ecc.key_pub().save(&key_pub);
-//  messages::_KeyPriv key_priv;
-//  ecc.key_priv().save(&key_priv);
-//  generated_keys.mutable_key_priv()->CopyFrom(key_priv);
-//  generated_keys.mutable_key_pub()->CopyFrom(key_pub);
-//  generated_keys.mutable_key_pub()->CopyFrom(
-//      messages::Hasher(ecc.key_pub()));
-//  return generated_keys;
-//}
+Rest::~Rest() { shutdown(); }
 
 }  // namespace neuro::api

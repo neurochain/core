@@ -33,6 +33,9 @@ class Peers {
     Peer::Status _status;
     Indexes _peers;
     Indexes::iterator _it;
+    static constexpr auto ALLSTATUS =
+        static_cast<Peer::Status>(Peer::CONNECTED | Peer::CONNECTED |
+                                  Peer::UNREACHABLE | Peer::DISCONNECTED);
 
     void shuffle() {
       std::mt19937 g(_rd());
@@ -53,7 +56,7 @@ class Peers {
       shuffle();
     }
 
-    iterator(const PeersByKey &peers) {
+    iterator(const PeersByKey &peers) : _status(ALLSTATUS) {
       for (const auto &pair : peers) {
         _peers.push_back(pair.second.get());
       }
@@ -95,9 +98,11 @@ class Peers {
   std::vector<Peer> peers_copy() const;
   std::optional<Peer* >peer_by_port(const Port port) const;
   iterator begin();
+  const iterator begin() const;
   iterator begin(const Peer::Status);
   iterator end();
-  operator _Peers () const;  
+  const iterator end() const;
+  operator _Peers () const;
 };
 
 std::ostream &operator<<(std::ostream &os, const Peers &peers);
