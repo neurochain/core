@@ -108,17 +108,14 @@ $ curl http://52.47.129.155:8080/total_nb_transactions
 129885
 ```
 ### Create transaction
-**URL**: `/create_transaction/:address/:fee`
-
-**URL Parameter**:
-* `address`
-* `fee`
+**URL**: `/create_transaction/:fee`
 
 **method**: `POST`
 
 **data**:
 ```
 {
+    key_pub: <public key>,
     outputs: [
         {
             address: {data: <address>},
@@ -126,14 +123,13 @@ $ curl http://52.47.129.155:8080/total_nb_transactions
             data: <data>
         },
         ...
-    ]
+    ],
+    fee: <optional amount for fee>
 }
 ```
 
 **exemple**:
 ```
-$ curl http://localhost:8080/create_transaction/N2DJgbU3v8tbbzaDdBEyn5fPnLZVzAFC6E/0 --data '{"outputs":[{"address":{"data":"N2DJgbU3v8tbbzaDdBEyn5fPnLZVzAFC6E"},"value":{"value":"42"},"data":""}]}'
-0a0408001200122a0a24080012200679098ad80c2f9a61c5725069b873cde04dd4f3796c554400b8f06209caf1cb100020001a2c0a240a224e32444a6762553376387462627a6144644245796e3566506e4c5a567a41464336451202082a1a001a2c0a240a224e32444a6762553376387462627a6144644245796e3566506e4c5a567a414643364512040896843d
 ```
 
 ### publish a transaction
@@ -143,11 +139,11 @@ $ curl http://localhost:8080/create_transaction/N2DJgbU3v8tbbzaDdBEyn5fPnLZVzAFC
 
 ## Misc.
 ### Get the balance of a wallet
-**URL**: `/balance/:address`
+**URL**: `/balance
 
 **URL Parameter**: `address` address of a wallet
 
-**method**: `GET`
+**method**: `POST`
 
 **exemple**:
 ```
