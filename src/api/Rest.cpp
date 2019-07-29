@@ -32,6 +32,7 @@ void Rest::shutdown() { _httpEndpoint->shutdown(); }
 
 void Rest::send(Response &response, const messages::Packet &packet) {
   response.headers().add<Http::Header::AccessControlAllowOrigin>("*");
+  response.headers().add<Http::Header::ContentType>(MIME(Application, Json));
   response.send(Pistache::Http::Code::Ok, messages::to_json(packet));
 }
 
@@ -47,9 +48,9 @@ void Rest::bad_request(Response &response, const std::string &message) {
 
 void Rest::setupRoutes() {
   using namespace ::Pistache::Rest::Routes;
-  Get(_router, "/balance/:key_pub", bind(&Rest::get_balance, this));
+  Post(_router, "/balance", bind(&Rest::get_balance, this));
   Get(_router, "/ready", bind(&Rest::get_ready, this));
-  Post(_router, "/create_transaction/:key_pub/:fees",
+  Post(_router, "/create_transaction/:fees",
        bind(&Rest::get_create_transaction, this));
   Post(_router, "/publish", bind(&Rest::publish, this));
   // Post(_router, "/list_transactions/:key_pub", bind(&Rest::get_unspent_transaction_list, this));
@@ -65,13 +66,22 @@ void Rest::setupRoutes() {
 }
 
 void Rest::get_balance(const Request &req, Response res) {
-  messages::_KeyPub key_pub;
-  key_pub.set_hex_data((req.param(":key_pub").as<std::string>()));
-  const auto balance_amount = balance(key_pub);
+  messages::_KeyPub key_pub_message;
+  if (!messages::from_json(req.body(), &key_pub_message)) {
+    bad_request(res, "could not parse body");
+  }
+
+  crypto::KeyPub key_pub(key_pub_message);
+  messages::_KeyPub public_key;
+  key_pub.save(&public_key);
+  const auto balance_amount = balance(public_key);
   send(res, balance_amount);
 }
 
-void Rest::get_ready(const Request &req, Response res) { send(res, "{ok: 1}"); }
+void Rest::get_ready(const Request &req, Response res) {
+  res.headers().add<Http::Header::ContentType>(MIME(Application, Json));
+  send(res, "{ok: 1}");
+}
 
 void Rest::get_transaction(const Request &req, Response res) {
   messages::Hash transaction_id;
@@ -83,12 +93,14 @@ void Rest::get_transaction(const Request &req, Response res) {
 }
 
 void Rest::get_create_transaction(const Request &req, Response res) {
-  messages::_KeyPub key_pub;
-  key_pub.set_hex_data(req.param(":key_pub").as<std::string>());
+  messages::CreateTransactionBody body;
+  if (!messages::from_json(req.body(), &body)) {
+    bad_request(res, "could not parse body");
+  }
 
   messages::Transaction transaction;
-  messages::from_json(req.body(), &transaction);
-  transaction.add_inputs()->mutable_key_pub()->CopyFrom(key_pub);
+  transaction.mutable_outputs()->CopyFrom(body.outputs());
+  transaction.add_inputs()->mutable_key_pub()->CopyFrom(body.key_pub());
 
   transaction.mutable_id()->set_type(messages::Hash::SHA256);
   transaction.mutable_id()->set_data("");
@@ -170,12 +182,12 @@ void Rest::get_total_nb_blocks(const Rest::Request &req, Rest::Response res) {
 }
 
 void Rest::get_peers(const Rest::Request &request, Rest::Response res) {
-  send(res, messages::to_json(Api::peers()));
+  send(res, Api::peers());
 }
 
 void Rest::get_status(const Rest::Request &req, Rest::Response res) {
   auto status = _monitor.complete_status();
-  send(res, messages::to_json(status));
+  send(res, status);
 }
 
 Rest::~Rest() { shutdown(); }

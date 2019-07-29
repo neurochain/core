@@ -1,6 +1,8 @@
 syntax = "proto2";
 
 package neuro.messages;
+import "common.proto";
+import "messages.proto";
 
 message Status {
   message BlockChain {
@@ -36,4 +38,10 @@ message Status {
   optional BlockChain blockchain = 2;
   optional FileSystem fs = 3;
   optional PeerCount peer = 4;
+}
+
+message CreateTransactionBody {
+  required _KeyPub key_pub = 1;
+  repeated Output outputs = 2;
+  optional uint64 fee = 3;
 }
