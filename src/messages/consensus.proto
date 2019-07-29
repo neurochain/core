@@ -11,14 +11,14 @@ extend Input {
 }
 
 message Pii {
-  required _Address address = 1;
+  required _KeyPub key_pub = 1;
   required Hash assembly_id = 2;
   required string score = 3;
   required int32 rank = 4;
 }
 
 message Integrity {
-  required _Address address = 1;
+  required _KeyPub key_pub = 1;
   required Hash assembly_id = 2;
   required string score = 3;
   required int32 assembly_height = 4;
@@ -31,5 +31,5 @@ message Assembly {
   required int32 height = 3;
   optional Hash previous_assembly_id = 4;
   optional int32 seed = 5;
-  optional int32 nb_addresses = 6;
+  optional int32 nb_key_pubs = 6;
 }

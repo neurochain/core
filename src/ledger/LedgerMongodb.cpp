@@ -15,16 +15,20 @@ const std::string FORK_BRANCH_NAME =
 const std::string UNVERIFIED_BRANCH_NAME =
     messages::Branch_Name(messages::Branch::UNVERIFIED);
 const std::string _ID = "_id";
+const std::string BRANCH_ID = "branchId";
+const std::string BLOCK_NUMBER = "blockNumber";
 const std::string $EXISTS = "$exists";
+const std::string $ELEMMATCH = "$elemMatch";
 const std::string $IN = "$in";
-const std::string $SET = "$set";
 const std::string $LTE = "$lte";
+const std::string $OR = "$or";
+const std::string $SET = "$set";
 const std::string AS = "as";
 const std::string ASSEMBLIES = "assemblies";
 const std::string ASSEMBLY_HEIGHT = "assemblyHeight";
 const std::string ASSEMBLY_ID = "assemblyId";
-const std::string ADDRESS = "address";
 const std::string AUTHOR = "author";
+const std::string BALANCES = "balances";
 const std::string BLOCK = "block";
 const std::string BLOCK_ID = "blockId";
 const std::string BLOCK_HEIGHT = "blockHeight";
@@ -48,7 +52,7 @@ const std::string INTEGRITY = "integrity";
 const std::string KEY_PUB = "keyPub";
 const std::string LOCAL_FIELD = "localField";
 const std::string MAIN = "MAIN";
-const std::string NB_ADDRESSES = "nbAddresses";
+const std::string NB_KEY_PUBS = "nbKeyPubs";
 const std::string PREVIOUS_ASSEMBLY_ID = "previousAssemblyId";
 const std::string OUTPUTS = "outputs";
 const std::string OUTPUT_ID = "outputId";
@@ -95,6 +99,8 @@ LedgerMongodb::LedgerMongodb(const messages::config::Database &config)
   set_main_branch_tip();
 }
 
+LedgerMongodb::~LedgerMongodb() { mpfr_free_cache(); }
+
 mongocxx::options::find LedgerMongodb::remove_OID() const {
   std::lock_guard lock(_ledger_mutex);
   mongocxx::options::find find_options;
@@ -125,7 +131,7 @@ mongocxx::options::find LedgerMongodb::projection(
 }
 
 void LedgerMongodb::create_first_assemblies(
-    const std::vector<messages::Address> &addresses) {
+    const std::vector<messages::_KeyPub> &key_pubs) {
   std::lock_guard lock(_ledger_mutex);
   messages::Assembly assembly_minus_1, assembly_minus_2;
   crypto::Ecc key0, key1;
@@ -135,24 +141,24 @@ void LedgerMongodb::create_first_assemblies(
       messages::Hasher(key1.key_pub()));
   assembly_minus_1.set_finished_computation(true);
   assembly_minus_1.set_seed(0);
-  assembly_minus_1.set_nb_addresses(addresses.size());
+  assembly_minus_1.set_nb_key_pubs(key_pubs.size());
   assembly_minus_1.set_height(-1);
   assembly_minus_2.mutable_id()->CopyFrom(
       assembly_minus_1.previous_assembly_id());
   assembly_minus_2.set_finished_computation(true);
   assembly_minus_2.set_seed(0);
   assembly_minus_2.set_height(-2);
-  assembly_minus_2.set_nb_addresses(addresses.size());
+  assembly_minus_2.set_nb_key_pubs(key_pubs.size());
 
   // Insert the Piis
   for (const auto &assembly : {assembly_minus_1, assembly_minus_2}) {
     auto bson_assembly = to_bson(assembly);
     auto result = _assemblies.insert_one(std::move(bson_assembly));
     assert(result);
-    for (size_t i = 0; i < addresses.size(); i++) {
-      auto &address = addresses[i];
+    for (size_t i = 0; i < key_pubs.size(); i++) {
+      auto &key_pub = key_pubs[i];
       messages::Pii pii;
-      pii.mutable_address()->CopyFrom(address);
+      pii.mutable_key_pub()->CopyFrom(key_pub);
       pii.mutable_assembly_id()->CopyFrom(assembly.id());
       pii.set_score("1");
       pii.set_rank(i);
@@ -234,22 +240,27 @@ void LedgerMongodb::create_indexes() {
                                              << bss::finalize);
   _transactions.create_index(bss::document{} << BLOCK_ID << 1 << bss::finalize);
   _transactions.create_index(bss::document{}
-                             << TRANSACTION + "." + OUTPUTS + "." + ADDRESS << 1
+                             << TRANSACTION + "." + OUTPUTS + "." + KEY_PUB << 1
                              << bss::finalize);
   _transactions.create_index(bss::document{}
                              << TRANSACTION + "." + INPUTS + "." + ID << 1
                              << TRANSACTION + "." + INPUTS + "." + OUTPUT_ID
                              << 1 << bss::finalize);
-  _pii.create_index(bss::document{} << ADDRESS << 1 << ASSEMBLY_ID << 1
+  _pii.create_index(bss::document{} << KEY_PUB << 1 << ASSEMBLY_ID << 1
                                     << bss::finalize);
   _pii.create_index(bss::document{} << RANK << 1 << ASSEMBLY_ID << 1
                                     << bss::finalize);
-  _integrity.create_index(bss::document{} << ADDRESS << 1 << bss::finalize);
+  _integrity.create_index(bss::document{} << KEY_PUB << 1 << bss::finalize);
   _assemblies.create_index(bss::document{} << ID << 1 << bss::finalize);
   _assemblies.create_index(bss::document{} << PREVIOUS_ASSEMBLY_ID << 1
                                            << bss::finalize);
   _assemblies.create_index(bss::document{} << FINISHED_COMPUTATION << 1
                                            << bss::finalize);
+  _assemblies.create_index(bss::document{}
+                           << BALANCES + "." + KEY_PUB << -1
+                           << BRANCH_PATH + "." + BRANCH_ID << -1
+                           << BRANCH_PATH + "." + BLOCK_NUMBER << -1
+                           << bss::finalize);
 }
 
 void LedgerMongodb::init_database(const messages::Block &block0) {
@@ -260,14 +271,19 @@ void LedgerMongodb::init_database(const messages::Block &block0) {
   tagged_block0.set_branch(messages::Branch::MAIN);
   tagged_block0.mutable_branch_path()->add_branch_ids(0);
   tagged_block0.mutable_branch_path()->add_block_numbers(0);
+  tagged_block0.mutable_branch_path()->set_branch_id(0);
+  tagged_block0.mutable_branch_path()->set_block_number(0);
   tagged_block0.mutable_block()->CopyFrom(block0);
   insert_block(tagged_block0);
-
-  std::vector<messages::Address> addresses;
-  for (const auto &output : block0.coinbase().outputs()) {
-    addresses.push_back(output.address());
+  if (!add_balances(&tagged_block0)) {
+    throw std::runtime_error("Add balance failed for block0");
   }
-  create_first_assemblies(addresses);
+
+  std::vector<messages::_KeyPub> key_pubs;
+  for (const auto &output : block0.coinbase().outputs()) {
+    key_pubs.push_back(output.key_pub());
+  }
+  create_first_assemblies(key_pubs);
 }
 
 void LedgerMongodb::remove_all() {
@@ -687,6 +703,21 @@ bool LedgerMongodb::get_transaction(
   return found_transaction;
 }
 
+std::vector<messages::TaggedTransaction> LedgerMongodb::get_transactions(
+    const messages::TransactionID &id, const messages::TaggedBlock &tip,
+    bool include_transaction_pool) const {
+  std::lock_guard lock(_ledger_mutex);
+  std::vector<messages::TaggedTransaction> transactions;
+  Filter filter;
+  filter.transaction_id(id);
+  for_each(filter, tip, include_transaction_pool,
+           [&transactions](const messages::TaggedTransaction &match) {
+             transactions.emplace_back().CopyFrom(match);
+             return true;
+           });
+  return transactions;
+}
+
 bool LedgerMongodb::get_transaction(const messages::TransactionID &id,
                                     messages::Transaction *transaction) const {
   std::lock_guard lock(_ledger_mutex);
@@ -753,7 +784,7 @@ bool LedgerMongodb::for_each(const Filter &filter,
                              bool include_transaction_pool,
                              Functor functor) const {
   std::lock_guard lock(_ledger_mutex);
-  if (!filter.output_address() && !filter.input_transaction_id() &&
+  if (!filter.output_key_pub() && !filter.input_transaction_id() &&
       !filter.transaction_id() && !filter.output_id()) {
     LOG_WARNING << "missing filters for for_each query";
     return false;
@@ -761,9 +792,9 @@ bool LedgerMongodb::for_each(const Filter &filter,
 
   auto query = bss::document{};
 
-  if (filter.output_address()) {
-    const auto bson = to_bson(*filter.output_address());
-    query << TRANSACTION + "." + OUTPUTS + "." + ADDRESS << bson;
+  if (filter.output_key_pub()) {
+    const auto bson = to_bson(*filter.output_key_pub());
+    query << TRANSACTION + "." + OUTPUTS + "." + KEY_PUB << bson;
   }
 
   if (filter.transaction_id()) {
@@ -946,6 +977,8 @@ messages::BranchPath LedgerMongodb::fork_from(
   for (const auto &block_number : branch_path.block_numbers()) {
     new_branch_path.add_block_numbers(block_number);
   }
+  new_branch_path.set_branch_id(new_branch_path.branch_ids(0));
+  new_branch_path.set_block_number(new_branch_path.block_numbers(0));
   return new_branch_path;
 }
 
@@ -955,6 +988,8 @@ messages::BranchPath LedgerMongodb::first_child(
   auto new_branch_path = messages::BranchPath(branch_path);
   *new_branch_path.mutable_block_numbers()->Mutable(0) =
       branch_path.block_numbers(0) + 1;
+  new_branch_path.set_branch_id(new_branch_path.branch_ids(0));
+  new_branch_path.set_block_number(new_branch_path.block_numbers(0));
   return new_branch_path;
 }
 
@@ -972,6 +1007,14 @@ bool LedgerMongodb::set_branch_path(const messages::BlockHeader &block_header,
   if (!(update_result && update_result->modified_count() > 0)) {
     return false;
   }
+  messages::TaggedBlock tagged_block;
+  get_block(block_header.id(), &tagged_block);
+  if (!add_balances(&tagged_block)) {
+    std::stringstream ss;
+    ss << "Add balance failed for block " << tagged_block.block().header().id();
+    throw std::runtime_error(ss.str());
+  }
+  add_balances(&tagged_block);
 
   // Set the branch path of the children
   std::vector<messages::TaggedBlock> tagged_blocks;
@@ -1080,19 +1123,6 @@ bool LedgerMongodb::cleanup_transaction_pool(
     messages::TaggedTransaction tagged_transaction;
     from_bson(bson_transaction, &tagged_transaction);
     bson_ids.append(bson_transaction[TRANSACTION][ID].get_document());
-
-    // Remove transactions from the transaction pool that spend the same inputs
-    for (const auto &input : tagged_transaction.transaction().inputs()) {
-      auto query = bss::document{}
-                   << TRANSACTION + "." + INPUTS << bss::open_document
-                   << "$elemMatch" << bss::open_document << ID
-                   << to_bson(input.id()) << OUTPUT_ID << input.output_id()
-                   << bss::close_document << bss::close_document << BLOCK_ID
-                   << bss::open_document << $EXISTS << false
-                   << bss::close_document << bss::finalize;
-      deleted_count +=
-          static_cast<bool>(_transactions.delete_many(query.view()));
-    }
   }
 
   query = bss::document{} << TRANSACTION + "." + ID << bss::open_document << $IN
@@ -1101,6 +1131,7 @@ bool LedgerMongodb::cleanup_transaction_pool(
                           << bss::close_document << bss::finalize;
   return deleted_count +
          static_cast<bool>(_transactions.delete_many(query.view()));
+  return true;
 }
 
 bool LedgerMongodb::update_main_branch() {
@@ -1115,7 +1146,7 @@ bool LedgerMongodb::update_main_branch() {
   }
   from_bson(bson_block->view(), &main_branch_tip);
 
-//  assert(main_branch_tip.branch() != messages::Branch::DETACHED);
+  //  assert(main_branch_tip.branch() != messages::Branch::DETACHED);
   if (main_branch_tip.branch() == messages::Branch::MAIN) {
     return true;
   }
@@ -1165,11 +1196,12 @@ bool LedgerMongodb::update_main_branch() {
   return true;
 }
 
-bool LedgerMongodb::get_pii(const messages::Address &address,
+bool LedgerMongodb::get_pii(const messages::_KeyPub &key_pub,
                             const messages::AssemblyID &assembly_id,
                             Double *pii) const {
   std::lock_guard lock(_ledger_mutex);
-  auto query = bss::document{} << ADDRESS << to_bson(address) << ASSEMBLY_ID
+  std::lock_guard lock_mpfr(mpfr_mutex);
+  auto query = bss::document{} << KEY_PUB << to_bson(key_pub) << ASSEMBLY_ID
                                << to_bson(assembly_id) << bss::finalize;
 
   const auto result = _pii.find_one(std::move(query), remove_OID());
@@ -1284,7 +1316,7 @@ bool LedgerMongodb::set_integrity(const messages::Integrity &integrity) {
 }
 
 bool LedgerMongodb::add_integrity(
-    const messages::Address &address, const messages::AssemblyID &assembly_id,
+    const messages::_KeyPub &key_pub, const messages::AssemblyID &assembly_id,
     const messages::AssemblyHeight &assembly_height,
     const messages::BranchPath &branch_path,
     const messages::IntegrityScore &added_score) {
@@ -1293,10 +1325,10 @@ bool LedgerMongodb::add_integrity(
   // The branch_path is not the right one but it should work because it is a
   // descendant of the corrent branch_path
   auto previous_score =
-      get_integrity(address, assembly_height - 1, branch_path);
+      get_integrity(key_pub, assembly_height - 1, branch_path);
 
   messages::Integrity integrity;
-  integrity.mutable_address()->CopyFrom(address);
+  integrity.mutable_key_pub()->CopyFrom(key_pub);
   integrity.mutable_assembly_id()->CopyFrom(assembly_id);
   integrity.set_score((previous_score + added_score).toString());
   integrity.set_assembly_height(assembly_height);
@@ -1306,16 +1338,16 @@ bool LedgerMongodb::add_integrity(
 
 /*
  * This is a bit complicated the goal is to return the integrity of the
- * address at a certain assembly. The hard part is that the integrity is
+ * key_pub at a certain assembly. The hard part is that the integrity is
  * only stored when it changes. And we only want to see the integrities for
  * our branch which we cannot specify in a mongo query.
  */
 messages::IntegrityScore LedgerMongodb::get_integrity(
-    const messages::Address &address,
+    const messages::_KeyPub &key_pub,
     const messages::AssemblyHeight &assembly_height,
     const messages::BranchPath &branch_path) const {
   std::lock_guard lock(_ledger_mutex);
-  auto query = bss::document{} << ADDRESS << to_bson(address) << ASSEMBLY_HEIGHT
+  auto query = bss::document{} << KEY_PUB << to_bson(key_pub) << ASSEMBLY_HEIGHT
                                << bss::open_document << $LTE << assembly_height
                                << bss::close_document << bss::finalize;
   auto options = remove_OID();
@@ -1352,25 +1384,25 @@ bool LedgerMongodb::get_assemblies_to_compute(
 }
 
 bool LedgerMongodb::get_block_writer(const messages::AssemblyID &assembly_id,
-                                     int32_t address_rank,
-                                     messages::Address *address) const {
+                                     int32_t key_pub_rank,
+                                     messages::_KeyPub *key_pub) const {
   std::lock_guard lock(_ledger_mutex);
   auto query = bss::document{} << ASSEMBLY_ID << to_bson(assembly_id) << RANK
-                               << address_rank << bss::finalize;
-  auto result = _pii.find_one(std::move(query), projection(ADDRESS));
+                               << key_pub_rank << bss::finalize;
+  auto result = _pii.find_one(std::move(query), projection(KEY_PUB));
   if (!result) {
     return false;
   };
-  from_bson(result->view()[ADDRESS].get_document(), address);
+  from_bson(result->view()[KEY_PUB].get_document(), key_pub);
   return true;
 }
 
-bool LedgerMongodb::set_nb_addresses(const messages::AssemblyID &assembly_id,
-                                     int32_t nb_addresses) {
+bool LedgerMongodb::set_nb_key_pubs(const messages::AssemblyID &assembly_id,
+                                    int32_t nb_key_pubs) {
   std::lock_guard lock(_ledger_mutex);
   auto filter = bss::document{} << ID << to_bson(assembly_id) << bss::finalize;
-  auto update = bss::document{} << $SET << bss::open_document << NB_ADDRESSES
-                                << nb_addresses << bss::close_document
+  auto update = bss::document{} << $SET << bss::open_document << NB_KEY_PUBS
+                                << nb_key_pubs << bss::close_document
                                 << bss::finalize;
   auto update_result =
       _assemblies.update_one(std::move(filter), std::move(update));
@@ -1509,6 +1541,213 @@ void LedgerMongodb::add_denunciations(
       added_denunciation->clear_branch_path();
     }
   }
+}
+
+messages::Balance LedgerMongodb::get_balance(
+    const messages::_KeyPub &key_pub,
+    const messages::TaggedBlock &tagged_block) const {
+  std::lock_guard lock(_ledger_mutex);
+  std::lock_guard lock_mpfr(mpfr_mutex);
+  const auto &branch_path = tagged_block.branch_path();
+  const auto bson_key_pub = to_bson(key_pub);
+  auto document = bss::document{};
+  auto in_array = document << $OR << bss::open_array;
+  for (int i = 0; i < branch_path.branch_ids_size(); i++) {
+    in_array = in_array << bss::open_document << BALANCES + "." + KEY_PUB
+                        << bson_key_pub << BRANCH_PATH + "." + BRANCH_ID
+                        << branch_path.branch_ids(i)
+                        << BRANCH_PATH + "." + BLOCK_NUMBER
+                        << bss::open_document << $LTE
+                        << branch_path.block_numbers(i) << bss::close_document
+                        << bss::close_document;
+  }
+  auto after_array = in_array << bss::close_array;
+  auto query = after_array << bss::finalize;
+
+  mongocxx::options::find options;
+  options.sort(bss::document{} << BRANCH_PATH + "." + BRANCH_ID << -1
+                               << BRANCH_PATH + "." + BLOCK_NUMBER << -1
+                               << bss::finalize);
+  auto projection_doc = bss::document{}
+                        << _ID << 0 << BLOCK + "." + HEADER + "." + HEIGHT << 1
+                        << BALANCES << bss::open_document << $ELEMMATCH
+                        << bss::open_document << KEY_PUB << bson_key_pub
+                        << bss::close_document << bss::close_document
+                        << bss::finalize;
+  options.projection(std::move(projection_doc));
+
+  const auto result = _blocks.find_one(std::move(query), options);
+  messages::Balance balance;
+  if (!result) {
+    LOG_INFO << "Balance not found for key pub " << key_pub << " at block "
+             << tagged_block.block().header().id();
+    balance.mutable_key_pub()->CopyFrom(key_pub);
+    balance.mutable_value()->CopyFrom(messages::NCCAmount(0));
+    Double enthalpy = 0;
+    balance.set_enthalpy_begin(enthalpy.toString());
+    balance.set_enthalpy_end(enthalpy.toString());
+    balance.set_block_height(0);
+  } else {
+    from_bson(result->view()[BALANCES][0].get_document(), &balance);
+    balance.set_block_height(
+        result->view()[BLOCK][HEADER][HEIGHT].get_int32().value);
+  }
+  return balance;
+}
+
+void LedgerMongodb::add_transaction_to_balances(
+    std::unordered_map<messages::_KeyPub, BalanceChange> *balance_changes,
+    const messages::Transaction &transaction) {
+  std::lock_guard lock(_ledger_mutex);
+  for (const auto &input : transaction.inputs()) {
+    auto *change = &(*balance_changes)[input.key_pub()];
+    change->negative += input.value().value();
+  }
+  for (const auto &output : transaction.outputs()) {
+    auto *change = &(*balance_changes)[output.key_pub()];
+    change->positive += output.value().value();
+  }
+}
+
+bool LedgerMongodb::cleanup_transactions(messages::Block *block) {
+  messages::TaggedBlock previous;
+  if (!get_block(block->header().previous_block_hash(), &previous)) {
+    return false;
+  }
+  std::vector<messages::Transaction> transactions;
+  std::unordered_map<messages::_KeyPub, Double> balances;
+  for (const auto &transaction : block->transactions()) {
+    bool is_transaction_valid = true;
+    for (const auto &input : transaction.inputs()) {
+      if (balances.count(input.key_pub()) == 0) {
+        balances[input.key_pub()] =
+            get_balance(input.key_pub(), previous).value().value();
+      }
+      balances[input.key_pub()] -= input.value().value();
+      if (balances[input.key_pub()] < 0) {
+        is_transaction_valid = false;
+      }
+    }
+    // Reverse balance changes
+    if (!is_transaction_valid) {
+      for (const auto &input : transaction.inputs()) {
+        balances[input.key_pub()] += input.value().value();
+      }
+      continue;
+    }
+    for (const auto &output : transaction.outputs()) {
+      if (balances.count(output.key_pub()) == 0) {
+        balances[output.key_pub()] =
+            get_balance(output.key_pub(), previous).value().value();
+      }
+      balances[output.key_pub()] += output.value().value();
+    }
+    transactions.push_back(transaction);
+  }
+  block->clear_transactions();
+  for (const auto &transaction : transactions) {
+    block->add_transactions()->CopyFrom(transaction);
+  }
+  return true;
+}
+
+bool LedgerMongodb::add_balances(messages::TaggedBlock *tagged_block) {
+  std::lock_guard lock(_ledger_mutex);
+  std::lock_guard lock_mpfr(mpfr_mutex);
+  messages::TaggedBlock previous;
+  bool is_block0 = tagged_block->block().header().height() == 0;
+  if (!is_block0) {
+    auto previous_block_id =
+        tagged_block->block().header().previous_block_hash();
+    bool include_transactions = false;
+    if (!get_block(previous_block_id, &previous, include_transactions)) {
+      std::stringstream ss;
+      ss << "Failed to find block with id " << previous_block_id
+         << " in add_balance";
+      throw std::runtime_error(ss.str());
+    }
+  }
+
+  std::unordered_map<messages::_KeyPub, BalanceChange> balance_changes;
+
+  for (const auto &transaction : tagged_block->block().transactions()) {
+    add_transaction_to_balances(&balance_changes, transaction);
+  }
+  add_transaction_to_balances(&balance_changes,
+                              tagged_block->block().coinbase());
+
+  Double enthalpy = 0;
+  for (const auto &[key_pub, change] : balance_changes) {
+    auto balance = tagged_block->add_balances();
+    enthalpy = 0;
+    if (is_block0) {
+      balance->mutable_key_pub()->CopyFrom(key_pub);
+      balance->mutable_value()->set_value(0);
+      balance->set_enthalpy_begin(enthalpy.toString());
+      balance->set_enthalpy_end(enthalpy.toString());
+      balance->set_block_height(0);
+    } else {
+      balance->CopyFrom(get_balance(key_pub, previous));
+    }
+
+    enthalpy = balance->enthalpy_end();
+
+    // Enthalpy has increased since the last balance change
+    enthalpy +=
+        balance->value().value() *
+        (tagged_block->block().header().height() - balance->block_height());
+
+    balance->set_enthalpy_begin(enthalpy.toString());
+
+    // Enthalpy decreases if coins were sent away
+    Double balance_ratio = balance->value().value() - change.negative;
+    balance_ratio /= balance->value().value();
+    balance_ratio = mpfr::fmax(0, balance_ratio);
+    enthalpy *= balance_ratio;
+    balance->set_enthalpy_end(enthalpy.toString());
+
+    Double new_balance =
+        Double{balance->value().value()} + change.positive - change.negative;
+
+    // This is a dirty workaround because of a memory leak in mpfr
+    // it could be problematic if mpfr_free_cache is not thread safe
+    mpfr_free_cache();
+
+    if (new_balance < 0) {
+      LOG_WARNING << "Block " << tagged_block->block().header().id()
+                  << " key pub " << key_pub << " would have a negative balance";
+      LOG_DEBUG << "Positive changes " << change.positive;
+      LOG_DEBUG << "Negative changes " << change.negative;
+      LOG_DEBUG << "Transactions " << tagged_block->block().transactions();
+      LOG_DEBUG << "Coinbase " << tagged_block->block().coinbase();
+      return false;
+    }
+
+    balance->mutable_value()->set_value(
+        static_cast<messages::NCCValue>(new_balance));
+
+    balance->clear_block_height();
+  }
+
+  // SAVE IT TO MONGO
+  if (tagged_block->balances_size() > 0) {
+    auto filter = bss::document{}
+                  << BLOCK + "." + HEADER + "." + ID
+                  << to_bson(tagged_block->block().header().id())
+                  << bss::finalize;
+    auto bson_tagged_block = to_bson(*tagged_block);
+    auto balances = bson_tagged_block.view()[BALANCES].get_array();
+    auto update = bss::document{} << $SET << bss::open_document << BALANCES
+                                  << balances << bss::close_document
+                                  << bss::finalize;
+    auto update_result =
+        _blocks.update_one(std::move(filter), std::move(update));
+    if (!(update_result && update_result->modified_count() > 0)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 }  // namespace ledger

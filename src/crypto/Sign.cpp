@@ -17,15 +17,13 @@ bool sign(const std::vector<const crypto::Ecc *> keys,
   Buffer serialized_transaction;
   messages::to_buffer(*transaction, &serialized_transaction);
 
-  for (const auto &input : *transaction->mutable_inputs()) {
-    const auto key = keys[input.signature_id()];
+  for (int i = 0; i < transaction->inputs_size(); i++) {
+    const auto &input = transaction->mutable_inputs(i);
+    const auto &key = keys[i];
     const auto signature = key->key_priv().sign(serialized_transaction);
-    auto input_signature = transaction->add_signatures();
 
-    input_signature->mutable_signature()->set_data(signature.str());
-    input_signature->mutable_signature()->set_type(messages::Hash::SHA256);
-
-    key->key_pub().save(input_signature->mutable_key_pub());
+    input->mutable_signature()->set_data(signature.str());
+    input->mutable_signature()->set_type(messages::Hash::SHA256);
   }
 
   return true;
@@ -33,7 +31,9 @@ bool sign(const std::vector<const crypto::Ecc *> keys,
 
 bool verify(const messages::Transaction &transaction) {
   auto transaction_copy = transaction;
-  transaction_copy.clear_signatures();
+  for (int i = 0; i < transaction_copy.inputs_size(); i++) {
+    transaction_copy.mutable_inputs(i)->clear_signature();
+  }
 
   // Fill the id which is a required field. This makes the transaction
   // serializable.
@@ -44,11 +44,11 @@ bool verify(const messages::Transaction &transaction) {
   messages::to_buffer(transaction_copy, &buffer);
 
   for (const auto &input : transaction.inputs()) {
-    const auto signature = transaction.signatures(input.signature_id());
+    const auto signature = input.signature();
 
-    KeyPub key_pub(signature.key_pub());
+    KeyPub key_pub(input.key_pub());
 
-    const auto hash = signature.signature().data();
+    const auto hash = signature.data();
     const Buffer sig(hash.data(), hash.size());
 
     if (!key_pub.verify(buffer, sig)) {

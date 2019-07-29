@@ -66,6 +66,8 @@ const int32_t MAX_MESSAGE_SIZE = 256 * 1024;
 // This is used both in the ledger and the consensus
 using Double = mpfr::mpreal;
 
+static std::recursive_mutex mpfr_mutex;
+
 // Useful debug utilities
 using Timer = std::chrono::high_resolution_clock;
 
