@@ -66,6 +66,9 @@ class Consensus {
 
   bool check_block_id(const messages::TaggedBlock &tagged_block) const;
 
+  bool is_expired(const messages::Transaction &transaction,
+                  const messages::Block &block) const;
+
   bool check_block_transactions(
       const messages::TaggedBlock &tagged_block) const;
 
@@ -161,6 +164,8 @@ class Consensus {
   void start_miner_thread();
 
   void mine_blocks();
+
+  void cleanup_expired_transactions();
 
   friend class neuro::consensus::tests::Consensus;
   friend class neuro::consensus::tests::RealtimeConsensus;
