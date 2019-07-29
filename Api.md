@@ -115,7 +115,7 @@ $ curl http://52.47.129.155:8080/total_nb_transactions
 **data**:
 ```
 {
-    key_pub: <public key>,
+    key_pub: {hexData: <public key>},
     outputs: [
         {
             address: {data: <address>},
@@ -141,14 +141,17 @@ $ curl http://52.47.129.155:8080/total_nb_transactions
 ### Get the balance of a wallet
 **URL**: `/balance
 
-**URL Parameter**: `address` address of a wallet
-
 **method**: `POST`
-
+**data**:
+```
+{
+    hexData: <public key>
+}
+```
 **exemple**:
 ```
-$ curl http://52.47.129.155:8080/balance/NH5Sr4NDcLDdEd5Gc6byrA2Rxh6ndR5E2N
-{"value":"5289"}
+$ curl 'http://localhost:8080/balance' --data '{"hexData":"0402368ae94009f1e32ef39826c057d6e3ff3b8ea1c9364f34dfebad765daf7e96a9f6abf90c855ab883044a25eee6aa338c0f8210303cc02687d648182abe0da0"}'
+  {"value":"0"}
 ```
 
 ### Check if a bot is alive
