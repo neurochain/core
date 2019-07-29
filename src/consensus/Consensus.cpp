@@ -222,8 +222,8 @@ bool Consensus::check_block_id(
   return block->header().id() == block_id;
 }
 
-bool Consensus::is_expired(const messages::Transaction &transaction,
-                           const messages::Block &block) const {
+bool Consensus::is_unexpired(const messages::Transaction &transaction,
+                             const messages::Block &block) const {
   messages::Block last_seen_block;
   bool include_transactions = false;
   if (!_ledger->get_block(transaction.last_seen_block_id(), &last_seen_block,
@@ -232,7 +232,7 @@ bool Consensus::is_expired(const messages::Transaction &transaction,
              << transaction.last_seen_block_id()
              << " when checking if transaction " << transaction.id()
              << " is expired in block " << block.header().id();
-    return true;
+    return false;
   }
   auto expires = transaction.has_expires()
                      ? transaction.expires()
@@ -240,9 +240,9 @@ bool Consensus::is_expired(const messages::Transaction &transaction,
   if (block.header().height() - last_seen_block.header().height() > expires) {
     LOG_INFO << "Transaction " << transaction.id() << " is expired "
              << " in block " << block.header().id();
-    return true;
+    return false;
   }
-  return false;
+  return true;
 }
 
 bool Consensus::check_block_transactions(
@@ -258,7 +258,7 @@ bool Consensus::check_block_transactions(
   tagged_coinbase.set_is_coinbase(true);
   tagged_coinbase.mutable_block_id()->CopyFrom(block.header().id());
   tagged_coinbase.mutable_transaction()->CopyFrom(block.coinbase());
-  if (!is_valid(tagged_coinbase) || is_expired(block.coinbase(), block)) {
+  if (!is_valid(tagged_coinbase) && !is_unexpired(block.coinbase(), block)) {
     LOG_INFO << "Failed check_block_transactions for block "
              << block.header().id();
     return false;
@@ -269,7 +269,7 @@ bool Consensus::check_block_transactions(
     tagged_transaction.set_is_coinbase(false);
     tagged_transaction.mutable_block_id()->CopyFrom(block.header().id());
     tagged_transaction.mutable_transaction()->CopyFrom(transaction);
-    if (!is_valid(tagged_transaction) || is_expired(transaction, block)) {
+    if (!is_valid(tagged_transaction) || !is_unexpired(transaction, block)) {
       LOG_INFO << "Failed check_block_transactions for block "
                << block.header().id();
       return false;
@@ -969,7 +969,7 @@ void Consensus::mine_blocks() {
 void Consensus::cleanup_expired_transactions() {
   const auto &tip = _ledger->get_main_branch_tip();
   for (const auto &tagged_transaction : _ledger->get_transaction_pool()) {
-    if (is_expired(tagged_transaction.transaction(), tip.block())) {
+    if (!is_unexpired(tagged_transaction.transaction(), tip.block())) {
       _ledger->delete_transaction(tagged_transaction.transaction().id());
     }
   }

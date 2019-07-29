@@ -66,8 +66,8 @@ class Consensus {
 
   bool check_block_id(const messages::TaggedBlock &tagged_block) const;
 
-  bool is_expired(const messages::Transaction &transaction,
-                  const messages::Block &block) const;
+  bool is_unexpired(const messages::Transaction &transaction,
+                    const messages::Block &block) const;
 
   bool check_block_transactions(
       const messages::TaggedBlock &tagged_block) const;
