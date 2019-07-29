@@ -15,8 +15,10 @@ Rest::Rest(const messages::config::Rest &config, Bot *bot)
 }
 
 void Rest::init() {
-  auto opts =
-      Http::Endpoint::options().threads(1).maxRequestSize(1024 * 1024);  // 1Mio
+  auto opts = Http::Endpoint::options()
+                  .threads(1)
+                  .maxRequestSize(1024 * 1024)  // 1Mio
+                  .flags(Tcp::Options::ReuseAddr);
   _httpEndpoint->init(opts);
   setupRoutes();
 }
@@ -38,7 +40,7 @@ void Rest::send(Response &response, const std::string &value) {
   response.send(Pistache::Http::Code::Ok, value);
 }
 
-void Rest::bad_request(Response &response, const std::string message) {
+void Rest::bad_request(Response &response, const std::string &message) {
   response.headers().add<Http::Header::AccessControlAllowOrigin>("*");
   response.send(Pistache::Http::Code::Bad_Request, message);
 }
@@ -52,8 +54,8 @@ void Rest::setupRoutes() {
   Post(_router, "/create_transaction/:key_pub/:fees",
        bind(&Rest::get_create_transaction, this));
   Post(_router, "/publish", bind(&Rest::publish, this));
-  Get(_router, "/transaction/:id", bind(&Rest::get_transaction, this));
-  Get(_router, "/block/id/:id", bind(&Rest::get_block_by_id, this));
+  Post(_router, "/transaction/", bind(&Rest::get_transaction, this));
+  Post(_router, "/block/id", bind(&Rest::get_block_by_id, this));
   Get(_router, "/block/height/:height", bind(&Rest::get_block_by_height, this));
   Get(_router, "/last_blocks/:nb_blocks", bind(&Rest::get_last_blocks, this));
   Get(_router, "/total_nb_transactions",
@@ -72,7 +74,10 @@ void Rest::get_balance(const Request &req, Response res) {
 void Rest::get_ready(const Request &req, Response res) { send(res, "{ok: 1}"); }
 
 void Rest::get_transaction(const Request &req, Response res) {
-  messages::Hasher transaction_id(req.param(":id").as<std::string>());
+  messages::Hash transaction_id;
+  if (!messages::from_json(req.body(), &transaction_id)) {
+    bad_request(res, "could not parse body");
+  }
   messages::Transaction transaction = Api::transaction(transaction_id);
   send(res, transaction);
 }
@@ -135,7 +140,10 @@ void Rest::publish(const Request &req, Response res) {
 }
 
 void Rest::get_block_by_id(const Rest::Request &req, Rest::Response res) {
-  messages::Hasher block_id(req.param(":id").as<std::string>());
+  messages::BlockID block_id;
+  if (!messages::from_json(req.body(), &block_id)) {
+    bad_request(res, "could not parse body");
+  }
   auto block = Api::block(block_id);
   send(res, block);
 }
@@ -162,7 +170,7 @@ void Rest::get_total_nb_blocks(const Rest::Request &req, Rest::Response res) {
 }
 
 void Rest::get_peers(const Rest::Request &request, Rest::Response res) {
-  send(res, to_json(Api::peers()));
+  send(res, messages::to_json(Api::peers()));
 }
 
 Rest::~Rest() { shutdown(); }

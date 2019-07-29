@@ -16,8 +16,12 @@ namespace neuro {
 class Bot;
 namespace api {
 
+namespace test {
+  class Rest;
+}
+
 class Rest : public Api {
-  private:
+private:
   using Request = Pistache::Rest::Request;
   using Response = Pistache::Http::ResponseWriter;
    //  Api *_api;
@@ -29,7 +33,7 @@ class Rest : public Api {
   void shutdown();
   void send(Response &response, const messages::Packet &packet);
   void send(Response &response, const std::string &value);
-  void bad_request(Response &response, const std::string message);
+  void bad_request(Response &response, const std::string& message);
   void setupRoutes();
 
   void get_balance(const Request& request, Response response);
@@ -48,6 +52,8 @@ class Rest : public Api {
 public:
   Rest(const messages::config::Rest &config, Bot *bot);
   ~Rest();
+
+  friend class test::Rest;
 };
 
 }  // namespace api
