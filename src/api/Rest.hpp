@@ -43,7 +43,6 @@ private:
   void get_transaction(const Request& request, Response response);
   void get_create_transaction (const Request& request, Response response);
   void publish(const Request &request, Response response);
-  void get_unspent_transaction_list(const Request &request, Response response);
   void get_block_by_id(const Request& request, Response response);
   void get_block_by_height(const Request& request, Response response);
   void get_last_blocks(const Request& request, Response response);

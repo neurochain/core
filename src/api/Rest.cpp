@@ -7,9 +7,9 @@
 namespace neuro::api {
 
 Rest::Rest(const messages::config::Rest &config, Bot *bot)
-    : Api::Api(bot),
-      _httpEndpoint(std::make_shared<Http::Endpoint>(
-          Address(Ipv4::any(), config.port()))) {
+    : Api::Api(bot), _httpEndpoint(std::make_shared<Http::Endpoint>(
+                         Address(Ipv4::any(), config.port()))),
+      _monitor(*bot) {
   init();
   start();
 }
@@ -51,7 +51,7 @@ void Rest::setupRoutes() {
   Get(_router, "/ready", bind(&Rest::get_ready, this));
   Post(_router, "/create_transaction/:key_pub/:fees",
        bind(&Rest::get_create_transaction, this));
-  Post(_router, "/publish", bind(&Rest::publish, this));*
+  Post(_router, "/publish", bind(&Rest::publish, this));
   // Post(_router, "/list_transactions/:key_pub", bind(&Rest::get_unspent_transaction_list, this));
   Post(_router, "/transaction/", bind(&Rest::get_transaction, this));
   Post(_router, "/block/id", bind(&Rest::get_block_by_id, this));
@@ -61,6 +61,7 @@ void Rest::setupRoutes() {
       bind(&Rest::get_total_nb_transactions, this));
   Get(_router, "/total_nb_blocks", bind(&Rest::get_total_nb_blocks, this));
   Get(_router, "/peers", bind(&Rest::get_peers, this));
+  Get(_router, "/status", bind(&Rest::get_status, this));
 }
 
 void Rest::get_balance(const Request &req, Response res) {
