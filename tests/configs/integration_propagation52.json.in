@@ -1,6 +1,6 @@
 {
   "logs": {
-        "severity": "trace",
+    "severity": "trace",
     "to_stdout": true
   },
   "networking": {
@@ -32,6 +32,7 @@
     "block0_file": {
       "block_format": "PROTO",
       "block_path": "@CMAKE_CURRENT_BINARY_DIR@/data.0.testnet"
-    }
+    },
+    "empty_database": true
   }
 }

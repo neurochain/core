@@ -20,20 +20,20 @@ class BotTest {
   std::unique_ptr<neuro::Bot> _bot;
   Port _port_offset;
 
-  void apply_port_offset(messages::config::Config& config) {
+  void apply_port_offset(messages::config::Config &config) {
     auto port = config.networking().tcp().port();
-    messages::config::Tcp* tcp_config =
+    messages::config::Tcp *tcp_config =
         config.mutable_networking()->mutable_tcp();
     tcp_config->set_port(port + _port_offset);
-    for (auto& peer : *tcp_config->mutable_peers()) {
+    for (auto &peer : *tcp_config->mutable_peers()) {
       auto peer_port = peer.port();
       peer.set_port(peer_port + _port_offset);
     }
   }
 
  public:
-  explicit BotTest(const std::string configPath,
-          const Port port_offset = 0) : _port_offset(port_offset) {
+  explicit BotTest(const std::string configPath, const Port port_offset = 0)
+      : _port_offset(port_offset) {
     Path configAsPath(configPath);
     messages::config::Config config(configAsPath);
     apply_port_offset(config);
@@ -70,10 +70,10 @@ class BotTest {
   }
 
   bool check_peer_status_by_port(const Port port,
-				 const messages::Peer::Status status) {
+                                 const messages::Peer::Status status) {
     const auto remote = _bot->peers().peer_by_port(port + _port_offset);
     EXPECT_TRUE(remote) << _bot->peers();
-    if(!remote) {
+    if (!remote) {
       return false;
     }
 
@@ -98,7 +98,7 @@ class BotTest {
     }
     return true;
   }
-  
+
   int nb_blocks() { return _bot->_ledger->total_nb_blocks(); }
 
   void add_block() {
@@ -115,8 +115,8 @@ class BotTest {
  * error, use gtest-parellel and uncomment to speed up the tests
  */
 Port random_port() {
-//  std::random_device rd;
-//  return (rd() + 10) % 10000;
+  //  std::random_device rd;
+  //  return (rd() + 10) % 10000;
   return 0;
 }
 
@@ -137,10 +137,12 @@ TEST(INTEGRATION, full_node) {
   ASSERT_EQ(bot1.peers().size(), 2);
   ASSERT_EQ(bot1->connected_peers().size(), 0);
 
-  const auto unavailable = static_cast<messages::Peer::Status>
-  (messages::Peer::UNREACHABLE | messages::Peer::DISCONNECTED);
-  ASSERT_TRUE(bot0.check_peer_status_by_port(1338, unavailable)) << bot0->peers();
-  ASSERT_TRUE(bot1.check_peer_status_by_port(1337, unavailable)) << bot1->peers();
+  const auto unavailable = static_cast<messages::Peer::Status>(
+      messages::Peer::UNREACHABLE | messages::Peer::DISCONNECTED);
+  ASSERT_TRUE(bot0.check_peer_status_by_port(1338, unavailable))
+      << bot0->peers();
+  ASSERT_TRUE(bot1.check_peer_status_by_port(1337, unavailable))
+      << bot1->peers();
 }
 
 TEST(INTEGRATION, simple_interaction) {
@@ -149,25 +151,19 @@ TEST(INTEGRATION, simple_interaction) {
   Port port_offset = random_port();
   std::cerr << "port offset : " << port_offset << std::endl;
   BotTest bot0("bot0.json", port_offset);
-  bot0->subscribe(
-      messages::Type::kConnectionReady,
-      [&](const messages::Header &header, const messages::Body &body) {
-        received_connection++;
-      });
+  bot0->subscribe(messages::Type::kConnectionReady,
+                  [&](const messages::Header &header,
+                      const messages::Body &body) { received_connection++; });
 
   BotTest bot1("bot1.json", port_offset);
-  bot1->subscribe(
-      messages::Type::kConnectionReady,
-      [&](const messages::Header &header, const messages::Body &body) {
-        received_connection++;
-      });
+  bot1->subscribe(messages::Type::kConnectionReady,
+                  [&](const messages::Header &header,
+                      const messages::Body &body) { received_connection++; });
 
   BotTest bot2("bot2.json", port_offset);
-  bot2->subscribe(
-      messages::Type::kConnectionReady,
-      [&](const messages::Header &header, const messages::Body &body) {
-        received_connection++;
-      });
+  bot2->subscribe(messages::Type::kConnectionReady,
+                  [&](const messages::Header &header,
+                      const messages::Body &body) { received_connection++; });
 
   std::this_thread::sleep_for(1s);
 
@@ -212,16 +208,16 @@ TEST(INTEGRATION, disconnect_message) {
   BotTest bot0("bot0.json", port_offset);
   BotTest bot1("bot1.json", port_offset);
   BotTest bot2("bot2.json", port_offset);
-  bot0->subscribe(messages::Type::kConnectionClosed,
-                  [&](const messages::Header &header,
-                     const messages::Body &body) {
-                    message_received0 = true;
-                  });
-  bot2->subscribe(messages::Type::kConnectionClosed,
-                  [&](const messages::Header &header,
-                      const messages::Body &body) {
-                    message_received2 = true;
-                  });
+  bot0->subscribe(
+      messages::Type::kConnectionClosed,
+      [&](const messages::Header &header, const messages::Body &body) {
+        message_received0 = true;
+      });
+  bot2->subscribe(
+      messages::Type::kConnectionClosed,
+      [&](const messages::Header &header, const messages::Body &body) {
+        message_received2 = true;
+      });
 
   std::this_thread::sleep_for(1s);
   ASSERT_EQ(bot0->connected_peers().size(), 2);
@@ -320,30 +316,30 @@ TEST(INTEGRATION, connection_opportunity) {
   BotTest bot1("bot1.json", port_offset);
   BotTest bot2("bot2.json", port_offset);
   BotTest bot3("integration_propagation40.json", port_offset);
-  bot0->subscribe(messages::Type::kConnectionClosed,
-                  [&](const messages::Header &header,
-                      const messages::Body &body) {
-                    auto remote_port = body.connection_closed().peer().port();
-                    if  (remote_port) {
-                      bot0_disconnect_received++;
-                    }
-                  });
-  bot1->subscribe(messages::Type::kConnectionClosed,
-                 [&](const messages::Header &header,
-                     const messages::Body &body) {
-                   auto remote_port = body.connection_closed().peer().port();
-                   if  (remote_port) {
-                     bot1_disconnect_received++;
-                   }
-                 });
-  bot2->subscribe(messages::Type::kConnectionClosed,
-                 [&](const messages::Header &header,
-                     const messages::Body &body) {
-                   auto remote_port = body.connection_closed().peer().port();
-                   if  (remote_port) {
-                     bot2_disconnect_received++;
-                   }
-                 });
+  bot0->subscribe(
+      messages::Type::kConnectionClosed,
+      [&](const messages::Header &header, const messages::Body &body) {
+        auto remote_port = body.connection_closed().peer().port();
+        if (remote_port) {
+          bot0_disconnect_received++;
+        }
+      });
+  bot1->subscribe(
+      messages::Type::kConnectionClosed,
+      [&](const messages::Header &header, const messages::Body &body) {
+        auto remote_port = body.connection_closed().peer().port();
+        if (remote_port) {
+          bot1_disconnect_received++;
+        }
+      });
+  bot2->subscribe(
+      messages::Type::kConnectionClosed,
+      [&](const messages::Header &header, const messages::Body &body) {
+        auto remote_port = body.connection_closed().peer().port();
+        if (remote_port) {
+          bot2_disconnect_received++;
+        }
+      });
   std::this_thread::sleep_for(1s);
 
   ASSERT_TRUE(bot0.check_peers_ports({1338, 1339, 13340}));
@@ -409,7 +405,8 @@ TEST(INTEGRATION, connection_opportunity_update) {
   ASSERT_TRUE(bot0.check_peers_ports({1338, 1339, 13340})) << bot0.peers();
   ASSERT_TRUE(bot1.check_peers_ports({1337, 1339, 13340})) << bot1.peers();
   ASSERT_TRUE(bot2.check_peers_ports({1337, 1338, 13340})) << bot2.peers();
-  ASSERT_TRUE(bot3.check_peers_ports({1337, 1338, 1339, 13350})) << bot3.peers();
+  ASSERT_TRUE(bot3.check_peers_ports({1337, 1338, 1339, 13350}))
+      << bot3.peers();
   ASSERT_TRUE(bot4.check_peers_ports({13340})) << bot4.peers();
 }
 
@@ -446,11 +443,14 @@ TEST(INTEGRATION, connection_reconfig) {
   ASSERT_TRUE(bot5.check_peers_ports({13350, 13352})) << bot5->peers();
   ASSERT_TRUE(bot6.check_peers_ports({13350, 13351})) << bot6->peers();
 
-  const auto unavailable = static_cast<messages::Peer::Status>
-      (messages::Peer::UNREACHABLE | messages::Peer::DISCONNECTED);
-  ASSERT_TRUE(bot0.check_peer_status_by_port(13350, unavailable)) << bot0->peers();
-  ASSERT_TRUE(bot0.check_peer_status_by_port(13351, unavailable)) << bot0->peers();
-  ASSERT_TRUE(bot0.check_peer_status_by_port(13352, unavailable)) << bot0->peers();
+  const auto unavailable = static_cast<messages::Peer::Status>(
+      messages::Peer::UNREACHABLE | messages::Peer::DISCONNECTED);
+  ASSERT_TRUE(bot0.check_peer_status_by_port(13350, unavailable))
+      << bot0->peers();
+  ASSERT_TRUE(bot0.check_peer_status_by_port(13351, unavailable))
+      << bot0->peers();
+  ASSERT_TRUE(bot0.check_peer_status_by_port(13352, unavailable))
+      << bot0->peers();
 
   // Delete 3 first bots.
   bot1.operator->().reset();
@@ -470,17 +470,15 @@ TEST(INTEGRATION, ignore_bad_message) {
   std::cerr << "port offset : " << port_offset << std::endl;
   BotTest bot0("bot0.json", port_offset);
   BotTest bot1("bot1.json", port_offset);
-  bot1->subscribe(messages::Type::kGetPeers,
-                  [](const messages::Header &header,
-                     const messages::Body &body) {
-                    EXPECT_EQ(header.version(), neuro::MessageVersion);
-                  });
+  bot1->subscribe(messages::Type::kGetPeers, [](const messages::Header &header,
+                                                const messages::Body &body) {
+    EXPECT_EQ(header.version(), neuro::MessageVersion);
+  });
 
   std::this_thread::sleep_for(1s);
 
   ASSERT_TRUE(bot0.check_peers_ports({1338}));
   ASSERT_TRUE(bot1.check_peers_ports({1337}));
-
 
   auto msg = std::make_shared<messages::Message>();
   auto *header = msg->mutable_header();

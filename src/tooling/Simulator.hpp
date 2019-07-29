@@ -17,8 +17,8 @@ class Simulator {
   std::vector<crypto::Ecc> keys;
   std::shared_ptr<neuro::ledger::LedgerMongodb> ledger;
   std::shared_ptr<neuro::consensus::Consensus> consensus;
-  std::vector<messages::Address> addresses;
-  std::unordered_map<messages::Address, uint32_t> addresses_indexes;
+  std::vector<messages::_KeyPub> key_pubs;
+  std::unordered_map<messages::_KeyPub, uint32_t> key_pubs_indexes;
 
   Simulator(const std::string &db_url, const std::string &db_name,
             const int32_t nb_keys, const messages::NCCAmount &ncc_block0,

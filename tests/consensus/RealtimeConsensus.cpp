@@ -30,8 +30,8 @@ class RealtimeConsensus : public testing::Test {
   void test_update_heights_thread() {
     consensus->_stop_miner = true;
     consensus->_stop_compute_pii = true;
-    std::vector<std::pair<messages::BlockHeight, AddressIndex>> heights;
-    consensus->get_heights_to_write(simulator.addresses, &heights);
+    std::vector<std::pair<messages::BlockHeight, KeyPubIndex>> heights;
+    consensus->get_heights_to_write(simulator.key_pubs, &heights);
     ASSERT_GT(heights.size(), 0);
     messages::TaggedBlock tagged_block;
     ledger->get_last_block(&tagged_block);
