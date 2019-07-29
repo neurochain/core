@@ -234,9 +234,9 @@ bool Consensus::is_unexpired(const messages::Transaction &transaction,
              << " is expired in block " << block.header().id();
     return false;
   }
-  auto expires = transaction.has_expires()
-                     ? transaction.expires()
-                     : _config.default_transaction_expires;
+  int32_t expires = transaction.has_expires()
+                        ? transaction.expires()
+                        : _config.default_transaction_expires;
   if (block.header().height() - last_seen_block.header().height() > expires) {
     LOG_INFO << "Transaction " << transaction.id() << " is expired "
              << " in block " << block.header().id();
