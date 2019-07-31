@@ -158,6 +158,8 @@ class Consensus {
       std::vector<std::pair<messages::BlockHeight, KeyPubIndex>> *heights)
       const;
 
+  bool cleanup_transactions(messages::Block *block) const;
+
   bool build_block(const crypto::Ecc &keys, const messages::BlockHeight &height,
                    messages::Block *block) const;
 

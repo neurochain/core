@@ -107,7 +107,7 @@ messages::Block Simulator::new_block(
   header->set_height(height);
 
   ledger->get_transaction_pool(&block);
-  ledger->cleanup_transactions(&block);
+  consensus->cleanup_transactions(&block);
 
   messages::NCCValue total_fees = 0;
   for (const auto &transaction : block.transactions()) {

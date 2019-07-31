@@ -238,6 +238,10 @@ bool Consensus::is_unexpired(const messages::Transaction &transaction,
                         ? transaction.expires()
                         : _config.default_transaction_expires;
   if (block.header().height() - last_seen_block.header().height() > expires) {
+    if (!block.header().has_id()) {
+      LOG_INFO << "Transaction " << transaction.id() << " is expired";
+      return false;
+    }
     LOG_INFO << "Transaction " << transaction.id() << " is expired "
              << " in block " << block.header().id();
     return false;
@@ -819,6 +823,60 @@ bool Consensus::get_heights_to_write(
   return true;
 }
 
+bool Consensus::cleanup_transactions(messages::Block *block) const {
+  messages::TaggedBlock previous;
+  if (!_ledger->get_block(block->header().previous_block_hash(), &previous)) {
+    LOG_INFO << "Failed to get the previous block with id "
+             << block->header().previous_block_hash()
+             << " in cleanup transactions";
+    return false;
+  }
+  std::vector<messages::Transaction> transactions;
+  std::unordered_map<messages::_KeyPub, Double> balances;
+  for (const auto &transaction : block->transactions()) {
+    if (!is_unexpired(transaction, *block)) {
+      _ledger->delete_transaction(transaction.id());
+      continue;
+    }
+
+    bool is_transaction_valid = true;
+    for (const auto &input : transaction.inputs()) {
+      if (balances.count(input.key_pub()) == 0) {
+        balances[input.key_pub()] =
+            _ledger->get_balance(input.key_pub(), previous).value().value();
+      }
+      balances[input.key_pub()] -= input.value().value();
+      if (balances[input.key_pub()] < 0) {
+        is_transaction_valid = false;
+        LOG_DEBUG << "Transaction " << transaction.id()
+                  << " not included in the block because of insufficient funds";
+      }
+    }
+
+    // Reverse balance changes
+    if (!is_transaction_valid) {
+      for (const auto &input : transaction.inputs()) {
+        balances[input.key_pub()] += input.value().value();
+      }
+      continue;
+    }
+
+    for (const auto &output : transaction.outputs()) {
+      if (balances.count(output.key_pub()) == 0) {
+        balances[output.key_pub()] =
+            _ledger->get_balance(output.key_pub(), previous).value().value();
+      }
+      balances[output.key_pub()] += output.value().value();
+    }
+    transactions.push_back(transaction);
+  }
+  block->clear_transactions();
+  for (const auto &transaction : transactions) {
+    block->add_transactions()->CopyFrom(transaction);
+  }
+  return true;
+}
+
 bool Consensus::build_block(const crypto::Ecc &keys,
                             const messages::BlockHeight &height,
                             messages::Block *block) const {
@@ -840,7 +898,7 @@ bool Consensus::build_block(const crypto::Ecc &keys,
   header->mutable_timestamp()->set_data(std::time(nullptr));
 
   _ledger->get_transaction_pool(block);
-  if (!_ledger->cleanup_transactions(block)) {
+  if (!cleanup_transactions(block)) {
     LOG_WARNING
         << "Failed to cleanup_transactions while mining block with height "
         << block->header().height();
@@ -858,6 +916,13 @@ bool Consensus::build_block(const crypto::Ecc &keys,
   tooling::blockgen::coinbase(
       {keys.key_pub()}, block_reward(height, total_fees),
       block->mutable_coinbase(), last_block.block().header().id());
+
+  // Check if the coinbase needs a longer expires
+  if (!is_unexpired(block->coinbase(), *block)) {
+    block->mutable_coinbase()->set_expires(
+        block->header().height() - last_block.block().header().height());
+    messages::set_transaction_hash(block->mutable_coinbase());
+  }
 
   _ledger->add_denunciations(block, last_block.branch_path());
 

@@ -99,7 +99,7 @@ class Consensus : public testing::Test {
   void test_compute_assembly_pii() {
     std::vector<messages::Assembly> assemblies;
     bool compute_pii = false;
-    simulator.run(consensus->config().blocks_per_assembly, 10, compute_pii);
+    simulator.run(consensus->config().blocks_per_assembly, 16, compute_pii);
     ASSERT_TRUE(ledger->get_assemblies_to_compute(&assemblies));
     ASSERT_EQ(assemblies.size(), 1);
     auto &assembly = assemblies[0];
@@ -265,6 +265,10 @@ TEST_F(Consensus, add_denunciations) {
   // Let's make the first miner double mine
   auto block1 = simulator.new_block();
   auto block1_bis = simulator.new_block(1);
+  LOG_DEBUG << "BLOCK1 ID " << block1.header().id();
+  LOG_DEBUG << "BLOCK1 NB TRANSACTIONS " << block1.transactions_size();
+  LOG_DEBUG << "BLOCK1 BIS ID " << block1_bis.header().id();
+  LOG_DEBUG << "BLOCK1 BIS NB TRANSACTIONS " << block1_bis.transactions_size();
   ASSERT_TRUE(simulator.consensus->add_block(block1));
   ASSERT_TRUE(simulator.consensus->add_block(block1_bis));
   messages::TaggedBlock tagged_block1;
