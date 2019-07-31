@@ -245,6 +245,13 @@ bool Consensus::is_unexpired(const messages::Transaction &transaction,
   return true;
 }
 
+bool Consensus::is_block_transaction_valid(
+    const messages::TaggedTransaction &tagged_transaction,
+    const messages::Block &block) const {
+  return is_valid(tagged_transaction) &&
+         is_unexpired(tagged_transaction.transaction(), block);
+}
+
 bool Consensus::check_block_transactions(
     const messages::TaggedBlock &tagged_block) const {
   const auto &block = tagged_block.block();
@@ -258,7 +265,7 @@ bool Consensus::check_block_transactions(
   tagged_coinbase.set_is_coinbase(true);
   tagged_coinbase.mutable_block_id()->CopyFrom(block.header().id());
   tagged_coinbase.mutable_transaction()->CopyFrom(block.coinbase());
-  if (!is_valid(tagged_coinbase) && !is_unexpired(block.coinbase(), block)) {
+  if (!is_block_transaction_valid(tagged_coinbase, block)) {
     LOG_INFO << "Failed check_block_transactions for block "
              << block.header().id();
     return false;
@@ -269,7 +276,7 @@ bool Consensus::check_block_transactions(
     tagged_transaction.set_is_coinbase(false);
     tagged_transaction.mutable_block_id()->CopyFrom(block.header().id());
     tagged_transaction.mutable_transaction()->CopyFrom(transaction);
-    if (!is_valid(tagged_transaction) || !is_unexpired(transaction, block)) {
+    if (!is_block_transaction_valid(tagged_transaction, block)) {
       LOG_INFO << "Failed check_block_transactions for block "
                << block.header().id();
       return false;
