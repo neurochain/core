@@ -9,8 +9,10 @@ Peers::iterator Peers::begin(const Peer::Status status) {
 }
 
 Peers::iterator Peers::begin() { return iterator{_peers}; }
+const Peers::iterator Peers::begin() const { return iterator{_peers}; }
 
 Peers::iterator Peers::end() { return iterator{}; }
+const Peers::iterator Peers::end() const { return iterator{}; }
 
 std::optional<Peer *> Peers::insert(const Peer &peer) {
   std::unique_lock<std::shared_mutex> lock(_mutex);

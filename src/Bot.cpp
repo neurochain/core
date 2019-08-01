@@ -221,7 +221,9 @@ bool Bot::init() {
 
   _consensus = std::make_shared<consensus::Consensus>(
       _ledger, _keys, _consensus_config,
-      [this](const messages::Block &block) { publish_block(block); });
+      [this](const messages::Block &block) {
+        publish_block(block);
+      });
 
   _io_context_thread = std::thread([this]() { _io_context->run(); });
 

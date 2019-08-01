@@ -7,16 +7,18 @@
 namespace neuro::api {
 
 Rest::Rest(const messages::config::Rest &config, Bot *bot)
-    : Api::Api(bot),
-      _httpEndpoint(std::make_shared<Http::Endpoint>(
-          Address(Ipv4::any(), config.port()))) {
+    : Api::Api(bot), _httpEndpoint(std::make_shared<Http::Endpoint>(
+                         Address(Ipv4::any(), config.port()))),
+      _monitor(*bot) {
   init();
   start();
 }
 
 void Rest::init() {
-  auto opts =
-      Http::Endpoint::options().threads(1).maxRequestSize(1024 * 1024);  // 1Mio
+  auto opts = Http::Endpoint::options()
+                  .threads(1)
+                  .maxRequestSize(1024 * 1024)  // 1Mio
+                  .flags(Tcp::Options::ReuseAddr);
   _httpEndpoint->init(opts);
   setupRoutes();
 }
@@ -30,6 +32,7 @@ void Rest::shutdown() { _httpEndpoint->shutdown(); }
 
 void Rest::send(Response &response, const messages::Packet &packet) {
   response.headers().add<Http::Header::AccessControlAllowOrigin>("*");
+  response.headers().add<Http::Header::ContentType>(MIME(Application, Json));
   response.send(Pistache::Http::Code::Ok, messages::to_json(packet));
 }
 
@@ -38,52 +41,66 @@ void Rest::send(Response &response, const std::string &value) {
   response.send(Pistache::Http::Code::Ok, value);
 }
 
-void Rest::bad_request(Response &response, const std::string message) {
+void Rest::bad_request(Response &response, const std::string &message) {
   response.headers().add<Http::Header::AccessControlAllowOrigin>("*");
   response.send(Pistache::Http::Code::Bad_Request, message);
 }
 
 void Rest::setupRoutes() {
   using namespace ::Pistache::Rest::Routes;
-  // Routes::Post(router, "/record/:name/:value?",
-  // Routes::bind(&StatsEndpoint::doRecordMetric, this));
-  Get(_router, "/balance/:key_pub", bind(&Rest::get_balance, this));
+  Post(_router, "/balance", bind(&Rest::get_balance, this));
   Get(_router, "/ready", bind(&Rest::get_ready, this));
-  Post(_router, "/create_transaction/:key_pub/:fees",
+  Post(_router, "/create_transaction/:fees",
        bind(&Rest::get_create_transaction, this));
   Post(_router, "/publish", bind(&Rest::publish, this));
-  Get(_router, "/transaction/:id", bind(&Rest::get_transaction, this));
-  Get(_router, "/block/id/:id", bind(&Rest::get_block_by_id, this));
+  // Post(_router, "/list_transactions/:key_pub", bind(&Rest::get_unspent_transaction_list, this));
+  Post(_router, "/transaction/", bind(&Rest::get_transaction, this));
+  Post(_router, "/block/id", bind(&Rest::get_block_by_id, this));
   Get(_router, "/block/height/:height", bind(&Rest::get_block_by_height, this));
   Get(_router, "/last_blocks/:nb_blocks", bind(&Rest::get_last_blocks, this));
   Get(_router, "/total_nb_transactions",
       bind(&Rest::get_total_nb_transactions, this));
   Get(_router, "/total_nb_blocks", bind(&Rest::get_total_nb_blocks, this));
   Get(_router, "/peers", bind(&Rest::get_peers, this));
+  Get(_router, "/status", bind(&Rest::get_status, this));
 }
 
 void Rest::get_balance(const Request &req, Response res) {
-  messages::_KeyPub key_pub;
-  key_pub.set_hex_data((req.param(":key_pub").as<std::string>()));
-  const auto balance_amount = balance(key_pub);
+  messages::_KeyPub key_pub_message;
+  if (!messages::from_json(req.body(), &key_pub_message)) {
+    bad_request(res, "could not parse body");
+  }
+
+  crypto::KeyPub key_pub(key_pub_message);
+  messages::_KeyPub public_key;
+  key_pub.save(&public_key);
+  const auto balance_amount = balance(public_key);
   send(res, balance_amount);
 }
 
-void Rest::get_ready(const Request &req, Response res) { send(res, "{ok: 1}"); }
+void Rest::get_ready(const Request &req, Response res) {
+  res.headers().add<Http::Header::ContentType>(MIME(Application, Json));
+  send(res, "{ok: 1}");
+}
 
 void Rest::get_transaction(const Request &req, Response res) {
-  messages::Hasher transaction_id(req.param(":id").as<std::string>());
+  messages::Hash transaction_id;
+  if (!messages::from_json(req.body(), &transaction_id)) {
+    bad_request(res, "could not parse body");
+  }
   messages::Transaction transaction = Api::transaction(transaction_id);
   send(res, transaction);
 }
 
 void Rest::get_create_transaction(const Request &req, Response res) {
-  messages::_KeyPub key_pub;
-  key_pub.set_hex_data(req.param(":key_pub").as<std::string>());
+  messages::CreateTransactionBody body;
+  if (!messages::from_json(req.body(), &body)) {
+    bad_request(res, "could not parse body");
+  }
 
   messages::Transaction transaction;
-  messages::from_json(req.body(), &transaction);
-  transaction.add_inputs()->mutable_key_pub()->CopyFrom(key_pub);
+  transaction.mutable_outputs()->CopyFrom(body.outputs());
+  transaction.add_inputs()->mutable_key_pub()->CopyFrom(body.key_pub());
 
   transaction.mutable_id()->set_type(messages::Hash::SHA256);
   transaction.mutable_id()->set_data("");
@@ -135,7 +152,10 @@ void Rest::publish(const Request &req, Response res) {
 }
 
 void Rest::get_block_by_id(const Rest::Request &req, Rest::Response res) {
-  messages::Hasher block_id(req.param(":id").as<std::string>());
+  messages::BlockID block_id;
+  if (!messages::from_json(req.body(), &block_id)) {
+    bad_request(res, "could not parse body");
+  }
   auto block = Api::block(block_id);
   send(res, block);
 }
@@ -162,59 +182,14 @@ void Rest::get_total_nb_blocks(const Rest::Request &req, Rest::Response res) {
 }
 
 void Rest::get_peers(const Rest::Request &request, Rest::Response res) {
-  send(res, to_json(Api::peers()));
+  send(res, Api::peers());
+}
+
+void Rest::get_status(const Rest::Request &req, Rest::Response res) {
+  auto status = _monitor.complete_status();
+  send(res, status);
 }
 
 Rest::~Rest() { shutdown(); }
-
-//
-// messages::Transaction Rest::build_transaction(
-//    const messages::TransactionToPublish &transaction_to_publish) const {
-//  messages::Transaction transaction;
-//
-//  // Load keys
-//  auto buffer = Buffer(transaction_to_publish.key_priv());
-//  const auto random_pool = std::make_shared<CryptoPP::AutoSeededRandomPool>();
-//  auto key_priv = crypto::KeyPriv(random_pool);
-//  key_priv.load(buffer);
-//
-//  std::vector<messages::Output> outputs;
-//  auto outputs_to_publish = transaction_to_publish.outputs();
-//  for (auto output : outputs_to_publish) {
-//    outputs.push_back(output);
-//  }
-//
-//  const crypto::KeyPub key_pub = key_priv.make_key_pub();
-//  const auto key_pub = messages::_KeyPub(key_pub);
-//  const auto ecc = crypto::Ecc(key_priv, key_pub);
-//  std::vector<const crypto::Ecc *> keys = {&ecc};
-//
-//  // Process the outputs and lookup their output_id to build the inputs
-//  std::vector<messages::_KeyPub> transaction_ids;
-//  auto transaction_ids_str = transaction_to_publish.transactions_ids();
-//  for (auto transaction_id_str : transaction_ids_str) {
-//    messages::_KeyPub transaction_id;
-//    transaction_id.set_type(messages::Hash_Type_SHA256);
-//    transaction_id.set_data(transaction_id_str);
-//    transaction_ids.push_back(transaction_id);
-//  }
-//
-//  return _ledger->build_transaction(transaction_ids, outputs, key_priv,
-//                                    transaction_to_publish.fees());
-//}
-//
-// messages::GeneratedKeys Rest::generate_keys() const {
-//  messages::GeneratedKeys generated_keys;
-//  crypto::Ecc ecc;
-//  messages::_KeyPub key_pub;
-//  ecc.key_pub().save(&key_pub);
-//  messages::_KeyPriv key_priv;
-//  ecc.key_priv().save(&key_priv);
-//  generated_keys.mutable_key_priv()->CopyFrom(key_priv);
-//  generated_keys.mutable_key_pub()->CopyFrom(key_pub);
-//  generated_keys.mutable_key_pub()->CopyFrom(
-//      messages::Hasher(ecc.key_pub()));
-//  return generated_keys;
-//}
 
 }  // namespace neuro::api

@@ -19,6 +19,8 @@ std::string encode_base58(const Buffer &buffer,
 std::string encode_base58(const std::string &data,
                           const std::string &version = "");
 
+CryptoPP::Integer decode_base58(const std::string &encoded_number);
+
 class Address : public _Address {
  private:
   std::size_t _hash_size = 30;

@@ -8,9 +8,9 @@ namespace messages {
 
 Queue::Queue() {}
 
-bool Queue::expired(std::shared_ptr<const messages::Message> message) {
+bool Queue::has_drifted(std::shared_ptr<const messages::Message> message) {
   const auto raw_ts = message->header().ts().data();
-  return ((raw_ts - std::time(nullptr)) > MESSAGE_TTL);
+  return (std::abs(std::time(nullptr) - raw_ts) > MESSAGE_TTL);
 }
 
 bool Queue::publish(std::shared_ptr<const messages::Message> message) {
@@ -19,8 +19,9 @@ bool Queue::publish(std::shared_ptr<const messages::Message> message) {
     return false;
   }
 
-  if (expired(message)) {
-    LOG_DEBUG << "Skip message because it's too old";
+  if (has_drifted(message)) {
+    LOG_DEBUG << "Skip message because timestamp drifted too much : "
+              << message->header();
     return false;
   }
 
