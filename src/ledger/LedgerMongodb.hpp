@@ -45,7 +45,7 @@ class LedgerMongodb : public Ledger {
 
   messages::TaggedBlock _main_branch_tip;
 
-  mongocxx::options::find remove_OID() const;
+  static mongocxx::options::find remove_OID();
 
   mongocxx::options::find projection(const std::string &field) const;
 
@@ -72,6 +72,9 @@ class LedgerMongodb : public Ledger {
                  const messages::BranchPath &branch_path,
                  messages::TaggedBlock *tagged_block,
                  bool include_transactions = true) const;
+
+  messages::TaggedBlocks get_blocks(mongocxx::cursor &cursor,
+				    bool include_transactions) const;
 
   messages::BranchID new_branch_id() const;
 

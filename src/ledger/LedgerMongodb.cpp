@@ -101,7 +101,7 @@ LedgerMongodb::LedgerMongodb(const messages::config::Database &config)
 
 LedgerMongodb::~LedgerMongodb() { mpfr_free_cache(); }
 
-mongocxx::options::find LedgerMongodb::remove_OID() const {
+mongocxx::options::find LedgerMongodb::remove_OID() {
   std::lock_guard lock(_ledger_mutex);
   mongocxx::options::find find_options;
   auto projection_doc = bss::document{} << _ID << 0
@@ -1480,7 +1480,7 @@ messages::TaggedBlocks LedgerMongodb::get_blocks(mongocxx::cursor &cursor,
 
 messages::TaggedBlocks LedgerMongodb::get_blocks(const messages::Branch name) const {
   auto query = bss::document{} << BRANCH << name << bss::finalize;
-  auto cursor = find(_blocks, std::move(query));
+  mongocxx::cursor cursor = find(_blocks, std::move(query));
   return get_blocks(cursor, false);
 }
   
