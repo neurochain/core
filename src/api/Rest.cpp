@@ -55,10 +55,14 @@ void Rest::setupRoutes() {
   Get(_router, "/ready", bind(&Rest::get_ready, this));
   Post(_router, "/create_transaction/:address/:fees",
        bind(&Rest::get_create_transaction, this));
+  Options(_router, "/create_transaction/:address/:fees", bind(&Rest::allow_option, this));
   Post(_router, "/publish", bind(&Rest::publish, this));
+  Options(_router, "/publish", bind(&Rest::allow_option, this));
   Get(_router, "/list_transactions/:address", bind(&Rest::get_unspent_transaction_list, this));
   Post(_router, "/transaction/", bind(&Rest::get_transaction, this));
+  Options(_router, "/transaction/", bind(&Rest::allow_option, this));
   Post(_router, "/block/id", bind(&Rest::get_block_by_id, this));
+  Options(_router, "/block/id", bind(&Rest::allow_option, this));
   Get(_router, "/block/height/:height", bind(&Rest::get_block_by_height, this));
   Get(_router, "/last_blocks/:nb_blocks", bind(&Rest::get_last_blocks, this));
   Get(_router, "/total_nb_transactions", bind(&Rest::get_total_nb_transactions, this));
@@ -182,6 +186,12 @@ void Rest::get_total_nb_blocks(const Rest::Request &req, Rest::Response res) {
 
 void Rest::get_peers(const Rest::Request& request, Rest::Response res) {
   send(res, messages::to_json(Api::peers()));
+}
+
+void Rest::allow_option(const Rest::Request& req, Rest::Response res) {
+  res.headers().add<Http::Header::AccessControlAllowOrigin>("*");
+  res.headers().add<Http::Header::AccessControlAllowMethods>("GET, POST");
+  res.send(Pistache::Http::Code::Ok);
 }
 
 Rest::~Rest() {
