@@ -22,7 +22,6 @@ Networking::Networking(messages::Queue *queue, crypto::Ecc *keys,
 
 TransportLayer::SendResult Networking::send(
     std::shared_ptr<messages::Message> message) const {
-  message->mutable_header()->set_id(_dist(_rd));
   return _transport_layer->send(message);
 }
 

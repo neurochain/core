@@ -341,7 +341,6 @@ void Bot::handler_connection(const messages::Header &header,
   LOG_DEBUG << this << " It entered in handler_connection in bot " << body;
 
   auto connection_ready = body.connection_ready();
-
   if (connection_ready.from_remote()) {
     // Nothing to do; just wait for the hello message from remote peer
     return;
@@ -354,6 +353,9 @@ void Bot::handler_connection(const messages::Header &header,
   auto hello = message->add_bodies()->mutable_hello();
   hello->mutable_peer()->CopyFrom(_me);
 
+  const auto tip = _ledger->get_main_branch_tip();
+  hello->mutable_tip()->CopyFrom(tip.block().header().id());
+  
   if (!_networking.send_unicast(message)) {
     LOG_DEBUG << this << " : " << _me << " can't send hello message "
               << message;
@@ -426,6 +428,9 @@ void Bot::handler_hello(const messages::Header &header,
   auto peers = message->add_bodies()->mutable_peers();
   bool accepted = _peers.used_peers_count() < _max_incoming_connections;
 
+  const auto tip = _ledger->get_main_branch_tip();
+  world->mutable_tip()->CopyFrom(tip.block().header().id());
+  
   // update peer status
   if (accepted) {
     (*remote_peer)->set_status(messages::Peer::CONNECTED);
