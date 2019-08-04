@@ -20,6 +20,7 @@ std::time_t time();
 std::time_t time(const std::time_t increment);
 
 static std::random_device _rd;  // TODO make global
+static std::uniform_int_distribution<uint32_t> _dist{0, std::numeric_limits<uint32_t>::max()};
 
 using namespace std::chrono_literals;
 

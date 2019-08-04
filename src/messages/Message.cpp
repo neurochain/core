@@ -142,7 +142,7 @@ void set_block_hash(Block *block) {
 }
 
 int32_t fill_header(messages::Header *header) {
-  int32_t id = std::rand();
+  const auto id = _dist(_rd);
   header->set_version(MessageVersion);
   header->mutable_ts()->set_data(std::time(nullptr));
   header->set_id(id);
