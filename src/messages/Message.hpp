@@ -72,6 +72,8 @@ int32_t fill_header_reply(const messages::Header &header_request,
 
 class Message : public _Message {
  public:
+  using ID = decltype(((_Message *)nullptr)->header().id());
+
   Message() { fill_header(mutable_header()); }
   Message(const std::string &json) { from_json(json, this); }
 

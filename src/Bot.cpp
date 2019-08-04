@@ -348,7 +348,7 @@ void Bot::handler_connection(const messages::Header &header,
 
   // send hello msg
   auto message = std::make_shared<messages::Message>();
-  messages::fill_header_reply(header, message->mutable_header());
+  messages::fill_header(message->mutable_header());
 
   auto hello = message->add_bodies()->mutable_hello();
   hello->mutable_peer()->CopyFrom(_me);

@@ -70,9 +70,15 @@ class Ledger {
 
  private:
   mutable std::mutex _send_ncc_mutex;
-
+  std::unordered_set<messages::Hash> _tips;
+  
  public:
   Ledger() {}
+
+  void new_tip(const messages::Hash &tip) {
+    _tips.insert(tip);
+  }
+
   virtual messages::TaggedBlock get_main_branch_tip() const = 0;
   virtual bool set_main_branch_tip() = 0;
   virtual messages::BlockHeight height() const = 0;
