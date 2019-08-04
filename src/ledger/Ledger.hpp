@@ -70,12 +70,15 @@ class Ledger {
 
  private:
   mutable std::mutex _send_ncc_mutex;
+
+  mutable std::mutex _tip_mutex;
   std::unordered_set<messages::Hash> _tips;
   
  public:
   Ledger() {}
 
   void new_tip(const messages::Hash &tip) {
+    std::lock_guard lock(_tip_mutex);
     _tips.insert(tip);
   }
 
