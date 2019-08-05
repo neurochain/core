@@ -60,7 +60,6 @@ class Consensus : public testing::Test {
         tagged_transaction.set_is_coinbase(false);
         ASSERT_TRUE(consensus->check_id(tagged_transaction));
         ASSERT_TRUE(consensus->check_signatures(tagged_transaction));
-        ASSERT_TRUE(consensus->check_inputs(tagged_transaction));
         ASSERT_TRUE(consensus->check_double_inputs(tagged_transaction));
         ASSERT_TRUE(consensus->check_outputs(tagged_transaction));
         ASSERT_TRUE(consensus->is_valid(tagged_transaction));
@@ -99,7 +98,7 @@ class Consensus : public testing::Test {
   void test_compute_assembly_pii() {
     std::vector<messages::Assembly> assemblies;
     bool compute_pii = false;
-    simulator.run(consensus->config().blocks_per_assembly, 16, compute_pii);
+    simulator.run(consensus->config().blocks_per_assembly, 10, compute_pii);
     ASSERT_TRUE(ledger->get_assemblies_to_compute(&assemblies));
     ASSERT_EQ(assemblies.size(), 1);
     auto &assembly = assemblies[0];

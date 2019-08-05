@@ -44,9 +44,6 @@ class Consensus {
   std::atomic<bool> _stop_miner;
   std::thread _miner_thread;
 
-  bool check_inputs(
-      const messages::TaggedTransaction &tagged_transaction) const;
-
   bool check_outputs(
       const messages::TaggedTransaction tagged_transaction) const;
 
@@ -89,6 +86,8 @@ class Consensus {
 
   bool check_block_denunciations(
       const messages::TaggedBlock &tagged_block) const;
+
+  bool check_balances(const messages::TaggedBlock &tagged_block) const;
 
   messages::BlockScore get_block_score(
       const messages::TaggedBlock &tagged_block) const;

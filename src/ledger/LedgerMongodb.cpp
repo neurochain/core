@@ -1009,12 +1009,6 @@ bool LedgerMongodb::set_branch_path(const messages::BlockHeader &block_header,
   }
   messages::TaggedBlock tagged_block;
   get_block(block_header.id(), &tagged_block);
-  if (!add_balances(&tagged_block)) {
-    std::stringstream ss;
-    ss << "Add balance failed for block " << tagged_block.block().header().id();
-    throw std::runtime_error(ss.str());
-  }
-  add_balances(&tagged_block);
 
   // Set the branch path of the children
   std::vector<messages::TaggedBlock> tagged_blocks;

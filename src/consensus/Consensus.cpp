@@ -49,11 +49,6 @@ Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
   init(start_threads);
 }
 
-bool Consensus::check_inputs(
-    const messages::TaggedTransaction &tagged_transaction) const {
-  return true;
-}
-
 bool Consensus::check_outputs(
     const messages::TaggedTransaction tagged_transaction) const {
   messages::TaggedBlock tip;
@@ -451,6 +446,12 @@ bool Consensus::check_block_denunciations(
   return true;
 }
 
+bool Consensus::check_balances(
+    const messages::TaggedBlock &tagged_block) const {
+  // The balance was checked when it was added
+  return tagged_block.balances_size() > 0;
+}
+
 messages::BlockScore Consensus::get_block_score(
     const messages::TaggedBlock &tagged_block) const {
   messages::TaggedBlock previous;
@@ -501,7 +502,7 @@ bool Consensus::verify_blocks() {
     // can work
     tagged_block.mutable_previous_assembly_id()->CopyFrom(assembly_id);
 
-    if (is_valid(tagged_block)) {
+    if (_ledger->add_balances(&tagged_block) && is_valid(tagged_block)) {
       _ledger->set_block_verified(tagged_block.block().header().id(),
                                   get_block_score(tagged_block), assembly_id);
     } else if (!_ledger->delete_block_and_children(
@@ -565,7 +566,6 @@ bool Consensus::is_valid(
   } else {
     return check_id(tagged_transaction) &&
            check_signatures(tagged_transaction) &&
-           check_inputs(tagged_transaction) &&
            check_double_inputs(tagged_transaction) &&
            check_outputs(tagged_transaction);
   }
@@ -580,7 +580,8 @@ bool Consensus::is_valid(const messages::TaggedBlock &tagged_block) const {
          check_block_height(tagged_block) &&
          check_block_timestamp(tagged_block) &&
          check_block_author(tagged_block) &&
-         check_block_denunciations(tagged_block);
+         check_block_denunciations(tagged_block) &&
+         check_balances(tagged_block);
 }
 
 bool Consensus::add_transaction(const messages::Transaction &transaction) {
