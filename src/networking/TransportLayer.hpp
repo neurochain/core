@@ -5,7 +5,10 @@
 
 #include "common/logger.hpp"
 #include "common/types.hpp"
+#include "crypto/Ecc.hpp"
+#include "messages/Peer.hpp"
 #include "messages/Peers.hpp"
+#include "messages/Queue.hpp"
 #include "networking/Connection.hpp"
 
 namespace neuro {

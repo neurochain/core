@@ -1,5 +1,4 @@
 #include "messages/Peers.hpp"
-#include <tuple>
 
 namespace neuro {
 namespace messages {

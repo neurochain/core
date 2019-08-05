@@ -1,7 +1,15 @@
+#include <memory>
+#include <bits/stdint-uintn.h>
+#include <boost/preprocessor/seq/enum.hpp>
+#include <boost/preprocessor/seq/size.hpp>
 #include <gtest/gtest.h>
-#include <thread>
+#include <cstdint>
+
+#include "common/logger.hpp"
 #include "consensus/Consensus.hpp"
 #include "ledger/LedgerMongodb.hpp"
+#include "messages.pb.h"
+#include "messages/NCCAmount.hpp"
 #include "tooling/Simulator.hpp"
 
 namespace neuro {

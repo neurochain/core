@@ -1,9 +1,11 @@
 #include <boost/program_options.hpp>
-#include "common/types.hpp"
-#include "crypto/Ecc.hpp"
-#include "crypto/Hash.hpp"
+#include <boost/program_options/value_semantic.hpp>
+#include <boost/program_options/variables_map.hpp>
+
+#include "common/Buffer.hpp"
+#include "crypto/KeyPub.hpp"
 #include "messages.pb.h"
-#include "messages/Hasher.hpp"
+#include "messages/NCCAmount.hpp"
 #include "messages/Message.hpp"
 
 namespace po = boost::program_options;

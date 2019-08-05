@@ -1,5 +1,9 @@
-#include "messages/Message.hpp"
+#include <boost/preprocessor/seq/enum.hpp>
+#include <boost/preprocessor/seq/size.hpp>
+#include <google/protobuf/util/json_util.h>
+
 #include "common/logger.hpp"
+#include "messages/Message.hpp"
 #include "messages/Hasher.hpp"
 
 namespace neuro {

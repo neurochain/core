@@ -1,6 +1,6 @@
 #include <boost/program_options.hpp>
+
 #include "crypto/Ecc.hpp"
-#include "messages.pb.h"
 
 namespace po = boost::program_options;
 

@@ -1,6 +1,9 @@
+#include <boost/preprocessor/seq/enum.hpp>
+#include <boost/preprocessor/seq/size.hpp>
+
+#include "common/logger.hpp"
+#include "crypto/Ecc.hpp"
 #include "messages/Address.hpp"
-#include <cryptopp/config.h>
-#include <sstream>
 #include "crypto/Hash.hpp"
 
 namespace neuro {

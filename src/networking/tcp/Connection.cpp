@@ -1,10 +1,13 @@
+#include <boost/preprocessor/seq/enum.hpp>
+#include <boost/preprocessor/seq/size.hpp>
 #include <cassert>
 
 #include "common/logger.hpp"
-#include "common/types.hpp"
+#include "config.pb.h"
+#include "messages/Peer.hpp"
 #include "messages/Queue.hpp"
+#include "networking/Connection.hpp"
 #include "networking/tcp/Connection.hpp"
-#include "networking/tcp/Tcp.hpp"
 
 namespace neuro {
 namespace networking {

@@ -1,16 +1,21 @@
 #ifndef NEURO_SRC_MESSAGES_PEERS_HPP
 #define NEURO_SRC_MESSAGES_PEERS_HPP
 
+#include <bits/stdint-uintn.h>
 #include <algorithm>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <numeric>
 #include <optional>
+#include <random>
 #include <shared_mutex>
 #include <string>
 #include <vector>
+
 #include "common.pb.h"
 #include "common/logger.hpp"
+#include "config.pb.h"
 #include "messages.pb.h"
 #include "messages/Message.hpp"
 #include "messages/Peer.hpp"

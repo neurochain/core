@@ -1,15 +1,18 @@
-#include <stdio.h>
-#include <chrono>
-#include <iomanip>
-#include <sstream>
-#include <thread>
-#include <tuple>
-#include <utility>
+#include <assert.h>
+#include <boost/asio/impl/io_context.ipp>
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/preprocessor/seq/enum.hpp>
+#include <boost/preprocessor/seq/size.hpp>
+#include <boost/system/error_code.hpp>
 
 #include "common/logger.hpp"
+#include "common/types.hpp"
+#include "config.pb.h"
 #include "crypto/Ecc.hpp"
-#include "networking/Networking.hpp"
-#include "networking/tcp/HeaderPattern.hpp"
+#include "messages/Peer.hpp"
+#include "messages/Peers.hpp"
+#include "messages/Queue.hpp"
+#include "networking/TransportLayer.hpp"
 #include "networking/tcp/Tcp.hpp"
 
 namespace neuro {

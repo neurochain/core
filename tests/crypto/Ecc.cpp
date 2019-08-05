@@ -1,8 +1,8 @@
-#include "crypto/Ecc.hpp"
-#include <cryptopp/dsa.h>
 #include <gtest/gtest.h>
-#include "common/logger.hpp"
 
+#include "crypto/Ecc.hpp"
+#include "common/logger.hpp"
+#include <cryptopp/dsa.h>
 namespace neuro {
 namespace crypto {
 namespace test {

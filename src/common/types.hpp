@@ -1,18 +1,24 @@
 #ifndef NEURO_SRC_COMMON_TYPES_HPP
 #define NEURO_SRC_COMMON_TYPES_HPP
 
-#include <mpreal.h>
+#include <bits/stdint-intn.h>
+#include <bits/stdint-uintn.h>
+#include <bits/types/time_t.h>
 #include <boost/asio.hpp>
+#include <boost/asio/ip/address.hpp>
+#include <boost/asio/ip/address_v4.hpp>
+#include <boost/asio/ip/address_v6.hpp>
 #include <boost/filesystem/path.hpp>
+#include <mpreal.h>
 #include <cassert>
 #include <chrono>
 #include <cstdint>
+#include <mutex>
 #include <random>
 #include <vector>
 
-#include "common/Buffer.hpp"
-
 #include "common.pb.h"
+#include "common/Buffer.hpp"
 
 namespace neuro {
 extern bool _fake_time;
@@ -28,6 +34,7 @@ using namespace std::chrono_literals;
 
 namespace networking {
 class Peer;
+
 namespace bai = boost::asio::ip;
 using IP = bai::address;
 using IP4 = bai::address_v4;

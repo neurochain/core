@@ -1,3 +1,7 @@
+#include <bits/stdint-uintn.h>
+#include <mpreal.h>
+#include <cstdint>
+
 #include "consensus/Pii.hpp"
 
 namespace neuro {

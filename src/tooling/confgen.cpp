@@ -1,11 +1,7 @@
 #include <boost/program_options.hpp>
-#include <fstream>
-#include <vector>
 
-#include "crypto/Ecc.hpp"
-#include "messages.pb.h"
-#include "messages/Message.hpp"
 #include "messages/config/Config.hpp"
+#include "messages/Message.hpp"
 
 namespace neuro {
 namespace po = boost::program_options;

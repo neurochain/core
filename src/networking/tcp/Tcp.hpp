@@ -5,7 +5,14 @@
 #include <boost/bind.hpp>
 #include <unordered_map>
 
+#include "common/Buffer.hpp"
 #include "common/types.hpp"
+#include "config.pb.h"
+#include "crypto/Ecc.hpp"
+#include "messages/Peer.hpp"
+#include "messages/Peers.hpp"
+#include "messages/Queue.hpp"
+#include "networking/Connection.hpp"
 #include "networking/TransportLayer.hpp"
 #include "networking/tcp/Connection.hpp"
 

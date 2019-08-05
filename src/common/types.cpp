@@ -1,3 +1,5 @@
+#include <ctime>
+
 #include "common/types.hpp"
 
 namespace neuro {

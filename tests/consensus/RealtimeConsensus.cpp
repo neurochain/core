@@ -1,7 +1,12 @@
+#include <memory>
 #include <gtest/gtest.h>
 #include <thread>
+
+#include "consensus.pb.h"
 #include "consensus/Consensus.hpp"
 #include "ledger/LedgerMongodb.hpp"
+#include "messages.pb.h"
+#include "messages/NCCAmount.hpp"
 #include "tooling/Simulator.hpp"
 
 namespace neuro {

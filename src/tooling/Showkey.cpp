@@ -1,6 +1,9 @@
 #include <boost/program_options.hpp>
+
+#include "common/Buffer.hpp"
 #include "crypto/Ecc.hpp"
-#include "messages.pb.h"
+#include "crypto/KeyPriv.hpp"
+#include "crypto/KeyPub.hpp"
 #include "messages/Address.hpp"
 #include "messages/Message.hpp"
 

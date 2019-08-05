@@ -1,8 +1,6 @@
-#include "messages/Address.hpp"
-#include <cryptopp/hex.h>
 #include <gtest/gtest.h>
-#include <random>
-#include "crypto/KeyPub.hpp"
+
+#include "messages/Address.hpp"
 
 namespace neuro {
 namespace messages {

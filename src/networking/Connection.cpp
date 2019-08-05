@@ -1,5 +1,6 @@
 #include <cassert>
 
+#include "messages/Queue.hpp"
 #include "networking/Connection.hpp"
 
 namespace neuro {

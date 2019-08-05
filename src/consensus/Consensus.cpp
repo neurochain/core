@@ -1,25 +1,17 @@
-#include "consensus/Consensus.hpp"
-#include <algorithm>
-#include <chrono>
-#include <functional>
+#include <assert.h>
+#include <bits/stdint-intn.h>
+#include <boost/preprocessor/seq/enum.hpp>
+#include <boost/preprocessor/seq/size.hpp>
 #include <random>
 #include <thread>
-#include <unordered_set>
-#include "tooling/blockgen.hpp"
+
+#include "common/Buffer.hpp"
+#include "common/logger.hpp"
+#include "consensus/Consensus.hpp"
 
 namespace neuro {
-namespace tooling {
-namespace tests {
-class RealtimeSimulator;
-}
-}  // namespace tooling
 
 namespace consensus {
-
-namespace tests {
-class Consensus;
-class RealtimeConsensus;
-}  // namespace tests
 
 Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
                      const std::vector<crypto::Ecc> &keys,

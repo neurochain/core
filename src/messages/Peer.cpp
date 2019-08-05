@@ -1,3 +1,11 @@
+#include <bits/stdint-intn.h>
+#include <boost/preprocessor/seq/enum.hpp>
+#include <boost/preprocessor/seq/size.hpp>
+#include <cstdint>
+#include <ctime>
+
+#include "common/logger.hpp"
+#include "common/types.hpp"
 #include "messages/Peer.hpp"
 
 namespace neuro {

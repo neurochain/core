@@ -1,9 +1,7 @@
 #include <gtest/gtest.h>
 #include <src/messages/config/Config.hpp>
-#include <typeinfo>
 
 #include "crypto/Ecc.hpp"
-#include "messages.pb.h"
 #include "src/messages/Peers.hpp"
 
 namespace neuro {

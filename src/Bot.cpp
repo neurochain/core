@@ -1,14 +1,10 @@
-#include "Bot.hpp"
-#include <cpr/cpr.h>
-#include <algorithm>
-
-#include <chrono>
+#include <boost/preprocessor/seq/enum.hpp>
+#include <boost/preprocessor/seq/size.hpp>
 #include <cstdlib>
-#include <ctime>
-#include <random>
+
+#include "Bot.hpp"
 #include "api/Rest.hpp"
 #include "common/logger.hpp"
-#include "common/types.hpp"
 #include "messages/Subscriber.hpp"
 
 namespace neuro {

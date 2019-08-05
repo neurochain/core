@@ -1,7 +1,7 @@
 #include <iomanip>
-
+#include <cstdint>
 #include <iostream>
-#include <iterator>
+
 #include "common/Buffer.hpp"
 
 namespace neuro {

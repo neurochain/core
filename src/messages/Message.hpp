@@ -3,12 +3,17 @@
 
 #include <google/protobuf/message.h>
 #include <google/protobuf/util/json_util.h>
+#include <cstdint>
 #include <fstream>
 #include <functional>
 #include <string>
 #include <type_traits>
+#include <variant>
 #include <vector>
 
+#include "bsoncxx/document/value.hpp"
+#include "bsoncxx/document/view.hpp"
+#include "common.pb.h"
 #include "common/Buffer.hpp"
 #include "common/logger.hpp"
 #include "common/types.hpp"
@@ -19,6 +24,7 @@
 #include "messages/Address.hpp"
 #include "messages/NCCAmount.hpp"
 #include "messages/Peer.hpp"
+
 namespace neuro {
 namespace messages {
 

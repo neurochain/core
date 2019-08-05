@@ -1,21 +1,34 @@
 #ifndef NEURO_SRC_LEDGERMONGODB_HPP
 #define NEURO_SRC_LEDGERMONGODB_HPP
 
-#include <mutex>
-
+#include <bits/stdint-intn.h>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
+#include <cstdint>
+#include <mutex>
+
+#include "bsoncxx/document/view_or_value.hpp"
+#include "common.pb.h"
 #include "common/types.hpp"
 #include "config.pb.h"
+#include "consensus.pb.h"
 #include "ledger/Ledger.hpp"
 #include "ledger/mongo.hpp"
 #include "messages.pb.h"
+#include "messages/Message.hpp"
 #include "messages/config/Database.hpp"
+#include "mongocxx/client.hpp"
+#include "mongocxx/collection.hpp"
+#include "mongocxx/cursor.hpp"
+#include "mongocxx/database.hpp"
+#include "mongocxx/instance.hpp"
+#include "mongocxx/options/find.hpp"
+#include "mongocxx/uri.hpp"
 
 namespace neuro {
 namespace tooling {
-class Simulator;
 class RealtimeSimulator;
+class Simulator;
 }  // namespace tooling
 
 namespace ledger {

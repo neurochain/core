@@ -1,8 +1,11 @@
-#include "Queue.hpp"
+#include <boost/preprocessor/seq/enum.hpp>
+#include <boost/preprocessor/seq/size.hpp>
 
-#include "messages/Hasher.hpp"
-#include "messages/Message.hpp"
+#include "Queue.hpp"
+#include "common/logger.hpp"
+#include "messages/Queue.hpp"
 #include "messages/Subscriber.hpp"
+
 namespace neuro {
 namespace messages {
 

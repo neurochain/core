@@ -1,9 +1,15 @@
 #ifndef NEURO_SRC_CRYPTO_ECC_HPP
 #define NEURO_SRC_CRYPTO_ECC_HPP
 
+#include <bits/stdint-uintn.h>
+#include <cstdint>
 #include <memory>
 
+#include "common.pb.h"
+#include "common/Buffer.hpp"
 #include "common/types.hpp"
+#include "config.pb.h"
+#include "crypto/KeyPriv.hpp"
 #include "crypto/KeyPub.hpp"
 #include "messages/config/Config.hpp"
 

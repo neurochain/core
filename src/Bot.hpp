@@ -1,20 +1,31 @@
 #ifndef NEURO_SRC_BOT_HPP
 #define NEURO_SRC_BOT_HPP
 
+#include <bits/stdint-uintn.h>
+#include <boost/asio/steady_timer.hpp>
+#include <cstdint>
 #include <memory>
+#include <mutex>
+#include <thread>
+
 #include "Bot.hpp"
 #include "api/Api.hpp"
+#include "config.pb.h"
+#include "consensus/Config.hpp"
+//#include "rest/Rest.hpp"
+#include "consensus/Consensus.hpp"
 #include "crypto/Ecc.hpp"
+#include "ledger/Ledger.hpp"
 #include "ledger/LedgerMongodb.hpp"
+#include "messages.pb.h"
 #include "messages/Message.hpp"
 #include "messages/Peer.hpp"
+#include "messages/Peers.hpp"
 #include "messages/Queue.hpp"
 #include "messages/Subscriber.hpp"
 #include "messages/config/Config.hpp"
 #include "networking/Networking.hpp"
 #include "networking/tcp/Tcp.hpp"
-//#include "rest/Rest.hpp"
-#include "consensus/Consensus.hpp"
 
 namespace neuro {
 
@@ -24,6 +35,7 @@ class BotTest;
 
 namespace tooling {
 class FullSimulator;
+
 namespace tests {
 class FullSimulator;
 }

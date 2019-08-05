@@ -1,11 +1,19 @@
 #ifndef NEURO_SRC_BLOCKGEN_HPP
 #define NEURO_SRC_BLOCKGEN_HPP
 
+#include <bits/stdint-intn.h>
+#include <bits/stdint-uintn.h>
 #include <boost/program_options.hpp>
+#include <boost/program_options/value_semantic.hpp>
+#include <cstdint>
 #include <optional>
+
 #include "crypto/Ecc.hpp"
 #include "ledger/LedgerMongodb.hpp"
+#include "messages.pb.h"
 #include "messages/Message.hpp"
+#include "messages/NCCAmount.hpp"
+#include "messages/config/Database.hpp"
 
 namespace po = boost::program_options;
 

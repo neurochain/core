@@ -1,17 +1,15 @@
+#include <bits/stdint-uintn.h>
+#include <boost/preprocessor/seq/enum.hpp>
+#include <boost/preprocessor/seq/size.hpp>
 #include <boost/program_options.hpp>
-#include "common/logger.hpp"
-#include "common/types.hpp"
-#include "crypto/Ecc.hpp"
-#include "crypto/Hash.hpp"
-#include "ledger/LedgerMongodb.hpp"
-#include "messages.pb.h"
-#include "messages/Hasher.hpp"
-#include "messages/Message.hpp"
-#include "messages/config/Config.hpp"
-#include "tooling/blockgen.hpp"
+#include <sys/stat.h>
+#include <cstdint>
 
-#include <fstream>
-#include <iostream>
+#include "common/logger.hpp"
+#include "messages/NCCAmount.hpp"
+#include "messages/config/Config.hpp"
+#include "messages/Message.hpp"
+#include "tooling/blockgen.hpp"
 
 namespace po = boost::program_options;
 

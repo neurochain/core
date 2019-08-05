@@ -1,11 +1,25 @@
 #ifndef NEURO_SRC_CONSENSUS_CONSENSUS_HPP
 #define NEURO_SRC_CONSENSUS_CONSENSUS_HPP
 
+#include <memory>
+#include <bits/std_function.h>
+#include <bits/stdint-uintn.h>
+#include <atomic>
+#include <cstdint>
+#include <mutex>
+#include <thread>
 #include <unordered_set>
+
+#include "common.pb.h"
+#include "consensus.pb.h"
+#include "consensus/Config.hpp"
 #include "consensus/Integrities.hpp"
 #include "consensus/Pii.hpp"
+#include "crypto/Ecc.hpp"
 #include "crypto/Sign.hpp"
 #include "ledger/Ledger.hpp"
+#include "messages.pb.h"
+#include "messages/NCCAmount.hpp"
 #include "tooling/blockgen.hpp"
 
 namespace neuro {

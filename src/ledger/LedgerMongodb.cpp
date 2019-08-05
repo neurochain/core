@@ -1,7 +1,17 @@
-#include "ledger/LedgerMongodb.hpp"
-#include <chrono>
+#include <assert.h>
+#include <boost/preprocessor/seq/enum.hpp>
+#include <boost/preprocessor/seq/size.hpp>
+#include <mpreal.h>
+
+#include "bsoncxx/builder/basic/array.hpp"
+#include "bsoncxx/builder/stream/document.hpp"
 #include "common/logger.hpp"
+#include "crypto/Ecc.hpp"
+#include "ledger/LedgerMongodb.hpp"
+#include "ledger/mongo.hpp"
 #include "messages.pb.h"
+#include "mongocxx/options/update.hpp"
+#include "mongocxx/pipeline.hpp"
 #include "messages/Hasher.hpp"
 
 namespace neuro {

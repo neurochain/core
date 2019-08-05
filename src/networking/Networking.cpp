@@ -1,10 +1,12 @@
-#include <cassert>
-#include <limits>
-#include <string>
-
-#include "common/logger.hpp"
+#include "common/types.hpp"
+#include "config.pb.h"
 #include "crypto/Ecc.hpp"
+#include "messages/Peer.hpp"
+#include "messages/Peers.hpp"
+#include "messages/Queue.hpp"
+#include "networking/Connection.hpp"
 #include "networking/Networking.hpp"
+#include "networking/TransportLayer.hpp"
 
 namespace neuro {
 namespace networking {

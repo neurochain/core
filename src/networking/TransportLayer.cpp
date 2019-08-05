@@ -1,6 +1,5 @@
-#include "networking/TransportLayer.hpp"
-#include "common/logger.hpp"
 #include "messages/Queue.hpp"
+#include "networking/TransportLayer.hpp"
 
 namespace neuro {
 namespace networking {

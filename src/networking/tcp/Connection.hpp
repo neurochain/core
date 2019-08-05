@@ -1,12 +1,16 @@
 #ifndef NEURO_SRC_NETWORKING_TCP_CONNECTION_HPP
 #define NEURO_SRC_NETWORKING_TCP_CONNECTION_HPP
 
-#include <stdio.h>
 #include <boost/asio.hpp>
+#include <stdio.h>
 #include <cmath>
 #include <iostream>
 
+#include "common/Buffer.hpp"
+#include "config.pb.h"
 #include "messages.pb.h"
+#include "messages/Peer.hpp"
+#include "messages/Queue.hpp"
 #include "networking/Connection.hpp"
 #include "networking/TransportLayer.hpp"
 #include "networking/tcp/HeaderPattern.hpp"
