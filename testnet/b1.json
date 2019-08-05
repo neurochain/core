@@ -1,12 +1,12 @@
 {
   "random_transaction": 0.8,
   "logs": {
-    "severity": "trace",
+    "severity": "info",
     "toStdout": true
   },
   "networking": {
     "peersUpdateTime": 1,
-    "maxConnections": 3,
+    "maxConnections": 2,
     "tcp": {
       "port": 1338,
       "endpoint": "localhost",
@@ -16,7 +16,7 @@
           "port": 1337,
           "keyPub": {
             "type": "ECP256K1",
-            "rawData": "Awqh/GaK+zXAydO8h4sDf4apFNmW8SFaIqRqXioYDXy8"
+            "rawData": "At2zvnKjc8FhInceEx4LWJ3Yy6DyD83MR3jlCneoZZpP"
           }
         },
         {

@@ -1009,12 +1009,6 @@ bool LedgerMongodb::set_branch_path(const messages::BlockHeader &block_header,
   }
   messages::TaggedBlock tagged_block;
   get_block(block_header.id(), &tagged_block);
-  if (!add_balances(&tagged_block)) {
-    std::stringstream ss;
-    ss << "Add balance failed for block " << tagged_block.block().header().id();
-    throw std::runtime_error(ss.str());
-  }
-  add_balances(&tagged_block);
 
   // Set the branch path of the children
   std::vector<messages::TaggedBlock> tagged_blocks;
@@ -1607,48 +1601,6 @@ void LedgerMongodb::add_transaction_to_balances(
     auto *change = &(*balance_changes)[output.key_pub()];
     change->positive += output.value().value();
   }
-}
-
-bool LedgerMongodb::cleanup_transactions(messages::Block *block) {
-  messages::TaggedBlock previous;
-  if (!get_block(block->header().previous_block_hash(), &previous)) {
-    return false;
-  }
-  std::vector<messages::Transaction> transactions;
-  std::unordered_map<messages::_KeyPub, Double> balances;
-  for (const auto &transaction : block->transactions()) {
-    bool is_transaction_valid = true;
-    for (const auto &input : transaction.inputs()) {
-      if (balances.count(input.key_pub()) == 0) {
-        balances[input.key_pub()] =
-            get_balance(input.key_pub(), previous).value().value();
-      }
-      balances[input.key_pub()] -= input.value().value();
-      if (balances[input.key_pub()] < 0) {
-        is_transaction_valid = false;
-      }
-    }
-    // Reverse balance changes
-    if (!is_transaction_valid) {
-      for (const auto &input : transaction.inputs()) {
-        balances[input.key_pub()] += input.value().value();
-      }
-      continue;
-    }
-    for (const auto &output : transaction.outputs()) {
-      if (balances.count(output.key_pub()) == 0) {
-        balances[output.key_pub()] =
-            get_balance(output.key_pub(), previous).value().value();
-      }
-      balances[output.key_pub()] += output.value().value();
-    }
-    transactions.push_back(transaction);
-  }
-  block->clear_transactions();
-  for (const auto &transaction : transactions) {
-    block->add_transactions()->CopyFrom(transaction);
-  }
-  return true;
 }
 
 bool LedgerMongodb::add_balances(messages::TaggedBlock *tagged_block) {

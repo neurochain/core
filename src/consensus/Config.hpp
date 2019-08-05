@@ -19,6 +19,7 @@ struct Config {
   int32_t integrity_block_reward{1};
   int32_t integrity_double_mining{-40};
   int32_t integrity_denunciation_reward{1};
+  uint32_t default_transaction_expires{5760};
 };
 
 }  // namespace consensus

@@ -49,11 +49,6 @@ Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
   init(start_threads);
 }
 
-bool Consensus::check_inputs(
-    const messages::TaggedTransaction &tagged_transaction) const {
-  return true;
-}
-
 bool Consensus::check_outputs(
     const messages::TaggedTransaction tagged_transaction) const {
   messages::TaggedBlock tip;
@@ -222,6 +217,40 @@ bool Consensus::check_block_id(
   return block->header().id() == block_id;
 }
 
+bool Consensus::is_unexpired(const messages::Transaction &transaction,
+                             const messages::Block &block) const {
+  messages::Block last_seen_block;
+  bool include_transactions = false;
+  if (!_ledger->get_block(transaction.last_seen_block_id(), &last_seen_block,
+                          include_transactions)) {
+    LOG_INFO << "Failed to get the last_seen_block with id "
+             << transaction.last_seen_block_id()
+             << " when checking if transaction " << transaction.id()
+             << " is expired in block " << block.header().id();
+    return false;
+  }
+  int32_t expires = transaction.has_expires()
+                        ? transaction.expires()
+                        : _config.default_transaction_expires;
+  if (block.header().height() - last_seen_block.header().height() > expires) {
+    if (!block.header().has_id()) {
+      LOG_INFO << "Transaction " << transaction.id() << " is expired";
+      return false;
+    }
+    LOG_INFO << "Transaction " << transaction.id() << " is expired "
+             << " in block " << block.header().id();
+    return false;
+  }
+  return true;
+}
+
+bool Consensus::is_block_transaction_valid(
+    const messages::TaggedTransaction &tagged_transaction,
+    const messages::Block &block) const {
+  return is_valid(tagged_transaction) &&
+         is_unexpired(tagged_transaction.transaction(), block);
+}
+
 bool Consensus::check_block_transactions(
     const messages::TaggedBlock &tagged_block) const {
   const auto &block = tagged_block.block();
@@ -235,7 +264,7 @@ bool Consensus::check_block_transactions(
   tagged_coinbase.set_is_coinbase(true);
   tagged_coinbase.mutable_block_id()->CopyFrom(block.header().id());
   tagged_coinbase.mutable_transaction()->CopyFrom(block.coinbase());
-  if (!is_valid(tagged_coinbase)) {
+  if (!is_block_transaction_valid(tagged_coinbase, block)) {
     LOG_INFO << "Failed check_block_transactions for block "
              << block.header().id();
     return false;
@@ -246,7 +275,7 @@ bool Consensus::check_block_transactions(
     tagged_transaction.set_is_coinbase(false);
     tagged_transaction.mutable_block_id()->CopyFrom(block.header().id());
     tagged_transaction.mutable_transaction()->CopyFrom(transaction);
-    if (!is_valid(tagged_transaction)) {
+    if (!is_block_transaction_valid(tagged_transaction, block)) {
       LOG_INFO << "Failed check_block_transactions for block "
                << block.header().id();
       return false;
@@ -417,6 +446,12 @@ bool Consensus::check_block_denunciations(
   return true;
 }
 
+bool Consensus::check_balances(
+    const messages::TaggedBlock &tagged_block) const {
+  // The balance was checked when it was added
+  return tagged_block.balances_size() > 0;
+}
+
 messages::BlockScore Consensus::get_block_score(
     const messages::TaggedBlock &tagged_block) const {
   messages::TaggedBlock previous;
@@ -467,7 +502,7 @@ bool Consensus::verify_blocks() {
     // can work
     tagged_block.mutable_previous_assembly_id()->CopyFrom(assembly_id);
 
-    if (is_valid(tagged_block)) {
+    if (_ledger->add_balances(&tagged_block) && is_valid(tagged_block)) {
       _ledger->set_block_verified(tagged_block.block().header().id(),
                                   get_block_score(tagged_block), assembly_id);
     } else if (!_ledger->delete_block_and_children(
@@ -531,7 +566,6 @@ bool Consensus::is_valid(
   } else {
     return check_id(tagged_transaction) &&
            check_signatures(tagged_transaction) &&
-           check_inputs(tagged_transaction) &&
            check_double_inputs(tagged_transaction) &&
            check_outputs(tagged_transaction);
   }
@@ -546,7 +580,8 @@ bool Consensus::is_valid(const messages::TaggedBlock &tagged_block) const {
          check_block_height(tagged_block) &&
          check_block_timestamp(tagged_block) &&
          check_block_author(tagged_block) &&
-         check_block_denunciations(tagged_block);
+         check_block_denunciations(tagged_block) &&
+         check_balances(tagged_block);
 }
 
 bool Consensus::add_transaction(const messages::Transaction &transaction) {
@@ -582,6 +617,7 @@ void Consensus::start_compute_pii_thread() {
         _ledger->get_assemblies_to_compute(&assemblies);
         if (assemblies.size() > 0) {
           compute_assembly_pii(assemblies[0]);
+          cleanup_expired_transactions();
         } else {
           std::this_thread::sleep_for(_config.compute_pii_sleep);
         }
@@ -788,6 +824,60 @@ bool Consensus::get_heights_to_write(
   return true;
 }
 
+bool Consensus::cleanup_transactions(messages::Block *block) const {
+  messages::TaggedBlock previous;
+  if (!_ledger->get_block(block->header().previous_block_hash(), &previous)) {
+    LOG_INFO << "Failed to get the previous block with id "
+             << block->header().previous_block_hash()
+             << " in cleanup transactions";
+    return false;
+  }
+  std::vector<messages::Transaction> transactions;
+  std::unordered_map<messages::_KeyPub, Double> balances;
+  for (const auto &transaction : block->transactions()) {
+    if (!is_unexpired(transaction, *block)) {
+      _ledger->delete_transaction(transaction.id());
+      continue;
+    }
+
+    bool is_transaction_valid = true;
+    for (const auto &input : transaction.inputs()) {
+      if (balances.count(input.key_pub()) == 0) {
+        balances[input.key_pub()] =
+            _ledger->get_balance(input.key_pub(), previous).value().value();
+      }
+      balances[input.key_pub()] -= input.value().value();
+      if (balances[input.key_pub()] < 0) {
+        is_transaction_valid = false;
+        LOG_DEBUG << "Transaction " << transaction.id()
+                  << " not included in the block because of insufficient funds";
+      }
+    }
+
+    // Reverse balance changes
+    if (!is_transaction_valid) {
+      for (const auto &input : transaction.inputs()) {
+        balances[input.key_pub()] += input.value().value();
+      }
+      continue;
+    }
+
+    for (const auto &output : transaction.outputs()) {
+      if (balances.count(output.key_pub()) == 0) {
+        balances[output.key_pub()] =
+            _ledger->get_balance(output.key_pub(), previous).value().value();
+      }
+      balances[output.key_pub()] += output.value().value();
+    }
+    transactions.push_back(transaction);
+  }
+  block->clear_transactions();
+  for (const auto &transaction : transactions) {
+    block->add_transactions()->CopyFrom(transaction);
+  }
+  return true;
+}
+
 bool Consensus::build_block(const crypto::Ecc &keys,
                             const messages::BlockHeight &height,
                             messages::Block *block) const {
@@ -809,7 +899,7 @@ bool Consensus::build_block(const crypto::Ecc &keys,
   header->mutable_timestamp()->set_data(std::time(nullptr));
 
   _ledger->get_transaction_pool(block);
-  if (!_ledger->cleanup_transactions(block)) {
+  if (!cleanup_transactions(block)) {
     LOG_WARNING
         << "Failed to cleanup_transactions while mining block with height "
         << block->header().height();
@@ -827,6 +917,13 @@ bool Consensus::build_block(const crypto::Ecc &keys,
   tooling::blockgen::coinbase(
       {keys.key_pub()}, block_reward(height, total_fees),
       block->mutable_coinbase(), last_block.block().header().id());
+
+  // Check if the coinbase needs a longer expires
+  if (!is_unexpired(block->coinbase(), *block)) {
+    block->mutable_coinbase()->set_expires(
+        block->header().height() - last_block.block().header().height());
+    messages::set_transaction_hash(block->mutable_coinbase());
+  }
 
   _ledger->add_denunciations(block, last_block.branch_path());
 
@@ -938,6 +1035,15 @@ void Consensus::mine_blocks() {
   while (!_stop_miner) {
     if (!mine_block(block0)) {
       std::this_thread::sleep_for(_config.miner_sleep);
+    }
+  }
+}
+
+void Consensus::cleanup_expired_transactions() {
+  const auto &tip = _ledger->get_main_branch_tip();
+  for (const auto &tagged_transaction : _ledger->get_transaction_pool()) {
+    if (!is_unexpired(tagged_transaction.transaction(), tip.block())) {
+      _ledger->delete_transaction(tagged_transaction.transaction().id());
     }
   }
 }
