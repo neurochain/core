@@ -71,17 +71,57 @@ class Ledger {
  private:
   mutable std::mutex _send_ncc_mutex;
 
+  std::optional<messages::Hash> new_tip(const messages::TaggedBlock &tagged_block) {
+    if (tagged_block.branch() != messages::Branch::DETACHED) {
+      std::lock_guard lock(_tip_mutex);
+      _tips.erase(tagged_block.block().header().id());
+      return std::nullopt;
+    }
+
+    messages::TaggedBlock prev_tagged_block;
+    if(!get_block(tagged_block.block().header().previous_block_hash(), &prev_tagged_block, false)) {
+      _tips.insert(tagged_block.block().header().id());
+      return tagged_block.block().header().previous_block_hash();
+    }
+    
+    return new_tip(prev_tagged_block);;
+  }
+  
+protected:
   mutable std::mutex _tip_mutex;
-  std::unordered_set<messages::Hash> _tips;
+  std::unordered_set<messages::BlockID> _tips;
   
  public:
   Ledger() {}
 
-  void new_tip(const messages::Hash &tip) {
+  std::optional<messages::Hash> new_tip(const messages::Block &block) {
+    messages::TaggedBlock tagged_block;
     std::lock_guard lock(_tip_mutex);
-    _tips.insert(tip);
+    
+    if(!get_block(block.header().id(), &tagged_block, false)) {
+      // this is weird, we should receive a block if it not inserted
+      _tips.insert(block.header().id());
+      return block.header().id();
+    }
+    _tips.erase(block.header().id());
+    return new_tip(tagged_block);
   }
 
+  std::optional<messages::Hash> new_tip(const messages::World &world) {
+    if(!world.has_tip()) {
+      return std::nullopt;
+    }
+    messages::TaggedBlock tagged_block;
+
+    std::lock_guard lock(_tip_mutex);
+    
+    if(!get_block(world.tip(), &tagged_block)) {
+      _tips.insert(tagged_block.block().header().previous_block_hash());
+      return tagged_block.block().header().previous_block_hash();
+    }
+    return new_tip(tagged_block);
+  }
+  
   virtual messages::TaggedBlock get_main_branch_tip() const = 0;
   virtual bool set_main_branch_tip() = 0;
   virtual messages::BlockHeight height() const = 0;
