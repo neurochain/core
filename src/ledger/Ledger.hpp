@@ -122,8 +122,8 @@ protected:
     std::lock_guard lock(_tip_mutex);
     
     if(!get_block(world.tip(), &tagged_block)) {
-      _tips.insert(tagged_block.block().header().previous_block_hash());
-      return tagged_block.block().header().previous_block_hash();
+      _tips.insert(world.tip());
+      return world.tip();
     }
     return new_tip(tagged_block);
   }
