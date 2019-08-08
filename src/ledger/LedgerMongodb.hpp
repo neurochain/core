@@ -297,8 +297,6 @@ class LedgerMongodb : public Ledger {
 
   bool add_balances(messages::TaggedBlock *tagged_block);
 
-  bool cleanup_transactions(messages::Block *block);
-
   friend class neuro::ledger::tests::LedgerMongodb;
 };
 

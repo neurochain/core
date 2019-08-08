@@ -60,7 +60,6 @@ class Consensus : public testing::Test {
         tagged_transaction.set_is_coinbase(false);
         ASSERT_TRUE(consensus->check_id(tagged_transaction));
         ASSERT_TRUE(consensus->check_signatures(tagged_transaction));
-        ASSERT_TRUE(consensus->check_inputs(tagged_transaction));
         ASSERT_TRUE(consensus->check_double_inputs(tagged_transaction));
         ASSERT_TRUE(consensus->check_outputs(tagged_transaction));
         ASSERT_TRUE(consensus->is_valid(tagged_transaction));
@@ -265,6 +264,10 @@ TEST_F(Consensus, add_denunciations) {
   // Let's make the first miner double mine
   auto block1 = simulator.new_block();
   auto block1_bis = simulator.new_block(1);
+  LOG_DEBUG << "BLOCK1 ID " << block1.header().id();
+  LOG_DEBUG << "BLOCK1 NB TRANSACTIONS " << block1.transactions_size();
+  LOG_DEBUG << "BLOCK1 BIS ID " << block1_bis.header().id();
+  LOG_DEBUG << "BLOCK1 BIS NB TRANSACTIONS " << block1_bis.transactions_size();
   ASSERT_TRUE(simulator.consensus->add_block(block1));
   ASSERT_TRUE(simulator.consensus->add_block(block1_bis));
   messages::TaggedBlock tagged_block1;

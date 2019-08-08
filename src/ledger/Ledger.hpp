@@ -297,8 +297,6 @@ protected:
 
   virtual bool add_balances(messages::TaggedBlock *tagged_block) = 0;
 
-  virtual bool cleanup_transactions(messages::Block *block) = 0;
-
   // helpers
 
   /*

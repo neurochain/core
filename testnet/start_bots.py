@@ -34,5 +34,9 @@ def start_bots():
 
 
 if __name__ == "__main__":
+    from sys import argv
+
     kill_bots()
+    if len(argv) > 1 and argv[1] == "kill_bots":
+        exit()
     start_bots()

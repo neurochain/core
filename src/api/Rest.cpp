@@ -46,16 +46,27 @@ void Rest::bad_request(Response &response, const std::string &message) {
   response.send(Pistache::Http::Code::Bad_Request, message);
 }
 
+void Rest::allow_option(const Rest::Request& req, Rest::Response res) {
+  res.headers().add<Http::Header::AccessControlAllowOrigin>("*");
+  res.headers().add<Http::Header::AccessControlAllowMethods>("GET, POST");
+  res.send(Pistache::Http::Code::Ok);
+}
+
 void Rest::setupRoutes() {
   using namespace ::Pistache::Rest::Routes;
   Post(_router, "/balance", bind(&Rest::get_balance, this));
+  Options(_router, "/balance", bind(&Rest::get_balance, this));
   Get(_router, "/ready", bind(&Rest::get_ready, this));
   Post(_router, "/create_transaction/:fees",
        bind(&Rest::get_create_transaction, this));
+  Options(_router, "/create_transaction/:fees", bind(&Rest::allow_option, this));
   Post(_router, "/publish", bind(&Rest::publish, this));
+  Options(_router, "/publish", bind(&Rest::allow_option, this));
   // Post(_router, "/list_transactions/:key_pub", bind(&Rest::get_unspent_transaction_list, this));
   Post(_router, "/transaction/", bind(&Rest::get_transaction, this));
+  Options(_router, "/transaction/", bind(&Rest::allow_option, this));
   Post(_router, "/block/id", bind(&Rest::get_block_by_id, this));
+  Options(_router, "/block/id", bind(&Rest::allow_option, this));
   Get(_router, "/block/height/:height", bind(&Rest::get_block_by_height, this));
   Get(_router, "/last_blocks/:nb_blocks", bind(&Rest::get_last_blocks, this));
   Get(_router, "/total_nb_transactions",

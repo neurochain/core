@@ -49,6 +49,7 @@ private:
   void get_total_nb_transactions(const Request& request, Response response);
   void get_total_nb_blocks(const Request& request, Response response);
   void get_peers(const Request& request, Response response);
+  void allow_option(const Request& request, Response response);
 
   void get_status(const Request& request, Response response);
 

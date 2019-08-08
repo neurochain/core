@@ -19,7 +19,7 @@ class Simulator {
   messages::NCCAmount _ncc_block0;
 
  public:
-  const float RATIO_TO_SEND = 0.5;
+  const float RATIO_TO_SEND = 0.1;
   std::vector<crypto::Ecc> keys;
   std::shared_ptr<neuro::ledger::LedgerMongodb> ledger;
   std::shared_ptr<neuro::consensus::Consensus> consensus;
