@@ -81,7 +81,7 @@ void Bot::handler_block(const messages::Header &header,
     LOG_WARNING << "Consensus rejected block";
     return;
   }
-  update_ledger();
+  update_ledger(_ledger->new_tip(body.block()));
 
   if (header.has_request_id()) {
     auto got = _request_ids.find(header.request_id());
@@ -103,33 +103,31 @@ void Bot::handler_transaction(const messages::Header &header,
                               const messages::Body &body) {
   _consensus->add_transaction(body.transaction());
 }
+  
 
-bool Bot::update_ledger() {
-  messages::BlockHeader last_header;
-  if (!_ledger->get_last_block_header(&last_header)) {
-    LOG_ERROR << "Ledger should have at least block0";
+
+bool Bot::update_ledger(const std::optional<messages::Hash> &tip) {
+  if(!tip) {
     return false;
-  }
-
-  // TODO #consensus change by height by time function
-  if ((std::time(nullptr) - last_header.timestamp().data()) <
-      _consensus->config().block_period) {
-    return true;
   }
 
   auto message = std::make_shared<messages::Message>();
   auto header = message->mutable_header();
   auto idheader = messages::fill_header(header);
 
-  const auto id = last_header.id();
-
   auto get_block = message->add_bodies()->mutable_get_block();
-  get_block->mutable_hash()->CopyFrom(id);
+  get_block->mutable_hash()->CopyFrom(*tip);
   get_block->set_count(1);
   _networking.send(message);
 
   _request_ids.insert(idheader);
   return false;
+}
+
+void Bot::update_ledger() {
+  for (const auto &tip : _ledger->tips()) {
+    update_ledger(tip);
+  }
 }
 
 void Bot::subscribe() {
@@ -232,7 +230,6 @@ bool Bot::init() {
     LOG_INFO << "api launched on : " << _config.rest().port();
   }
 
-  update_ledger();
   this->keep_max_connections();
 
   return true;
@@ -393,7 +390,7 @@ void Bot::handler_world(const messages::Header &header,
     (*remote_peer)->set_status(messages::Peer::CONNECTED);
   }
 
-  _ledger->new_tip(world);
+  update_ledger(_ledger->new_tip(world));
   
   this->keep_max_connections();
 }

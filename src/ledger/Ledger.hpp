@@ -15,7 +15,7 @@ namespace ledger {
 class Ledger {
  public:
   using Functor = std::function<bool(const messages::TaggedTransaction &)>;
-
+  using Tips = std::unordered_set<messages::BlockID>;
   struct MainBranchTip {
     messages::TaggedBlock main_branch_tip;
     bool updated;
@@ -89,11 +89,17 @@ class Ledger {
   
 protected:
   mutable std::mutex _tip_mutex;
-  std::unordered_set<messages::BlockID> _tips;
+  Tips _tips;
   
  public:
   Ledger() {}
 
+  const Tips tips() {
+    std::lock_guard lock(_tip_mutex);
+    const auto copy = _tips;
+    return copy;
+  }
+  
   std::optional<messages::Hash> new_tip(const messages::Block &block) {
     messages::TaggedBlock tagged_block;
     std::lock_guard lock(_tip_mutex);
