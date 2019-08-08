@@ -44,7 +44,7 @@ messages::Status::Bot Monitoring::resource_usage() {
   getrusage(RUSAGE_SELF, &usage);
 
   auto current_uptime = uptime();
-  bot.set_uptime(static_cast<int>(current_uptime));
+  bot.set_uptime(static_cast<unsigned>(current_uptime));
   bot.set_utime(usage.ru_utime.tv_sec);
   bot.set_stime(usage.ru_stime.tv_sec);
   double vtime = usage.ru_utime.tv_sec + usage.ru_stime.tv_sec;
