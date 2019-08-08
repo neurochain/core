@@ -102,8 +102,11 @@ messages::Status::PeerCount Monitoring::peer_count() const {
 
 messages::Status Monitoring::complete_status() {
   messages::Status status;
-  status.mutable_blockchain()->set_last_block_ts(last_block_ts());
-  status.mutable_blockchain()->set_current_height(current_height());
+  messages::Status_BlockChain *chain_status = status.mutable_blockchain();
+  chain_status->set_last_block_ts(last_block_ts());
+  chain_status->set_current_height(current_height());
+  chain_status->set_mined_block(_bot.ledger()->total_nb_blocks());
+  chain_status->set_transaction_count(_bot.ledger()->total_nb_transactions());
   status.mutable_bot()->CopyFrom(resource_usage());
   status.mutable_fs()->CopyFrom(filesystem_usage());
   status.mutable_peer()->CopyFrom(peer_count());
