@@ -8,7 +8,6 @@ namespace api {
 Api::Api(Bot *bot) : _bot(bot) {
   messages::Block block;
   _bot->ledger()->get_block(int32_t{0}, &block, true);
-  std::cout << messages::to_json(block) << std::endl;
 }
 
 bool Api::verify_key_pub_format(const messages::_KeyPub &key_pub) {

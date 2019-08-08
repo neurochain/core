@@ -120,14 +120,12 @@ bool Bot::update_ledger(const std::optional<messages::Hash> &tip) {
   get_block->set_count(1);
   _networking.send(message);
 
-  std::cout << "trax> asking for block " << tip->data() << std::endl;
   _request_ids.insert(idheader);
   return false;
 }
 
 void Bot::update_ledger() {
   for (const auto &tip : _ledger->tips()) {
-    std::cout << "trax> tipping " << tip << std::endl;
     update_ledger(tip);
   }
 }

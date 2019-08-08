@@ -88,7 +88,7 @@ class Ledger {
   }
   
 protected:
-  mutable std::mutex _tip_mutex;
+  mutable std::recursive_mutex _tip_mutex;
   Tips _tips;
   
  public:
@@ -103,10 +103,6 @@ protected:
   std::optional<messages::Hash> new_tip(const messages::Block &block) {
     messages::TaggedBlock tagged_block;
     std::lock_guard lock(_tip_mutex);
-
-    std::cout << "trax> new tip " << block.header().id().data() << std::endl
-	      << ":" << block.header().height()
-	      << std::endl;
     
     if(!get_block(block.header().id(), &tagged_block, false)) {
       // this is weird, we should receive a block if it not inserted
