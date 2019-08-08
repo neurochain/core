@@ -1,43 +1,46 @@
-#include "Monitoring.h"
+#include "Monitoring.hpp"
 #include <rest.pb.h>
 #include <sys/resource.h>
 #include <sys/time.h>
 #include <sys/statfs.h>
+#include "Bot.hpp"
+
+
+namespace neuro {
+namespace api {
 
 using Rusage = struct rusage;
 using Statfs = struct statfs;
 
-namespace neuro {
 
-Monitoring::Monitoring(Bot &b) : _bot(b) {}
+Monitoring::Monitoring(Bot *bot) : _bot(bot) {}
 
-double Monitoring::uptime() {
+double Monitoring::uptime() const {
   auto now = std::chrono::system_clock::now();
   std::chrono::duration<double> diff = now - _starting_time;
   return diff.count();
 }
 
-int Monitoring::last_block_ts() {
-  auto last_blocks = _bot.ledger()->get_last_blocks(1);
-  if (!last_blocks.empty()) {
-    auto last_block = last_blocks[0];
-    return last_block.header().timestamp().data();
-  } else {
+std::time_t Monitoring::last_block_ts() const {
+  auto last_blocks = _bot->ledger()->get_last_blocks(1);
+  if (last_blocks.empty()) {
     return 0;
   }
+
+  const auto last_block = last_blocks[0];
+  return last_block.header().timestamp().data();
 }
 
-int Monitoring::current_height() {
-  auto last_blocks = _bot.ledger()->get_last_blocks(1);
-  if (!last_blocks.empty()) {
-    auto last_block = last_blocks[0];
-    return last_block.header().height();
-  } else {
+int Monitoring::current_height() const {
+  auto last_blocks = _bot->ledger()->get_last_blocks(1);
+  if (last_blocks.empty()) {
     return 0;
   }
+  const auto last_block = last_blocks[0];
+  return last_block.header().height();
 }
 
-messages::Status::Bot Monitoring::resource_usage() {
+messages::Status::Bot Monitoring::resource_usage() const {
   messages::Status::Bot bot;
 
   Rusage usage;
@@ -56,7 +59,7 @@ messages::Status::Bot Monitoring::resource_usage() {
   return bot;
 }
 
-messages::Status::FileSystem Monitoring::filesystem_usage() {
+messages::Status::FileSystem Monitoring::filesystem_usage() const {
   messages::Status::FileSystem fs;
   Statfs stat;
   statfs("/", &stat);
@@ -75,7 +78,7 @@ messages::Status::PeerCount Monitoring::peer_count() const {
   auto disconnected = 0;
   auto unreachable = 0;
 
-  for (const auto peer : _bot.peers()) {
+  for (const auto peer : _bot->peers()) {
     switch (peer->status()) {
     case messages::Peer::CONNECTED:
       connected++;
@@ -100,7 +103,7 @@ messages::Status::PeerCount Monitoring::peer_count() const {
   return peerCount;
 }
 
-messages::Status Monitoring::complete_status() {
+messages::Status Monitoring::complete_status() const {
   messages::Status status;
   status.mutable_blockchain()->set_last_block_ts(last_block_ts());
   status.mutable_blockchain()->set_current_height(current_height());
@@ -109,4 +112,5 @@ messages::Status Monitoring::complete_status() {
   status.mutable_peer()->CopyFrom(peer_count());
   return status;
 }
+} // namespace api
 } // namespace neuro

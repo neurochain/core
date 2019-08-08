@@ -9,7 +9,7 @@ namespace neuro::api {
 Rest::Rest(const messages::config::Rest &config, Bot *bot)
     : Api::Api(bot), _httpEndpoint(std::make_shared<Http::Endpoint>(
                          Address(Ipv4::any(), config.port()))),
-      _monitor(*bot) {
+      _monitor(bot) {
   init();
   start();
 }

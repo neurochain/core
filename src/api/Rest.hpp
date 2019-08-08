@@ -3,7 +3,7 @@
 
 #include "common/types.hpp"
 #include "api/Api.hpp"
-#include "api/Monitoring.h"
+#include "api/Monitoring.hpp"
 
 #include <memory>
 #include <pistache/endpoint.h>
