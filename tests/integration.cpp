@@ -364,7 +364,7 @@ TEST(INTEGRATION, connection_opportunity) {
 
   // Destroy a connected bot.
   bot3.operator->().reset();
-  std::this_thread::sleep_for(13s);
+  std::this_thread::sleep_for(15s);
 
   ASSERT_TRUE(bot0.check_peers_ports({1338, 1339, 13341})) << bot0->peers();
   ASSERT_TRUE(bot1.check_peers_ports({1337, 1339, 13341})) << bot1->peers();
