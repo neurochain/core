@@ -103,11 +103,9 @@ void Bot::handler_transaction(const messages::Header &header,
                               const messages::Body &body) {
   _consensus->add_transaction(body.transaction());
 }
-  
-
 
 bool Bot::update_ledger(const std::optional<messages::Hash> &tip) {
-  if(!tip) {
+  if (!tip) {
     return false;
   }
 
@@ -215,9 +213,7 @@ bool Bot::init() {
 
   _consensus = std::make_shared<consensus::Consensus>(
       _ledger, _keys, _consensus_config,
-      [this](const messages::Block &block) {
-        publish_block(block);
-      });
+      [this](const messages::Block &block) { publish_block(block); });
 
   _io_context_thread = std::thread([this]() { _io_context->run(); });
 
@@ -240,6 +236,7 @@ void Bot::regular_update() {
   update_peerlist();
   keep_max_connections();
   update_ledger();
+  _networking.clean_old_connections(10);
 
   if (_config.has_random_transaction() &&
       rand() < _config.random_transaction() * RAND_MAX) {
@@ -347,7 +344,7 @@ void Bot::handler_connection(const messages::Header &header,
 
   const auto tip = _ledger->get_main_branch_tip();
   hello->mutable_tip()->CopyFrom(tip.block().header().id());
-  
+
   if (!_networking.send_unicast(message)) {
     LOG_DEBUG << this << " : " << _me << " can't send hello message "
               << message;
@@ -391,7 +388,7 @@ void Bot::handler_world(const messages::Header &header,
   }
 
   update_ledger(_ledger->new_tip(world));
-  
+
   this->keep_max_connections();
 }
 
@@ -424,7 +421,7 @@ void Bot::handler_hello(const messages::Header &header,
 
   const auto tip = _ledger->get_main_branch_tip();
   world->mutable_tip()->CopyFrom(tip.block().header().id());
-  
+
   // update peer status
   if (accepted) {
     (*remote_peer)->set_status(messages::Peer::CONNECTED);

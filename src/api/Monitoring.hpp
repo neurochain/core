@@ -1,8 +1,8 @@
 #ifndef NEURO_SRC_API_MONITORING_HPP
 #define NEURO_SRC_API_MONITORING_HPP
 
-#include "rest.pb.h"
 #include <chrono>
+#include "rest.pb.h"
 
 namespace neuro {
 
@@ -10,13 +10,12 @@ class Bot;
 
 namespace api {
 
-  
 class Monitoring {
   Bot* _bot;
   using TimePoint = std::chrono::time_point<std::chrono::system_clock>;
   const TimePoint _starting_time = std::chrono::system_clock::now();
 
-public:
+ public:
   Monitoring(Bot* bot);
   double uptime() const;
   std::time_t last_block_ts() const;
@@ -27,8 +26,7 @@ public:
   messages::Status::PeerCount peer_count() const;
 };
 
-} // namespace api
-} // naemspace neuro
+}  // namespace api
+}  // namespace neuro
 
-
-#endif //NEURO_SRC_API_MONITORING_HPP
+#endif  // NEURO_SRC_API_MONITORING_HPP

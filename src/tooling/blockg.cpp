@@ -1,14 +1,14 @@
 #include <bits/stdint-uintn.h>
+#include <sys/stat.h>
 #include <boost/preprocessor/seq/enum.hpp>
 #include <boost/preprocessor/seq/size.hpp>
 #include <boost/program_options.hpp>
-#include <sys/stat.h>
 #include <cstdint>
 
 #include "common/logger.hpp"
+#include "messages/Message.hpp"
 #include "messages/NCCAmount.hpp"
 #include "messages/config/Config.hpp"
-#include "messages/Message.hpp"
 #include "tooling/blockgen.hpp"
 
 namespace po = boost::program_options;

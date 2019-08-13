@@ -7,8 +7,9 @@
 namespace neuro::api {
 
 Rest::Rest(const messages::config::Rest &config, Bot *bot)
-    : Api::Api(bot), _httpEndpoint(std::make_shared<Http::Endpoint>(
-                         Address(Ipv4::any(), config.port()))),
+    : Api::Api(bot),
+      _httpEndpoint(std::make_shared<Http::Endpoint>(
+          Address(Ipv4::any(), config.port()))),
       _monitor(bot) {
   init();
   start();
@@ -46,7 +47,7 @@ void Rest::bad_request(Response &response, const std::string &message) {
   response.send(Pistache::Http::Code::Bad_Request, message);
 }
 
-void Rest::allow_option(const Rest::Request& req, Rest::Response res) {
+void Rest::allow_option(const Rest::Request &req, Rest::Response res) {
   res.headers().add<Http::Header::AccessControlAllowOrigin>("*");
   res.headers().add<Http::Header::AccessControlAllowMethods>("GET, POST");
   res.send(Pistache::Http::Code::Ok);
@@ -59,10 +60,12 @@ void Rest::setupRoutes() {
   Get(_router, "/ready", bind(&Rest::get_ready, this));
   Post(_router, "/create_transaction/:fees",
        bind(&Rest::get_create_transaction, this));
-  Options(_router, "/create_transaction/:fees", bind(&Rest::allow_option, this));
+  Options(_router, "/create_transaction/:fees",
+          bind(&Rest::allow_option, this));
   Post(_router, "/publish", bind(&Rest::publish, this));
   Options(_router, "/publish", bind(&Rest::allow_option, this));
-  // Post(_router, "/list_transactions/:key_pub", bind(&Rest::get_unspent_transaction_list, this));
+  // Post(_router, "/list_transactions/:key_pub",
+  // bind(&Rest::get_unspent_transaction_list, this));
   Post(_router, "/transaction/", bind(&Rest::get_transaction, this));
   Options(_router, "/transaction/", bind(&Rest::allow_option, this));
   Post(_router, "/block/id", bind(&Rest::get_block_by_id, this));

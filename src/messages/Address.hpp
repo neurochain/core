@@ -47,10 +47,8 @@ class Address : public _Address {
 };
 
 using Addresses = std::vector<Address>;
-  
+
 }  // namespace messages
 }  // namespace neuro
-
-
 
 #endif /* NEURO_SRC_MESSAGES_ADDRESS_HPP */

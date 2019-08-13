@@ -1,17 +1,15 @@
 #include "Monitoring.hpp"
 #include <rest.pb.h>
 #include <sys/resource.h>
-#include <sys/time.h>
 #include <sys/statfs.h>
+#include <sys/time.h>
 #include "Bot.hpp"
-
 
 namespace neuro {
 namespace api {
 
 using Rusage = struct rusage;
 using Statfs = struct statfs;
-
 
 Monitoring::Monitoring(Bot *bot) : _bot(bot) {}
 
@@ -80,20 +78,20 @@ messages::Status::PeerCount Monitoring::peer_count() const {
 
   for (const auto peer : _bot->peers()) {
     switch (peer->status()) {
-    case messages::Peer::CONNECTED:
-      connected++;
-      break;
-    case messages::Peer::CONNECTING:
-      connecting++;
-      break;
-    case messages::Peer::DISCONNECTED:
-      disconnected++;
-      break;
-    case messages::Peer::UNREACHABLE:
-      unreachable++;
-      break;
-    default:
-      break;
+      case messages::Peer::CONNECTED:
+        connected++;
+        break;
+      case messages::Peer::CONNECTING:
+        connecting++;
+        break;
+      case messages::Peer::DISCONNECTED:
+        disconnected++;
+        break;
+      case messages::Peer::UNREACHABLE:
+        unreachable++;
+        break;
+      default:
+        break;
     }
   }
   peerCount.set_connected(connected);
@@ -112,5 +110,5 @@ messages::Status Monitoring::complete_status() const {
   status.mutable_peer()->CopyFrom(peer_count());
   return status;
 }
-} // namespace api
-} // namespace neuro
+}  // namespace api
+}  // namespace neuro

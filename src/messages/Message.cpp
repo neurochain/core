@@ -1,10 +1,10 @@
+#include <google/protobuf/util/json_util.h>
 #include <boost/preprocessor/seq/enum.hpp>
 #include <boost/preprocessor/seq/size.hpp>
-#include <google/protobuf/util/json_util.h>
 
 #include "common/logger.hpp"
-#include "messages/Message.hpp"
 #include "messages/Hasher.hpp"
+#include "messages/Message.hpp"
 
 namespace neuro {
 namespace messages {
@@ -59,7 +59,7 @@ bool to_buffer(const Packet &packet, Buffer *buffer) {
 
 std::optional<Buffer> to_buffer(const Packet &packet) {
   Buffer buffer;
-  if(!to_buffer(packet, &buffer)) {
+  if (!to_buffer(packet, &buffer)) {
     return std::nullopt;
   }
   return std::make_optional(buffer);
@@ -70,12 +70,12 @@ void to_json(const Packet &packet, std::string *output) {
     google::protobuf::util::MessageToJsonString(packet, output);
   } catch (...) {
     auto buff = to_buffer(packet);
-    if(!buff) {
+    if (!buff) {
       throw std::runtime_error("Could not parse packet");
     }
     buff->save("crashing.proto");
-    LOG_ERROR << "Could not to_json packet " << buff->size() << boost::stacktrace::stacktrace()
-              << std::endl;
+    LOG_ERROR << "Could not to_json packet " << buff->size()
+              << boost::stacktrace::stacktrace() << std::endl;
     throw;
   }
 }
@@ -135,7 +135,7 @@ void set_block_hash(Block *block) {
   // serializable.
   header->mutable_id()->set_type(messages::Hash::SHA256);
   header->mutable_id()->set_data("");
-  
+
   // The author should always be filled after the hash is set because the author
   // field contains the signature of a denunciation that contains the hash of
   // the block

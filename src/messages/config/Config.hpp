@@ -1,10 +1,10 @@
 #ifndef NEURO_SRC_MESSAGES_CONFIG_CONFIG_HPP
 #define NEURO_SRC_MESSAGES_CONFIG_CONFIG_HPP
 
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
 #include <google/protobuf/message.h>
 #include <google/protobuf/util/json_util.h>
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
 #include <fstream>
 #include <stdexcept>
 #include <string>

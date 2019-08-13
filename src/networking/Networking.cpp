@@ -1,3 +1,4 @@
+#include "networking/Networking.hpp"
 #include "common/types.hpp"
 #include "config.pb.h"
 #include "crypto/Ecc.hpp"
@@ -5,7 +6,6 @@
 #include "messages/Peers.hpp"
 #include "messages/Queue.hpp"
 #include "networking/Connection.hpp"
-#include "networking/Networking.hpp"
 #include "networking/TransportLayer.hpp"
 
 namespace neuro {
@@ -18,8 +18,7 @@ Networking::Networking(messages::Queue *queue, crypto::Ecc *keys,
       _keys(keys),
       _dist(0, std::numeric_limits<uint32_t>::max()) {
   _queue->run();
-  _transport_layer =
-      std::make_unique<Tcp>(queue, peers, _keys, *config);
+  _transport_layer = std::make_unique<Tcp>(queue, peers, _keys, *config);
 }
 
 TransportLayer::SendResult Networking::send(
@@ -54,12 +53,16 @@ bool Networking::connect(messages::Peer *peer) {
   return _transport_layer->connect(peer);
 }
 
+void Networking::clean_old_connections(int delta) {
+  _transport_layer->clean_old_connections(delta);
+}
+
 /**
  * Find a peer associated with a connection
  * \param id an identifiant of a connection
  * \return the associated peer for the connection
  */
-std::optional<messages::Peer*> Networking::find_peer(Connection::ID id) {
+std::optional<messages::Peer *> Networking::find_peer(Connection::ID id) {
   return _transport_layer->find_peer(id);
 }
 

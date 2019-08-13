@@ -68,14 +68,14 @@ class Subscriber {
   void handler(std::shared_ptr<const Message> message) {
     std::lock_guard<std::mutex> lock_handler(_mutex_handler);
 
-    if(message->has_header() && message->header().has_id()) {
+    if (message->has_header() && message->header().has_id()) {
       const auto id = message->header().id();
       auto got = _callbacks_by_id.find(id);
       if (got != _callbacks_by_id.end()) {
-	got->second(*message.get());
+        got->second(*message.get());
       }
     }
-    
+
     const auto time = std::time(nullptr);
     for (const auto &body : message->bodies()) {
       const auto type = get_type(body);

@@ -11,7 +11,7 @@ namespace neuro {
 namespace messages {
 
 class Hasher : public messages::Hash {
-public:
+ public:
   Hasher() {}
 
   void from_buffer(const Buffer &data) {

@@ -4,12 +4,12 @@
 #include <bits/stdint-intn.h>
 #include <bits/stdint-uintn.h>
 #include <bits/types/time_t.h>
+#include <mpreal.h>
 #include <boost/asio.hpp>
 #include <boost/asio/ip/address.hpp>
 #include <boost/asio/ip/address_v4.hpp>
 #include <boost/asio/ip/address_v6.hpp>
 #include <boost/filesystem/path.hpp>
-#include <mpreal.h>
 #include <cassert>
 #include <chrono>
 #include <cstdint>
@@ -26,7 +26,8 @@ std::time_t time();
 std::time_t time(const std::time_t increment);
 
 static std::random_device _rd;  // TODO make global
-static std::uniform_int_distribution<uint32_t> _dist{0, std::numeric_limits<uint32_t>::max()};
+static std::uniform_int_distribution<uint32_t> _dist{
+    0, std::numeric_limits<uint32_t>::max()};
 
 using namespace std::chrono_literals;
 

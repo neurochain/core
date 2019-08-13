@@ -31,7 +31,7 @@ Connection::Connection(const ID id, messages::Queue *queue,
       _header(sizeof(HeaderPattern), 0),
       _buffer(128, 0),
       _socket(socket),
-      _remote_peer(config){
+      _remote_peer(config) {
   assert(_socket != nullptr);
 }
 
@@ -44,18 +44,19 @@ void Connection::read() { read_header(); }
 const std::string Connection::ip() const {
   try {
     return _socket->remote_endpoint().address().to_string();
-  }catch(...) {
+  } catch (...) {
     return "(no ip)";
   }
 }
-  
+
 void Connection::read_header() {
   boost::asio::async_read(
       *_socket, boost::asio::buffer(_header.data(), _header.size()),
       [_this = ptr()](const boost::system::error_code &error,
                       std::size_t bytes_read) {
         if (error) {
-          LOG_WARNING << "read header error " << error.message() << " " << _this->ip();
+          LOG_WARNING << "read header error " << error.message() << " "
+                      << _this->ip();
           _this->terminate();
           return;
         }
@@ -87,12 +88,15 @@ void Connection::read_body(std::size_t body_size) {
         header->set_connection_id(_id);
         auto signature = header->mutable_signature();
         signature->set_type(messages::Hash::SHA256);
-        signature->set_data(reinterpret_cast<const char*>(header_pattern->signature),
-                            sizeof(header_pattern->signature));
+        signature->set_data(
+            reinterpret_cast<const char *>(header_pattern->signature),
+            sizeof(header_pattern->signature));
 
         // validate the MessageVersion from the header
         if (header->version() != neuro::MessageVersion) {
-          LOG_INFO << "Killing connection because received message from wrong version (" << header->version() << ") " << ip();
+          LOG_INFO << "Killing connection because received message from wrong "
+                      "version ("
+                   << header->version() << ") " << ip();
           _this->terminate();
           return;
         }
@@ -103,11 +107,11 @@ void Connection::read_body(std::size_t body_size) {
             const auto endpoint = _socket->remote_endpoint(ec);
             if (ec) {
               LOG_DEBUG << "got an hello message from disconnected endpoint "
-                        << ec.message()
-                        << std::endl;
+                        << ec.message() << std::endl;
             } else {
               auto *hello = body.mutable_hello();
-              hello->mutable_peer()->set_endpoint(endpoint.address().to_string());
+              hello->mutable_peer()->set_endpoint(
+                  endpoint.address().to_string());
               _remote_peer.CopyFrom(hello->peer());
               LOG_TRACE << "remote ip> "
                         << _socket->remote_endpoint().address().to_string()
@@ -117,7 +121,9 @@ void Connection::read_body(std::size_t body_size) {
         }
 
         if (!_this->_remote_peer.has_key_pub()) {
-          LOG_INFO << "Killing connection because received message without key pub " << ip();
+          LOG_INFO
+              << "Killing connection because received message without key pub "
+              << ip();
           _this->terminate();
           return;
         }
@@ -133,13 +139,13 @@ void Connection::read_body(std::size_t body_size) {
           _this->terminate();
           return;
         }
-	try{      
-	  LOG_DEBUG << "Receiving ["
-		    << _socket->remote_endpoint() << ":" << _remote_peer.port() << "]: " << *message;
-	} catch(...) {
-	  _this->_buffer.save("conf/crashed.proto");
-	  return;
-	}
+        try {
+          LOG_DEBUG << "Receiving [" << _socket->remote_endpoint() << ":"
+                    << _remote_peer.port() << "]: " << *message;
+        } catch (...) {
+          _this->_buffer.save("conf/crashed.proto");
+          return;
+        }
         message->mutable_header()->mutable_key_pub()->CopyFrom(
             _remote_peer.key_pub());
         _this->_queue->publish(message);
@@ -201,9 +207,7 @@ const std::optional<Port> Connection::remote_port() const {
 
 const messages::Peer Connection::remote_peer() const { return _remote_peer; }
 
-Connection::~Connection() {
-  close();
-}
+Connection::~Connection() { close(); }
 }  // namespace tcp
 }  // namespace networking
 }  // namespace neuro

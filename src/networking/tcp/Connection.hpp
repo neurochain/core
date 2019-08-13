@@ -1,8 +1,8 @@
 #ifndef NEURO_SRC_NETWORKING_TCP_CONNECTION_HPP
 #define NEURO_SRC_NETWORKING_TCP_CONNECTION_HPP
 
-#include <boost/asio.hpp>
 #include <stdio.h>
+#include <boost/asio.hpp>
 #include <cmath>
 #include <iostream>
 
@@ -39,7 +39,7 @@ class Connection : public networking::Connection,
  public:
   Connection(const ID id, messages::Queue* queue,
              const std::shared_ptr<tcp::socket>& socket,
-             const messages::config::Networking &config);
+             const messages::config::Networking& config);
   Connection(const ID id, messages::Queue* queue,
              const std::shared_ptr<tcp::socket>& socket,
              const messages::Peer& remote_peer);

@@ -1,7 +1,7 @@
 #include <assert.h>
+#include <mpreal.h>
 #include <boost/preprocessor/seq/enum.hpp>
 #include <boost/preprocessor/seq/size.hpp>
-#include <mpreal.h>
 
 #include "bsoncxx/builder/basic/array.hpp"
 #include "bsoncxx/builder/stream/document.hpp"
@@ -10,9 +10,9 @@
 #include "ledger/LedgerMongodb.hpp"
 #include "ledger/mongo.hpp"
 #include "messages.pb.h"
+#include "messages/Hasher.hpp"
 #include "mongocxx/options/update.hpp"
 #include "mongocxx/pipeline.hpp"
-#include "messages/Hasher.hpp"
 
 namespace neuro {
 namespace ledger {
@@ -1460,17 +1460,15 @@ bool LedgerMongodb::denunciation_exists(
   return false;
 }
 
-mongocxx::cursor LedgerMongodb::find(mongocxx::collection &collection,
-                      bsoncxx::document::view_or_value query,
-                      const mongocxx::options::find &options) const {
-    std::lock_guard lock(_ledger_mutex);
-    return collection.find(std::move(query), options);
-  }
+mongocxx::cursor LedgerMongodb::find(
+    mongocxx::collection &collection, bsoncxx::document::view_or_value query,
+    const mongocxx::options::find &options) const {
+  std::lock_guard lock(_ledger_mutex);
+  return collection.find(std::move(query), options);
+}
 
-
-messages::TaggedBlocks LedgerMongodb::get_blocks(mongocxx::cursor &cursor,
-                                                 bool include_transactions) const {
-
+messages::TaggedBlocks LedgerMongodb::get_blocks(
+    mongocxx::cursor &cursor, bool include_transactions) const {
   messages::TaggedBlocks tagged_blocks;
   for (const auto &bson_tagged_block : cursor) {
     auto &tagged_block = tagged_blocks.emplace_back();
@@ -1483,12 +1481,13 @@ messages::TaggedBlocks LedgerMongodb::get_blocks(mongocxx::cursor &cursor,
   return tagged_blocks;
 }
 
-messages::TaggedBlocks LedgerMongodb::get_blocks(const messages::Branch name) const {
+messages::TaggedBlocks LedgerMongodb::get_blocks(
+    const messages::Branch name) const {
   auto query = bss::document{} << BRANCH << name << bss::finalize;
   mongocxx::cursor cursor = find(_blocks, std::move(query));
   return get_blocks(cursor, false);
 }
-  
+
 std::vector<messages::TaggedBlock> LedgerMongodb::get_blocks(
     const messages::BlockHeight height, const messages::_KeyPub &author,
     bool include_transactions) const {

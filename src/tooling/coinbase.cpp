@@ -5,8 +5,8 @@
 #include "common/Buffer.hpp"
 #include "crypto/KeyPub.hpp"
 #include "messages.pb.h"
-#include "messages/NCCAmount.hpp"
 #include "messages/Message.hpp"
+#include "messages/NCCAmount.hpp"
 
 namespace po = boost::program_options;
 

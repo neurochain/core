@@ -1,11 +1,11 @@
 #ifndef NEURO_SRC_CONSENSUS_CONSENSUS_HPP
 #define NEURO_SRC_CONSENSUS_CONSENSUS_HPP
 
-#include <memory>
 #include <bits/std_function.h>
 #include <bits/stdint-uintn.h>
 #include <atomic>
 #include <cstdint>
+#include <memory>
 #include <mutex>
 #include <thread>
 #include <unordered_set>

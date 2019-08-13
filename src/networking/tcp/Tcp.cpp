@@ -19,8 +19,8 @@ namespace neuro {
 namespace networking {
 using namespace std::chrono_literals;
 
-Tcp::Tcp(messages::Queue *queue, messages::Peers *peers,
-         crypto::Ecc *keys, const messages::config::Networking &config)
+Tcp::Tcp(messages::Queue *queue, messages::Peers *peers, crypto::Ecc *keys,
+         const messages::config::Networking &config)
     : TransportLayer(queue, peers, keys),
       _stopped(false),
       _listening_port(config.tcp().port()),
@@ -108,8 +108,7 @@ void Tcp::new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
     _queue->publish(message);
     connection->read();
   } else {
-    LOG_WARNING << "Could not create new connection : "
-                << error.message();
+    LOG_WARNING << "Could not create new connection : " << error.message();
 
     msg_body->mutable_connection_closed();
     _queue->publish(message);
@@ -128,10 +127,8 @@ void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
     _current_id++;
 
     msg_header->set_connection_id(_current_id);
-    auto connection = std::make_shared<tcp::Connection>(_current_id,
-                                                        _queue,
-                                                        socket,
-                                                        *peer);
+    auto connection =
+        std::make_shared<tcp::Connection>(_current_id, _queue, socket, *peer);
     _connections.insert(std::make_pair(_current_id, connection));
 
     auto connection_ready = msg_body->mutable_connection_ready();
@@ -239,6 +236,16 @@ TransportLayer::SendResult Tcp::send(
   return res;
 }
 
+std::optional<tcp::Connection *> Tcp::connection(
+    const Connection::ID id) const {
+  auto got = _connections.find(id);
+  if (got == _connections.end()) {
+    return std::nullopt;
+  }
+
+  return got->second.get();
+}
+
 bool Tcp::send_unicast(std::shared_ptr<messages::Message> message) const {
   std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   if (_stopped || !message->header().has_connection_id()) {
@@ -246,13 +253,13 @@ bool Tcp::send_unicast(std::shared_ptr<messages::Message> message) const {
     return false;
   }
 
-  auto got = _connections.find(message->header().connection_id());
-  if (got == _connections.end()) {
+  const auto connection_opt = connection(message->header().connection_id());
+  if (!connection_opt) {
     LOG_WARNING << "not sending message because could not find connection";
     return false;
   }
-
-  const auto port_opt = got->second->remote_port();
+  const auto connection = *connection_opt;
+  const auto port_opt = connection->remote_port();
   if (!port_opt) {
     return false;
   }
@@ -265,12 +272,21 @@ bool Tcp::send_unicast(std::shared_ptr<messages::Message> message) const {
   if (!serialize(message, header_tcp.get(), body_tcp.get())) {
     return false;
   }
-
   bool res = true;
-  res &= got->second->send(header_tcp);
-  res &= got->second->send(body_tcp);
+  res &= connection->send(header_tcp);
+  res &= connection->send(body_tcp);
 
   return res;
+}
+
+void Tcp::clean_old_connections(int delta) {
+  const auto current_time = ::neuro::time() - delta;
+  for (auto &[_, connection] : _connections) {
+    if ((connection->init_ts() < current_time) &&
+        (connection->remote_peer().status() != messages::Peer::CONNECTED)) {
+      connection->terminate();
+    }
+  }
 }
 
 /**

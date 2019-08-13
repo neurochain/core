@@ -121,8 +121,8 @@ class Bot {
 
   bool publish_transaction(const messages::Transaction &transaction) const;
   void publish_block(const messages::Block &block) const;
-  ledger::Ledger* ledger();
-  
+  ledger::Ledger *ledger();
+
   friend class neuro::tests::BotTest;
   friend class neuro::tooling::FullSimulator;
   friend class neuro::tooling::tests::FullSimulator;

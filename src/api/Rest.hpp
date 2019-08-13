@@ -1,14 +1,14 @@
 #ifndef NEURO_SRC_API_REST_HPP
 #define NEURO_SRC_API_REST_HPP
 
-#include "common/types.hpp"
 #include "api/Api.hpp"
 #include "api/Monitoring.hpp"
+#include "common/types.hpp"
 
-#include <memory>
 #include <pistache/endpoint.h>
 #include <pistache/http.h>
 #include <pistache/router.h>
+#include <memory>
 #include <thread>
 
 using namespace Pistache;
@@ -18,14 +18,14 @@ class Bot;
 namespace api {
 
 namespace test {
-  class Rest;
+class Rest;
 }
 
 class Rest : public Api {
-private:
+ private:
   using Request = Pistache::Rest::Request;
   using Response = Pistache::Http::ResponseWriter;
-   //  Api *_api;
+  //  Api *_api;
   std::shared_ptr<Http::Endpoint> _httpEndpoint;
   Pistache::Rest::Router _router;
   Monitoring _monitor;
@@ -33,16 +33,16 @@ private:
   void init();
   void start();
   void shutdown();
-  void send(Response &response, const messages::Packet &packet);
-  void send(Response &response, const std::string &value);
-  void bad_request(Response &response, const std::string& message);
+  void send(Response& response, const messages::Packet& packet);
+  void send(Response& response, const std::string& value);
+  void bad_request(Response& response, const std::string& message);
   void setupRoutes();
 
   void get_balance(const Request& request, Response response);
   void get_ready(const Request& request, Response response);
   void get_transaction(const Request& request, Response response);
-  void get_create_transaction (const Request& request, Response response);
-  void publish(const Request &request, Response response);
+  void get_create_transaction(const Request& request, Response response);
+  void publish(const Request& request, Response response);
   void get_block_by_id(const Request& request, Response response);
   void get_block_by_height(const Request& request, Response response);
   void get_last_blocks(const Request& request, Response response);
@@ -53,8 +53,8 @@ private:
 
   void get_status(const Request& request, Response response);
 
-public:
-  Rest(const messages::config::Rest &config, Bot *bot);
+ public:
+  Rest(const messages::config::Rest& config, Bot* bot);
   ~Rest();
 
   friend class test::Rest;
@@ -64,5 +64,3 @@ public:
 }  // namespace neuro
 
 #endif /* NEURO_SRC_API_REST_HPP */
-
-

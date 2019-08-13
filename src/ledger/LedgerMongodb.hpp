@@ -87,7 +87,7 @@ class LedgerMongodb : public Ledger {
                  bool include_transactions = true) const;
 
   messages::TaggedBlocks get_blocks(mongocxx::cursor &cursor,
-				    bool include_transactions) const;
+                                    bool include_transactions) const;
 
   messages::BranchID new_branch_id() const;
 
@@ -111,9 +111,10 @@ class LedgerMongodb : public Ledger {
       std::unordered_map<messages::_KeyPub, BalanceChange> *balance_changes,
       const messages::Transaction &transaction);
 
-  mongocxx::cursor find(mongocxx::collection &collection,
-			bsoncxx::document::view_or_value filter,
-			const mongocxx::options::find &options=remove_OID()) const;
+  mongocxx::cursor find(
+      mongocxx::collection &collection, bsoncxx::document::view_or_value filter,
+      const mongocxx::options::find &options = remove_OID()) const;
+
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);
   LedgerMongodb(const std::string &url, const std::string &db_name,
@@ -274,9 +275,9 @@ class LedgerMongodb : public Ledger {
                            const messages::BlockHeight &max_block_height,
                            const messages::BranchPath &branch_path) const;
 
-  messages::TaggedBlocks get_blocks(
-      const messages::BlockHeight height, const messages::_KeyPub &author,
-      bool include_transactions = true) const;
+  messages::TaggedBlocks get_blocks(const messages::BlockHeight height,
+                                    const messages::_KeyPub &author,
+                                    bool include_transactions = true) const;
   messages::TaggedBlocks get_blocks(const messages::Branch name) const;
 
   void add_double_mining(
