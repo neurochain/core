@@ -216,6 +216,9 @@ TransportLayer::SendResult Tcp::send(
 
   uint16_t res_count = 0;
   for (auto &[_, connection] : _connections) {
+    if (connection->remote_peer().status() != messages::Peer::CONNECTED) {
+      continue;
+    }
     bool res_send = true;
     res_send &= connection->send(header_tcp);
     res_send &= connection->send(body_tcp);
