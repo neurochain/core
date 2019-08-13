@@ -285,8 +285,9 @@ bool Tcp::send_unicast(std::shared_ptr<messages::Message> message) const {
 void Tcp::clean_old_connections(int delta) {
   const auto current_time = ::neuro::time() - delta;
   for (auto &[_, connection] : _connections) {
-    if ((connection->init_ts() < current_time) &&
-        (connection->remote_peer().status() != messages::Peer::CONNECTED)) {
+    auto remote_peer = _peers->find(connection->remote_peer().key_pub());
+    if (remote_peer && (connection->init_ts() < current_time) &&
+        ((*remote_peer)->status() != messages::Peer::CONNECTED)) {
       connection->terminate();
     }
   }
