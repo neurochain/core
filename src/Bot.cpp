@@ -23,13 +23,18 @@ Bot::Bot(const messages::config::Config &config,
       _ledger(std::make_shared<ledger::LedgerMongodb>(_config.database())),
       _update_timer(std::ref(*_io_context)),
       _consensus_config(consensus_config) {
-  LOG_DEBUG << this << " hello from bot " << _me.port() << " "
-            << _keys.at(0).key_pub() << std::endl
-            << _peers << std::endl;
 
   if (!init()) {
     throw std::runtime_error("Could not create bot from configuration file");
   }
+
+  LOG_DEBUG << this << " hello from bot " << _me.port() << " "
+            << _keys.at(0).key_pub() << std::endl
+	    << " cons " << _consensus.get() << std::endl
+	    << " net  " << &_networking << std::endl
+	    << " peers " << &_peers  << std::endl
+            << _peers << std::endl;
+  
 }
 
 Bot::Bot(const std::string &config_path)

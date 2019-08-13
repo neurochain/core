@@ -229,8 +229,8 @@ TEST(INTEGRATION, disconnect_message) {
   std::this_thread::sleep_for(2s);
   ASSERT_TRUE(message_received0) << bot0.peers();
   ASSERT_TRUE(message_received2) << bot2.peers();
-  ASSERT_EQ(bot0->connected_peers().size(), 1);
-  ASSERT_EQ(bot2->connected_peers().size(), 1);
+  ASSERT_EQ(bot0->connected_peers().size(), 1) << bot0->peers();
+  ASSERT_EQ(bot2->connected_peers().size(), 1) << bot1->peers();
 }
 
 TEST(INTEGRATION, neighbors_propagation) {
