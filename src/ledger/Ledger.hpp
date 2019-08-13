@@ -82,12 +82,12 @@ class Ledger {
     messages::TaggedBlock prev_tagged_block;
     if (!get_block(tagged_block.block().header().previous_block_hash(),
                    &prev_tagged_block, false)) {
+      std::lock_guard lock(_tip_mutex);
       _tips.insert(tagged_block.block().header().id());
       return tagged_block.block().header().previous_block_hash();
     }
 
     return new_tip(prev_tagged_block);
-    ;
   }
 
  protected:
@@ -109,6 +109,7 @@ class Ledger {
 
     if (!get_block(block.header().id(), &tagged_block, false)) {
       // this is weird, we should receive a block if it not inserted
+      LOG_ERROR << "trax> new block unknown " << block.header().id().data();
       _tips.insert(block.header().id());
       return block.header().id();
     }

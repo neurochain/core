@@ -55,7 +55,7 @@ void Connection::read_header() {
       [_this = ptr()](const boost::system::error_code &error,
                       std::size_t bytes_read) {
         if (error) {
-          LOG_WARNING << this << " read header error " << error.message() << " "
+          LOG_WARNING << " read header error " << error.message() << " "
                       << _this->ip();
           _this->terminate();
           return;

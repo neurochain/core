@@ -212,16 +212,18 @@ TransportLayer::SendResult Tcp::send(
   }
 
   LOG_DEBUG << "Sending message[" << this->listening_port() << "]: >>"
-            << *message;
+            << *message << " " << _connections.size();
 
   uint16_t res_count = 0;
   for (auto &[_, connection] : _connections) {
-    if (connection->remote_peer().status() != messages::Peer::CONNECTED) {
-      continue;
-    }
+    // if (connection->remote_peer().status() != messages::Peer::CONNECTED) {
+    //   LOG_TRACE << "not senting " << connection->remote_peer();
+    //   continue;
+    // }
     bool res_send = true;
     res_send &= connection->send(header_tcp);
     res_send &= connection->send(body_tcp);
+    LOG_TRACE << "senting message " << connection->remote_peer();
     if (res_send) {
       res_count++;
     }
