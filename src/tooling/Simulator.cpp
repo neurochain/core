@@ -97,6 +97,9 @@ messages::Block Simulator::new_block(
 
   messages::Address address;
   assert(consensus->get_block_writer(assembly, height, &address));
+  ((void)(assembly));
+
+
   uint32_t miner_index = addresses_indexes.at(address);
   auto header = block.mutable_header();
   header->mutable_timestamp()->set_data(block0.header().timestamp().data() +
