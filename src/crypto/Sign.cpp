@@ -13,6 +13,7 @@ bool sign(const std::vector<const crypto::Ecc *>& keys,
   // should not be overwriting anything
   transaction->mutable_id()->set_type(messages::Hash::SHA256);
   transaction->mutable_id()->set_data("");
+  transaction->mutable_signatures()->Clear();
 
   Buffer serialized_transaction;
   messages::to_buffer(*transaction, &serialized_transaction);

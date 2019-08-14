@@ -220,7 +220,7 @@ bool Consensus::check_coinbase(
       tagged_transaction.transaction().coinbase_height() !=
           tagged_block.block().header().height()) {
     LOG_INFO << "Invalid coinbase for transaction "
-             << tagged_transaction.transaction().id();
+             << tagged_transaction.transaction().id() << " wrong height.";
     return false;
   }
 
@@ -271,7 +271,6 @@ bool Consensus::check_block_id(
   auto mutable_tagged_block = tagged_block;
   auto block = mutable_tagged_block.mutable_block();
   const auto block_id = block->header().id();
-  const auto author = block->header().author();
   messages::set_block_hash(block);
 
   if (!block->header().has_id()) {
@@ -279,7 +278,12 @@ bool Consensus::check_block_id(
     return false;
   }
 
-  return block->header().id() == block_id;
+  if (block->header().id() != block_id) {
+    LOG_INFO << "Failed check_block_id the block id is " << block_id
+             << " but rehashing gave " << block->header().id();
+    return false;
+  }
+  return true;
 }
 
 bool Consensus::check_block_transactions(
@@ -328,9 +332,7 @@ bool Consensus::check_block_size(
   return result;
 }
 
-bool Consensus::check_transactions_order(
-    const messages::TaggedBlock &tagged_block) const {
-  const auto &block = tagged_block.block();
+bool Consensus::check_transactions_order(const messages::Block &block) const {
   std::vector<std::string> transaction_ids;
   for (const auto &transaction : block.transactions()) {
     transaction_ids.push_back(messages::to_json(transaction.id()));
@@ -345,6 +347,12 @@ bool Consensus::check_transactions_order(
              << block.header().id();
   }
   return result;
+}
+
+bool Consensus::check_transactions_order(
+    const messages::TaggedBlock &tagged_block) const {
+  const auto &block = tagged_block.block();
+  return check_transactions_order(block);
 }
 
 bool Consensus::check_block_height(
@@ -628,8 +636,11 @@ bool Consensus::add_double_mining(const messages::Block &block) {
 }
 
 bool Consensus::add_block(const messages::Block &block) {
-  return _ledger->insert_block(block) && verify_blocks() &&
-         _ledger->update_main_branch() && add_double_mining(block);
+  // Check the transactions order before inserting because the order is lost at
+  // insertion
+  return check_transactions_order(block) && _ledger->insert_block(block) &&
+         verify_blocks() && _ledger->update_main_branch() &&
+         add_double_mining(block);
 }
 
 void Consensus::start_compute_pii_thread() {

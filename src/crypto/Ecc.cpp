@@ -99,5 +99,7 @@ bool Ecc::operator==(const Ecc &ecc) const {
           ecc.key_pub() == *_key_public);
 }
 
+bool Ecc::operator!=(const Ecc &ecc) const { return !(ecc == *this); }
+
 }  // namespace crypto
 }  // namespace neuro

@@ -200,6 +200,9 @@ class LedgerMongodb : public Ledger {
   bool get_assembly(const messages::AssemblyID &assembly_id,
                     messages::Assembly *assembly) const;
 
+  bool get_assembly(const messages::AssemblyHeight &height,
+                    messages::Assembly *assembly) const;
+
   bool add_assembly(const messages::TaggedBlock &tagged_block,
                     const messages::AssemblyHeight height);
 

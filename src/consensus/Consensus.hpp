@@ -71,6 +71,8 @@ class Consensus {
 
   bool check_block_size(const messages::TaggedBlock &tagged_block) const;
 
+  bool check_transactions_order(const messages::Block &block) const;
+
   bool check_transactions_order(
       const messages::TaggedBlock &tagged_block) const;
 
