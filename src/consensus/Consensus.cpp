@@ -384,8 +384,6 @@ bool Consensus::check_block_timestamp(
   int64_t expected_timestamp = block0.header().timestamp().data() +
                                block.header().height() * _config.block_period;
   int64_t real_timestamp = tagged_block.block().header().timestamp().data();
-  LOG_DEBUG << "REAL TIMESTAMP " << real_timestamp;
-  LOG_DEBUG << "EXPECTED TIMESTAMP " << expected_timestamp;
   if (!block.header().has_timestamp()) {
     LOG_INFO << "Failed check_block_timestamp for block " << block.header().id()
              << " it is missing the timestamp field";
