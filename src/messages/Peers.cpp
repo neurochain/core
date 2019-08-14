@@ -46,7 +46,8 @@ std::size_t Peers::used_peers_count() const {
   long used_peers_count =
       std::count_if(_peers.begin(), _peers.end(), [](const auto &it) {
         const auto &peer = it.second;
-        auto connection_status = peer->status() & Peer::CONNECTED;
+        auto connection_status =
+            peer->status() & (Peer::CONNECTED | Peer::CONNECTING);
         return peer->has_status() && connection_status;
       });
   return used_peers_count;
