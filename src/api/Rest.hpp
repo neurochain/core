@@ -39,6 +39,7 @@ private:
   void setupRoutes();
 
   void get_balance(const Request& request, Response response);
+  void post_balance(const Request& request, Response response);
   void get_ready(const Request& request, Response response);
   void get_transaction(const Request& request, Response response);
   void get_create_transaction (const Request& request, Response response);

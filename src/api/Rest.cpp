@@ -54,7 +54,8 @@ void Rest::allow_option(const Rest::Request& req, Rest::Response res) {
 
 void Rest::setupRoutes() {
   using namespace ::Pistache::Rest::Routes;
-  Post(_router, "/balance", bind(&Rest::get_balance, this));
+  Get(_router, "/balance", bind(&Rest::get_balance, this));
+  Post(_router, "/balance", bind(&Rest::post_balance, this));
   Options(_router, "/balance", bind(&Rest::get_balance, this));
   Get(_router, "/ready", bind(&Rest::get_ready, this));
   Post(_router, "/create_transaction/:fees",
@@ -77,6 +78,23 @@ void Rest::setupRoutes() {
 }
 
 void Rest::get_balance(const Request &req, Response res) {
+  if (!req.query().has("pubkey")) {
+    bad_request(res, "public key not found");
+  }
+
+  messages::_KeyPub public_key;
+  // we must use from_json to prevent protobuf from base64 the data again
+  if (!messages::from_json("{rawData:\"" + req.query().get("pubkey").get() +
+                               "\"}",
+                           &public_key)) {
+    bad_request(res, "could not parse public key");
+  }
+  public_key.set_type(messages::ECP256K1);
+  const auto balance_amount = balance(public_key);
+  send(res, balance_amount);
+}
+
+void Rest::post_balance(const Request &req, Response res) {
   messages::_KeyPub key_pub_message;
   if (!messages::from_json(req.body(), &key_pub_message)) {
     bad_request(res, "could not parse body");
