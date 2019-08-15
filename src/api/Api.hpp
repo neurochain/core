@@ -33,6 +33,11 @@ class Api {
   virtual bool is_ledger_uptodate() const final;
   virtual Buffer transaction(
       const messages::Transaction &transaction) const final;
+  virtual messages::Transaction build_transaction(
+      const messages::_KeyPub &sender_key_pub,
+      const messages::_KeyPub &recipient_key_pub,
+      const messages::NCCAmount &amount,
+      const std::optional<messages::NCCAmount> &fees) final;
   virtual std::optional<messages::Transaction> transaction_from_json(
       const std::string &json) final;
   virtual messages::Transaction transaction(

@@ -108,13 +108,10 @@ void Rest::get_create_transaction(const Request &req, Response res) {
   if (!messages::from_json(req.body(), &body)) {
     bad_request(res, "could not parse body");
   }
-
-  messages::Transaction transaction;
-  transaction.mutable_outputs()->CopyFrom(body.outputs());
-  transaction.add_inputs()->mutable_key_pub()->CopyFrom(body.key_pub());
-
-  transaction.mutable_id()->set_type(messages::Hash::SHA256);
-  transaction.mutable_id()->set_data("");
+  // TODO use all output ?
+  const messages::Output &output0 = body.outputs(0);
+  const auto transaction =
+      build_transaction(body.key_pub(), output0.key_pub(), output0.value(), 0);
 
   const auto transaction_opt = messages::to_buffer(transaction);
   if (!transaction_opt) {
@@ -141,11 +138,9 @@ void Rest::publish(const Request &req, Response res) {
     return;
   }
 
-  crypto::KeyPub key_pub(publish_message.key_pub());
   auto input = transaction.mutable_inputs(0);
   auto input_signature = input->mutable_signature();
   input_signature->set_type(messages::Hash::SHA256);
-  key_pub.save(input->mutable_key_pub());
   input_signature->set_data(signature.str());
 
   if (!crypto::verify(transaction)) {
