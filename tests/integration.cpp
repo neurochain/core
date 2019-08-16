@@ -426,13 +426,12 @@ TEST(INTEGRATION, connection_reconfig) {
   ASSERT_TRUE(bot2.check_peers_ports({1337, 1338, 13340})) << bot2->peers();
   ASSERT_TRUE(bot3.check_peers_ports({1337, 1338, 1339})) << bot3->peers();
 
-  // Now adding peers that know only onebot of the network.
+  // Now adding peers that know only one bot of the network.
   BotTest bot4("integration_propagation50.json", port_offset);
   BotTest bot5("integration_propagation51.json", port_offset);
   BotTest bot6("integration_propagation52.json", port_offset);
-
   // give them more time, they need to ask bot0 for more peer
-  std::this_thread::sleep_for(11s);
+  std::this_thread::sleep_for(4s);
 
   // Check there is no change for current network.
   ASSERT_TRUE(bot0.check_peers_ports({1338, 1339, 13340})) << bot0->peers();
@@ -456,8 +455,8 @@ TEST(INTEGRATION, connection_reconfig) {
   bot1.operator->().reset();
   bot2.operator->().reset();
   bot3.operator->().reset();
-  // worst case scenario, wait 8 sec after each reset()
-  std::this_thread::sleep_for(24s);
+  // worst case scenario, wait 8 sec after reset()
+  std::this_thread::sleep_for(8s);
 
   ASSERT_TRUE(bot0.check_peers_ports({13350, 13351, 13352})) << bot0->peers();
   ASSERT_TRUE(bot4.check_peers_ports({1337, 13351, 13352})) << bot4->peers();

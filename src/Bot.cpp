@@ -367,6 +367,15 @@ void Bot::handler_deconnection(const messages::Header &header,
                 << (*remote_peer)->port();
     }
     _networking.terminate(header.connection_id());
+  } else {
+    // peer didn't create a connection
+    if (body.connection_closed().has_peer()) {
+      auto peer = _peers.find(body.connection_closed().peer().key_pub());
+      if (peer) {
+        (*peer)->set_status(messages::Peer::UNREACHABLE);
+        LOG_DEBUG << _me.port() << " can't connect to " << (*peer)->port();
+      }
+    }
   }
 
   LOG_DEBUG << this << " " << __LINE__

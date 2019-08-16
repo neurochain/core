@@ -285,6 +285,7 @@ bool Tcp::send_unicast(std::shared_ptr<messages::Message> message) const {
 }
 
 void Tcp::clean_old_connections(int delta) {
+  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   const auto current_time = ::neuro::time() - delta;
   for (auto &[_, connection] : _connections) {
     auto remote_peer = _peers->find(connection->remote_peer().key_pub());
