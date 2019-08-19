@@ -236,6 +236,10 @@ void LedgerMongodb::create_indexes() {
                                        << bss::finalize);
   _blocks.create_index(bss::document{} << DENUNCIATIONS + "." + ID << 1
                                        << bss::finalize);
+  _blocks.create_index(bss::document{} << BALANCES + "." + KEY_PUB << -1
+                                       << BRANCH_PATH + "." + BRANCH_ID << -1
+                                       << BRANCH_PATH + "." + BLOCK_NUMBER << -1
+                                       << bss::finalize);
   _transactions.create_index(bss::document{} << TRANSACTION + "." + ID << 1
                                              << bss::finalize);
   _transactions.create_index(bss::document{} << BLOCK_ID << 1 << bss::finalize);
@@ -256,11 +260,6 @@ void LedgerMongodb::create_indexes() {
                                            << bss::finalize);
   _assemblies.create_index(bss::document{} << FINISHED_COMPUTATION << 1
                                            << bss::finalize);
-  _assemblies.create_index(bss::document{}
-                           << BALANCES + "." + KEY_PUB << -1
-                           << BRANCH_PATH + "." + BRANCH_ID << -1
-                           << BRANCH_PATH + "." + BLOCK_NUMBER << -1
-                           << bss::finalize);
 }
 
 void LedgerMongodb::init_database(const messages::Block &block0) {
