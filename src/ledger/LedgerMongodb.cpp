@@ -1650,11 +1650,13 @@ bool LedgerMongodb::add_balances(messages::TaggedBlock *tagged_block) {
     balance->set_enthalpy_begin(enthalpy.toString());
 
     // Enthalpy decreases if coins were sent away
-    Double balance_ratio = balance->value().value() - change.negative;
-    balance_ratio /= balance->value().value();
-    balance_ratio = mpfr::fmax(0, balance_ratio);
-    enthalpy *= balance_ratio;
-    balance->set_enthalpy_end(enthalpy.toString());
+    if (balance->value().value() > 0) {
+      Double balance_ratio = balance->value().value() - change.negative;
+      balance_ratio /= balance->value().value();
+      balance_ratio = mpfr::fmax(0, balance_ratio);
+      enthalpy *= balance_ratio;
+      balance->set_enthalpy_end(enthalpy.toString());
+    }
 
     Double new_balance =
         Double{balance->value().value()} + change.positive - change.negative;
