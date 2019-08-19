@@ -232,8 +232,7 @@ void LedgerMongodb::create_indexes() {
   _blocks.create_index(bss::document{} << BRANCH << 1 << bss::finalize);
   _blocks.create_index(bss::document{} << BRANCH_PATH + "." + BRANCH_IDS + ".0"
                                        << 1 << bss::finalize);
-  _blocks.create_index(bss::document{} << BLOCK + "." + SCORE << 1
-                                       << bss::finalize);
+  _blocks.create_index(bss::document{} << SCORE << -1 << bss::finalize);
   _blocks.create_index(bss::document{} << DENUNCIATIONS + "." + ID << 1
                                        << bss::finalize);
   _blocks.create_index(bss::document{} << BALANCES + "." + KEY_PUB << -1
