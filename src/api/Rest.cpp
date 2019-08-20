@@ -129,7 +129,7 @@ void Rest::get_create_transaction(const Request &req, Response res) {
   if (!messages::from_json(req.body(), &body)) {
     bad_request(res, "could not parse body");
   }
-  // TODO use all output ?
+
   const auto transaction =
       build_transaction(body.key_pub(), body.outputs(), 0);
 
