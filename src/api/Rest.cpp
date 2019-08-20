@@ -127,10 +127,8 @@ void Rest::get_create_transaction(const Request &req, Response res) {
     bad_request(res, "could not parse body");
   }
   // TODO use all output ?
-  const messages::Output &output0 = body.outputs(0);
   const auto transaction =
-      build_transaction(body.key_pub(), output0.key_pub(), output0.value(), 0);
-
+      build_transaction(body.key_pub(), body.outputs(), 0);
   const auto transaction_opt = messages::to_buffer(transaction);
   if (!transaction_opt) {
     bad_request(res, "Could not serialize transaction");
