@@ -613,7 +613,7 @@ bool LedgerMongodb::insert_block(const messages::TaggedBlock &tagged_block) {
     // The block already exists
     LOG_INFO << "Failed to insert block " << tagged_block.block().header().id()
              << " it already exists";
-    _tips.erase(tagged_block.block().header().id());
+    _missing_blocks.erase(tagged_block.block().header().id());
     return false;
   }
 

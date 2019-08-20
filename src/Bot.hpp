@@ -98,7 +98,7 @@ class Bot {
   void regular_update();
   void send_random_transaction();
   void update_ledger();
-  bool update_ledger(const std::optional<messages::Hash> &tip);
+  bool update_ledger(const std::optional<messages::Hash> &missing_block);
   void update_peerlist();
 
  public:

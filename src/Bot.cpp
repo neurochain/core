@@ -82,7 +82,7 @@ void Bot::handler_block(const messages::Header &header,
     LOG_WARNING << "Consensus rejected block";
     return;
   }
-  update_ledger(_ledger->new_tip(body.block()));
+  update_ledger(_ledger->new_missing_block(body.block()));
 
   if (header.has_request_id()) {
     auto got = _request_ids.find(header.request_id());
@@ -105,8 +105,8 @@ void Bot::handler_transaction(const messages::Header &header,
   _consensus->add_transaction(body.transaction());
 }
 
-bool Bot::update_ledger(const std::optional<messages::Hash> &tip) {
-  if (!tip) {
+bool Bot::update_ledger(const std::optional<messages::Hash> &missing_block) {
+  if (!missing_block) {
     return false;
   }
 
@@ -115,7 +115,7 @@ bool Bot::update_ledger(const std::optional<messages::Hash> &tip) {
   auto idheader = messages::fill_header(header);
 
   auto get_block = message->add_bodies()->mutable_get_block();
-  get_block->mutable_hash()->CopyFrom(*tip);
+  get_block->mutable_hash()->CopyFrom(*missing_block);
   get_block->set_count(1);
   _networking.send(message);
 
@@ -124,8 +124,8 @@ bool Bot::update_ledger(const std::optional<messages::Hash> &tip) {
 }
 
 void Bot::update_ledger() {
-  for (const auto &tip : _ledger->tips()) {
-    update_ledger(tip);
+  for (const auto &missing_block : _ledger->missing_blocks()) {
+    update_ledger(missing_block);
   }
 }
 
@@ -397,7 +397,7 @@ void Bot::handler_world(const messages::Header &header,
     (*remote_peer)->set_status(messages::Peer::CONNECTED);
   }
 
-  update_ledger(_ledger->new_tip(world));
+  update_ledger(_ledger->new_missing_block(world));
 
   this->keep_max_connections();
 }
@@ -430,7 +430,7 @@ void Bot::handler_hello(const messages::Header &header,
   bool accepted = _peers.used_peers_count() < _max_incoming_connections;
 
   const auto tip = _ledger->get_main_branch_tip();
-  world->mutable_tip()->CopyFrom(tip.block().header().id());
+  world->mutable_missing_block()->CopyFrom(tip.block().header().id());
 
   // update peer status
   if (accepted) {
