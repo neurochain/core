@@ -46,13 +46,10 @@ void Bot::handler_get_block(const messages::Header &header,
   auto id = messages::fill_header_reply(header, header_reply);
 
   if (get_block.has_hash()) {
-    const auto previd = get_block.hash();
+    const auto id = get_block.hash();
     auto block = message->add_bodies()->mutable_block();
-    if (!_ledger->get_block_by_previd(previd, block)) {
-      std::stringstream sstr;  // TODO operator <<
-      sstr << previd;
-      LOG_ERROR << _me.port() << " get_block by prev id not found "
-                << sstr.str();
+    if (!_ledger->get_block(id, block)) {
+      LOG_ERROR << _me.port() << " get_block by prev id not found " << id;
       return;
     }
 
