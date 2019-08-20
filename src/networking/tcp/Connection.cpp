@@ -58,6 +58,10 @@ void Connection::read_header() {
         }
         const auto header_pattern =
             reinterpret_cast<HeaderPattern *>(_this->_header.data());
+	if(header_pattern->size > MAX_MESSAGE_SIZE) {
+	  LOG_WARNING << "Receiving message too big " << header_pattern->size;
+	  return;
+	}
         _this->read_body(header_pattern->size);
       });
 }
