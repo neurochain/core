@@ -52,6 +52,7 @@ void Rest::bad_request(Response &response, const std::string &message) {
 
 void Rest::allow_option(const Rest::Request& req, Rest::Response res) {
   res.headers().add<Http::Header::AccessControlAllowOrigin>("*");
+  res.headers().add<Http::Header::AccessControlAllowHeaders>("*");
   res.headers().add<Http::Header::AccessControlAllowMethods>("GET, POST");
   res.send(Pistache::Http::Code::Ok);
 }
