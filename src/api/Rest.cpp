@@ -60,7 +60,7 @@ void Rest::setupRoutes() {
   using namespace ::Pistache::Rest::Routes;
   Get(_router, "/balance", bind(&Rest::get_balance, this));
   Post(_router, "/balance", bind(&Rest::post_balance, this));
-  Options(_router, "/balance", bind(&Rest::get_balance, this));
+  Options(_router, "/balance", bind(&Rest::allow_option, this));
   Get(_router, "/ready", bind(&Rest::get_ready, this));
   Post(_router, "/create_transaction/:fees",
        bind(&Rest::get_create_transaction, this));
@@ -130,8 +130,10 @@ void Rest::get_create_transaction(const Request &req, Response res) {
     bad_request(res, "could not parse body");
   }
 
+  auto fees = req.param(":fees").as<std::size_t>();
+
   const auto transaction =
-      build_transaction(body.key_pub(), body.outputs(), 0);
+      build_transaction(body.key_pub(), body.outputs(), fees);
 
   const auto transaction_opt = messages::to_buffer(transaction);
   if (!transaction_opt) {
