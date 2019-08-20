@@ -2,7 +2,7 @@
 #include <rest.pb.h>
 #include <sys/resource.h>
 #include <sys/statfs.h>
-#include <sys/time.h>
+#include <ctime>
 #include "Bot.hpp"
 
 namespace neuro {
@@ -29,13 +29,8 @@ std::time_t Monitoring::last_block_ts() const {
   return last_block.header().timestamp().data();
 }
 
-int Monitoring::current_height() const {
-  auto last_blocks = _bot->ledger()->get_last_blocks(1);
-  if (last_blocks.empty()) {
-    return 0;
-  }
-  const auto last_block = last_blocks[0];
-  return last_block.header().height();
+messages::BlockHeight Monitoring::current_height() const {
+  return _bot->ledger()->height();
 }
 
 messages::Status::Bot Monitoring::resource_usage() const {

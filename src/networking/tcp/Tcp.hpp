@@ -73,9 +73,9 @@ class Tcp : public TransportLayer {
   bool send_unicast(std::shared_ptr<messages::Message> message) const;
   Port listening_port() const;
   IP local_ip() const;
-  bool terminate(const Connection::ID id);
-  std::optional<tcp::Connection *> connection(const Connection::ID id) const;
-  std::optional<messages::Peer *> find_peer(const Connection::ID id);
+  bool terminate(Connection::ID id);
+  std::optional<tcp::Connection *> find(Connection::ID id) const;
+  std::optional<messages::Peer *> find_peer(Connection::ID id);
   void clean_old_connections(int delta);
   std::size_t peer_count() const;
   void stop();

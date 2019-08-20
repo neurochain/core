@@ -1,7 +1,4 @@
 #include <memory>
-#include <bits/stdint-uintn.h>
-#include <boost/preprocessor/seq/enum.hpp>
-#include <boost/preprocessor/seq/size.hpp>
 #include <gtest/gtest.h>
 #include <cstdint>
 

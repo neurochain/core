@@ -1,9 +1,6 @@
 #ifndef NEURO_SRC_COMMON_TYPES_HPP
 #define NEURO_SRC_COMMON_TYPES_HPP
 
-#include <bits/stdint-intn.h>
-#include <bits/stdint-uintn.h>
-#include <bits/types/time_t.h>
 #include <mpreal.h>
 #include <boost/asio.hpp>
 #include <boost/asio/ip/address.hpp>
@@ -23,7 +20,7 @@
 namespace neuro {
 extern bool _fake_time;
 std::time_t time();
-std::time_t time(const std::time_t increment);
+std::time_t time(std::time_t increment);
 
 static std::random_device _rd;  // TODO make global
 static std::uniform_int_distribution<uint32_t> _dist{

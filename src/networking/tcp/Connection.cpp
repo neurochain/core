@@ -1,5 +1,3 @@
-#include <boost/preprocessor/seq/enum.hpp>
-#include <boost/preprocessor/seq/size.hpp>
 #include <cassert>
 
 #include "common/logger.hpp"
@@ -42,9 +40,11 @@ std::shared_ptr<const tcp::socket> Connection::socket() const {
 void Connection::read() { read_header(); }
 
 const std::string Connection::ip() const {
-  try {
-    return _socket->remote_endpoint().address().to_string();
-  } catch (...) {
+  auto ip = remote_ip();
+  if (ip) {
+    return ip->to_string();
+  } else {
+    LOG_ERROR << "got a connection with no ip associated";
     return "(no ip)";
   }
 }

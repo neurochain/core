@@ -1,7 +1,6 @@
 #ifndef NEURO_SRC_BOT_HPP
 #define NEURO_SRC_BOT_HPP
 
-#include <bits/stdint-uintn.h>
 #include <boost/asio/steady_timer.hpp>
 #include <cstdint>
 #include <memory>
@@ -12,7 +11,6 @@
 #include "api/Api.hpp"
 #include "config.pb.h"
 #include "consensus/Config.hpp"
-//#include "rest/Rest.hpp"
 #include "consensus/Consensus.hpp"
 #include "crypto/Ecc.hpp"
 #include "ledger/Ledger.hpp"

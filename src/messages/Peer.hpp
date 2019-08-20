@@ -1,8 +1,6 @@
 #ifndef NEURO_SRC_MESSAGES_PEER_HPP
 #define NEURO_SRC_MESSAGES_PEER_HPP
 
-#include <bits/types/time_t.h>
-
 #include "common.pb.h"
 #include "common/logger.hpp"
 #include "common/types.hpp"

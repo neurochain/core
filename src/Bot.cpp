@@ -1,7 +1,3 @@
-#include <boost/preprocessor/seq/enum.hpp>
-#include <boost/preprocessor/seq/size.hpp>
-#include <cstdlib>
-
 #include "Bot.hpp"
 #include "api/Rest.hpp"
 #include "common/logger.hpp"
@@ -241,7 +237,7 @@ void Bot::regular_update() {
   update_peerlist();
   keep_max_connections();
   update_ledger();
-  _networking.clean_old_connections(10);
+  _networking.clean_old_connections(_config.networking().keep_old_connection_time());
 
   if (_config.has_random_transaction() &&
       rand() < _config.random_transaction() * RAND_MAX) {

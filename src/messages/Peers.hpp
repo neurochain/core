@@ -1,7 +1,6 @@
 #ifndef NEURO_SRC_MESSAGES_PEERS_HPP
 #define NEURO_SRC_MESSAGES_PEERS_HPP
 
-#include <bits/stdint-uintn.h>
 #include <algorithm>
 #include <cstdint>
 #include <functional>

@@ -1,7 +1,5 @@
 #include <assert.h>
 #include <mpreal.h>
-#include <boost/preprocessor/seq/enum.hpp>
-#include <boost/preprocessor/seq/size.hpp>
 
 #include "bsoncxx/builder/basic/array.hpp"
 #include "bsoncxx/builder/stream/document.hpp"
