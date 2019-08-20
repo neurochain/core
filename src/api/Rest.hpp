@@ -33,12 +33,16 @@ private:
   void init();
   void start();
   void shutdown();
+
+  std::string raw_data_to_json(std::string raw_data) const;
+
   void send(Response &response, const messages::Packet &packet);
   void send(Response &response, const std::string &value);
   void bad_request(Response &response, const std::string& message);
   void setupRoutes();
 
   void get_balance(const Request& request, Response response);
+  void post_balance(const Request& request, Response response);
   void get_ready(const Request& request, Response response);
   void get_transaction(const Request& request, Response response);
   void get_create_transaction (const Request& request, Response response);

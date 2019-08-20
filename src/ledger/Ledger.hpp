@@ -324,9 +324,10 @@ class Ledger {
     return messages::NCCAmount(last_balance.value());
   }
 
+  template<class Outputs>
   messages::Transaction build_transaction(
       const messages::_KeyPub &sender,
-      const std::vector<messages::Output> &outputs,
+      const Outputs &outputs,
       const std::optional<messages::NCCAmount> &fees = {}) const {
     messages::Transaction transaction;
 
@@ -357,8 +358,6 @@ class Ledger {
       const messages::_KeyPub &recipient_key_pub,
       const messages::NCCAmount &amount,
       const std::optional<messages::NCCAmount> &fees = {}) const {
-    messages::Transaction transaction;
-
     auto outputs = std::vector<messages::Output>{1};
     auto output = &outputs[0];
     output->mutable_key_pub()->CopyFrom(recipient_key_pub);

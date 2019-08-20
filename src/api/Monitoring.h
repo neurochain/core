@@ -12,7 +12,7 @@ class Monitoring {
 
 public:
   Monitoring(Bot& b);
-  double uptime();
+  std::chrono::seconds::rep uptime();
   int last_block_ts();
   int current_height();
   messages::Status::Bot resource_usage();

@@ -11,9 +11,10 @@ namespace neuro {
 
 Monitoring::Monitoring(Bot &b) : _bot(b) {}
 
-double Monitoring::uptime() {
-  auto now = std::chrono::system_clock::now();
-  std::chrono::duration<double> diff = now - _starting_time;
+std::chrono::seconds::rep Monitoring::uptime() {
+  using namespace std::chrono;
+  auto now = system_clock::now();
+  auto diff = duration_cast<seconds>(now - _starting_time);
   return diff.count();
 }
 
@@ -44,7 +45,7 @@ messages::Status::Bot Monitoring::resource_usage() {
   getrusage(RUSAGE_SELF, &usage);
 
   auto current_uptime = uptime();
-  bot.set_uptime(static_cast<int>(current_uptime));
+  bot.set_uptime(current_uptime);
   bot.set_utime(usage.ru_utime.tv_sec);
   bot.set_stime(usage.ru_stime.tv_sec);
   double vtime = usage.ru_utime.tv_sec + usage.ru_stime.tv_sec;
@@ -102,8 +103,11 @@ messages::Status::PeerCount Monitoring::peer_count() const {
 
 messages::Status Monitoring::complete_status() {
   messages::Status status;
-  status.mutable_blockchain()->set_last_block_ts(last_block_ts());
-  status.mutable_blockchain()->set_current_height(current_height());
+  auto *chain_status = status.mutable_blockchain();
+  chain_status->set_last_block_ts(last_block_ts());
+  chain_status->set_current_height(current_height());
+  chain_status->set_mined_block(_bot.ledger()->total_nb_blocks());
+  chain_status->set_transaction_count(_bot.ledger()->total_nb_transactions());
   status.mutable_bot()->CopyFrom(resource_usage());
   status.mutable_fs()->CopyFrom(filesystem_usage());
   status.mutable_peer()->CopyFrom(peer_count());
