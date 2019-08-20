@@ -33,6 +33,9 @@ private:
   void init();
   void start();
   void shutdown();
+
+  std::string raw_data_to_json(std::string raw_data) const;
+
   void send(Response &response, const messages::Packet &packet);
   void send(Response &response, const std::string &value);
   void bad_request(Response &response, const std::string& message);

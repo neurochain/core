@@ -30,6 +30,10 @@ void Rest::start() {
 
 void Rest::shutdown() { _httpEndpoint->shutdown(); }
 
+std::string Rest::raw_data_to_json(std::string raw_data) const {
+  return "{rawData:\"" + raw_data + "\"}";
+}
+
 void Rest::send(Response &response, const messages::Packet &packet) {
   response.headers().add<Http::Header::AccessControlAllowOrigin>("*");
   response.headers().add<Http::Header::ContentType>(MIME(Application, Json));
@@ -84,9 +88,8 @@ void Rest::get_balance(const Request &req, Response res) {
 
   messages::_KeyPub public_key;
   // we must use from_json to prevent protobuf from base64 the data again
-  if (!messages::from_json("{rawData:\"" + req.query().get("pubkey").get() +
-                               "\"}",
-                           &public_key)) {
+  auto json_query = raw_data_to_json(req.query().get("pubkey").get());
+  if (!messages::from_json(json_query, &public_key)) {
     bad_request(res, "could not parse public key");
   }
   public_key.set_type(messages::ECP256K1);
@@ -129,6 +132,7 @@ void Rest::get_create_transaction(const Request &req, Response res) {
   // TODO use all output ?
   const auto transaction =
       build_transaction(body.key_pub(), body.outputs(), 0);
+
   const auto transaction_opt = messages::to_buffer(transaction);
   if (!transaction_opt) {
     bad_request(res, "Could not serialize transaction");
