@@ -41,7 +41,8 @@ int Monitoring::current_height() const {
 uint32_t Monitoring::nb_blocks_since(const std::time_t since) const {
   uint32_t total = 0;
   auto tagged_block = _bot->ledger()->get_main_branch_tip();
-  while (std::time(nullptr) - tagged_block.block().header().timestamp().data() <
+  auto current_time = std::time(nullptr);
+  while (current_time - tagged_block.block().header().timestamp().data() <
          since) {
     total++;
     if (!_bot->ledger()->get_block(
@@ -53,11 +54,12 @@ uint32_t Monitoring::nb_blocks_since(const std::time_t since) const {
   return total;
 }
 
-int Monitoring::nb_transactions_since(std::time_t since) const {
+uint32_t Monitoring::nb_transactions_since(std::time_t since) const {
   int total = 0;
   messages::TaggedBlock tagged_block;
   _bot->ledger()->get_last_block(&tagged_block);
-  while (std::time(nullptr) - tagged_block.block().header().timestamp().data() <
+  auto current_time = std::time(nullptr);
+  while (current_time - tagged_block.block().header().timestamp().data() <
          since) {
     // Add 1 for the coinbase
     total += tagged_block.block().transactions_size() + 1;
@@ -96,15 +98,15 @@ float Monitoring::average_block_propagation_since(std::time_t since) const {
   return total_propagation / nb_blocks;
 }
 
-int Monitoring::nb_blocks_5m() const { return nb_blocks_since(300); }
+uint32_t Monitoring::nb_blocks_5m() const { return nb_blocks_since(300); }
 
-int Monitoring::nb_blocks_1h() const { return nb_blocks_since(3600); }
+uint32_t Monitoring::nb_blocks_1h() const { return nb_blocks_since(3600); }
 
-int Monitoring::nb_transactions_5m() const {
+uint32_t Monitoring::nb_transactions_5m() const {
   return nb_transactions_since(300);
 }
 
-int Monitoring::nb_transactions_1h() const {
+uint32_t Monitoring::nb_transactions_1h() const {
   return nb_transactions_since(3600);
 }
 
