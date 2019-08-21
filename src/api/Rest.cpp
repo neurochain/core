@@ -156,6 +156,8 @@ void Rest::publish(const Request &req, Response res) {
     return;
   }
 
+  messages::set_transaction_hash(&transaction);
+
   if (!transaction_publish(transaction)) {
     bad_request(res, "Could not publish transaction");
     return;

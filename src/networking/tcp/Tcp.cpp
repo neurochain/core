@@ -222,7 +222,7 @@ TransportLayer::SendResult Tcp::send(
   SendResult res;
   if (res_count == 0) {
     res = SendResult::FAILED;
-  } else if (res_count == _connections.size()) {
+  } else if (res_count != _connections.size()) {
     res = SendResult::FAILED;
   } else {
     res = SendResult::ALL_GOOD;
