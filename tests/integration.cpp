@@ -432,14 +432,28 @@ TEST(INTEGRATION, connection_reconfig) {
   // give them more time, they need to ask bot0 for more peer
   std::this_thread::sleep_for(4s);
 
+
+  auto print_peers = [&bot0, &bot1, &bot2, &bot3, &bot4, &bot5, &bot6]() -> std::string {
+    std::ostringstream os;
+    os << "all peers" << std::endl
+    << "bot0" << std::endl << bot0->peers() << std::endl
+    << "bot1" << std::endl << bot1->peers() << std::endl
+    << "bot2" << std::endl << bot2->peers() << std::endl
+    << "bot3" << std::endl << bot3->peers() << std::endl
+    << "bot4" << std::endl << bot4->peers() << std::endl
+    << "bot5" << std::endl << bot5->peers() << std::endl
+    << "bot6" << std::endl << bot6->peers() << std::endl
+    << "==================================================" << std::endl;
+    return os.str();
+  };
   // Check there is no change for current network.
-  ASSERT_TRUE(bot0.check_peers_ports({1338, 1339, 13340})) << bot0->peers();
-  ASSERT_TRUE(bot1.check_peers_ports({1337, 1339, 13340})) << bot1->peers();
-  ASSERT_TRUE(bot2.check_peers_ports({1337, 1338, 13340})) << bot2->peers();
-  ASSERT_TRUE(bot3.check_peers_ports({1337, 1338, 1339})) << bot3->peers();
-  ASSERT_TRUE(bot4.check_peers_ports({13351, 13352})) << bot4->peers();
-  ASSERT_TRUE(bot5.check_peers_ports({13350, 13352})) << bot5->peers();
-  ASSERT_TRUE(bot6.check_peers_ports({13350, 13351})) << bot6->peers();
+  ASSERT_TRUE(bot0.check_peers_ports({1338, 1339, 13340})) << print_peers();
+  ASSERT_TRUE(bot1.check_peers_ports({1337, 1339, 13340})) << print_peers();
+  ASSERT_TRUE(bot2.check_peers_ports({1337, 1338, 13340})) << print_peers();
+  ASSERT_TRUE(bot3.check_peers_ports({1337, 1338, 1339}))  << print_peers();
+  ASSERT_TRUE(bot4.check_peers_ports({13351, 13352}))      << print_peers();
+  ASSERT_TRUE(bot5.check_peers_ports({13350, 13352}))      << print_peers();
+  ASSERT_TRUE(bot6.check_peers_ports({13350, 13351}))      << print_peers();
 
   const auto unavailable = static_cast<messages::Peer::Status>(
       messages::Peer::UNREACHABLE | messages::Peer::DISCONNECTED);
