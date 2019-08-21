@@ -17,8 +17,8 @@ class Monitoring {
   const TimePoint _starting_time = std::chrono::system_clock::now();
 
  public:
-  Monitoring(Bot* bot);
-  double uptime() const;
+  explicit Monitoring(Bot* bot);
+  std::chrono::seconds::rep uptime() const;
   std::time_t last_block_ts() const;
   messages::BlockHeight current_height() const;
   messages::Status::Bot resource_usage() const;

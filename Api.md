@@ -141,6 +141,18 @@ $ curl http://52.47.129.155:8080/total_nb_transactions
 ### Get the balance of a wallet
 **URL**: `/balance
 
+**method**: `GET`
+**query parameter: `pubkey`
+
+**exemple**:
+```
+$ curl http://localhost:8080/balance?pubkey=A5mc7ff4DMn9DyLq2qcbAUMyHfmzlvKKbLWuXHlQmuCD
+{"value":"30861119"}
+```
+
+### Get the balance of a wallet
+**URL**: `/balance
+
 **method**: `POST`
 **data**:
 ```
@@ -151,7 +163,7 @@ $ curl http://52.47.129.155:8080/total_nb_transactions
 **exemple**:
 ```
 $ curl 'http://localhost:8080/balance' --data '{"hexData":"0402368ae94009f1e32ef39826c057d6e3ff3b8ea1c9364f34dfebad765daf7e96a9f6abf90c855ab883044a25eee6aa338c0f8210303cc02687d648182abe0da0"}'
-  {"value":"0"}
+{"value":"0"}
 ```
 
 ### Check if a bot is alive

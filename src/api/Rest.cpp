@@ -31,6 +31,10 @@ void Rest::start() {
 
 void Rest::shutdown() { _httpEndpoint->shutdown(); }
 
+std::string Rest::raw_data_to_json(std::string raw_data) const {
+  return "{rawData:\"" + raw_data + "\"}";
+}
+
 void Rest::send(Response &response, const messages::Packet &packet) {
   response.headers().add<Http::Header::AccessControlAllowOrigin>("*");
   response.headers().add<Http::Header::ContentType>(MIME(Application, Json));
@@ -49,14 +53,16 @@ void Rest::bad_request(Response &response, const std::string &message) {
 
 void Rest::allow_option(const Rest::Request &req, Rest::Response res) {
   res.headers().add<Http::Header::AccessControlAllowOrigin>("*");
+  res.headers().add<Http::Header::AccessControlAllowHeaders>("*");
   res.headers().add<Http::Header::AccessControlAllowMethods>("GET, POST");
   res.send(Pistache::Http::Code::Ok);
 }
 
 void Rest::setupRoutes() {
   using namespace ::Pistache::Rest::Routes;
-  Post(_router, "/balance", bind(&Rest::get_balance, this));
-  Options(_router, "/balance", bind(&Rest::get_balance, this));
+  Get(_router, "/balance", bind(&Rest::get_balance, this));
+  Post(_router, "/balance", bind(&Rest::post_balance, this));
+  Options(_router, "/balance", bind(&Rest::allow_option, this));
   Get(_router, "/ready", bind(&Rest::get_ready, this));
   Post(_router, "/create_transaction/:fees",
        bind(&Rest::get_create_transaction, this));
@@ -80,6 +86,22 @@ void Rest::setupRoutes() {
 }
 
 void Rest::get_balance(const Request &req, Response res) {
+  if (!req.query().has("pubkey")) {
+    bad_request(res, "public key not found");
+  }
+
+  messages::_KeyPub public_key;
+  // we must use from_json to prevent protobuf from base64 the data again
+  auto json_query = raw_data_to_json(req.query().get("pubkey").get());
+  if (!messages::from_json(json_query, &public_key)) {
+    bad_request(res, "could not parse public key");
+  }
+  public_key.set_type(messages::ECP256K1);
+  const auto balance_amount = balance(public_key);
+  send(res, balance_amount);
+}
+
+void Rest::post_balance(const Request &req, Response res) {
   messages::_KeyPub key_pub_message;
   if (!messages::from_json(req.body(), &key_pub_message)) {
     bad_request(res, "could not parse body");
@@ -112,12 +134,10 @@ void Rest::get_create_transaction(const Request &req, Response res) {
     bad_request(res, "could not parse body");
   }
 
-  messages::Transaction transaction;
-  transaction.mutable_outputs()->CopyFrom(body.outputs());
-  transaction.add_inputs()->mutable_key_pub()->CopyFrom(body.key_pub());
+  auto fees = req.param(":fees").as<std::size_t>();
 
-  transaction.mutable_id()->set_type(messages::Hash::SHA256);
-  transaction.mutable_id()->set_data("");
+  const auto transaction =
+      build_transaction(body.key_pub(), body.outputs(), fees);
 
   const auto transaction_opt = messages::to_buffer(transaction);
   if (!transaction_opt) {
@@ -144,11 +164,9 @@ void Rest::publish(const Request &req, Response res) {
     return;
   }
 
-  crypto::KeyPub key_pub(publish_message.key_pub());
   auto input = transaction.mutable_inputs(0);
   auto input_signature = input->mutable_signature();
   input_signature->set_type(messages::Hash::SHA256);
-  key_pub.save(input->mutable_key_pub());
   input_signature->set_data(signature.str());
 
   if (!crypto::verify(transaction)) {
