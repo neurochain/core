@@ -249,16 +249,6 @@ class Consensus : public testing::Test {
     transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
                                    simulator.key_pubs[1], 1, fees);
     ASSERT_TRUE(consensus->add_transaction(transaction));
-
-    // The fee is higher than the inputs
-    did_throw = false;
-    try {
-      transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
-                                     simulator.key_pubs[1], 1, fees);
-    } catch (std::runtime_error &) {
-      did_throw = true;
-    }
-    ASSERT_TRUE(did_throw);
   }
 
   messages::TaggedTransaction new_tagged_transaction() {
@@ -308,20 +298,6 @@ class Consensus : public testing::Test {
     messages::set_transaction_hash(tagged_transaction.mutable_transaction());
     ASSERT_TRUE(consensus->check_id(tagged_transaction));
     ASSERT_FALSE(consensus->check_outputs(tagged_transaction));
-    ASSERT_FALSE(consensus->is_valid(tagged_transaction));
-  }
-
-  void test_check_transaction_inputs() {
-    auto first_transaction = new_tagged_transaction();
-    consensus->add_transaction(first_transaction.transaction());
-    auto tagged_transaction = new_tagged_transaction();
-    ASSERT_TRUE(consensus->is_valid(tagged_transaction));
-    ASSERT_EQ(tagged_transaction.transaction().inputs_size(), 1);
-    ASSERT_EQ(first_transaction.transaction().inputs_size(), 1);
-    tagged_transaction.mutable_transaction()->mutable_inputs()->CopyFrom(
-        first_transaction.transaction().inputs());
-    messages::set_transaction_hash(tagged_transaction.mutable_transaction());
-    ASSERT_TRUE(consensus->check_id(tagged_transaction));
     ASSERT_FALSE(consensus->is_valid(tagged_transaction));
   }
 
@@ -667,17 +643,7 @@ TEST_F(Consensus, fees_too_high) {
 }
 
 TEST_F(Consensus, transaction_overflow) {
-  auto fees = messages::NCCAmount(-1);
-  auto did_throw = false;
-  try {
-    auto transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
-                                        simulator.key_pubs[1], 1, fees);
-  } catch (std::runtime_error &) {
-    did_throw = true;
-  }
-  ASSERT_TRUE(did_throw);
-
-  fees = messages::NCCAmount(100);
+  auto fees = messages::NCCAmount(100);
   auto transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
                                       simulator.key_pubs[1], 1, fees);
   transaction.mutable_outputs(0)->mutable_value()->set_value(-1);
@@ -696,8 +662,6 @@ TEST_F(Consensus, check_transaction_signatures) {
 TEST_F(Consensus, check_transaction_outputs) {
   test_check_transaction_outputs();
 }
-
-TEST_F(Consensus, check_transaction_inputs) { test_check_transaction_inputs(); }
 
 TEST_F(Consensus, check_transaction_double_inputs) {
   test_check_transaction_double_inputs();
