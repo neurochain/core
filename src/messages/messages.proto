@@ -155,6 +155,7 @@ message TaggedBlock {
   optional int64 score = 4;
   optional Hash previous_assembly_id = 5;
   repeated Balance balances = 6;
+  optional Timestamp reception_time = 7;
 }
 
 message TaggedTransaction {

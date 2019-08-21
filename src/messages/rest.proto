@@ -8,6 +8,12 @@ message Status {
   message BlockChain {
     optional int32 last_block_ts = 1;
     optional int32 current_height = 2;
+    optional int32 nb_blocks_5m = 3;
+    optional int32 nb_blocks_1h = 4;
+    optional int32 nb_transactions_5m = 5;
+    optional int32 nb_transactions_1h = 6;
+    optional float average_block_propagation_5m = 7;
+    optional float average_block_propagation_1h = 8;
   }
 
   message Bot {

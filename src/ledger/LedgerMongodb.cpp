@@ -651,6 +651,7 @@ bool LedgerMongodb::insert_block(const messages::TaggedBlock &tagged_block) {
   auto mutable_tagged_block = tagged_block;
   mutable_tagged_block.mutable_block()->clear_transactions();
   mutable_tagged_block.mutable_block()->clear_coinbase();
+  mutable_tagged_block.mutable_reception_time()->set_data(std::time(nullptr));
   auto bson_block = to_bson(mutable_tagged_block);
   auto result = _blocks.insert_one(std::move(bson_block));
   if (!result) {

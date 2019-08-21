@@ -38,6 +38,84 @@ int Monitoring::current_height() const {
   return last_block.header().height();
 }
 
+int Monitoring::nb_blocks_since(std::time_t since) const {
+  int total = 0;
+  auto tagged_block = _bot->ledger()->get_main_branch_tip();
+  while (std::time(nullptr) - tagged_block.block().header().timestamp().data() <
+         since) {
+    total++;
+    if (!_bot->ledger()->get_block(
+            tagged_block.block().header().previous_block_hash(), &tagged_block,
+            false)) {
+      break;
+    }
+  }
+  return total;
+}
+
+int Monitoring::nb_transactions_since(std::time_t since) const {
+  int total = 0;
+  messages::TaggedBlock tagged_block;
+  _bot->ledger()->get_last_block(&tagged_block);
+  while (std::time(nullptr) - tagged_block.block().header().timestamp().data() <
+         since) {
+    // Add 1 for the coinbase
+    total += tagged_block.block().transactions_size() + 1;
+    if (!_bot->ledger()->get_block(
+            tagged_block.block().header().previous_block_hash(),
+            &tagged_block)) {
+      break;
+    }
+  }
+  return total;
+}
+
+float Monitoring::average_block_propagation_since(std::time_t since) const {
+  int nb_blocks = 0;
+  int total_propagation = 0;
+  auto tagged_block = _bot->ledger()->get_main_branch_tip();
+  while (std::time(nullptr) - tagged_block.block().header().timestamp().data() <
+         since) {
+    nb_blocks++;
+    if (tagged_block.has_reception_time()) {
+      int propagation = tagged_block.reception_time().data() -
+                        tagged_block.block().header().timestamp().data();
+      if (propagation > 0) {
+        total_propagation += propagation;
+      }
+    }
+    if (!_bot->ledger()->get_block(
+            tagged_block.block().header().previous_block_hash(), &tagged_block,
+            false)) {
+      break;
+    }
+  }
+  if (nb_blocks == 0) {
+    return -1;
+  }
+  return total_propagation / nb_blocks;
+}
+
+int Monitoring::nb_blocks_5m() const { return nb_blocks_since(300); }
+
+int Monitoring::nb_blocks_1h() const { return nb_blocks_since(3600); }
+
+int Monitoring::nb_transactions_5m() const {
+  return nb_transactions_since(300);
+}
+
+int Monitoring::nb_transactions_1h() const {
+  return nb_transactions_since(3600);
+}
+
+float Monitoring::average_block_propagation_5m() const {
+  return average_block_propagation_since(300);
+}
+
+float Monitoring::average_block_propagation_1h() const {
+  return average_block_propagation_since(3600);
+}
+
 messages::Status::Bot Monitoring::resource_usage() const {
   messages::Status::Bot bot;
 
@@ -105,6 +183,14 @@ messages::Status Monitoring::complete_status() const {
   messages::Status status;
   status.mutable_blockchain()->set_last_block_ts(last_block_ts());
   status.mutable_blockchain()->set_current_height(current_height());
+  status.mutable_blockchain()->set_nb_blocks_5m(nb_blocks_5m());
+  status.mutable_blockchain()->set_nb_blocks_1h(nb_blocks_1h());
+  status.mutable_blockchain()->set_nb_transactions_5m(nb_transactions_5m());
+  status.mutable_blockchain()->set_nb_transactions_1h(nb_transactions_1h());
+  status.mutable_blockchain()->set_average_block_propagation_5m(
+      average_block_propagation_5m());
+  status.mutable_blockchain()->set_average_block_propagation_1h(
+      average_block_propagation_1h());
   status.mutable_bot()->CopyFrom(resource_usage());
   status.mutable_fs()->CopyFrom(filesystem_usage());
   status.mutable_peer()->CopyFrom(peer_count());
