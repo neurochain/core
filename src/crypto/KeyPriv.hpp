@@ -1,10 +1,20 @@
 #ifndef NEURO_SRC_CRYPTO_KEYPRIV_HPP
 #define NEURO_SRC_CRYPTO_KEYPRIV_HPP
 
+#include <cryptopp/eccrypto.h>
+#include <cryptopp/integer.h>
+#include <cstdint>
 #include <memory>
 
 #include "KeyPub.hpp"
+#include "common.pb.h"
+#include "common/Buffer.hpp"
 #include "common/types.hpp"
+#include "crypto/KeyPub.hpp"
+
+namespace CryptoPP {
+class ECP;
+}  // namespace CryptoPP
 
 namespace neuro {
 namespace crypto {

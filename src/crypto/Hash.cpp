@@ -1,7 +1,9 @@
 
+#include "crypto/Hash.hpp"
 #include <cryptopp/sha3.h>
 
-#include "crypto/Hash.hpp"
+#include "common/Buffer.hpp"
+#include "messages/Message.hpp"
 
 namespace neuro {
 namespace crypto {

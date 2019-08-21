@@ -2,8 +2,13 @@
 #define NEURO_SRC_TOOLING_FULL_SIMULATOR_HPP
 
 #include <Bot.hpp>
+#include <cstdint>
+
 #include "common/types.hpp"
+#include "consensus/Config.hpp"
+#include "messages.pb.h"
 #include "messages/Message.hpp"
+#include "messages/NCCAmount.hpp"
 #include "messages/config/Config.hpp"
 
 namespace neuro {

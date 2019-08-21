@@ -5,7 +5,10 @@
 
 #include "common/logger.hpp"
 #include "common/types.hpp"
+#include "crypto/Ecc.hpp"
+#include "messages/Peer.hpp"
 #include "messages/Peers.hpp"
+#include "messages/Queue.hpp"
 #include "networking/Connection.hpp"
 
 namespace neuro {
@@ -38,9 +41,10 @@ class TransportLayer {
       const std::shared_ptr<messages::Message> message) const = 0;
   virtual std::size_t peer_count() const = 0;
   virtual bool terminate(const Connection::ID id) = 0;
-  virtual std::optional<messages::Peer *> find_peer(const Connection::ID id) = 0;
+  virtual std::optional<messages::Peer*> find_peer(const Connection::ID id) = 0;
   virtual Port listening_port() const = 0;
   virtual bool connect(messages::Peer* peer) = 0;
+  virtual void clean_old_connections(int delta) = 0;
 
   virtual ~TransportLayer(){};
   virtual void join() = 0;

@@ -1,8 +1,9 @@
 #include "tooling/blockgen.hpp"
-#include <fstream>
-#include <iostream>
-#include "common/logger.hpp"
-#include "crypto/Sign.hpp"
+#include "crypto/Ecc.hpp"
+#include "messages/Message.hpp"
+#include "mongocxx/client.hpp"
+#include "mongocxx/database.hpp"
+#include "mongocxx/uri.hpp"
 
 namespace po = boost::program_options;
 

@@ -1,17 +1,11 @@
+#include <sys/stat.h>
 #include <boost/program_options.hpp>
+
 #include "common/logger.hpp"
-#include "common/types.hpp"
-#include "crypto/Ecc.hpp"
-#include "crypto/Hash.hpp"
-#include "ledger/LedgerMongodb.hpp"
-#include "messages.pb.h"
-#include "messages/Hasher.hpp"
 #include "messages/Message.hpp"
+#include "messages/NCCAmount.hpp"
 #include "messages/config/Config.hpp"
 #include "tooling/blockgen.hpp"
-
-#include <fstream>
-#include <iostream>
 
 namespace po = boost::program_options;
 

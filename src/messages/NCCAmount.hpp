@@ -3,7 +3,6 @@
 
 #include "common.pb.h"
 
-
 namespace neuro {
 namespace messages {
 
@@ -15,7 +14,7 @@ class NCCAmount : public _NCCAmount {
   NCCAmount(const uint64_t amount) { set_value(amount); }
 };
 
-}  // messages
-}  // neuro
+}  // namespace messages
+}  // namespace neuro
 
 #endif /* NEURO_SRC_MESSAGES_NCCAMOUNT_HPP */

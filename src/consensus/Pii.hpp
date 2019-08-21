@@ -1,6 +1,10 @@
 #ifndef NEURO_SRC_CONSENSUS_PII_HPP
 #define NEURO_SRC_CONSENSUS_PII_HPP
 
+#include <cstddef>
+#include <memory>
+#include "common.pb.h"
+#include "common/types.hpp"
 #include "consensus/Config.hpp"
 #include "ledger/Ledger.hpp"
 #include "messages.pb.h"

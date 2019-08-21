@@ -1,6 +1,6 @@
-#include "crypto/Sign.hpp"
 #include <gtest/gtest.h>
-#include "messages/Address.hpp"
+
+#include "crypto/Sign.hpp"
 #include "messages/Hasher.hpp"
 
 namespace neuro {

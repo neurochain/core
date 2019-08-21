@@ -1,8 +1,8 @@
 #include "Queue.hpp"
-
-#include "messages/Hasher.hpp"
-#include "messages/Message.hpp"
+#include "common/logger.hpp"
+#include "messages/Queue.hpp"
 #include "messages/Subscriber.hpp"
+
 namespace neuro {
 namespace messages {
 
@@ -63,7 +63,6 @@ std::shared_ptr<const messages::Message> Queue::next_message() {
 
 std::size_t Queue::size() const { return _queue.size(); }
 
-  
 void Queue::quit() {
   if (!_started) {
     return;
@@ -96,9 +95,7 @@ void Queue::do_work() {
   } while (!_quitting);
 }
 
-Queue::~Queue() {
-  quit();
-}
+Queue::~Queue() { quit(); }
 
 }  // namespace messages
 }  // namespace neuro

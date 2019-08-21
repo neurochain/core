@@ -1,6 +1,6 @@
-#include "consensus/Consensus.hpp"
 #include <gtest/gtest.h>
-#include <thread>
+
+#include "consensus/Consensus.hpp"
 #include "ledger/LedgerMongodb.hpp"
 #include "tooling/Simulator.hpp"
 

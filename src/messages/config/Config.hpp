@@ -8,6 +8,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <string>
+
 #include "common/types.hpp"
 #include "config.pb.h"
 #include "crypto/KeyPriv.hpp"

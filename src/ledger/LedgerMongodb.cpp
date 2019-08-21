@@ -1,8 +1,16 @@
-#include "ledger/LedgerMongodb.hpp"
-#include <chrono>
+#include <assert.h>
+#include <mpreal.h>
+
+#include "bsoncxx/builder/basic/array.hpp"
+#include "bsoncxx/builder/stream/document.hpp"
 #include "common/logger.hpp"
+#include "crypto/Ecc.hpp"
+#include "ledger/LedgerMongodb.hpp"
+#include "ledger/mongo.hpp"
 #include "messages.pb.h"
 #include "messages/Hasher.hpp"
+#include "mongocxx/options/update.hpp"
+#include "mongocxx/pipeline.hpp"
 
 namespace neuro {
 namespace ledger {
@@ -101,7 +109,7 @@ LedgerMongodb::LedgerMongodb(const messages::config::Database &config)
 
 LedgerMongodb::~LedgerMongodb() { mpfr_free_cache(); }
 
-mongocxx::options::find LedgerMongodb::remove_OID() const {
+mongocxx::options::find LedgerMongodb::remove_OID() {
   std::lock_guard lock(_ledger_mutex);
   mongocxx::options::find find_options;
   auto projection_doc = bss::document{} << _ID << 0
@@ -603,6 +611,7 @@ bool LedgerMongodb::insert_block(const messages::TaggedBlock &tagged_block) {
     // The block already exists
     LOG_INFO << "Failed to insert block " << tagged_block.block().header().id()
              << " it already exists";
+    _missing_blocks.erase(tagged_block.block().header().id());
     return false;
   }
 
@@ -638,6 +647,7 @@ bool LedgerMongodb::insert_block(const messages::TaggedBlock &tagged_block) {
   auto mutable_tagged_block = tagged_block;
   mutable_tagged_block.mutable_block()->clear_transactions();
   mutable_tagged_block.mutable_block()->clear_coinbase();
+  mutable_tagged_block.mutable_reception_time()->set_data(std::time(nullptr));
   auto bson_block = to_bson(mutable_tagged_block);
   auto result = _blocks.insert_one(std::move(bson_block));
   if (!result) {
@@ -1447,6 +1457,34 @@ bool LedgerMongodb::denunciation_exists(
   return false;
 }
 
+mongocxx::cursor LedgerMongodb::find(
+    mongocxx::collection &collection, bsoncxx::document::view_or_value query,
+    const mongocxx::options::find &options) const {
+  std::lock_guard lock(_ledger_mutex);
+  return collection.find(std::move(query), options);
+}
+
+messages::TaggedBlocks LedgerMongodb::get_blocks(
+    mongocxx::cursor &cursor, bool include_transactions) const {
+  messages::TaggedBlocks tagged_blocks;
+  for (const auto &bson_tagged_block : cursor) {
+    auto &tagged_block = tagged_blocks.emplace_back();
+    from_bson(bson_tagged_block, &tagged_block);
+    if (include_transactions) {
+      fill_block_transactions(tagged_block.mutable_block());
+    }
+  }
+
+  return tagged_blocks;
+}
+
+messages::TaggedBlocks LedgerMongodb::get_blocks(
+    const messages::Branch name) const {
+  auto query = bss::document{} << BRANCH << name << bss::finalize;
+  mongocxx::cursor cursor = find(_blocks, std::move(query));
+  return get_blocks(cursor, false);
+}
+
 std::vector<messages::TaggedBlock> LedgerMongodb::get_blocks(
     const messages::BlockHeight height, const messages::_KeyPub &author,
     bool include_transactions) const {
@@ -1456,15 +1494,8 @@ std::vector<messages::TaggedBlock> LedgerMongodb::get_blocks(
                << BLOCK + "." + HEADER + "." + HEIGHT << height
                << BLOCK + "." + HEADER + "." + AUTHOR + "." + KEY_PUB
                << to_bson(author) << bss::finalize;
-  auto cursor = _blocks.find(std::move(query), remove_OID());
-  for (const auto &bson_tagged_block : cursor) {
-    auto &tagged_block = tagged_blocks.emplace_back();
-    from_bson(bson_tagged_block, &tagged_block);
-    if (include_transactions) {
-      fill_block_transactions(tagged_block.mutable_block());
-    }
-  }
-  return tagged_blocks;
+  auto cursor = find(_blocks, std::move(query));
+  return get_blocks(cursor, include_transactions);
 }
 
 void LedgerMongodb::add_double_mining(

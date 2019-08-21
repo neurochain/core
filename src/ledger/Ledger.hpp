@@ -15,7 +15,7 @@ namespace ledger {
 class Ledger {
  public:
   using Functor = std::function<bool(const messages::TaggedTransaction &)>;
-
+  using MissingBlocks = std::unordered_set<messages::BlockID>;
   struct MainBranchTip {
     messages::TaggedBlock main_branch_tip;
     bool updated;
@@ -71,8 +71,70 @@ class Ledger {
  private:
   mutable std::mutex _send_ncc_mutex;
 
+  std::optional<messages::Hash>
+  new_missing_block(
+      const messages::TaggedBlock &tagged_block) {
+    if (tagged_block.branch() != messages::Branch::DETACHED) {
+      std::lock_guard lock(_missing_block_mutex);
+      _missing_blocks.erase(tagged_block.block().header().id());
+      return std::nullopt;
+    }
+
+    messages::TaggedBlock prev_tagged_block;
+    if (!get_block(tagged_block.block().header().previous_block_hash(),
+                   &prev_tagged_block, false)) {
+      std::lock_guard lock(_missing_block_mutex);
+      _missing_blocks.insert(tagged_block.block().header().id());
+      return tagged_block.block().header().previous_block_hash();
+    }
+
+    return new_missing_block(prev_tagged_block);
+  }
+
+ protected:
+  mutable std::recursive_mutex _missing_block_mutex;
+  MissingBlocks _missing_blocks;
+
  public:
   Ledger() {}
+
+  const MissingBlocks missing_blocks() {
+    std::lock_guard lock(_missing_block_mutex);
+    const auto copy = _missing_blocks;
+    return copy;
+  }
+
+  std::optional<messages::Hash>
+  new_missing_block(const messages::Block &block) {
+    messages::TaggedBlock tagged_block;
+    std::lock_guard lock(_missing_block_mutex);
+
+    if (!get_block(block.header().id(), &tagged_block, false)) {
+      // this is weird, we should receive a block if it not inserted
+      LOG_ERROR << "unknown new block " << block.header().id();
+      _missing_blocks.insert(block.header().id());
+      return block.header().id();
+    }
+    _missing_blocks.erase(block.header().id());
+    return new_missing_block(tagged_block);
+  }
+
+  std::optional<messages::Hash>
+  new_missing_block(const messages::World &world) {
+    if (!world.has_missing_block()) {
+      return std::nullopt;
+    }
+    messages::TaggedBlock tagged_block;
+
+    std::lock_guard lock(_missing_block_mutex);
+
+    if (!get_block(world.missing_block(), &tagged_block)) {
+      _missing_blocks.insert(world.missing_block());
+      return world.missing_block();
+    }
+    return new_missing_block(tagged_block);
+  }
+
   virtual messages::TaggedBlock get_main_branch_tip() const = 0;
   virtual bool set_main_branch_tip() = 0;
   virtual messages::BlockHeight height() const = 0;
@@ -104,9 +166,11 @@ class Ledger {
                          const messages::BranchPath &branch_path,
                          messages::TaggedBlock *tagged_block,
                          bool include_transactions = true) const = 0;
-  virtual std::vector<messages::TaggedBlock> get_blocks(
+  virtual messages::TaggedBlocks get_blocks(
       const messages::BlockHeight height, const messages::_KeyPub &author,
       bool include_transactions = true) const = 0;
+  virtual messages::TaggedBlocks get_blocks(
+      const messages::Branch name) const = 0;
   virtual bool insert_block(const messages::TaggedBlock &tagged_block) = 0;
   virtual bool insert_block(const messages::Block &block) = 0;
   virtual bool delete_block(const messages::BlockID &id) = 0;

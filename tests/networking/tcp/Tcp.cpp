@@ -1,12 +1,9 @@
-#include "networking/tcp/Tcp.hpp"
-#include "common.pb.h"
-#include "crypto/Ecc.hpp"
-#include "messages/Message.hpp"
-#include "messages/Peers.hpp"
-#include "networking/Networking.hpp"
-#include "networking/TransportLayer.hpp"
 #include <gtest/gtest.h>
 #include <src/messages/config/Config.hpp>
+
+#include "crypto/Ecc.hpp"
+#include "messages/Peers.hpp"
+#include "networking/tcp/Tcp.hpp"
 
 namespace neuro {
 namespace networking {

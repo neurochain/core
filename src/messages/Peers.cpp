@@ -1,5 +1,4 @@
 #include "messages/Peers.hpp"
-#include <tuple>
 
 namespace neuro {
 namespace messages {
@@ -47,7 +46,8 @@ std::size_t Peers::used_peers_count() const {
   long used_peers_count =
       std::count_if(_peers.begin(), _peers.end(), [](const auto &it) {
         const auto &peer = it.second;
-        auto connection_status = peer->status() & Peer::CONNECTED;
+        auto connection_status =
+            peer->status() & (Peer::CONNECTED | Peer::CONNECTING);
         return peer->has_status() && connection_status;
       });
   return used_peers_count;
@@ -114,7 +114,7 @@ void Peers::update_unreachable() {
   }
 }
 
-std::optional<Peer* > Peers::peer_by_port(const Port port) const {
+std::optional<Peer *> Peers::peer_by_port(const Port port) const {
   std::shared_lock<std::shared_mutex> lock(_mutex);
   for (auto &[_, peer] : _peers) {
     if (peer->port() == port) {
@@ -139,7 +139,7 @@ bool Peers::fill(_Peers *peers, uint8_t peer_count) {
   return true;
 }
 
-Peers::operator _Peers () const {
+Peers::operator _Peers() const {
   _Peers peers;
   for (const auto &[foo, peer] : _peers) {
     peers.add_peers()->CopyFrom(*peer.get());
@@ -154,6 +154,6 @@ std::ostream &operator<<(std::ostream &os, const Peers &peers) {
 
   return os;
 }
-  
+
 }  // namespace messages
 }  // namespace neuro

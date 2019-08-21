@@ -1,9 +1,14 @@
 #ifndef NEURO_SRC_TOOLING_SIMULATOR_HPP
 #define NEURO_SRC_TOOLING_SIMULATOR_HPP
 
+#include <cstdint>
+#include <memory>
+
 #include "consensus/Consensus.hpp"
 #include "crypto/Ecc.hpp"
 #include "ledger/LedgerMongodb.hpp"
+#include "messages.pb.h"
+#include "messages/NCCAmount.hpp"
 
 namespace neuro {
 namespace tooling {

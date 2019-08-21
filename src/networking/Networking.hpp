@@ -10,9 +10,9 @@
 #include "messages.pb.h"
 #include "messages/Queue.hpp"
 #include "messages/Subscriber.hpp"
+#include "networking/TransportLayer.hpp"
 #include "networking/tcp/Connection.hpp"
 #include "networking/tcp/Tcp.hpp"
-#include "networking/TransportLayer.hpp"
 
 namespace neuro {
 namespace networking {
@@ -39,7 +39,8 @@ class Networking {
   bool terminate(const Connection::ID id);
   Port listening_port() const;
   bool connect(messages::Peer *peer);
-  std::optional<messages::Peer*> find_peer(Connection::ID id);
+  std::optional<messages::Peer *> find_peer(Connection::ID id);
+  void clean_old_connections(int delta);
 };
 
 }  // namespace networking

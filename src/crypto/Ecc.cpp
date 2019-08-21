@@ -13,7 +13,7 @@
 #include "crypto/KeyPriv.hpp"
 namespace neuro {
 namespace crypto {
-  static constexpr std::size_t sign_length() { return KeyPriv::sign_length(); }
+static constexpr std::size_t sign_length() { return KeyPriv::sign_length(); }
 
 Ecc::Ecc()
     : _prng(std::make_shared<CryptoPP::AutoSeededRandomPool>()),

@@ -1,14 +1,6 @@
 #include "Bot.hpp"
-#include <cpr/cpr.h>
-#include <algorithm>
-
-#include <chrono>
-#include <cstdlib>
-#include <ctime>
-#include <random>
 #include "api/Rest.hpp"
 #include "common/logger.hpp"
-#include "common/types.hpp"
 #include "messages/Subscriber.hpp"
 
 namespace neuro {
@@ -27,13 +19,18 @@ Bot::Bot(const messages::config::Config &config,
       _ledger(std::make_shared<ledger::LedgerMongodb>(_config.database())),
       _update_timer(std::ref(*_io_context)),
       _consensus_config(consensus_config) {
-  LOG_DEBUG << this << " hello from bot " << _me.port() << " "
-            << _keys.at(0).key_pub() << std::endl
-            << _peers << std::endl;
 
   if (!init()) {
     throw std::runtime_error("Could not create bot from configuration file");
   }
+
+  LOG_DEBUG << this << " hello from bot " << _me.port() << " "
+            << _keys.at(0).key_pub() << std::endl
+	    << " cons " << _consensus.get() << std::endl
+	    << " net  " << &_networking << std::endl
+	    << " peers " << &_peers  << std::endl
+            << _peers << std::endl;
+  
 }
 
 Bot::Bot(const std::string &config_path)
@@ -49,13 +46,10 @@ void Bot::handler_get_block(const messages::Header &header,
   auto id = messages::fill_header_reply(header, header_reply);
 
   if (get_block.has_hash()) {
-    const auto previd = get_block.hash();
+    const auto id = get_block.hash();
     auto block = message->add_bodies()->mutable_block();
-    if (!_ledger->get_block_by_previd(previd, block)) {
-      std::stringstream sstr;  // TODO operator <<
-      sstr << previd;
-      LOG_ERROR << _me.port() << " get_block by prev id not found "
-                << sstr.str();
+    if (!_ledger->get_block(id, block)) {
+      LOG_ERROR << _me.port() << " get_block by prev id not found " << id;
       return;
     }
 
@@ -85,7 +79,7 @@ void Bot::handler_block(const messages::Header &header,
     LOG_WARNING << "Consensus rejected block";
     return;
   }
-  update_ledger();
+  update_ledger(_ledger->new_missing_block(body.block()));
 
   if (header.has_request_id()) {
     auto got = _request_ids.find(header.request_id());
@@ -108,32 +102,28 @@ void Bot::handler_transaction(const messages::Header &header,
   _consensus->add_transaction(body.transaction());
 }
 
-bool Bot::update_ledger() {
-  messages::BlockHeader last_header;
-  if (!_ledger->get_last_block_header(&last_header)) {
-    LOG_ERROR << "Ledger should have at least block0";
+bool Bot::update_ledger(const std::optional<messages::Hash> &missing_block) {
+  if (!missing_block) {
     return false;
-  }
-
-  // TODO #consensus change by height by time function
-  if ((std::time(nullptr) - last_header.timestamp().data()) <
-      _consensus->config().block_period) {
-    return true;
   }
 
   auto message = std::make_shared<messages::Message>();
   auto header = message->mutable_header();
   auto idheader = messages::fill_header(header);
 
-  const auto id = last_header.id();
-
   auto get_block = message->add_bodies()->mutable_get_block();
-  get_block->mutable_hash()->CopyFrom(id);
+  get_block->mutable_hash()->CopyFrom(*missing_block);
   get_block->set_count(1);
   _networking.send(message);
 
   _request_ids.insert(idheader);
   return false;
+}
+
+void Bot::update_ledger() {
+  for (const auto &missing_block : _ledger->missing_blocks()) {
+    update_ledger(missing_block);
+  }
 }
 
 void Bot::subscribe() {
@@ -221,9 +211,7 @@ bool Bot::init() {
 
   _consensus = std::make_shared<consensus::Consensus>(
       _ledger, _keys, _consensus_config,
-      [this](const messages::Block &block) {
-        publish_block(block);
-      });
+      [this](const messages::Block &block) { publish_block(block); });
 
   _io_context_thread = std::thread([this]() { _io_context->run(); });
 
@@ -236,7 +224,6 @@ bool Bot::init() {
     LOG_INFO << "api launched on : " << _config.rest().port();
   }
 
-  update_ledger();
   this->keep_max_connections();
 
   return true;
@@ -247,6 +234,7 @@ void Bot::regular_update() {
   update_peerlist();
   keep_max_connections();
   update_ledger();
+  _networking.clean_old_connections(_config.networking().keep_old_connection_time());
 
   if (_config.has_random_transaction() &&
       rand() < _config.random_transaction() * RAND_MAX) {
@@ -341,7 +329,6 @@ void Bot::handler_connection(const messages::Header &header,
   LOG_DEBUG << this << " It entered in handler_connection in bot " << body;
 
   auto connection_ready = body.connection_ready();
-
   if (connection_ready.from_remote()) {
     // Nothing to do; just wait for the hello message from remote peer
     return;
@@ -350,9 +337,11 @@ void Bot::handler_connection(const messages::Header &header,
   // send hello msg
   auto message = std::make_shared<messages::Message>();
   messages::fill_header_reply(header, message->mutable_header());
-
   auto hello = message->add_bodies()->mutable_hello();
   hello->mutable_peer()->CopyFrom(_me);
+
+  const auto tip = _ledger->get_main_branch_tip();
+  hello->mutable_tip()->CopyFrom(tip.block().header().id());
 
   if (!_networking.send_unicast(message)) {
     LOG_DEBUG << this << " : " << _me << " can't send hello message "
@@ -371,6 +360,15 @@ void Bot::handler_deconnection(const messages::Header &header,
                 << (*remote_peer)->port();
     }
     _networking.terminate(header.connection_id());
+  } else {
+    // peer didn't create a connection
+    if (body.connection_closed().has_peer()) {
+      auto peer = _peers.find(body.connection_closed().peer().key_pub());
+      if (peer) {
+        (*peer)->set_status(messages::Peer::UNREACHABLE);
+        LOG_DEBUG << _me.port() << " can't connect to " << (*peer)->port();
+      }
+    }
   }
 
   LOG_DEBUG << this << " " << __LINE__
@@ -395,6 +393,8 @@ void Bot::handler_world(const messages::Header &header,
   } else {
     (*remote_peer)->set_status(messages::Peer::CONNECTED);
   }
+
+  update_ledger(_ledger->new_missing_block(world));
 
   this->keep_max_connections();
 }
@@ -425,6 +425,9 @@ void Bot::handler_hello(const messages::Header &header,
   auto world = message->add_bodies()->mutable_world();
   auto peers = message->add_bodies()->mutable_peers();
   bool accepted = _peers.used_peers_count() < _max_incoming_connections;
+
+  const auto tip = _ledger->get_main_branch_tip();
+  world->mutable_missing_block()->CopyFrom(tip.block().header().id());
 
   // update peer status
   if (accepted) {

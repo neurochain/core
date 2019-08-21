@@ -1,21 +1,33 @@
 #ifndef NEURO_SRC_LEDGERMONGODB_HPP
 #define NEURO_SRC_LEDGERMONGODB_HPP
 
-#include <mutex>
-
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
+#include <cstdint>
+#include <mutex>
+
+#include "bsoncxx/document/view_or_value.hpp"
+#include "common.pb.h"
 #include "common/types.hpp"
 #include "config.pb.h"
+#include "consensus.pb.h"
 #include "ledger/Ledger.hpp"
 #include "ledger/mongo.hpp"
 #include "messages.pb.h"
+#include "messages/Message.hpp"
 #include "messages/config/Database.hpp"
+#include "mongocxx/client.hpp"
+#include "mongocxx/collection.hpp"
+#include "mongocxx/cursor.hpp"
+#include "mongocxx/database.hpp"
+#include "mongocxx/instance.hpp"
+#include "mongocxx/options/find.hpp"
+#include "mongocxx/uri.hpp"
 
 namespace neuro {
 namespace tooling {
-class Simulator;
 class RealtimeSimulator;
+class Simulator;
 }  // namespace tooling
 
 namespace ledger {
@@ -45,7 +57,7 @@ class LedgerMongodb : public Ledger {
 
   messages::TaggedBlock _main_branch_tip;
 
-  mongocxx::options::find remove_OID() const;
+  static mongocxx::options::find remove_OID();
 
   mongocxx::options::find projection(const std::string &field) const;
 
@@ -73,6 +85,9 @@ class LedgerMongodb : public Ledger {
                  messages::TaggedBlock *tagged_block,
                  bool include_transactions = true) const;
 
+  messages::TaggedBlocks get_blocks(mongocxx::cursor &cursor,
+                                    bool include_transactions) const;
+
   messages::BranchID new_branch_id() const;
 
   bool set_branch_path(const messages::BlockHeader &block_header,
@@ -94,6 +109,10 @@ class LedgerMongodb : public Ledger {
   void add_transaction_to_balances(
       std::unordered_map<messages::_KeyPub, BalanceChange> *balance_changes,
       const messages::Transaction &transaction);
+
+  mongocxx::cursor find(
+      mongocxx::collection &collection, bsoncxx::document::view_or_value filter,
+      const mongocxx::options::find &options = remove_OID()) const;
 
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);
@@ -255,9 +274,10 @@ class LedgerMongodb : public Ledger {
                            const messages::BlockHeight &max_block_height,
                            const messages::BranchPath &branch_path) const;
 
-  std::vector<messages::TaggedBlock> get_blocks(
-      const messages::BlockHeight height, const messages::_KeyPub &author,
-      bool include_transactions = true) const;
+  messages::TaggedBlocks get_blocks(const messages::BlockHeight height,
+                                    const messages::_KeyPub &author,
+                                    bool include_transactions = true) const;
+  messages::TaggedBlocks get_blocks(const messages::Branch name) const;
 
   void add_double_mining(
       const std::vector<messages::TaggedBlock> &tagged_blocks);

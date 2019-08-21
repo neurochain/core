@@ -1,8 +1,6 @@
-#include "networking/tcp/Connection.hpp"
 #include <gtest/gtest.h>
-#include <src/messages/config/Config.hpp>
 
-#include "src/messages/Queue.hpp"
+#include "networking/tcp/Connection.hpp"
 
 namespace neuro {
 namespace networking {

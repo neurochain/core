@@ -1,9 +1,7 @@
 #include <gtest/gtest.h>
 #include <src/messages/config/Config.hpp>
-#include <typeinfo>
 
 #include "crypto/Ecc.hpp"
-#include "messages.pb.h"
 #include "src/messages/Peers.hpp"
 
 namespace neuro {
@@ -70,7 +68,7 @@ TEST_F(PeersF, pick) {
   (*new_peer1)->set_status(Peer::CONNECTED);
   (*new_peer2)->set_status(Peer::CONNECTING);
 
-  ASSERT_EQ(peers.used_peers_count(), 1);
+  ASSERT_EQ(peers.used_peers_count(), 2);
   const auto used_peers = peers.used_peers();
   ASSERT_EQ(used_peers.size(), 2);
 

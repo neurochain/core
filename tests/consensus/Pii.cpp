@@ -1,6 +1,8 @@
-#include "consensus/Pii.hpp"
 #include <gtest/gtest.h>
+
+#include "consensus/Pii.hpp"
 #include "ledger/LedgerMongodb.hpp"
+#include "messages/NCCAmount.hpp"
 #include "tooling/Simulator.hpp"
 
 namespace neuro {
