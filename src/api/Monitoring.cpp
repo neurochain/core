@@ -103,8 +103,8 @@ messages::Status Monitoring::complete_status() const {
   auto *chain_status = status.mutable_blockchain();
   chain_status->set_last_block_ts(last_block_ts());
   chain_status->set_current_height(current_height());
-  chain_status->set_mined_block(_bot.ledger()->total_nb_blocks());
-  chain_status->set_transaction_count(_bot.ledger()->total_nb_transactions());
+  chain_status->set_mined_block(_bot->ledger()->total_nb_blocks());
+  chain_status->set_transaction_count(_bot->ledger()->total_nb_transactions());
   status.mutable_bot()->CopyFrom(resource_usage());
   status.mutable_fs()->CopyFrom(filesystem_usage());
   status.mutable_peer()->CopyFrom(peer_count());
