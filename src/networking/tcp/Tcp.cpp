@@ -242,7 +242,6 @@ std::optional<tcp::Connection *> Tcp::find(const Connection::ID id) const {
 }
 
 bool Tcp::send_unicast(std::shared_ptr<messages::Message> message) const {
-  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   if (_stopped || !message->header().has_connection_id()) {
     LOG_WARNING << "not sending message " << _stopped;
     return false;
