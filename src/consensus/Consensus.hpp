@@ -1,8 +1,6 @@
 #ifndef NEURO_SRC_CONSENSUS_CONSENSUS_HPP
 #define NEURO_SRC_CONSENSUS_CONSENSUS_HPP
 
-#include <bits/std_function.h>
-#include <bits/stdint-uintn.h>
 #include <atomic>
 #include <cstdint>
 #include <memory>

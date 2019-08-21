@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <bits/stdint-uintn.h>
 
 #include "common.pb.h"
 #include "consensus.pb.h"

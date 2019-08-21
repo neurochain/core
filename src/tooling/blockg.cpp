@@ -1,9 +1,5 @@
-#include <bits/stdint-uintn.h>
 #include <sys/stat.h>
-#include <boost/preprocessor/seq/enum.hpp>
-#include <boost/preprocessor/seq/size.hpp>
 #include <boost/program_options.hpp>
-#include <cstdint>
 
 #include "common/logger.hpp"
 #include "messages/Message.hpp"

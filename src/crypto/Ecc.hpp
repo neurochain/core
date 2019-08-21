@@ -1,7 +1,6 @@
 #ifndef NEURO_SRC_CRYPTO_ECC_HPP
 #define NEURO_SRC_CRYPTO_ECC_HPP
 
-#include <bits/stdint-uintn.h>
 #include <cstdint>
 #include <memory>
 

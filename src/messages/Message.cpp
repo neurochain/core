@@ -1,6 +1,4 @@
 #include <google/protobuf/util/json_util.h>
-#include <boost/preprocessor/seq/enum.hpp>
-#include <boost/preprocessor/seq/size.hpp>
 
 #include "common/logger.hpp"
 #include "messages/Hasher.hpp"
@@ -74,8 +72,7 @@ void to_json(const Packet &packet, std::string *output) {
       throw std::runtime_error("Could not parse packet");
     }
     buff->save("crashing.proto");
-    LOG_ERROR << "Could not to_json packet " << buff->size()
-              << boost::stacktrace::stacktrace() << std::endl;
+    LOG_TRACE << "Could not to_json packet " << buff->size();
     throw;
   }
 }

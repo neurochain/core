@@ -2,6 +2,7 @@
 #define NEURO_SRC_API_MONITORING_HPP
 
 #include <chrono>
+#include <messages/Message.hpp>
 #include "rest.pb.h"
 
 namespace neuro {
@@ -16,10 +17,10 @@ class Monitoring {
   const TimePoint _starting_time = std::chrono::system_clock::now();
 
  public:
-  Monitoring(Bot* bot);
-  double uptime() const;
+  explicit Monitoring(Bot* bot);
+  std::chrono::seconds::rep uptime() const;
   std::time_t last_block_ts() const;
-  int current_height() const;
+  messages::BlockHeight current_height() const;
   uint32_t nb_blocks_since(std::time_t duration_in_s) const;
   uint32_t nb_transactions_since(std::time_t duration_in_s) const;
   uint32_t nb_blocks_1h() const;

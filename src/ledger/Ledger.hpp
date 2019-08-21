@@ -15,7 +15,7 @@ namespace ledger {
 class Ledger {
  public:
   using Functor = std::function<bool(const messages::TaggedTransaction &)>;
-  using Tips = std::unordered_set<messages::BlockID>;
+  using MissingBlocks = std::unordered_set<messages::BlockID>;
   struct MainBranchTip {
     messages::TaggedBlock main_branch_tip;
     bool updated;
@@ -71,65 +71,68 @@ class Ledger {
  private:
   mutable std::mutex _send_ncc_mutex;
 
-  std::optional<messages::Hash> new_tip(
+  std::optional<messages::Hash>
+  new_missing_block(
       const messages::TaggedBlock &tagged_block) {
     if (tagged_block.branch() != messages::Branch::DETACHED) {
-      std::lock_guard lock(_tip_mutex);
-      _tips.erase(tagged_block.block().header().id());
+      std::lock_guard lock(_missing_block_mutex);
+      _missing_blocks.erase(tagged_block.block().header().id());
       return std::nullopt;
     }
 
     messages::TaggedBlock prev_tagged_block;
     if (!get_block(tagged_block.block().header().previous_block_hash(),
                    &prev_tagged_block, false)) {
-      std::lock_guard lock(_tip_mutex);
-      _tips.insert(tagged_block.block().header().id());
+      std::lock_guard lock(_missing_block_mutex);
+      _missing_blocks.insert(tagged_block.block().header().id());
       return tagged_block.block().header().previous_block_hash();
     }
 
-    return new_tip(prev_tagged_block);
+    return new_missing_block(prev_tagged_block);
   }
 
  protected:
-  mutable std::recursive_mutex _tip_mutex;
-  Tips _tips;
+  mutable std::recursive_mutex _missing_block_mutex;
+  MissingBlocks _missing_blocks;
 
  public:
   Ledger() {}
 
-  const Tips tips() {
-    std::lock_guard lock(_tip_mutex);
-    const auto copy = _tips;
+  const MissingBlocks missing_blocks() {
+    std::lock_guard lock(_missing_block_mutex);
+    const auto copy = _missing_blocks;
     return copy;
   }
 
-  std::optional<messages::Hash> new_tip(const messages::Block &block) {
+  std::optional<messages::Hash>
+  new_missing_block(const messages::Block &block) {
     messages::TaggedBlock tagged_block;
-    std::lock_guard lock(_tip_mutex);
+    std::lock_guard lock(_missing_block_mutex);
 
     if (!get_block(block.header().id(), &tagged_block, false)) {
       // this is weird, we should receive a block if it not inserted
-      LOG_ERROR << "trax> new block unknown " << block.header().id().data();
-      _tips.insert(block.header().id());
+      LOG_ERROR << "unknown new block " << block.header().id();
+      _missing_blocks.insert(block.header().id());
       return block.header().id();
     }
-    _tips.erase(block.header().id());
-    return new_tip(tagged_block);
+    _missing_blocks.erase(block.header().id());
+    return new_missing_block(tagged_block);
   }
 
-  std::optional<messages::Hash> new_tip(const messages::World &world) {
-    if (!world.has_tip()) {
+  std::optional<messages::Hash>
+  new_missing_block(const messages::World &world) {
+    if (!world.has_missing_block()) {
       return std::nullopt;
     }
     messages::TaggedBlock tagged_block;
 
-    std::lock_guard lock(_tip_mutex);
+    std::lock_guard lock(_missing_block_mutex);
 
-    if (!get_block(world.tip(), &tagged_block)) {
-      _tips.insert(world.tip());
-      return world.tip();
+    if (!get_block(world.missing_block(), &tagged_block)) {
+      _missing_blocks.insert(world.missing_block());
+      return world.missing_block();
     }
-    return new_tip(tagged_block);
+    return new_missing_block(tagged_block);
   }
 
   virtual messages::TaggedBlock get_main_branch_tip() const = 0;
@@ -385,9 +388,10 @@ class Ledger {
     return messages::NCCAmount(last_balance.value());
   }
 
+  template<class Outputs>
   messages::Transaction build_transaction(
       const messages::_KeyPub &sender,
-      const std::vector<messages::Output> &outputs,
+      const Outputs &outputs,
       const std::optional<messages::NCCAmount> &fees = {}) const {
     messages::Transaction transaction;
 
@@ -418,8 +422,6 @@ class Ledger {
       const messages::_KeyPub &recipient_key_pub,
       const messages::NCCAmount &amount,
       const std::optional<messages::NCCAmount> &fees = {}) const {
-    messages::Transaction transaction;
-
     auto outputs = std::vector<messages::Output>{1};
     auto output = &outputs[0];
     output->mutable_key_pub()->CopyFrom(recipient_key_pub);

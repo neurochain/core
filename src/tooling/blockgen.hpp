@@ -1,8 +1,6 @@
 #ifndef NEURO_SRC_BLOCKGEN_HPP
 #define NEURO_SRC_BLOCKGEN_HPP
 
-#include <bits/stdint-intn.h>
-#include <bits/stdint-uintn.h>
 #include <boost/program_options.hpp>
 #include <boost/program_options/value_semantic.hpp>
 #include <cstdint>

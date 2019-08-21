@@ -1,7 +1,5 @@
 #include <assert.h>
 #include <mpreal.h>
-#include <boost/preprocessor/seq/enum.hpp>
-#include <boost/preprocessor/seq/size.hpp>
 
 #include "bsoncxx/builder/basic/array.hpp"
 #include "bsoncxx/builder/stream/document.hpp"
@@ -242,9 +240,12 @@ void LedgerMongodb::create_indexes() {
   _blocks.create_index(bss::document{} << BRANCH << 1 << bss::finalize);
   _blocks.create_index(bss::document{} << BRANCH_PATH + "." + BRANCH_IDS + ".0"
                                        << 1 << bss::finalize);
-  _blocks.create_index(bss::document{} << BLOCK + "." + SCORE << 1
-                                       << bss::finalize);
+  _blocks.create_index(bss::document{} << SCORE << -1 << bss::finalize);
   _blocks.create_index(bss::document{} << DENUNCIATIONS + "." + ID << 1
+                                       << bss::finalize);
+  _blocks.create_index(bss::document{} << BALANCES + "." + KEY_PUB << -1
+                                       << BRANCH_PATH + "." + BRANCH_ID << -1
+                                       << BRANCH_PATH + "." + BLOCK_NUMBER << -1
                                        << bss::finalize);
   _transactions.create_index(bss::document{} << TRANSACTION + "." + ID << 1
                                              << bss::finalize);
@@ -266,11 +267,6 @@ void LedgerMongodb::create_indexes() {
                                            << bss::finalize);
   _assemblies.create_index(bss::document{} << FINISHED_COMPUTATION << 1
                                            << bss::finalize);
-  _assemblies.create_index(bss::document{}
-                           << BALANCES + "." + KEY_PUB << -1
-                           << BRANCH_PATH + "." + BRANCH_ID << -1
-                           << BRANCH_PATH + "." + BLOCK_NUMBER << -1
-                           << bss::finalize);
 }
 
 void LedgerMongodb::init_database(const messages::Block &block0) {
@@ -615,7 +611,7 @@ bool LedgerMongodb::insert_block(const messages::TaggedBlock &tagged_block) {
     // The block already exists
     LOG_INFO << "Failed to insert block " << tagged_block.block().header().id()
              << " it already exists";
-    _tips.erase(tagged_block.block().header().id());
+    _missing_blocks.erase(tagged_block.block().header().id());
     return false;
   }
 
@@ -1685,11 +1681,13 @@ bool LedgerMongodb::add_balances(messages::TaggedBlock *tagged_block) {
     balance->set_enthalpy_begin(enthalpy.toString());
 
     // Enthalpy decreases if coins were sent away
-    Double balance_ratio = balance->value().value() - change.negative;
-    balance_ratio /= balance->value().value();
-    balance_ratio = mpfr::fmax(0, balance_ratio);
-    enthalpy *= balance_ratio;
-    balance->set_enthalpy_end(enthalpy.toString());
+    if (balance->value().value() > 0) {
+      Double balance_ratio = balance->value().value() - change.negative;
+      balance_ratio /= balance->value().value();
+      balance_ratio = mpfr::fmax(0, balance_ratio);
+      enthalpy *= balance_ratio;
+      balance->set_enthalpy_end(enthalpy.toString());
+    }
 
     Double new_balance =
         Double{balance->value().value()} + change.positive - change.negative;

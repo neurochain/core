@@ -1,8 +1,6 @@
 #include <assert.h>
 #include <boost/asio/impl/io_context.ipp>
 #include <boost/asio/ip/tcp.hpp>
-#include <boost/preprocessor/seq/enum.hpp>
-#include <boost/preprocessor/seq/size.hpp>
 #include <boost/system/error_code.hpp>
 
 #include "common/logger.hpp"
@@ -159,14 +157,11 @@ bool Tcp::terminate(const Connection::ID id) {
 }
 
 std::optional<messages::Peer *> Tcp::find_peer(const Connection::ID id) {
-  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
-  auto got = _connections.find(id);
-  if (got == _connections.end()) {
+  auto connection = find(id);
+  if (!connection) {
     return std::nullopt;
   }
-
-  auto &connection = got->second;
-  auto remote_peer = connection->remote_peer();
+  auto remote_peer = (*connection)->remote_peer();
   return _peers->find(remote_peer.key_pub());
 }
 
@@ -216,14 +211,9 @@ TransportLayer::SendResult Tcp::send(
 
   uint16_t res_count = 0;
   for (auto &[_, connection] : _connections) {
-    // if (connection->remote_peer().status() != messages::Peer::CONNECTED) {
-    //   LOG_TRACE << "not senting " << connection->remote_peer();
-    //   continue;
-    // }
     bool res_send = true;
     res_send &= connection->send(header_tcp);
     res_send &= connection->send(body_tcp);
-    LOG_TRACE << "senting message " << connection->remote_peer();
     if (res_send) {
       res_count++;
     }
@@ -232,7 +222,7 @@ TransportLayer::SendResult Tcp::send(
   SendResult res;
   if (res_count == 0) {
     res = SendResult::FAILED;
-  } else if (res_count == _connections.size()) {
+  } else if (res_count != _connections.size()) {
     res = SendResult::FAILED;
   } else {
     res = SendResult::ALL_GOOD;
@@ -241,8 +231,8 @@ TransportLayer::SendResult Tcp::send(
   return res;
 }
 
-std::optional<tcp::Connection *> Tcp::connection(
-    const Connection::ID id) const {
+std::optional<tcp::Connection *> Tcp::find(const Connection::ID id) const {
+  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   auto got = _connections.find(id);
   if (got == _connections.end()) {
     return std::nullopt;
@@ -252,13 +242,12 @@ std::optional<tcp::Connection *> Tcp::connection(
 }
 
 bool Tcp::send_unicast(std::shared_ptr<messages::Message> message) const {
-  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   if (_stopped || !message->header().has_connection_id()) {
     LOG_WARNING << "not sending message " << _stopped;
     return false;
   }
 
-  const auto connection_opt = connection(message->header().connection_id());
+  const auto connection_opt = find(message->header().connection_id());
   if (!connection_opt) {
     LOG_WARNING << "not sending message because could not find connection";
     return false;

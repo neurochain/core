@@ -1,7 +1,6 @@
 #ifndef NEURO_SRC_TOOLING_FULL_SIMULATOR_HPP
 #define NEURO_SRC_TOOLING_FULL_SIMULATOR_HPP
 
-#include <bits/stdint-intn.h>
 #include <Bot.hpp>
 #include <cstdint>
 

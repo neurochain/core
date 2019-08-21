@@ -71,6 +71,7 @@ message Networking {
   repeated Keys keys = 5;
   optional int32 connecting_next_update_time = 6 [default = 3];
   optional int32 default_next_update_time = 7 [default = 7];
+  optional int32 keep_old_connection_time = 8 [default = 11];
 }
 
 message _Config {

@@ -1,6 +1,3 @@
-#include <boost/preprocessor/seq/enum.hpp>
-#include <boost/preprocessor/seq/size.hpp>
-
 #include "KeyPub.hpp"
 #include "common/Buffer.hpp"
 #include "common/logger.hpp"

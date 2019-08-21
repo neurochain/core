@@ -1,6 +1,3 @@
-#include <boost/preprocessor/seq/enum.hpp>
-#include <boost/preprocessor/seq/size.hpp>
-
 #include "Queue.hpp"
 #include "common/logger.hpp"
 #include "messages/Queue.hpp"

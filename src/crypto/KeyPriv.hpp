@@ -1,7 +1,6 @@
 #ifndef NEURO_SRC_CRYPTO_KEYPRIV_HPP
 #define NEURO_SRC_CRYPTO_KEYPRIV_HPP
 
-#include <bits/stdint-uintn.h>
 #include <cryptopp/eccrypto.h>
 #include <cryptopp/integer.h>
 #include <cstdint>

@@ -2,7 +2,7 @@
 #include <rest.pb.h>
 #include <sys/resource.h>
 #include <sys/statfs.h>
-#include <sys/time.h>
+#include <ctime>
 #include "Bot.hpp"
 
 namespace neuro {
@@ -13,9 +13,10 @@ using Statfs = struct statfs;
 
 Monitoring::Monitoring(Bot *bot) : _bot(bot) {}
 
-double Monitoring::uptime() const {
-  auto now = std::chrono::system_clock::now();
-  std::chrono::duration<double> diff = now - _starting_time;
+std::chrono::seconds::rep Monitoring::uptime() const {
+  using namespace std::chrono;
+  auto now = system_clock::now();
+  auto diff = now - _starting_time;
   return diff.count();
 }
 
@@ -29,13 +30,8 @@ std::time_t Monitoring::last_block_ts() const {
   return last_block.header().timestamp().data();
 }
 
-int Monitoring::current_height() const {
-  auto last_blocks = _bot->ledger()->get_last_blocks(1);
-  if (last_blocks.empty()) {
-    return 0;
-  }
-  const auto last_block = last_blocks[0];
-  return last_block.header().height();
+messages::BlockHeight Monitoring::current_height() const {
+  return _bot->ledger()->height();
 }
 
 uint32_t Monitoring::nb_blocks_since(const std::time_t since) const {
@@ -125,7 +121,7 @@ messages::Status::Bot Monitoring::resource_usage() const {
   getrusage(RUSAGE_SELF, &usage);
 
   auto current_uptime = uptime();
-  bot.set_uptime(static_cast<int>(current_uptime));
+  bot.set_uptime(current_uptime);
   bot.set_utime(usage.ru_utime.tv_sec);
   bot.set_stime(usage.ru_stime.tv_sec);
   double vtime = usage.ru_utime.tv_sec + usage.ru_stime.tv_sec;
@@ -183,15 +179,18 @@ messages::Status::PeerCount Monitoring::peer_count() const {
 
 messages::Status Monitoring::complete_status() const {
   messages::Status status;
-  status.mutable_blockchain()->set_last_block_ts(last_block_ts());
-  status.mutable_blockchain()->set_current_height(current_height());
-  status.mutable_blockchain()->set_nb_blocks_5m(nb_blocks_5m());
-  status.mutable_blockchain()->set_nb_blocks_1h(nb_blocks_1h());
-  status.mutable_blockchain()->set_nb_transactions_5m(nb_transactions_5m());
-  status.mutable_blockchain()->set_nb_transactions_1h(nb_transactions_1h());
-  status.mutable_blockchain()->set_average_block_propagation_5m(
+  auto *chain_status = status.mutable_blockchain();
+  chain_status->set_last_block_ts(last_block_ts());
+  chain_status->set_current_height(current_height());
+  chain_status->set_mined_block(_bot->ledger()->total_nb_blocks());
+  chain_status->set_transaction_count(_bot->ledger()->total_nb_transactions());
+  chain_status->set_nb_blocks_5m(nb_blocks_5m());
+  chain_status->set_nb_blocks_1h(nb_blocks_1h());
+  chain_status->set_nb_transactions_5m(nb_transactions_5m());
+  chain_status->set_nb_transactions_1h(nb_transactions_1h());
+  chain_status->set_average_block_propagation_5m(
       average_block_propagation_5m());
-  status.mutable_blockchain()->set_average_block_propagation_1h(
+  chain_status->set_average_block_propagation_1h(
       average_block_propagation_1h());
   status.mutable_bot()->CopyFrom(resource_usage());
   status.mutable_fs()->CopyFrom(filesystem_usage());

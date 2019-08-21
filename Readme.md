@@ -88,7 +88,7 @@ ninja install
 
 
 # install bot
-cv $NCC_WORKDIR
+cd $NCC_WORKDIR
 git clone --branch feature/ledger https://gitlab.com/neurochaintech/core.git
 cd core
 mkdir build
