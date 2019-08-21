@@ -10,6 +10,12 @@ message Status {
     optional uint32 current_height = 2;
     optional uint32 mined_block = 3;
     optional uint32 transaction_count = 4;
+    optional int32 nb_blocks_5m = 5;
+    optional int32 nb_blocks_1h = 6;
+    optional int32 nb_transactions_5m = 7;
+    optional int32 nb_transactions_1h = 8;
+    optional float average_block_propagation_5m = 9;
+    optional float average_block_propagation_1h = 10;
   }
 
   message Bot {
