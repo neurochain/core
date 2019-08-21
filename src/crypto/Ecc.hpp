@@ -44,6 +44,8 @@ class Ecc {
 
   bool operator==(const Ecc &ecc) const;
 
+  bool operator!=(const Ecc &ecc) const;
+
   bool save(const std::string &filepath_private,
             const std::string &filepath_public) const;
   Buffer sign(const Buffer &input);

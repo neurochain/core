@@ -136,8 +136,8 @@ void Rest::get_create_transaction(const Request &req, Response res) {
 
   auto fees = req.param(":fees").as<std::size_t>();
 
-  const auto transaction =
-      build_transaction(body.key_pub(), body.outputs(), fees);
+  const auto transaction = build_transaction(body.key_pub(), body.outputs(),
+                                             messages::NCCAmount(fees));
 
   const auto transaction_opt = messages::to_buffer(transaction);
   if (!transaction_opt) {

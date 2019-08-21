@@ -71,8 +71,7 @@ class Ledger {
  private:
   mutable std::mutex _send_ncc_mutex;
 
-  std::optional<messages::Hash>
-  new_missing_block(
+  std::optional<messages::Hash> new_missing_block(
       const messages::TaggedBlock &tagged_block) {
     if (tagged_block.branch() != messages::Branch::DETACHED) {
       std::lock_guard lock(_missing_block_mutex);
@@ -104,8 +103,8 @@ class Ledger {
     return copy;
   }
 
-  std::optional<messages::Hash>
-  new_missing_block(const messages::Block &block) {
+  std::optional<messages::Hash> new_missing_block(
+      const messages::Block &block) {
     messages::TaggedBlock tagged_block;
     std::lock_guard lock(_missing_block_mutex);
 
@@ -119,8 +118,8 @@ class Ledger {
     return new_missing_block(tagged_block);
   }
 
-  std::optional<messages::Hash>
-  new_missing_block(const messages::World &world) {
+  std::optional<messages::Hash> new_missing_block(
+      const messages::World &world) {
     if (!world.has_missing_block()) {
       return std::nullopt;
     }
@@ -230,6 +229,9 @@ class Ledger {
                                  std::vector<messages::Pii> *piis) = 0;
 
   virtual bool get_assembly(const messages::AssemblyID &assembly_id,
+                            messages::Assembly *assembly) const = 0;
+
+  virtual bool get_assembly(const messages::AssemblyHeight &height,
                             messages::Assembly *assembly) const = 0;
 
   virtual bool add_assembly(const messages::TaggedBlock &tagged_block,
@@ -371,7 +373,7 @@ class Ledger {
     auto blocks = std::vector<messages::Block>{block};
     for (uint32_t i = 0; i < nb_blocks - 1; i++) {
       messages::BlockID previous_hash = block.header().previous_block_hash();
-      if (previous_hash.data().size() == 0) {
+      if (previous_hash.data().empty()) {
         break;
       }
       if (get_block(previous_hash, &block)) {
@@ -388,10 +390,9 @@ class Ledger {
     return messages::NCCAmount(last_balance.value());
   }
 
-  template<class Outputs>
+  template <class Outputs>
   messages::Transaction build_transaction(
-      const messages::_KeyPub &sender,
-      const Outputs &outputs,
+      const messages::_KeyPub &sender, const Outputs &outputs,
       const std::optional<messages::NCCAmount> &fees = {}) const {
     messages::Transaction transaction;
 
@@ -434,12 +435,15 @@ class Ledger {
       const crypto::KeyPriv &sender_key_priv,
       const messages::_KeyPub &recipient_key_pub, const float ratio_to_send,
       const std::optional<messages::NCCAmount> &fees = {}) const {
-    assert(ratio_to_send <= 1);
+    if (ratio_to_send > 1 || ratio_to_send < 0) {
+      throw std::runtime_error("Cannot send_ncc with a ratio of " +
+                               std::to_string(ratio_to_send));
+    }
     std::lock_guard<std::mutex> lock(_send_ncc_mutex);
     const auto sender_key_pub = sender_key_priv.make_key_pub();
 
-    messages::NCCValue amount_to_send =
-        balance(sender_key_pub).value() * ratio_to_send;
+    auto amount_to_send =
+        messages::NCCAmount(balance(sender_key_pub).value() * ratio_to_send);
 
     auto transaction = build_transaction(sender_key_pub, recipient_key_pub,
                                          amount_to_send, fees);

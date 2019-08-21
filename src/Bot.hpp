@@ -102,9 +102,9 @@ class Bot {
   void update_peerlist();
 
  public:
-  Bot(const messages::config::Config &config,
+  explicit Bot(const messages::config::Config &config,
       const consensus::Config &consensus_config = consensus::Config());
-  Bot(const std::string &config_path);
+  explicit Bot(const std::string &config_path);
   Bot(const Bot &) = delete;
 
   void join();

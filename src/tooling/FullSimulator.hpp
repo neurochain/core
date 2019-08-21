@@ -15,17 +15,17 @@ namespace neuro {
 namespace tooling {
 
 const consensus::Config default_consensus_config{
-    5,       // blocks_per_assembly
-    10,      // members_per_assembly
-    1,       // block_period
-    100,     // block_reward
-    128000,  // max_block_size
-    1s,      // update_heights_sleep
-    1s,      // compute_pii_sleep
-    100ms,   // miner_sleep
-    1,       // integrity_block_reward
-    -40,     // integrity_double_mining
-    1        // integrity_denunciation_reward
+    5,                         // blocks_per_assembly
+    10,                        // members_per_assembly
+    1,                         // block_period
+    messages::NCCAmount(100),  // block_reward
+    128000,                    // max_block_size
+    1s,                        // update_heights_sleep
+    1s,                        // compute_pii_sleep
+    100ms,                     // miner_sleep
+    1,                         // integrity_block_reward
+    -40,                       // integrity_double_mining
+    1                          // integrity_denunciation_reward
 };
 
 class FullSimulator {

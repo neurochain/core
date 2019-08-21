@@ -39,14 +39,14 @@ Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
 }
 
 bool Consensus::check_outputs(
-    const messages::TaggedTransaction tagged_transaction) const {
+    const messages::TaggedTransaction &tagged_transaction) const {
   messages::TaggedBlock tip;
   if (tagged_transaction.has_block_id()) {
     if (!_ledger->get_block(tagged_transaction.block_id(), &tip, false)) {
       LOG_INFO << "Failed check_output for transaction "
                << tagged_transaction.transaction().id();
       return false;
-    };
+    }
   } else {
     tip = _ledger->get_main_branch_tip();
   }
@@ -195,7 +195,6 @@ bool Consensus::check_block_id(
   auto mutable_tagged_block = tagged_block;
   auto block = mutable_tagged_block.mutable_block();
   const auto block_id = block->header().id();
-  const auto author = block->header().author();
   messages::set_block_hash(block);
 
   if (!block->header().has_id()) {
@@ -203,7 +202,12 @@ bool Consensus::check_block_id(
     return false;
   }
 
-  return block->header().id() == block_id;
+  if (block->header().id() != block_id) {
+    LOG_INFO << "Failed check_block_id the block id is " << block_id
+             << " but rehashing gave " << block->header().id();
+    return false;
+  }
+  return true;
 }
 
 bool Consensus::is_unexpired(const messages::Transaction &transaction,
@@ -286,9 +290,7 @@ bool Consensus::check_block_size(
   return result;
 }
 
-bool Consensus::check_transactions_order(
-    const messages::TaggedBlock &tagged_block) const {
-  const auto &block = tagged_block.block();
+bool Consensus::check_transactions_order(const messages::Block &block) const {
   std::vector<std::string> transaction_ids;
   for (const auto &transaction : block.transactions()) {
     transaction_ids.push_back(messages::to_json(transaction.id()));
@@ -303,6 +305,12 @@ bool Consensus::check_transactions_order(
              << block.header().id();
   }
   return result;
+}
+
+bool Consensus::check_transactions_order(
+    const messages::TaggedBlock &tagged_block) const {
+  const auto &block = tagged_block.block();
+  return check_transactions_order(block);
 }
 
 bool Consensus::check_block_height(
@@ -552,12 +560,10 @@ bool Consensus::is_valid(
     const messages::TaggedTransaction &tagged_transaction) const {
   if (tagged_transaction.is_coinbase()) {
     return check_id(tagged_transaction) && check_coinbase(tagged_transaction);
-  } else {
-    return check_id(tagged_transaction) &&
-           check_signatures(tagged_transaction) &&
-           check_double_inputs(tagged_transaction) &&
-           check_outputs(tagged_transaction);
   }
+  return check_id(tagged_transaction) && check_signatures(tagged_transaction) &&
+         check_double_inputs(tagged_transaction) &&
+         check_outputs(tagged_transaction);
 }
 
 bool Consensus::is_valid(const messages::TaggedBlock &tagged_block) const {
@@ -593,8 +599,11 @@ bool Consensus::add_double_mining(const messages::Block &block) {
 }
 
 bool Consensus::add_block(const messages::Block &block) {
-  return _ledger->insert_block(block) && verify_blocks() &&
-         _ledger->update_main_branch() && add_double_mining(block);
+  // Check the transactions order before inserting because the order is lost at
+  // insertion
+  return check_transactions_order(block) && _ledger->insert_block(block) &&
+         verify_blocks() && _ledger->update_main_branch() &&
+         add_double_mining(block);
 }
 
 void Consensus::start_compute_pii_thread() {
@@ -604,7 +613,7 @@ void Consensus::start_compute_pii_thread() {
       while (!_stop_compute_pii) {
         std::vector<messages::Assembly> assemblies;
         _ledger->get_assemblies_to_compute(&assemblies);
-        if (assemblies.size() > 0) {
+        if (!assemblies.empty()) {
           compute_assembly_pii(assemblies[0]);
           cleanup_expired_transactions();
         } else {
@@ -653,7 +662,7 @@ bool Consensus::compute_assembly_pii(const messages::Assembly &assembly) {
     LOG_WARNING << "During Pii computation failed to set seed for assembly "
                 << assembly.id();
     return false;
-  };
+  }
 
   // Add the integrity before the pii because it is used in the pii computations
   for (const auto &[key_pub, score] : integrities.scores()) {
@@ -662,7 +671,7 @@ bool Consensus::compute_assembly_pii(const messages::Assembly &assembly) {
   }
 
   auto piis = pii.get_key_pubs_pii(assembly.height(), branch_path);
-  if (piis.size() == 0) {
+  if (piis.empty()) {
     LOG_INFO << "There were no transactions during the assembly "
              << assembly.id()
              << " we will therefore use the piis of the previous assembly";
@@ -678,20 +687,20 @@ bool Consensus::compute_assembly_pii(const messages::Assembly &assembly) {
     pii.mutable_assembly_id()->CopyFrom(assembly.id());
     pii.set_rank(i);
     _ledger->set_pii(pii);
-  };
+  }
 
   if (!_ledger->set_nb_key_pubs(assembly.id(), piis.size())) {
     LOG_WARNING
         << "During Pii computation failed to set nb_key_pubs for assembly "
         << assembly.id();
     return false;
-  };
+  }
   if (!_ledger->set_finished_computation(assembly.id())) {
     LOG_WARNING << "During Pii computation failed to set "
                    "finished_computation for assembly "
                 << assembly.id();
     return false;
-  };
+  }
   return true;
 }
 
@@ -980,7 +989,7 @@ void Consensus::start_miner_thread() {
 
 bool Consensus::mine_block(const messages::Block &block0) {
   std::lock_guard<std::mutex> lock(_heights_to_write_mutex);
-  if (_heights_to_write.size() == 0) {
+  if (_heights_to_write.empty()) {
     return false;
   }
   const auto height = _heights_to_write[0].first;

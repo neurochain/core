@@ -46,7 +46,7 @@ class TransportLayer {
   virtual bool connect(messages::Peer* peer) = 0;
   virtual void clean_old_connections(int delta) = 0;
 
-  virtual ~TransportLayer(){};
+  virtual ~TransportLayer() = default;
   virtual void join() = 0;
 };
 

@@ -57,7 +57,7 @@ class Consensus {
   std::thread _miner_thread;
 
   bool check_outputs(
-      const messages::TaggedTransaction tagged_transaction) const;
+      const messages::TaggedTransaction& tagged_transaction) const;
 
   bool check_signatures(
       const messages::TaggedTransaction &tagged_transaction) const;
@@ -86,6 +86,8 @@ class Consensus {
       const messages::TaggedBlock &tagged_block) const;
 
   bool check_block_size(const messages::TaggedBlock &tagged_block) const;
+
+  bool check_transactions_order(const messages::Block &block) const;
 
   bool check_transactions_order(
       const messages::TaggedBlock &tagged_block) const;

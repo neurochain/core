@@ -42,8 +42,6 @@ class Address : public _Address {
   static Address random();
 
   bool verify() const;
-
-  operator bool() const;
 };
 
 using Addresses = std::vector<Address>;

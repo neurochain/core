@@ -13,8 +13,8 @@ class Api {
   Bot *_bot;
 
  public:
-  Api(Bot *bot);
-  virtual ~Api() {}
+  explicit Api(Bot *bot);
+  virtual ~Api() = default;
 
  protected:
   virtual bool verify_key_pub_format(const messages::_KeyPub &key_pub) final;

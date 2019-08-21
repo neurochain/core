@@ -1,7 +1,7 @@
+#include "messages/Address.hpp"
 #include "common/logger.hpp"
 #include "crypto/Ecc.hpp"
 #include "crypto/Hash.hpp"
-#include "messages/Address.hpp"
 
 namespace neuro {
 namespace messages {
@@ -112,8 +112,6 @@ bool Address::verify() const {
 
   return true;
 }
-
-Address::operator bool() const { return verify(); }
 
 }  // namespace messages
 }  // namespace neuro

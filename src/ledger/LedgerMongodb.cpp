@@ -4,13 +4,9 @@
 #include "bsoncxx/builder/basic/array.hpp"
 #include "bsoncxx/builder/stream/document.hpp"
 #include "common/logger.hpp"
-#include "crypto/Ecc.hpp"
 #include "ledger/LedgerMongodb.hpp"
-#include "ledger/mongo.hpp"
 #include "messages.pb.h"
 #include "messages/Hasher.hpp"
-#include "mongocxx/options/update.hpp"
-#include "mongocxx/pipeline.hpp"
 
 namespace neuro {
 namespace ledger {
@@ -95,7 +91,7 @@ LedgerMongodb::LedgerMongodb(const std::string &url, const std::string &db_name,
   empty_database();
   init_database(block0);
   set_main_branch_tip();
-};
+}
 
 LedgerMongodb::LedgerMongodb(const messages::config::Database &config)
     : LedgerMongodb(config.url(), config.db_name()) {
@@ -170,14 +166,20 @@ void LedgerMongodb::create_first_assemblies(
       pii.mutable_assembly_id()->CopyFrom(assembly.id());
       pii.set_score("1");
       pii.set_rank(i);
-      assert(set_pii(pii));
+      bool is_pii_set = set_pii(pii);
+      assert(is_pii_set);
     }
   }
 
   messages::Block block0;
-  assert(get_block(0, &block0));
-  assert(set_block_verified(block0.header().id(), 0, assembly_minus_1.id()));
-  assert(update_branch_tag(block0.header().id(), messages::Branch::MAIN));
+  bool has_block = get_block(0, &block0);
+  assert(has_block);
+  bool is_block_verified =
+      set_block_verified(block0.header().id(), 0, assembly_minus_1.id());
+  assert(is_block_verified);
+  bool is_branch_tag_updated =
+      update_branch_tag(block0.header().id(), messages::Branch::MAIN);
+  assert(is_branch_tag_updated);
 }
 
 bool LedgerMongodb::load_block0(const messages::config::Database &config,
@@ -653,7 +655,7 @@ bool LedgerMongodb::insert_block(const messages::TaggedBlock &tagged_block) {
   if (!result) {
     return false;
   }
-  if (bson_transactions.size() > 0) {
+  if (!bson_transactions.empty()) {
     return static_cast<bool>(
         _transactions.insert_many(std::move(bson_transactions)));
   }
@@ -1234,6 +1236,18 @@ bool LedgerMongodb::get_assembly(const messages::AssemblyID &assembly_id,
   return true;
 }
 
+bool LedgerMongodb::get_assembly(const messages::AssemblyHeight &height,
+                                 messages::Assembly *assembly) const {
+  std::lock_guard lock(_ledger_mutex);
+  auto query = bss::document{} << HEIGHT << height << bss::finalize;
+  const auto result = _assemblies.find_one(std::move(query), remove_OID());
+  if (!result) {
+    return false;
+  }
+  from_bson(result->view(), assembly);
+  return true;
+}
+
 bool LedgerMongodb::get_next_assembly(const messages::AssemblyID &assembly_id,
                                       messages::Assembly *assembly) const {
   std::lock_guard lock(_ledger_mutex);
@@ -1288,7 +1302,7 @@ bool LedgerMongodb::get_assembly_piis(const messages::AssemblyID &assembly_id,
     auto &pii = piis->emplace_back();
     from_bson(bson_pii, &pii);
   }
-  return piis->size() > 0;
+  return !piis->empty();
 }
 
 bool LedgerMongodb::set_pii(const messages::Pii &pii) {

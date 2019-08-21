@@ -39,9 +39,8 @@ TEST(Ecc, save_load_buffer) {
 
   keys0.key_priv().save(&buff);
   keys1.mutable_key_priv()->load(buff);
-
   keys0.key_pub().save(&buff);
-  *keys1.mutable_key_pub() = buff;
+  *keys1.mutable_key_pub() = KeyPub(buff);
 
   ASSERT_EQ(keys0, keys1);
 }

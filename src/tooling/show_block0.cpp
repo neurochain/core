@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  if (options.count("help")) {
+  if (options.count("help") != 0u) {
     LOG_INFO << description;
     return 1;
   }

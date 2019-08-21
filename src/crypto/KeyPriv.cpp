@@ -9,7 +9,7 @@ namespace neuro {
 namespace crypto {
 
 KeyPriv::KeyPriv(std::shared_ptr<CryptoPP::AutoSeededRandomPool> prng)
-    : _prng(prng), _params(CryptoPP::ASN1::secp256k1()), _key() {
+    : _prng(prng), _params(CryptoPP::ASN1::secp256k1()) {
   _key.Initialize(*_prng, _params);
 
   // Fill protobuf

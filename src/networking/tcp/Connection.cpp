@@ -73,7 +73,8 @@ void Connection::read_body(std::size_t body_size) {
       [_this = ptr(), this](const boost::system::error_code &error,
                             std::size_t bytes_read) {
         if (error) {
-          LOG_WARNING << this << " read body error " << error.message() << " " << ip();
+          LOG_WARNING << this << " read body error " << error.message() << " "
+                      << ip();
           _this->terminate();
           return;
         }

@@ -12,7 +12,7 @@ namespace messages {
 
 class Hasher : public messages::Hash {
  public:
-  Hasher() {}
+  Hasher() = default;
 
   void from_buffer(const Buffer &data) {
     Buffer hash;

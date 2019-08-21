@@ -57,9 +57,9 @@ class Subscriber {
 
     for (auto it = _message_hash_by_ts.begin(),
               end = _message_hash_by_ts.lower_bound(current_time - MESSAGE_TTL);
-         it != end; ++it) {
+         it != end;) {
       _seen_messages_hash.erase(it->second);
-      _message_hash_by_ts.erase(it);
+      it = _message_hash_by_ts.erase(it);
     }
 
     return true;

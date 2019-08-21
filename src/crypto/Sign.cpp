@@ -1,13 +1,13 @@
+#include "crypto/Sign.hpp"
 #include "KeyPub.hpp"
 #include "common/Buffer.hpp"
 #include "common/logger.hpp"
 #include "crypto/KeyPriv.hpp"
-#include "crypto/Sign.hpp"
 
 namespace neuro {
 namespace crypto {
 
-bool sign(const std::vector<const crypto::Ecc *> keys,
+bool sign(const std::vector<const crypto::Ecc *> &keys,
           messages::Transaction *transaction) {
   // Fill the id which is a required field. This makes the transaction
   // serializable.
@@ -97,7 +97,7 @@ bool verify(const messages::Denunciation &denunciation) {
   Buffer buffer;
   messages::to_buffer(denunciation_copy, &buffer);
 
-  const auto author = denunciation.block_author();
+  const auto &author = denunciation.block_author();
   const auto hash = author.signature().data();
   const Buffer sig(hash.data(), hash.size());
 

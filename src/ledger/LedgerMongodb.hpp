@@ -118,7 +118,7 @@ class LedgerMongodb : public Ledger {
   LedgerMongodb(const std::string &url, const std::string &db_name);
   LedgerMongodb(const std::string &url, const std::string &db_name,
                 const messages::Block &block0);
-  LedgerMongodb(const messages::config::Database &config);
+  explicit LedgerMongodb(const messages::config::Database &config);
 
   ~LedgerMongodb();
 
@@ -220,7 +220,7 @@ class LedgerMongodb : public Ledger {
       const messages::BranchPath &branch_path) const;
 
   bool get_pii(const messages::_KeyPub &key_pub,
-               const messages::AssemblyID &assembly_id, Double *score) const;
+               const messages::AssemblyID &assembly_id, Double *pii) const;
 
   bool get_assembly_piis(const messages::AssemblyID &assembly_id,
                          std::vector<messages::Pii> *piis);
@@ -230,6 +230,9 @@ class LedgerMongodb : public Ledger {
   void init_database(const messages::Block &block0);
 
   bool get_assembly(const messages::AssemblyID &assembly_id,
+                    messages::Assembly *assembly) const;
+
+  bool get_assembly(const messages::AssemblyHeight &height,
                     messages::Assembly *assembly) const;
 
   bool add_assembly(const messages::TaggedBlock &tagged_block,

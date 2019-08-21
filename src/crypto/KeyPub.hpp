@@ -26,10 +26,10 @@ class KeyPub : public messages::_KeyPub {
 
  public:
   KeyPub(const KeyPub &key_pub) = default;
-  KeyPub(const messages::_KeyPub &key_pub);
-  KeyPub(const std::string &filepath);
-  KeyPub(const Buffer &pub_key);
-  KeyPub(const Key &key);
+  explicit KeyPub(const messages::_KeyPub &key_pub);
+  explicit KeyPub(const std::string &filepath);
+  explicit KeyPub(const Buffer &key_pub);
+  explicit KeyPub(const Key &key);
   KeyPub(const uint8_t *data, const std::size_t size);
 
   Key *key();
@@ -42,10 +42,10 @@ class KeyPub : public messages::_KeyPub {
               const std::size_t size) const;
   bool verify(const Buffer &data, const Buffer &signature) const;
   bool operator==(const KeyPub &key) const;
-  friend std::ostream &operator<<(std::ostream &os, const KeyPub &k);
+  //friend std::ostream &operator<<(std::ostream &os, const KeyPub &key_pub);
 };  // namespace crypto
 
-std::ostream &operator<<(std::ostream &os, const KeyPub &k);
+std::ostream &operator<<(std::ostream &os, const KeyPub &pub);
 
 }  // namespace crypto
 }  // namespace neuro
