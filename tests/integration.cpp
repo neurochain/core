@@ -128,9 +128,8 @@ TEST(INTEGRATION, full_node) {
   std::cerr << "port offset : " << port_offset << std::endl;
   BotTest bot0("bot0.json", port_offset);
   bot0.set_max_incoming_connections(0);
-  std::this_thread::sleep_for(2s);
   BotTest bot1("bot1.json", port_offset);
-  std::this_thread::sleep_for(2s);
+  std::this_thread::sleep_for(5s);
 
   ASSERT_EQ(bot0.peers().size(), 2);
   ASSERT_EQ(bot0->connected_peers().size(), 0);
