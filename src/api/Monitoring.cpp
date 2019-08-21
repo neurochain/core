@@ -38,7 +38,7 @@ int Monitoring::current_height() const {
   return last_block.header().height();
 }
 
-int Monitoring::nb_blocks_since(std::time_t since) const {
+uint32_t Monitoring::nb_blocks_since(const std::time_t since) const {
   int total = 0;
   auto tagged_block = _bot->ledger()->get_main_branch_tip();
   while (std::time(nullptr) - tagged_block.block().header().timestamp().data() <
