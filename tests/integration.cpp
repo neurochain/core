@@ -3,11 +3,8 @@
 #include <sstream>
 #include <thread>
 #include "Bot.hpp"
-#include "common/logger.hpp"
 #include "common/types.hpp"
 #include "crypto/Sign.hpp"
-#include "ledger/LedgerMongodb.hpp"
-#include "messages/Subscriber.hpp"
 #include "messages/config/Config.hpp"
 #include "tooling/blockgen.hpp"
 
@@ -25,6 +22,7 @@ class BotTest {
     messages::config::Tcp *tcp_config =
         config.mutable_networking()->mutable_tcp();
     tcp_config->set_port(port + _port_offset);
+
     for (auto &peer : *tcp_config->mutable_peers()) {
       auto peer_port = peer.port();
       peer.set_port(peer_port + _port_offset);
@@ -56,7 +54,20 @@ class BotTest {
   void update_unreachable() { _bot->_peers.update_unreachable(); }
 
   messages::Peers &peers() { return _bot->_peers; }
+
   auto &networking() { return _bot->_networking; }
+
+  auto &queue() { return _bot->_queue; }
+
+  const std::chrono::seconds unreachable_timeout() {
+    auto t =_bot->_config.networking().default_next_update_time();
+    return std::chrono::seconds{t};
+  }
+
+  const std::chrono::seconds connecting_timeout() {
+    auto t = _bot->_config.networking().connecting_next_update_time();
+    return std::chrono::seconds{t};
+  }
 
   bool check_peers_ports(std::vector<int> ports) {
     std::sort(ports.begin(), ports.end());
@@ -107,6 +118,16 @@ class BotTest {
         new_block.mutable_block(), _bot->_ledger, 1, 0);
     _bot->_ledger->insert_block(new_block);
   }
+
+  void unsubscribe() {
+    _bot->_subscriber.unsubscribe();
+  }
+
+  messages::Block block0() {
+    messages::Block block0;
+    _bot->_ledger->get_block(0, &block0);
+    return block0;
+  }
 };
 
 /**
@@ -115,9 +136,15 @@ class BotTest {
  * error, use gtest-parellel and uncomment to speed up the tests
  */
 Port random_port() {
+  Port port_offset = 0;
   //  std::random_device rd;
-  //  return (rd() + 10) % 10000;
-  return 0;
+  //  port_offset = (rd() + 10) % 10000;
+  LOG_INFO << "port offset : " << port_offset;
+  return port_offset;
+}
+
+void sleep_for_boot() {
+  std::this_thread::sleep_for(2s);
 }
 
 TEST(INTEGRATION, full_node) {
@@ -125,7 +152,6 @@ TEST(INTEGRATION, full_node) {
   // UNREACHABLE and the node that initiated the connection should be marked as
   // UNREACHABLE too
   Port port_offset = random_port();
-  std::cerr << "port offset : " << port_offset << std::endl;
   BotTest bot0("bot0.json", port_offset);
   bot0.set_max_incoming_connections(0);
   BotTest bot1("bot1.json", port_offset);
@@ -148,7 +174,6 @@ TEST(INTEGRATION, simple_interaction) {
   int received_connection = 0;
   int received_deconnection = 0;
   Port port_offset = random_port();
-  std::cerr << "port offset : " << port_offset << std::endl;
   BotTest bot0("bot0.json", port_offset);
   bot0->subscribe(messages::Type::kConnectionReady,
                   [&](const messages::Header &header,
@@ -183,7 +208,6 @@ TEST(INTEGRATION, simple_interaction) {
 
 TEST(INTEGRATION, disconnect) {
   Port port_offset = random_port();
-  std::cerr << "port offset : " << port_offset << std::endl;
   BotTest bot0("bot0.json", port_offset);
   BotTest bot1("bot1.json", port_offset);
 
@@ -201,7 +225,6 @@ TEST(INTEGRATION, disconnect) {
 
 TEST(INTEGRATION, disconnect_message) {
   Port port_offset = random_port();
-  std::cerr << "port offset : " << port_offset << std::endl;
   bool message_received0 = false;
   bool message_received2 = false;
   BotTest bot0("bot0.json", port_offset);
@@ -217,15 +240,15 @@ TEST(INTEGRATION, disconnect_message) {
       [&](const messages::Header &header, const messages::Body &body) {
         message_received2 = true;
       });
+  sleep_for_boot();
 
-  std::this_thread::sleep_for(2s);
-  ASSERT_EQ(bot0->connected_peers().size(), 2);
-  ASSERT_EQ(bot1->connected_peers().size(), 2);
-  ASSERT_EQ(bot2->connected_peers().size(), 2);
+  ASSERT_EQ(bot0->connected_peers().size(), 2) << bot0.peers();
+  ASSERT_EQ(bot1->connected_peers().size(), 2) << bot1.peers();
+  ASSERT_EQ(bot2->connected_peers().size(), 2) << bot2.peers();
 
   bot1.operator->().reset();
-
   std::this_thread::sleep_for(2s);
+
   ASSERT_TRUE(message_received0) << bot0.peers();
   ASSERT_TRUE(message_received2) << bot2.peers();
   ASSERT_EQ(bot0->connected_peers().size(), 1) << bot0->peers();
@@ -234,7 +257,6 @@ TEST(INTEGRATION, disconnect_message) {
 
 TEST(INTEGRATION, neighbors_propagation) {
   Port port_offset = random_port();
-  std::cerr << "port offset : " << port_offset << std::endl;
   BotTest bot0("integration_propagation0.json", port_offset);
   BotTest bot1("integration_propagation1.json", port_offset);
   BotTest bot2("integration_propagation2.json", port_offset);
@@ -257,7 +279,6 @@ TEST(INTEGRATION, neighbors_propagation) {
 
 TEST(INTEGRATION, neighbors_connections) {
   Port port_offset = random_port();
-  std::cerr << "port offset : " << port_offset << std::endl;
   BotTest bot0("bot0.json", port_offset);
   BotTest bot1("bot1.json", port_offset);
   BotTest bot2("bot2.json", port_offset);
@@ -272,7 +293,6 @@ TEST(INTEGRATION, neighbors_connections) {
 TEST(INTEGRATION, key_gen_connection) {
   // Check an unknown bot with unknown signature can connect to bot0.
   Port port_offset = random_port();
-  std::cerr << "port offset : " << port_offset << std::endl;
   BotTest bot0("bot0.json", port_offset);
   BotTest bot50("integration_propagation50.json", port_offset);
 
@@ -285,7 +305,6 @@ TEST(INTEGRATION, key_gen_connection) {
 TEST(INTEGRATION, fullfill_network) {
   // Add a fourth node to get a complete graph
   Port port_offset = random_port();
-  std::cerr << "port offset : " << port_offset << std::endl;
   BotTest bot0("bot0.json", port_offset);
   BotTest bot1("bot1.json", port_offset);
   BotTest bot2("bot2.json", port_offset);
@@ -310,7 +329,6 @@ TEST(INTEGRATION, connection_opportunity) {
   int bot1_disconnect_received = 0;
   int bot2_disconnect_received = 0;
   Port port_offset = random_port();
-  LOG_INFO << "port offset : " << port_offset << std::endl;
   BotTest bot0("bot0.json", port_offset);
   BotTest bot1("bot1.json", port_offset);
   BotTest bot2("bot2.json", port_offset);
@@ -375,7 +393,6 @@ TEST(INTEGRATION, connection_opportunity_update) {
   // Check a node excluded from a connected graph can connect after a node of
   // the complete graph accept one more connection.
   Port port_offset = random_port();
-  std::cerr << "port offset : " << port_offset << std::endl;
   BotTest bot0("bot0.json", port_offset);
   BotTest bot1("bot1.json", port_offset);
   BotTest bot2("bot2.json", port_offset);
@@ -413,7 +430,6 @@ TEST(INTEGRATION, connection_reconfig) {
   // Test that new nodes can form a graph even if first node are all
   // disconnected.
   Port port_offset = random_port();
-  std::cerr << "port offset : " << port_offset << std::endl;
   BotTest bot0("bot0.json", port_offset);
   BotTest bot1("bot1.json", port_offset);
   BotTest bot2("bot2.json", port_offset);
@@ -479,7 +495,6 @@ TEST(INTEGRATION, connection_reconfig) {
 
 TEST(INTEGRATION, ignore_bad_message) {
   Port port_offset = random_port();
-  std::cerr << "port offset : " << port_offset << std::endl;
   BotTest bot0("bot0.json", port_offset);
   BotTest bot1("bot1.json", port_offset);
   bot1->subscribe(messages::Type::kGetPeers, [](const messages::Header &header,
@@ -502,7 +517,6 @@ TEST(INTEGRATION, ignore_bad_message) {
 
 TEST(INTEGRATION, keep_max_connections) {
   Port port_offset = random_port();
-  std::cerr << "port offset : " << port_offset << std::endl;
   BotTest bot0("bot0.json", port_offset);
   bot0.set_max_incoming_connections(1);
   std::this_thread::sleep_for(2s);
@@ -514,6 +528,41 @@ TEST(INTEGRATION, keep_max_connections) {
   ASSERT_TRUE(bot0.check_peers_ports({1338}));
   ASSERT_TRUE(bot1.check_peers_ports({1337, 1339}));
   ASSERT_TRUE(bot2.check_peers_ports({1338}));
+}
+
+TEST(INTEGRATION, handler_get_block) {
+  Port port_offset = random_port();
+  BotTest fake_bot("bot0.json", port_offset);
+  fake_bot.unsubscribe();
+  BotTest bot("bot1.json", port_offset);
+  sleep_for_boot();
+
+  auto get_block_id = 0;
+  bot->subscribe(messages::Type::kGetBlock, [&](const messages::Header &header,
+                                                 const messages::Body &body) {
+    get_block_id = header.id();
+  });
+
+  auto received_block = false;
+  messages::Subscriber fake_bot_subscriber(&fake_bot.queue());
+  fake_bot_subscriber.subscribe(messages::Type::kBlock, [&](const messages::Header &header,
+                                              const messages::Body &body) {
+    if (header.request_id() == get_block_id) {
+      ASSERT_EQ(fake_bot.block0(), body.block());
+      received_block = true;
+    }
+  });
+
+
+  auto message = std::make_shared<messages::Message>();
+  messages::fill_header(message->mutable_header());
+  auto get_block = message->add_bodies()->mutable_get_block();
+  get_block->set_height(0);
+  get_block->set_count(1);
+  // ask for block 0
+  fake_bot.networking().send(message);
+  std::this_thread::sleep_for(3s);
+  ASSERT_TRUE(received_block);
 }
 
 }  // namespace neuro::tests
