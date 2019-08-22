@@ -111,7 +111,6 @@ class Peers {
 };
 
 std::ostream &operator<<(std::ostream &os, const Peers &peers);
-std::string to_json(const Packet &packet);
 
 }  // namespace messages
 }  // namespace neuro

@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
     peer->mutable_key_pub()->CopyFrom(ecc.key_pub());
   }
   std::string s;
-  messages::to_json(config, &s);
+  messages::to_json(config, &s, true);
 
   std::ofstream out(output);
   out << s;
