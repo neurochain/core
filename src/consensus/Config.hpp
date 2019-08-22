@@ -10,7 +10,7 @@ namespace consensus {
 struct Config {
   uint32_t blocks_per_assembly{5760};
   uint32_t members_per_assembly{500};
-  uint32_t block_period{3};
+  uint32_t block_period{15};
   messages::NCCAmount block_reward{uint64_t{100}};
   uint32_t max_block_size{128000};
   std::chrono::seconds update_heights_sleep{5};
