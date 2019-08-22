@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
   desc.add_options()("help,h", "Produce help message.")(
       "nb-wallet,n", po::value<uint32_t>()->default_value(100),
       "Number of wallets in block 0")(
-      "keyspath,k", po::value<std::string>()->default_value("keys"),
+      "keyspath,k", po::value<Path>()->default_value("keys"),
       "File path for keys (appending .pub or .priv)")(
       "ncc,n", po::value<uint64_t>()->default_value(1152921504606846976lu),
       "How many ncc you want");
@@ -36,17 +36,16 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  const auto keypath = Path(vm["keyspath"].as<std::string>());
+  const auto keypath = vm["keyspath"].as<std::string>();
   if (!filesystem::exists(keypath)) {
     std::cout << "create dir : " << std::endl;
     std::cout << "mkdir " << keypath << std::endl;
     return 1;
   }
 
-  uint32_t bots = vm["wallet"].as<uint32_t>();
+  uint32_t bots = vm["nb-wallet"].as<uint32_t>();
   uint64_t ncc = vm["ncc"].as<uint64_t>();
 
-  LOG_INFO << "Load 1 ...";
   messages::NCCAmount nccsdf;
   nccsdf.set_value(ncc);
 
