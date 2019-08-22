@@ -16,7 +16,7 @@ Monitoring::Monitoring(Bot *bot) : _bot(bot) {}
 std::chrono::seconds::rep Monitoring::uptime() const {
   using namespace std::chrono;
   auto now = system_clock::now();
-  auto diff = now - _starting_time;
+  auto diff = duration_cast<seconds>(now - _starting_time);
   return diff.count();
 }
 
