@@ -397,12 +397,12 @@ TEST(INTEGRATION, connection_opportunity_update) {
   BotTest bot1("bot1.json", port_offset);
   BotTest bot2("bot2.json", port_offset);
   BotTest bot3("integration_propagation40.json", port_offset);
-  std::this_thread::sleep_for(2s);
+  std::this_thread::sleep_for(5s);
 
-  ASSERT_TRUE(bot0.check_peers_ports({1338, 1339, 13340}));
-  ASSERT_TRUE(bot1.check_peers_ports({1337, 1339, 13340}));
-  ASSERT_TRUE(bot2.check_peers_ports({1337, 1338, 13340}));
-  ASSERT_TRUE(bot3.check_peers_ports({1337, 1338, 1339}));
+  ASSERT_TRUE(bot0.check_peers_ports({1338, 1339, 13340})) << bot0.peers();
+  ASSERT_TRUE(bot1.check_peers_ports({1337, 1339, 13340})) << bot1.peers();
+  ASSERT_TRUE(bot2.check_peers_ports({1337, 1338, 13340})) << bot2.peers();
+  ASSERT_TRUE(bot3.check_peers_ports({1337, 1338, 1339})) << bot3.peers();
 
   // Create additional node that cannot connect
   BotTest bot4("integration_propagation50.json", port_offset);
