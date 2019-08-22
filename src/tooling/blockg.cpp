@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
       "Number of wallets in block 0")(
       "keyspath,k", po::value<Path>()->default_value("keys"),
       "File path for keys (appending .pub or .priv)")(
-      "ncc,n", po::value<uint64_t>()->default_value(1152921504606846976lu),
+      "ncc,N", po::value<uint64_t>()->default_value(1152921504606846976lu),
       "How many ncc you want");
 
   po::variables_map vm;
@@ -36,11 +36,9 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  const auto keypath = vm["keyspath"].as<std::string>();
+  const auto keypath = vm["keyspath"].as<Path>();
   if (!filesystem::exists(keypath)) {
-    std::cout << "create dir : " << std::endl;
-    std::cout << "mkdir " << keypath << std::endl;
-    return 1;
+    filesystem::create_directories(keypath);
   }
 
   uint32_t bots = vm["nb-wallet"].as<uint32_t>();
