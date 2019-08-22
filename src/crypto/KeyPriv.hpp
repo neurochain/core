@@ -28,15 +28,15 @@ class KeyPriv : public messages::_KeyPriv {
  public:
   explicit KeyPriv(std::shared_ptr<CryptoPP::AutoSeededRandomPool> prng);
   KeyPriv(std::shared_ptr<CryptoPP::AutoSeededRandomPool> prng,
-          const std::string &filepath);
+          const Path &filepath);
   KeyPriv(std::shared_ptr<CryptoPP::AutoSeededRandomPool> prng,
           const messages::_KeyPriv &key_priv);
-  bool save(const std::string &filepath) const;
+  bool save(const Path &filepath) const;
   bool save(Buffer *buffer) const;
   messages::_KeyPub save() const;
   bool save(messages::_KeyPriv *key_priv) const;
   bool load(const Buffer &buffer);
-  bool load(const std::string &filepath);
+  bool load(const Path &filepath);
   static constexpr std::size_t sign_length() { return 64; /* TODO  magic */ }
   void sign(const uint8_t *data, const std::size_t size,
             uint8_t *signature) const;

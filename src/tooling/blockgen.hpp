@@ -32,7 +32,7 @@ messages::TaggedBlock gen_block0(const std::vector<crypto::Ecc> &keys,
 void block0(uint32_t bots, const std::string &pathdir,
             const messages::NCCAmount &nccsdf, ledger::LedgerMongodb *ledger);
 
-void testnet_blockg(uint32_t bots, const std::string &pathdir,
+void testnet_blockg(uint32_t number_of_wallets, const Path &pathdir,
                     messages::NCCAmount &nccsdf);
 
 bool blockgen_from_block(

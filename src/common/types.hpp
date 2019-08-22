@@ -46,7 +46,8 @@ namespace consensus {
 using Address = std::string;
 }  // namespace consensus
 
-using Path = boost::filesystem::path;
+namespace filesystem = boost::filesystem;
+using Path = filesystem::path;
 
 using std::int16_t;
 using std::int32_t;

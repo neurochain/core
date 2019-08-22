@@ -8,7 +8,7 @@
 namespace neuro {
 namespace crypto {
 
-bool sign(const std::vector<const crypto::Ecc *>& keys,
+bool sign(const std::vector<const crypto::Ecc *> &keys,
           messages::Transaction *transaction);
 
 bool verify(const messages::Transaction &transaction);

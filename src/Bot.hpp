@@ -103,7 +103,7 @@ class Bot {
 
  public:
   explicit Bot(const messages::config::Config &config,
-      const consensus::Config &consensus_config = consensus::Config());
+               const consensus::Config &consensus_config = consensus::Config());
   explicit Bot(const std::string &config_path);
   Bot(const Bot &) = delete;
 

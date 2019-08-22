@@ -4,7 +4,7 @@ namespace neuro {
 
 std::time_t _time = 0;
 bool _fake_time = false;
-  
+
 std::time_t time() {
   if (!_fake_time) {
     return std::time(nullptr);
