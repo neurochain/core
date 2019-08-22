@@ -48,7 +48,7 @@ Type get_type(const Body &body);
 
 bool from_buffer(const Buffer &buffer, Packet *packet);
 bool from_json(const std::string &json, Packet *packet);
-bool from_json_file(const std::string &path, Packet *packet);
+bool from_json_file(const Path &path, Packet *packet);
 bool from_bson(const bsoncxx::document::value &doc, Packet *packet);
 bool from_bson(const bsoncxx::document::view &doc, Packet *packet);
 
