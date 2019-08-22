@@ -13,22 +13,6 @@
      "endpoint": "boot0.test.neurochaintech.io",
      "keyPub": {
       "type": "ECP256K1",
-      "rawData": "At2zvnKjc8FhInceEx4LWJ3Yy6DyD83MR3jlCneoZZpP"
-     },
-     "port": 1337
-    },
-    {
-     "endpoint": "boot1.test.neurochaintech.io",
-     "keyPub": {
-      "type": "ECP256K1",
-      "rawData": "A5mc7ff4DMn9DyLq2qcbAUMyHfmzlvKKbLWuXHlQmuCD"
-     },
-     "port": 1337
-    },
-    {
-     "endpoint": "boot0.test.neurochaintech.io",
-     "keyPub": {
-      "type": "ECP256K1",
       "rawData": "A2SY4btZmJFFz+VShMgTkt3CSlx/mcCcFYvxrETFhHGZ"
      },
      "port": 1337
