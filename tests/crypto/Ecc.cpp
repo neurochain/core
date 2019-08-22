@@ -11,7 +11,7 @@ TEST(Ecc, save_load_file) {
   crypto::Ecc keys0;
   ASSERT_TRUE(keys0.save("test_keys.priv", "test_keys.pub"));
 
-  crypto::Ecc keys1("test_keys.priv", "test_keys.pub");
+  crypto::Ecc keys1(Path{"test_keys.priv"}, Path{"test_keys.pub"});
 
   ASSERT_EQ(keys0, keys1);
 }

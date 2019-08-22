@@ -20,20 +20,20 @@ class KeyPub : public messages::_KeyPub {
  private:
   Key _key;
   bool load(const Buffer &buffer);
-  bool load(const std::string &filepath);
+  bool load(const Path &filepath);
   bool load(const uint8_t *data, const std::size_t size);
   bool load(const messages::_KeyPub &key_pub);
 
  public:
   KeyPub(const KeyPub &key_pub) = default;
   explicit KeyPub(const messages::_KeyPub &key_pub);
-  explicit KeyPub(const std::string &filepath);
+  explicit KeyPub(const Path &filepath);
   explicit KeyPub(const Buffer &key_pub);
   explicit KeyPub(const Key &key);
   KeyPub(const uint8_t *data, const std::size_t size);
 
   Key *key();
-  bool save(const std::string &filepath) const;
+  bool save(const Path &filepath) const;
   bool save(Buffer *buffer) const;
   Buffer save() const;
   bool save(messages::_KeyPub *key_pub) const;

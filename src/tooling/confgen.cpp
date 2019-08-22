@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
   }
 
   const auto conf_path = vm["conf"].as<std::string>();
-  const auto keys_path = vm["keys"].as<std::vector<std::string>>();
+  const auto keys_path = vm["keys"].as<std::vector<Path>>();
   const auto endpoints = vm["endpoint"].as<std::vector<std::string>>();
   const auto output = vm["output"].as<std::string>();
 

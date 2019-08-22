@@ -21,7 +21,7 @@ KeyPriv::KeyPriv(std::shared_ptr<CryptoPP::AutoSeededRandomPool> prng)
 }
 
 KeyPriv::KeyPriv(std::shared_ptr<CryptoPP::AutoSeededRandomPool> prng,
-                 const std::string &filepath)
+                 const Path &filepath)
     : _prng(prng) {
   if (!load(filepath)) {
     throw std::runtime_error("Public key load failed");
@@ -36,8 +36,8 @@ KeyPriv::KeyPriv(std::shared_ptr<CryptoPP::AutoSeededRandomPool> prng,
   }
 }
 
-bool KeyPriv::save(const std::string &filepath) const {
-  CryptoPP::FileSink fs(filepath.c_str(), true);
+bool KeyPriv::save(const Path &filepath) const {
+  CryptoPP::FileSink fs(filepath.string().c_str(), true);
   _key.Save(fs);
 
   return true;
@@ -58,11 +58,11 @@ bool KeyPriv::save(messages::_KeyPriv *key_priv) const {
   return true;
 }
 
-bool KeyPriv::load(const std::string &filepath) {
+bool KeyPriv::load(const Path &filepath) {
   _params = CryptoPP::DL_GroupParameters_EC<CryptoPP::ECP>(
       CryptoPP::ASN1::secp256k1());
   _key.Initialize(*_prng, _params);
-  CryptoPP::FileSource fs(filepath.c_str(), true);
+  CryptoPP::FileSource fs(filepath.string().c_str(), true);
   _key.Load(fs);
 
   // Fill protobuf
