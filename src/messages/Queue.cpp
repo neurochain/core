@@ -1,16 +1,16 @@
 #include "Queue.hpp"
-
-#include "messages/Hasher.hpp"
-#include "messages/Message.hpp"
+#include "common/logger.hpp"
+#include "messages/Queue.hpp"
 #include "messages/Subscriber.hpp"
+
 namespace neuro {
 namespace messages {
 
 Queue::Queue() = default;
 
-bool Queue::expired(std::shared_ptr<const messages::Message> message) {
+bool Queue::has_drifted(std::shared_ptr<const messages::Message> message) {
   const auto raw_ts = message->header().ts().data();
-  return ((raw_ts - std::time(nullptr)) > MESSAGE_TTL);
+  return (std::abs(std::time(nullptr) - raw_ts) > MESSAGE_TTL);
 }
 
 bool Queue::publish(std::shared_ptr<const messages::Message> message) {
@@ -19,8 +19,9 @@ bool Queue::publish(std::shared_ptr<const messages::Message> message) {
     return false;
   }
 
-  if (expired(message)) {
-    LOG_DEBUG << "Skip message because it's too old";
+  if (has_drifted(message)) {
+    LOG_DEBUG << "Skip message because timestamp drifted too much : "
+              << message->header();
     return false;
   }
 
@@ -62,7 +63,6 @@ std::shared_ptr<const messages::Message> Queue::next_message() {
 
 std::size_t Queue::size() const { return _queue.size(); }
 
-  
 void Queue::quit() {
   if (!_started) {
     return;
@@ -95,9 +95,7 @@ void Queue::do_work() {
   } while (!_quitting);
 }
 
-Queue::~Queue() {
-  quit();
-}
+Queue::~Queue() { quit(); }
 
 }  // namespace messages
 }  // namespace neuro

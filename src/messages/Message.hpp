@@ -3,12 +3,17 @@
 
 #include <google/protobuf/message.h>
 #include <google/protobuf/util/json_util.h>
+#include <cstdint>
 #include <fstream>
 #include <functional>
 #include <string>
 #include <type_traits>
+#include <variant>
 #include <vector>
 
+#include "bsoncxx/document/value.hpp"
+#include "bsoncxx/document/view.hpp"
+#include "common.pb.h"
 #include "common/Buffer.hpp"
 #include "common/logger.hpp"
 #include "common/types.hpp"
@@ -16,15 +21,17 @@
 #include "crypto/KeyPriv.hpp"
 #include "ledger/mongo.hpp"
 #include "messages.pb.h"
-#include "messages/Peer.hpp"
 #include "messages/Address.hpp"
 #include "messages/NCCAmount.hpp"
+#include "messages/Peer.hpp"
+
 namespace neuro {
 namespace messages {
 
 using NCCValue = decltype(((_NCCAmount *)nullptr)->value());
 using BlockHeight = decltype(((BlockHeader *)nullptr)->height());
 using BlockScore = decltype(((TaggedBlock *)nullptr)->score());
+using TaggedBlocks = std::vector<messages::TaggedBlock>;
 using AssemblyHeight = decltype(((Assembly *)nullptr)->height());
 using BlockID = std::remove_reference<decltype(
     *(((BlockHeader *)nullptr)->mutable_id()))>::type;
@@ -33,7 +40,6 @@ using AssemblyID = std::remove_reference<decltype(
 using TransactionID = std::remove_reference<decltype(
     *(((Transaction *)nullptr)->mutable_id()))>::type;
 using Packet = google::protobuf::Message;
-  
 using Type = Body::BodyCase;
 using BranchID = int32_t;
 using IntegrityScore = Double;
@@ -72,6 +78,8 @@ int32_t fill_header_reply(const messages::Header &header_request,
 
 class Message : public _Message {
  public:
+  using ID = decltype(((_Message *)nullptr)->header().id());
+
   Message() { fill_header(mutable_header()); }
   Message(const std::string &json) { from_json(json, this); }
 
@@ -134,6 +142,15 @@ struct PacketHash<neuro::messages::_KeyPub> {
 };
 
 namespace std {
+
+template <>
+struct hash<neuro::messages::_KeyPub> {
+  std::size_t operator()(neuro::messages::_KeyPub const &s) const noexcept {
+    size_t key_as_bytes = *s.raw_data().data();
+    return key_as_bytes;
+  }
+};
+
 template <>
 struct hash<neuro::messages::Input> {
   size_t operator()(const neuro::messages::Input &input) const {
@@ -162,7 +179,6 @@ struct hash<neuro::messages::Address> {
     return hash<string>()(::neuro::messages::to_json(address));
   }
 };
-
 
 }  // namespace std
 

@@ -1,7 +1,7 @@
+#include <cstdint>
 #include <iomanip>
-
 #include <iostream>
-#include <iterator>
+
 #include "common/Buffer.hpp"
 
 namespace neuro {
@@ -64,9 +64,7 @@ void Buffer::append(const Buffer &buffer) {
   std::copy(buffer.begin(), buffer.end(), begin() + size());
 }
 
-std::string Buffer::str() const {
-  return std::string(begin(), end());
-}
+std::string Buffer::str() const { return std::string(begin(), end()); }
 
 std::string Buffer::to_hex() const {
   std::stringstream ss;
@@ -77,7 +75,7 @@ std::string Buffer::to_hex() const {
   ss.flags(f);
   return ss.str();
 }
-  
+
 bool Buffer::read_hex(const std::string &str) {
   if ((str.size() % 2) == 1) {
     return false;
@@ -96,6 +94,5 @@ std::ostream &operator<<(std::ostream &os, const Buffer &buffer) {
   os << buffer.to_hex();
   return os;
 }
-
 
 }  // namespace neuro

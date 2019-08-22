@@ -1,8 +1,9 @@
 #include "tooling/blockgen.hpp"
-#include <fstream>
-#include <iostream>
-#include "common/logger.hpp"
-#include "crypto/Sign.hpp"
+#include "crypto/Ecc.hpp"
+#include "messages/Message.hpp"
+#include "mongocxx/client.hpp"
+#include "mongocxx/database.hpp"
+#include "mongocxx/uri.hpp"
 
 namespace po = boost::program_options;
 
@@ -13,15 +14,15 @@ namespace blockgen {
 void coinbase(const std::vector<crypto::KeyPub> &pub_keys,
               const messages::NCCAmount &ncc,
               messages::Transaction *transaction,
-              const messages::BlockHeight &height,
-              const std::string& output_data) {
+              const messages::BlockID &last_seen_block_id,
+              const std::string &output_data) {
   for (const auto &pub_key : pub_keys) {
     auto output = transaction->add_outputs();
-    output->mutable_address()->CopyFrom(messages::Address(pub_key));
+    output->mutable_key_pub()->CopyFrom(messages::_KeyPub(pub_key));
     output->mutable_value()->CopyFrom(ncc);
     output->set_data(output_data);
   }
-  transaction->set_coinbase_height(height);
+  transaction->mutable_last_seen_block_id()->CopyFrom(last_seen_block_id);
 
   messages::set_transaction_hash(transaction);
 }
@@ -29,15 +30,15 @@ void coinbase(const std::vector<crypto::KeyPub> &pub_keys,
 void coinbase(const std::vector<crypto::Ecc> &eccs,
               const messages::NCCAmount &ncc,
               messages::Transaction *transaction,
-              const messages::BlockHeight &height,
-              const std::string& output_data) {
+              const messages::BlockID &last_seen_block_id,
+              const std::string &output_data) {
   for (size_t i = 0; i < eccs.size(); i++) {
     auto output = transaction->add_outputs();
-    output->mutable_address()->CopyFrom(messages::Address(eccs[i].key_pub()));
+    output->mutable_key_pub()->CopyFrom(messages::_KeyPub(eccs[i].key_pub()));
     output->mutable_value()->CopyFrom(ncc);
     output->set_data(output_data);
   }
-  transaction->set_coinbase_height(height);
+  transaction->mutable_last_seen_block_id()->CopyFrom(last_seen_block_id);
 
   messages::set_transaction_hash(transaction);
 }
@@ -58,10 +59,15 @@ messages::TaggedBlock gen_block0(const std::vector<crypto::Ecc> &keys,
     pub_keys.push_back(key.key_pub());
   }
 
-  blockgen::coinbase(pub_keys, ncc_block0, block->mutable_coinbase(), 0);
+  messages::BlockID block_id;
+  block_id.set_type(messages::BlockID::SHA256);
+  block_id.set_data("");
+  blockgen::coinbase(pub_keys, ncc_block0, block->mutable_coinbase(), block_id);
   tagged_block.set_branch(messages::Branch::MAIN);
   tagged_block.mutable_branch_path()->add_branch_ids(0);
   tagged_block.mutable_branch_path()->add_block_numbers(0);
+  tagged_block.mutable_branch_path()->set_branch_id(0);
+  tagged_block.mutable_branch_path()->set_block_number(0);
   tagged_block.set_score(0);
   messages::sort_transactions(tagged_block.mutable_block());
   messages::set_block_hash(tagged_block.mutable_block());
@@ -105,10 +111,10 @@ void testnet_blockg(uint32_t bots, const std::string &pathdir,
   stream_block0.close();
 }
 
-bool blockgen_from_block(messages::Block *block,
-                         const messages::Block &last_block,
-                         const int32_t height, const uint64_t seed,
-                         const std::optional<neuro::messages::_KeyPub>& author) {
+bool blockgen_from_block(
+    messages::Block *block, const messages::Block &last_block,
+    const int32_t height, const uint64_t seed,
+    const std::optional<neuro::messages::_KeyPub> &author) {
   /*uint32_t height = last_height;
   if (height == 0) {
     height = ledger->height();
@@ -153,16 +159,17 @@ bool blockgen_from_block(messages::Block *block,
 
     // Input from sender
     neuro::messages::Input *input = new_trans->add_inputs();
-    input->mutable_id()->CopyFrom(sender.id());
-    input->set_output_id(num_output);
-    input->set_signature_id(i);
+    input->mutable_key_pub()->CopyFrom(sender.outputs(0).key_pub());
+    input->mutable_value()->set_value(total_ncc);
 
     // Output to recevied
     // Output to sender with min 1 ncc
     neuro::messages::Output *output_revevied = new_trans->add_outputs();
-    output_revevied->mutable_address()->CopyFrom(
-        recevied.outputs(num_output).address());
+    output_revevied->mutable_key_pub()->CopyFrom(
+        recevied.outputs(num_output).key_pub());
     output_revevied->mutable_value()->set_value(total_ncc);
+
+    new_trans->mutable_last_seen_block_id()->CopyFrom(last_block.header().id());
 
     messages::set_transaction_hash(new_trans);
   }
@@ -172,11 +179,11 @@ bool blockgen_from_block(messages::Block *block,
   return true;
 }
 
-bool blockgen_from_last_db_block(messages::Block *block,
-                                 std::shared_ptr<ledger::Ledger> ledger,
-                                 const uint64_t seed, const int32_t new_height,
-                                 const std::optional<neuro::messages::_KeyPub>& author,
-                                 const int32_t last_height) {
+bool blockgen_from_last_db_block(
+    messages::Block *block, std::shared_ptr<ledger::Ledger> ledger,
+    const uint64_t seed, const int32_t new_height,
+    const std::optional<neuro::messages::_KeyPub> &author,
+    const int32_t last_height) {
   int32_t height = last_height;
   if (height == 0) {
     height = ledger->height();
@@ -202,7 +209,9 @@ void append_blocks(const int nb, std::shared_ptr<ledger::Ledger> ledger) {
     messages::TaggedBlock tagged_block;
     tagged_block.set_branch(messages::Branch::MAIN);
     tagged_block.mutable_branch_path()->add_branch_ids(0);
-    tagged_block.mutable_branch_path()->add_block_numbers(0);
+    tagged_block.mutable_branch_path()->add_block_numbers(i);
+    tagged_block.mutable_branch_path()->set_branch_id(0);
+    tagged_block.mutable_branch_path()->set_block_number(i);
     *tagged_block.mutable_block() = block;
     ledger->insert_block(tagged_block);
   }
@@ -223,6 +232,7 @@ void append_fork_blocks(const int nb, std::shared_ptr<ledger::Ledger> ledger) {
     }
     tagged_block.mutable_branch_path()->CopyFrom(branch_path);
     tagged_block.mutable_branch_path()->add_block_numbers(0);
+    tagged_block.mutable_branch_path()->set_block_number(0);
     ledger->insert_block(tagged_block);
     last_block.CopyFrom(tagged_block);
     tagged_block.Clear();

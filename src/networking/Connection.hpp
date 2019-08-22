@@ -14,10 +14,12 @@ class Connection {
  protected:
   ID _id;
   messages::Queue* _queue;
+  const std::time_t _init_ts;
 
  public:
   Connection(const ID id, messages::Queue* queue);
   ID id() const;
+  std::time_t init_ts() const;
 };
 
 }  // namespace networking

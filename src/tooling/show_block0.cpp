@@ -1,8 +1,9 @@
 #include <boost/program_options.hpp>
-#include <fstream>
-#include <iostream>
+
+#include "bsoncxx/builder/stream/document.hpp"
 #include "common/logger.hpp"
-#include "ledger/LedgerMongodb.hpp"
+#include "ledger/mongo.hpp"
+#include "messages.pb.h"
 #include "messages/Message.hpp"
 
 namespace po = boost::program_options;

@@ -1,9 +1,5 @@
 #include <boost/program_options.hpp>
-#include <fstream>
-#include <vector>
 
-#include "crypto/Ecc.hpp"
-#include "messages.pb.h"
 #include "messages/Message.hpp"
 #include "messages/config/Config.hpp"
 
@@ -14,7 +10,7 @@ int main(int argc, char *argv[]) {
   po::options_description desc("Allowed options");
   desc.add_options()("help,h", "Produce help message.")(
       "keys,k", po::value<std::vector<std::string>>()->multitoken(),
-      "Key file to include")(
+      "Public Key file to include")(
       "endpoint,e", po::value<std::vector<std::string>>()->multitoken(),
       "Endpoint in same order as keys")("conf,c",
                                         po::value<std::string>()->required(),

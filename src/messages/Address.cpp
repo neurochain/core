@@ -1,7 +1,7 @@
 #include "messages/Address.hpp"
-#include "messages/Message.hpp"
+#include "common/logger.hpp"
+#include "crypto/Ecc.hpp"
 #include "crypto/Hash.hpp"
-#include <sstream>
 
 namespace neuro {
 namespace messages {
@@ -12,6 +12,17 @@ const std::string ALPHABET[BASE] = {
     "G", "H", "J", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "U", "V", "W",
     "X", "Y", "Z", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "m",
     "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"};
+
+const std::unordered_map<char, int> REVERSE_ALPHABET = {
+    {'1', 0},  {'2', 1},  {'3', 2},  {'4', 3},  {'5', 4},  {'6', 5},  {'7', 6},
+    {'8', 7},  {'9', 8},  {'A', 9},  {'B', 10}, {'C', 11}, {'D', 12}, {'E', 13},
+    {'F', 14}, {'G', 15}, {'H', 16}, {'J', 17}, {'K', 18}, {'L', 19}, {'M', 20},
+    {'N', 21}, {'P', 22}, {'Q', 23}, {'R', 24}, {'S', 25}, {'T', 26}, {'U', 27},
+    {'V', 28}, {'W', 29}, {'X', 30}, {'Y', 31}, {'Z', 32}, {'a', 33}, {'b', 34},
+    {'c', 35}, {'d', 36}, {'e', 37}, {'f', 38}, {'g', 39}, {'h', 40}, {'i', 41},
+    {'j', 42}, {'k', 43}, {'m', 44}, {'n', 45}, {'o', 46}, {'p', 47}, {'q', 48},
+    {'r', 49}, {'s', 50}, {'t', 51}, {'u', 52}, {'v', 53}, {'w', 54}, {'x', 55},
+    {'y', 56}, {'z', 57}};
 
 std::string encode_base58(const CryptoPP::Integer &num,
                           const std::string &version) {
@@ -36,8 +47,22 @@ std::string encode_base58(const Buffer &buffer, const std::string &version) {
 
 std::string encode_base58(const std::string &data, const std::string &version) {
   CryptoPP::Integer num;
-  num.Decode(reinterpret_cast<const byte *>(data.data()), data.size());
+  num.Decode(reinterpret_cast<const CryptoPP::byte *>(data.data()),
+             data.size());
   return encode_base58(num, version);
+}
+
+CryptoPP::Integer decode_base58(const std::string &encoded_number) {
+  CryptoPP::Integer num(CryptoPP::Integer::Zero());
+  CryptoPP::Integer radix(CryptoPP::Integer::One());
+
+  for (int i = encoded_number.size() - 1; i >= 0; --i) {
+    const auto character = REVERSE_ALPHABET.at(encoded_number[i]) * radix;
+    num += character;
+    radix *= BASE;
+  }
+
+  return num;
 }
 
 void Address::init(const messages::_KeyPub &key_pub) {
@@ -59,9 +84,7 @@ Address::Address(const crypto::KeyPub &ecc_pub) {
 }
 
 Address::Address(const messages::_Address &address) : _Address(address) {}
-Address::Address(const std::string &str) {
-  set_data(str);
-}
+Address::Address(const std::string &str) { set_data(str); }
 
 Address Address::random() {
   crypto::Ecc ecc;

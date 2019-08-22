@@ -5,6 +5,7 @@
   },
   "networking": {
     "maxConnections": 3,
+    "default_next_update_time": 3,
     "tcp": {
       "port": 1337,
       "endpoint": "localhost",
@@ -40,6 +41,7 @@
     "block0File": {
       "blockFormat": "PROTO",
       "blockPath": "data.0.testnet"
-    }
+    },
+    "empty_database": true
   }
 }

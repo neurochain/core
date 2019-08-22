@@ -1,6 +1,6 @@
-#include "crypto/Sign.hpp"
 #include <gtest/gtest.h>
-#include "messages/Address.hpp"
+
+#include "crypto/Sign.hpp"
 #include "messages/Hasher.hpp"
 
 namespace neuro {
@@ -10,22 +10,19 @@ namespace tests {
 TEST(Sign, transaction) {
   messages::Transaction transaction;
   transaction.mutable_id()->CopyFrom(messages::Hasher::random());
+  transaction.mutable_last_seen_block_id()->CopyFrom(
+      messages::Hasher::random());
   auto input = transaction.add_inputs();
   auto output = transaction.add_outputs();
-  input->mutable_id()->CopyFrom(messages::Hasher::random());
-  input->set_output_id(0);
-  input->set_signature_id(0);
-  output->mutable_address()->CopyFrom(messages::Address::random());
+  crypto::Ecc ecc0, ecc1;
+  input->mutable_key_pub()->CopyFrom(ecc0.key_pub());
+  input->mutable_value()->set_value(0);
+  output->mutable_key_pub()->CopyFrom(ecc1.key_pub());
   output->mutable_value()->CopyFrom(messages::NCCAmount(0));
-  crypto::Ecc ecc;
-  ASSERT_TRUE(sign({&ecc}, &transaction));
-  ASSERT_EQ(transaction.signatures_size(), 1);
-  const auto signature = transaction.signatures(0);
-  ASSERT_TRUE(signature.has_key_pub());
-  ASSERT_TRUE(signature.has_signature());
+  ASSERT_TRUE(sign({&ecc0}, &transaction));
+  ASSERT_TRUE(transaction.inputs(0).has_signature());
   ASSERT_TRUE(verify(transaction));
-  auto mutable_signature =
-      transaction.mutable_signatures(0)->mutable_signature();
+  auto mutable_signature = transaction.mutable_inputs(0)->mutable_signature();
   auto data = mutable_signature->mutable_data();
   (*data)[0] += 1;
   ASSERT_FALSE(verify(transaction));

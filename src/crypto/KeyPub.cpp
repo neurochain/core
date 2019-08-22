@@ -57,8 +57,9 @@ bool KeyPub::load(const std::string &filepath) {
 }
 
 bool KeyPub::load(const Buffer &buffer) {
-  CryptoPP::StringSource array(reinterpret_cast<const byte *>(buffer.data()),
-                               buffer.size(), true);
+  CryptoPP::StringSource array(
+      reinterpret_cast<const CryptoPP::byte *>(buffer.data()), buffer.size(),
+      true);
   _key.Load(array);
 
   // Fill the protobuf
@@ -68,8 +69,8 @@ bool KeyPub::load(const Buffer &buffer) {
 }
 
 bool KeyPub::load(const uint8_t *data, const std::size_t size) {
-  CryptoPP::StringSource array(reinterpret_cast<const byte *>(data), size,
-                               true);
+  CryptoPP::StringSource array(reinterpret_cast<const CryptoPP::byte *>(data),
+                               size, true);
   _key.Load(array);
 
   // Fill the protobuf
@@ -129,7 +130,7 @@ bool KeyPub::save(messages::_KeyPub *key_pub) const {
   const auto &y = _key.GetPublicElement().y;
 
   const auto x_size = 32;
-  byte output[x_size + 1];
+  CryptoPP::byte output[x_size + 1];
   x.Encode(&output[1], x_size);
 
   // Set compressed flag see
@@ -165,8 +166,9 @@ bool KeyPub::verify(const Buffer &data, const uint8_t *signature,
                     const std::size_t size) const {
   CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA256>::Verifier verifier(_key);
 
-  return verifier.VerifyMessage((const byte *)data.data(), data.size(),
-                                (const byte *)signature, size);
+  return verifier.VerifyMessage((const CryptoPP::byte *)data.data(),
+                                data.size(), (const CryptoPP::byte *)signature,
+                                size);
 }
 
 bool KeyPub::verify(const Buffer &data, const Buffer &signature) const {

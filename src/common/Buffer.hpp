@@ -53,7 +53,7 @@ class Buffer : public std::vector<uint8_t> {
 
   std::string str() const;
   std::string to_hex() const;
-  };
+};
 
 std::ostream &operator<<(std::ostream &os, const Buffer &buffer);
 

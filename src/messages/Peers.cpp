@@ -8,8 +8,10 @@ Peers::iterator Peers::begin(const Peer::Status status) {
 }
 
 Peers::iterator Peers::begin() { return iterator{_peers}; }
+const Peers::iterator Peers::begin() const { return iterator{_peers}; }
 
 Peers::iterator Peers::end() { return iterator{}; }
+const Peers::iterator Peers::end() const { return iterator{}; }
 
 std::optional<Peer *> Peers::insert(const Peer &peer) {
   std::unique_lock<std::shared_mutex> lock(_mutex);
@@ -44,7 +46,8 @@ std::size_t Peers::used_peers_count() const {
   long used_peers_count =
       std::count_if(_peers.begin(), _peers.end(), [](const auto &it) {
         const auto &peer = it.second;
-        auto connection_status = peer->status() & Peer::CONNECTED;
+        auto connection_status =
+            peer->status() & (Peer::CONNECTED | Peer::CONNECTING);
         return peer->has_status() && connection_status;
       });
   return used_peers_count;
@@ -111,7 +114,7 @@ void Peers::update_unreachable() {
   }
 }
 
-std::optional<Peer* > Peers::peer_by_port(const Port port) const {
+std::optional<Peer *> Peers::peer_by_port(const Port port) const {
   std::shared_lock<std::shared_mutex> lock(_mutex);
   for (auto &[_, peer] : _peers) {
     if (peer->port() == port) {
@@ -134,6 +137,14 @@ bool Peers::fill(_Peers *peers, uint8_t peer_count) {
     peer_count--;
   }
   return true;
+}
+
+Peers::operator _Peers() const {
+  _Peers peers;
+  for (const auto &[foo, peer] : _peers) {
+    peers.add_peers()->CopyFrom(*peer.get());
+  }
+  return peers;
 }
 
 std::ostream &operator<<(std::ostream &os, const Peers &peers) {

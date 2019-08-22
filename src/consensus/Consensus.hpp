@@ -1,11 +1,23 @@
 #ifndef NEURO_SRC_CONSENSUS_CONSENSUS_HPP
 #define NEURO_SRC_CONSENSUS_CONSENSUS_HPP
 
+#include <atomic>
+#include <cstdint>
+#include <memory>
+#include <mutex>
+#include <thread>
 #include <unordered_set>
+
+#include "common.pb.h"
+#include "consensus.pb.h"
+#include "consensus/Config.hpp"
 #include "consensus/Integrities.hpp"
 #include "consensus/Pii.hpp"
+#include "crypto/Ecc.hpp"
 #include "crypto/Sign.hpp"
 #include "ledger/Ledger.hpp"
+#include "messages.pb.h"
+#include "messages/NCCAmount.hpp"
 #include "tooling/blockgen.hpp"
 
 namespace neuro {
@@ -23,18 +35,18 @@ class RealtimeConsensus;
 }  // namespace tests
 
 using PublishBlock = std::function<void(const messages::Block &block)>;
-using AddressIndex = uint32_t;
+using KeyPubIndex = uint32_t;
 
 class Consensus {
  private:
   const Config _config;
   std::shared_ptr<ledger::Ledger> _ledger;
   const std::vector<crypto::Ecc> &_keys;
-  std::vector<messages::Address> _addresses;
+  std::vector<messages::_KeyPub> _key_pubs;
   const PublishBlock _publish_block;
   std::atomic<bool> _stop_compute_pii;
   std::thread _compute_pii_thread;
-  std::vector<std::pair<messages::BlockHeight, AddressIndex>> _heights_to_write;
+  std::vector<std::pair<messages::BlockHeight, KeyPubIndex>> _heights_to_write;
   std::mutex _heights_to_write_mutex;
   std::recursive_mutex _verify_blocks_mutex;
   std::optional<messages::AssemblyID> _previous_assembly_id;
@@ -43,9 +55,6 @@ class Consensus {
   std::thread _update_heights_thread;
   std::atomic<bool> _stop_miner;
   std::thread _miner_thread;
-
-  bool check_inputs(
-      const messages::TaggedTransaction &tagged_transaction) const;
 
   bool check_outputs(
       const messages::TaggedTransaction& tagged_transaction) const;
@@ -66,6 +75,13 @@ class Consensus {
 
   bool check_block_id(const messages::TaggedBlock &tagged_block) const;
 
+  bool is_unexpired(const messages::Transaction &transaction,
+                    const messages::Block &block) const;
+
+  bool is_block_transaction_valid(
+      const messages::TaggedTransaction &tagged_transaction,
+      const messages::Block &block) const;
+
   bool check_block_transactions(
       const messages::TaggedBlock &tagged_block) const;
 
@@ -84,6 +100,8 @@ class Consensus {
 
   bool check_block_denunciations(
       const messages::TaggedBlock &tagged_block) const;
+
+  bool check_balances(const messages::TaggedBlock &tagged_block) const;
 
   messages::BlockScore get_block_score(
       const messages::TaggedBlock &tagged_block) const;
@@ -143,15 +161,17 @@ class Consensus {
 
   bool get_block_writer(const messages::Assembly &assembly,
                         const messages::BlockHeight &height,
-                        messages::Address *address) const;
+                        messages::_KeyPub *key_pub) const;
 
   messages::BlockHeight get_current_height() const;
   messages::AssemblyHeight get_current_assembly_height() const;
 
   bool get_heights_to_write(
-      const std::vector<messages::Address> &addresses,
-      std::vector<std::pair<messages::BlockHeight, AddressIndex>> *heights)
+      const std::vector<messages::_KeyPub> &key_pubs,
+      std::vector<std::pair<messages::BlockHeight, KeyPubIndex>> *heights)
       const;
+
+  bool cleanup_transactions(messages::Block *block) const;
 
   bool build_block(const crypto::Ecc &keys, const messages::BlockHeight &height,
                    messages::Block *block) const;
@@ -163,6 +183,8 @@ class Consensus {
   void start_miner_thread();
 
   void mine_blocks();
+
+  void cleanup_expired_transactions();
 
   friend class neuro::consensus::tests::Consensus;
   friend class neuro::consensus::tests::RealtimeConsensus;

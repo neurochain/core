@@ -1,10 +1,13 @@
 #ifndef NEURO_SRC_CONSENSUS_PII_HPP
 #define NEURO_SRC_CONSENSUS_PII_HPP
 
+#include <cstddef>
+#include <memory>
+#include "common.pb.h"
+#include "common/types.hpp"
 #include "consensus/Config.hpp"
 #include "ledger/Ledger.hpp"
 #include "messages.pb.h"
-#include "messages/Address.hpp"
 #include "messages/Message.hpp"
 
 namespace neuro {
@@ -13,7 +16,10 @@ namespace tests {
 class Pii;
 }
 
-class Addresses {
+using TotalSpent = std::unordered_map<messages::_KeyPub, messages::NCCValue>;
+using Balances = std::unordered_map<messages::_KeyPub, messages::Balance>;
+
+class KeyPubs {
  public:
   struct Counters {
     size_t nb_transactions;
@@ -22,44 +28,37 @@ class Addresses {
   };
 
   struct Transactions {
-    std::unordered_map<messages::Address, Counters> _in;
-    std::unordered_map<messages::Address, Counters> _out;
+    std::unordered_map<messages::_KeyPub, Counters> _in;
+    std::unordered_map<messages::_KeyPub, Counters> _out;
   };
 
  private:
-  std::unordered_map<messages::Address, Transactions> _addresses;
+  std::unordered_map<messages::_KeyPub, Transactions> _key_pubs;
 
  public:
-  void add_enthalpy(const messages::Address &sender,
-                    const messages::Address &recipient, const Double &enthalpy);
+  void add_enthalpy(const messages::_KeyPub &sender,
+                    const messages::_KeyPub &recipient, const Double &enthalpy);
 
-  Double get_entropy(const messages::Address &address) const;
+  Double get_entropy(const messages::_KeyPub &key_pub) const;
 
-  std::vector<messages::Address> addresses() const;
+  std::vector<messages::_KeyPub> key_pubs() const;
 
   friend class tests::Pii;
 };
 
 class Pii {
  private:
-  Addresses _addresses;
+  KeyPubs _key_pubs;
   std::shared_ptr<ledger::Ledger> _ledger;
   Config _config;
 
-  bool get_enthalpy(const messages::Transaction &transaction,
-                    const messages::TaggedBlock &tagged_block,
-                    const messages::Address &sender,
-                    const messages::Address &recipient, Double *enthalpy) const;
+  TotalSpent get_total_spent(const messages::Block &block) const;
 
-  bool get_recipients(const messages::Transaction &transaction,
-                      std::unordered_set<messages::Address> *recipients) const;
-
-  bool get_senders(const messages::Transaction &transaction,
-                   const messages::TaggedBlock &tagged_block,
-                   std::unordered_set<messages::Address> *senders) const;
+  Balances get_balances(const messages::TaggedBlock &tagged_block) const;
 
   bool add_transaction(const messages::Transaction &transaction,
-                       const messages::TaggedBlock &tagged_block);
+                       const messages::TaggedBlock &tagged_block,
+                       const TotalSpent &total_spent, const Balances &balances);
 
   Double enthalpy_n() const;
   Double enthalpy_c() const;
@@ -75,7 +74,7 @@ class Pii {
 
   bool add_block(const messages::TaggedBlock &tagged_block);
 
-  std::vector<messages::Pii> get_addresses_pii(
+  std::vector<messages::Pii> get_key_pubs_pii(
       const messages::AssemblyHeight &assembly_height,
       const messages::BranchPath &branch_path);
 

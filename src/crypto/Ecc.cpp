@@ -1,18 +1,19 @@
 
 #include "Ecc.hpp"
-#include <asn.h>
-#include <eccrypto.h>
-#include <files.h>
-#include <oids.h>
-#include <osrng.h>
-#include <sha3.h>
+#include <cryptopp/asn.h>
+#include <cryptopp/eccrypto.h>
+#include <cryptopp/files.h>
+#include <cryptopp/oids.h>
+#include <cryptopp/osrng.h>
+#include <cryptopp/sha3.h>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 
 #include "common/logger.hpp"
-
+#include "crypto/KeyPriv.hpp"
 namespace neuro {
 namespace crypto {
+static constexpr std::size_t sign_length() { return KeyPriv::sign_length(); }
 
 Ecc::Ecc()
     : _prng(std::make_shared<CryptoPP::AutoSeededRandomPool>()),

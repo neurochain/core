@@ -1,8 +1,8 @@
-#include "crypto/Ecc.hpp"
-#include <dsa.h>
 #include <gtest/gtest.h>
-#include "common/logger.hpp"
 
+#include "crypto/Ecc.hpp"
+#include "common/logger.hpp"
+#include <cryptopp/dsa.h>
 namespace neuro {
 namespace crypto {
 namespace test {
@@ -77,7 +77,7 @@ TEST(Ecc, sign_verify) {
 
   Buffer signature(0x40 /*DSA_P1363 signature size*/, 0);
   CryptoPP::DSAConvertSignatureFormat(
-      (byte *)signature.data(), signature.size(), CryptoPP::DSA_P1363,
+      (CryptoPP::byte *)signature.data(), signature.size(), CryptoPP::DSA_P1363,
       derSignature, sizeof(derSignature), CryptoPP::DSA_DER);
 
   // Hola mundo desde NeuroChainTech

@@ -1,6 +1,8 @@
-#include "messages/Message.hpp"
+#include <google/protobuf/util/json_util.h>
+
 #include "common/logger.hpp"
 #include "messages/Hasher.hpp"
+#include "messages/Message.hpp"
 
 namespace neuro {
 namespace messages {
@@ -48,14 +50,14 @@ bool to_buffer(const Packet &packet, Buffer *buffer) {
     packet.SerializeToArray(buffer->data(), buffer->size());
     return true;
   } catch (...) {
-    std::cout << boost::stacktrace::stacktrace() << std::endl;
+    LOG_WARNING << boost::stacktrace::stacktrace() << std::endl;
     return false;
   }
 }
 
 std::optional<Buffer> to_buffer(const Packet &packet) {
   Buffer buffer;
-  if(!to_buffer(packet, &buffer)) {
+  if (!to_buffer(packet, &buffer)) {
     return std::nullopt;
   }
   return std::make_optional(buffer);
@@ -65,8 +67,12 @@ void to_json(const Packet &packet, std::string *output) {
   try {
     google::protobuf::util::MessageToJsonString(packet, output);
   } catch (...) {
-    LOG_ERROR << "Could not to_json packet " << boost::stacktrace::stacktrace()
-              << std::endl;
+    auto buff = to_buffer(packet);
+    if (!buff) {
+      throw std::runtime_error("Could not parse packet");
+    }
+    buff->save("crashing.proto");
+    LOG_TRACE << "Could not to_json packet " << buff->size();
     throw;
   }
 }
@@ -137,7 +143,7 @@ void set_block_hash(Block *block) {
 }
 
 int32_t fill_header(messages::Header *header) {
-  int32_t id = std::rand();
+  const auto id = _dist(_rd);
   header->set_version(MessageVersion);
   header->mutable_ts()->set_data(std::time(nullptr));
   header->set_id(id);

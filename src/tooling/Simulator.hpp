@@ -1,9 +1,14 @@
 #ifndef NEURO_SRC_TOOLING_SIMULATOR_HPP
 #define NEURO_SRC_TOOLING_SIMULATOR_HPP
 
+#include <cstdint>
+#include <memory>
+
 #include "consensus/Consensus.hpp"
 #include "crypto/Ecc.hpp"
 #include "ledger/LedgerMongodb.hpp"
+#include "messages.pb.h"
+#include "messages/NCCAmount.hpp"
 
 namespace neuro {
 namespace tooling {
@@ -13,12 +18,12 @@ class Simulator {
   messages::NCCAmount _ncc_block0;
 
  public:
-  const float RATIO_TO_SEND = 0.5;
+  const float RATIO_TO_SEND = 0.1;
   std::vector<crypto::Ecc> keys;
   std::shared_ptr<neuro::ledger::LedgerMongodb> ledger;
   std::shared_ptr<neuro::consensus::Consensus> consensus;
-  std::vector<messages::Address> addresses;
-  std::unordered_map<messages::Address, uint32_t> addresses_indexes;
+  std::vector<messages::_KeyPub> key_pubs;
+  std::unordered_map<messages::_KeyPub, uint32_t> key_pubs_indexes;
 
   Simulator(const std::string &db_url, const std::string &db_name,
             const int32_t nb_keys, const messages::NCCAmount &ncc_block0,

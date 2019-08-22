@@ -2,15 +2,20 @@
 #define NEURO_SRC_MESSAGES_PEERS_HPP
 
 #include <algorithm>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <numeric>
 #include <optional>
+#include <random>
 #include <shared_mutex>
 #include <string>
 #include <vector>
+
 #include "common.pb.h"
 #include "common/logger.hpp"
+#include "config.pb.h"
+#include "messages.pb.h"
 #include "messages/Message.hpp"
 #include "messages/Peer.hpp"
 
@@ -32,6 +37,9 @@ class Peers {
     Peer::Status _status;
     Indexes _peers;
     Indexes::iterator _it;
+    static constexpr auto ALLSTATUS =
+        static_cast<Peer::Status>(Peer::CONNECTED | Peer::CONNECTED |
+                                  Peer::UNREACHABLE | Peer::DISCONNECTED);
 
     void shuffle() {
       std::mt19937 g(_rd());
@@ -52,7 +60,7 @@ class Peers {
       shuffle();
     }
 
-    iterator(const PeersByKey &peers) {
+    iterator(const PeersByKey &peers) : _status(ALLSTATUS) {
       for (const auto &pair : peers) {
         _peers.push_back(pair.second.get());
       }
@@ -71,7 +79,8 @@ class Peers {
     Peer *operator->() { return *_it; }
   };
 
-  Peers(const _KeyPub &own_key, const messages::config::Networking &config) : _own_key(own_key) {
+  Peers(const _KeyPub &own_key, const messages::config::Networking &config)
+      : _own_key(own_key) {
     for (auto configured_peer : config.tcp().peers()) {
       messages::Peer peer(config, configured_peer);
       insert(peer);
@@ -92,13 +101,17 @@ class Peers {
   std::vector<Peer *> used_peers();
   std::vector<Peer *> connected_peers();
   std::vector<Peer> peers_copy() const;
-  std::optional<Peer* >peer_by_port(const Port port) const;
+  std::optional<Peer *> peer_by_port(const Port port) const;
   iterator begin();
+  const iterator begin() const;
   iterator begin(const Peer::Status);
   iterator end();
+  const iterator end() const;
+  operator _Peers() const;
 };
 
 std::ostream &operator<<(std::ostream &os, const Peers &peers);
+std::string to_json(const Packet &packet);
 
 }  // namespace messages
 }  // namespace neuro

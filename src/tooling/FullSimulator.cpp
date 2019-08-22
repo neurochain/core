@@ -3,24 +3,11 @@
 namespace neuro {
 namespace tooling {
 
-consensus::Config consensus_config{
-    5,       // blocks_per_assembly
-    10,      // members_per_assembly
-    1,       // block_period
-    messages::NCCAmount(100ull),  // block_reward
-    128000,  // max_block_size
-    1s,      // update_heights_sleep
-    1s,      // compute_pii_sleep
-    100ms,   // miner_sleep
-    1,       // integrity_block_reward
-    -40,     // integrity_double_mining
-    1        // integrity_denunciation_reward
-};
-
-messages::config::Config FullSimulator::bot_config(const int bot_index,
-                                                   const int nb_bots) const {
+messages::config::Config FullSimulator::bot_config(
+    const int bot_index, const int nb_bots,
+    const double random_transaction) const {
   messages::config::Config config;
-  config.set_random_transaction(0.5);
+  config.set_random_transaction(random_transaction);
   auto networking = config.mutable_networking();
   networking->set_max_connections(3);
   auto tcp = networking->mutable_tcp();
@@ -48,6 +35,8 @@ messages::config::Config FullSimulator::bot_config(const int bot_index,
 FullSimulator::FullSimulator(const std::string &db_url,
                              const std::string &db_name, const int nb_bots,
                              const messages::NCCAmount ncc_block0,
+                             const consensus::Config &consensus_config,
+                             const double random_transaction,
                              const int32_t time_delta)
     : db_url(db_url),
       db_name(db_name),
@@ -60,8 +49,8 @@ FullSimulator::FullSimulator(const std::string &db_url,
     addresses_indexes.insert({address, i});
   }
   for (int i = 0; i < nb_bots; i++) {
-    bots.push_back(
-        std::make_unique<Bot>(bot_config(i, nb_bots), consensus_config));
+    bots.push_back(std::make_unique<Bot>(
+        bot_config(i, nb_bots, random_transaction), consensus_config));
   }
 }
 

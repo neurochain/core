@@ -1,6 +1,6 @@
 {
   "logs": {
-        "severity": "trace",
+    "severity": "trace",
     "to_stdout": true
   },
   "networking": {
@@ -11,6 +11,7 @@
       }
     ],
     "max_connections": 3,
+    "default_next_update_time": 3,
     "tcp": {
       "port": 13352,
       "endpoint": "localhost",
@@ -32,6 +33,7 @@
     "block0_file": {
       "block_format": "PROTO",
       "block_path": "@CMAKE_CURRENT_BINARY_DIR@/data.0.testnet"
-    }
+    },
+    "empty_database": true
   }
 }

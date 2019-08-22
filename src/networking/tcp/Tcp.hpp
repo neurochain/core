@@ -5,7 +5,14 @@
 #include <boost/bind.hpp>
 #include <unordered_map>
 
+#include "common/Buffer.hpp"
 #include "common/types.hpp"
+#include "config.pb.h"
+#include "crypto/Ecc.hpp"
+#include "messages/Peer.hpp"
+#include "messages/Peers.hpp"
+#include "messages/Queue.hpp"
+#include "networking/Connection.hpp"
 #include "networking/TransportLayer.hpp"
 #include "networking/tcp/Connection.hpp"
 
@@ -58,15 +65,17 @@ class Tcp : public TransportLayer {
   Tcp(Tcp &&) = delete;
   Tcp(const Tcp &) = delete;
 
-  Tcp(messages::Queue *queue, messages::Peers *peers,
-      crypto::Ecc *keys, const messages::config::Networking &config);
+  Tcp(messages::Queue *queue, messages::Peers *peers, crypto::Ecc *keys,
+      const messages::config::Networking &config);
   bool connect(messages::Peer *peer);
   SendResult send(std::shared_ptr<messages::Message> message) const;
   bool send_unicast(std::shared_ptr<messages::Message> message) const;
   Port listening_port() const;
   IP local_ip() const;
-  bool terminate(const Connection::ID id);
-  std::optional<messages::Peer *> find_peer(const Connection::ID id);
+  bool terminate(Connection::ID id);
+  std::optional<tcp::Connection *> find(Connection::ID id) const;
+  std::optional<messages::Peer *> find_peer(Connection::ID id);
+  void clean_old_connections(int delta);
   std::size_t peer_count() const;
   void stop();
   void join();

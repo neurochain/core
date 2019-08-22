@@ -1,8 +1,6 @@
-#include "messages/Address.hpp"
-#include <cryptopp/hex.h>
 #include <gtest/gtest.h>
-#include <random>
-#include "crypto/KeyPub.hpp"
+
+#include "messages/Address.hpp"
 #include "messages/Message.hpp"
 
 namespace neuro {
@@ -20,6 +18,20 @@ TEST(Address, encode_base58) {
   }
 
   ASSERT_EQ(encode_base58(static_cast<CryptoPP::Integer>(0l), "TITI"), "TITI1");
+}
+
+TEST(Address, decode_base58) {
+  std::map<int, std::string> test_cases = {
+      {0, "1"},        {1, "2"},       {57, "z"},
+      {58, "21"},      {2 * 58, "31"}, {57 * 58 + 57, "zz"},
+      {58 * 58, "211"}};
+  for (const auto &[result, i] : test_cases) {
+    ASSERT_EQ(decode_base58(i), result);
+  }
+
+  std::string test_str =
+      "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ123456789";
+  ASSERT_EQ(test_str, encode_base58(decode_base58(test_str)));
 }
 
 TEST(Address, address) {

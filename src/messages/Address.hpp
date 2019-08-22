@@ -1,11 +1,15 @@
 #ifndef NEURO_SRC_MESSAGES_ADDRESS_HPP
 #define NEURO_SRC_MESSAGES_ADDRESS_HPP
 
+#include <cryptopp/algebra.h>
 #include <cryptopp/integer.h>
 #include <vector>
+
 #include "common.pb.h"
+#include "common/Buffer.hpp"
 #include "common/logger.hpp"
 #include "crypto/Ecc.hpp"
+#include "crypto/KeyPub.hpp"
 
 namespace neuro {
 namespace messages {
@@ -18,6 +22,8 @@ std::string encode_base58(const Buffer &buffer,
 
 std::string encode_base58(const std::string &data,
                           const std::string &version = "");
+
+CryptoPP::Integer decode_base58(const std::string &encoded_number);
 
 class Address : public _Address {
  private:
@@ -39,10 +45,8 @@ class Address : public _Address {
 };
 
 using Addresses = std::vector<Address>;
-  
+
 }  // namespace messages
 }  // namespace neuro
-
-
 
 #endif /* NEURO_SRC_MESSAGES_ADDRESS_HPP */
