@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  const auto keypath = vm["keypath"].as<std::string>();
+  const auto keypath = Path{vm["keypath"].as<std::string>()};
   const auto type = vm["type"].as<std::string>();
   const auto ncc = vm["ncc"].as<uint64_t>();
 

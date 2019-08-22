@@ -75,33 +75,20 @@ messages::TaggedBlock gen_block0(const std::vector<crypto::Ecc> &keys,
   return tagged_block;
 }
 
-void block0(uint32_t bots, const std::string &pathdir,
-            const messages::NCCAmount &nccsdf, ledger::LedgerMongodb *ledger) {
-  std::vector<crypto::Ecc> keys;
-  for (uint32_t i = 0; i < bots; ++i) {
-    // gen i keys
-    crypto::Ecc &ecc = keys.emplace_back();
-    ecc.save({pathdir + "/key_" + std::to_string(i) + ".priv"},
-             {pathdir + "/key_" + std::to_string(i) + ".pub"});
+std::vector<crypto::Ecc> create_key_pairs(uint32_t number_of_wallets,
+                                          const Path &pathdir) {
+  std::vector<crypto::Ecc> eccs;
+  for (uint32_t i = 0; i < number_of_wallets; i++) {
+    const auto key_priv_name = "key" + std::to_string(i) + ".priv";
+    const auto key_pub_name = "key" + std::to_string(i) + ".pub";
+    eccs.emplace_back(pathdir / key_priv_name, pathdir / key_pub_name);
   }
-
-  auto tagged_block0 = gen_block0(keys, nccsdf);
-  ledger->insert_block(tagged_block0);
-
-  std::ofstream blockfile0;
-  blockfile0.open("block.0.bp");
-  blockfile0 << tagged_block0.block().SerializeAsString();
-  blockfile0.close();
+  return eccs;
 }
 
-void testnet_blockg(uint32_t bots, const std::string &pathdir,
+void testnet_blockg(uint32_t number_of_wallets, const Path &pathdir,
                     messages::NCCAmount &nccsdf) {
-  std::vector<crypto::Ecc> eccs;
-  for (uint32_t i = 0; i < bots; i++) {
-    eccs.emplace_back(pathdir + "key" + std::to_string(i) + ".priv",
-                      pathdir + "key" + std::to_string(i) + ".pub");
-  }
-
+  const auto eccs = create_key_pairs(number_of_wallets, pathdir);
   const messages::Block block0 = gen_block0(eccs, nccsdf).block();
 
   std::cout << "block0 " << block0 << std::endl;
