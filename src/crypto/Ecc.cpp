@@ -20,27 +20,23 @@ Ecc::Ecc()
       _key_private(std::make_unique<KeyPriv>(_prng)),
       _key_public(std::make_unique<KeyPub>(_key_private->make_key_pub())) {}
 
-
 Ecc::Ecc(const messages::_KeyPriv &key_priv, const messages::_KeyPub &key_pub)
     : _prng(std::make_shared<CryptoPP::AutoSeededRandomPool>()),
       _key_private(std::make_unique<KeyPriv>(_prng, key_priv)),
       _key_public(std::make_unique<KeyPub>(key_pub)) {}
 
-Ecc::Ecc(const Path &filepath_private, const Path &filepath_public) :
-  _prng(std::make_shared<CryptoPP::AutoSeededRandomPool>()) {
+Ecc::Ecc(const Path &filepath_private, const Path &filepath_public)
+    : _prng(std::make_shared<CryptoPP::AutoSeededRandomPool>()) {
   if (!load_keys(filepath_private, filepath_public)) {
     throw std::runtime_error("Could not create or load keys");
   }
-  }
-  
+}
 
-bool Ecc::load_keys(const Path &keypath_priv,
-                    const Path &keypath_pub) {
+bool Ecc::load_keys(const Path &keypath_priv, const Path &keypath_pub) {
   bool keys_save{false};
   bool keys_create{false};
 
-  if (!filesystem::exists(keypath_pub) ||
-      !filesystem::exists(keypath_priv)) {
+  if (!filesystem::exists(keypath_pub) || !filesystem::exists(keypath_priv)) {
     keys_create = true;
     keys_save = true;
   }
@@ -97,8 +93,7 @@ void Ecc::sign(const uint8_t *data, const std::size_t size, uint8_t *dest) {
 }
 
 bool Ecc::operator==(const Ecc &ecc) const {
-  return (ecc.key_priv() == *_key_private &&
-          ecc.key_pub() == *_key_public);
+  return (ecc.key_priv() == *_key_private && ecc.key_pub() == *_key_public);
 }
 
 bool Ecc::operator!=(const Ecc &ecc) const { return !(ecc == *this); }

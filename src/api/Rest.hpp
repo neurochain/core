@@ -5,10 +5,10 @@
 #include "api/Monitoring.hpp"
 #include "common/types.hpp"
 
-#include <memory>
 #include <pistache/endpoint.h>
 #include <pistache/http.h>
 #include <pistache/router.h>
+#include <memory>
 #include <thread>
 
 using namespace Pistache;
@@ -22,7 +22,7 @@ class Rest;
 }
 
 class Rest : public Api {
-private:
+ private:
   using Request = Pistache::Rest::Request;
   using Response = Pistache::Http::ResponseWriter;
   //  Api *_api;
@@ -57,14 +57,14 @@ private:
 
   void get_status(const Request &request, Response response);
 
-public:
+ public:
   Rest(const messages::config::Rest &config, Bot *bot);
   ~Rest();
 
   friend class test::Rest;
 };
 
-} // namespace api
-} // namespace neuro
+}  // namespace api
+}  // namespace neuro
 
 #endif /* NEURO_SRC_API_REST_HPP */

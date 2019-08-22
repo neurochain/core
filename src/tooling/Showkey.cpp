@@ -49,7 +49,8 @@ int main(int argc, char *argv[]) {
   } else {
     std::cout << "public:\n" << ecc.key_pub() << std::endl;
     std::cout << "private:\n" << ecc.key_priv() << std::endl;
-    std::cout << "private exponent:\n" << std::hex << ecc.key_priv().exponent() << std::endl;
+    std::cout << "private exponent:\n"
+              << std::hex << ecc.key_priv().exponent() << std::endl;
   }
 
   messages::Address addr(ecc.key_pub());

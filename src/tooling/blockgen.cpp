@@ -75,7 +75,8 @@ messages::TaggedBlock gen_block0(const std::vector<crypto::Ecc> &keys,
   return tagged_block;
 }
 
-std::vector<crypto::Ecc> create_key_pairs(uint32_t number_of_wallets, const Path &pathdir) {
+std::vector<crypto::Ecc> create_key_pairs(uint32_t number_of_wallets,
+                                          const Path &pathdir) {
   std::vector<crypto::Ecc> eccs;
   for (uint32_t i = 0; i < number_of_wallets; i++) {
     const auto key_priv_name = "key" + std::to_string(i) + ".priv";
@@ -84,7 +85,7 @@ std::vector<crypto::Ecc> create_key_pairs(uint32_t number_of_wallets, const Path
   }
   return eccs;
 }
-  
+
 void testnet_blockg(uint32_t number_of_wallets, const Path &pathdir,
                     messages::NCCAmount &nccsdf) {
   const auto eccs = create_key_pairs(number_of_wallets, pathdir);

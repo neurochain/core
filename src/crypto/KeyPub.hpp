@@ -42,7 +42,7 @@ class KeyPub : public messages::_KeyPub {
               const std::size_t size) const;
   bool verify(const Buffer &data, const Buffer &signature) const;
   bool operator==(const KeyPub &key) const;
-  //friend std::ostream &operator<<(std::ostream &os, const KeyPub &key_pub);
+  // friend std::ostream &operator<<(std::ostream &os, const KeyPub &key_pub);
 };  // namespace crypto
 
 std::ostream &operator<<(std::ostream &os, const KeyPub &pub);
