@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
     ++itEndpoint;
   }
   std::string s;
-  messages::to_json(config, &s);
+  messages::to_json(config, &s, true);
 
   std::ofstream out(output);
   out << s;
