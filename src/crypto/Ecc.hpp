@@ -45,6 +45,7 @@ class Ecc {
 
   bool operator!=(const Ecc &ecc) const;
 
+  bool save(const Path &dirpath) const;
   bool save(const Path &filepath_private, const Path &filepath_public) const;
   Buffer sign(const Buffer &input);
   Buffer sign(const uint8_t *data, const std::size_t size);
