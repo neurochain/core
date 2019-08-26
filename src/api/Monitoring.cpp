@@ -4,6 +4,7 @@
 #include <sys/statfs.h>
 #include <ctime>
 #include "Bot.hpp"
+#include "version.h"
 
 namespace neuro {
 namespace api {
@@ -91,7 +92,7 @@ float Monitoring::average_block_propagation_since(std::time_t since) const {
   if (nb_blocks == 0) {
     return -1;
   }
-  return total_propagation / nb_blocks;
+  return static_cast<float>(total_propagation) / nb_blocks;
 }
 
 uint32_t Monitoring::nb_blocks_5m() const { return nb_blocks_since(300); }
@@ -129,6 +130,7 @@ messages::Status::Bot Monitoring::resource_usage() const {
   bot.set_memory(usage.ru_maxrss);
   bot.set_net_in(usage.ru_msgrcv);
   bot.set_net_out(usage.ru_msgsnd);
+  bot.set_version(GIT_COMMIT_HASH);
 
   return bot;
 }

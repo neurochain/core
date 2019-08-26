@@ -26,6 +26,7 @@ message Status {
     optional uint32 memory = 5;
     optional uint32 net_in = 6;
     optional uint32 net_out = 7;
+    optional string version = 8;
   }
 
   message FileSystem {
