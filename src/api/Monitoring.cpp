@@ -4,6 +4,7 @@
 #include <sys/statfs.h>
 #include <ctime>
 #include "Bot.hpp"
+#include "version.h"
 
 namespace neuro {
 namespace api {
@@ -129,6 +130,7 @@ messages::Status::Bot Monitoring::resource_usage() const {
   bot.set_memory(usage.ru_maxrss);
   bot.set_net_in(usage.ru_msgrcv);
   bot.set_net_out(usage.ru_msgsnd);
+  bot.set_version(GIT_COMMIT_HASH);
 
   return bot;
 }
