@@ -14,7 +14,6 @@
           "endpoint": "localhost",
           "port": 1337,
           "keyPub": {
-            "type": "ECP256K1",
             "rawData": "Awqh/GaK+zXAydO8h4sDf4apFNmW8SFaIqRqXioYDXy8"
           }
         },
@@ -22,7 +21,6 @@
           "endpoint": "localhost",
           "port": 1339,
           "keyPub": {
-            "type": "ECP256K1",
             "rawData": "AyMKGnZhazXAoXb0SJIqi4Ho+lk6bw0UttE34PDtDbya"
           }
         }
