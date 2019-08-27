@@ -125,7 +125,6 @@ bool KeyPub::save(Buffer *buffer) const {
 }
 
 bool KeyPub::save(messages::_KeyPub *key_pub) const {
-  key_pub->set_type(messages::KeyType::ECP256K1);
   const auto &x = _key.GetPublicElement().x;
   const auto &y = _key.GetPublicElement().y;
 
@@ -148,7 +147,6 @@ bool KeyPub::save(messages::_KeyPub *key_pub) const {
 }
 
 bool KeyPub::save_as_hex(messages::_KeyPub *key_pub) const {
-  key_pub->set_type(messages::KeyType::ECP256K1);
   const auto x = _key.GetPublicElement().x;
   const auto y = _key.GetPublicElement().y;
 

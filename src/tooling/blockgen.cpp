@@ -52,7 +52,6 @@ messages::TaggedBlock gen_block0(const std::vector<crypto::Ecc> &keys,
   header->mutable_timestamp()->set_data(std::time(nullptr) + time_delta);
   auto previons_block_hash = header->mutable_previous_block_hash();
   previons_block_hash->set_data("");
-  previons_block_hash->set_type(messages::Hash::Type::Hash_Type_SHA256);
   header->set_height(0);
   std::vector<crypto::KeyPub> pub_keys;
   for (const auto &key : keys) {
@@ -60,7 +59,6 @@ messages::TaggedBlock gen_block0(const std::vector<crypto::Ecc> &keys,
   }
 
   messages::BlockID block_id;
-  block_id.set_type(messages::BlockID::SHA256);
   block_id.set_data("");
   blockgen::coinbase(pub_keys, ncc_block0, block->mutable_coinbase(), block_id);
   tagged_block.set_branch(messages::Branch::MAIN);

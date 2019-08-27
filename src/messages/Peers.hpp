@@ -93,7 +93,7 @@ class Peers {
 
   std::optional<Peer *> insert(const Peer &peer);
 
-  bool fill(_Peers *peers, uint8_t peer_count = 10);
+  void fill(_Peers *peers, uint8_t peer_count = 10);
   std::size_t used_peers_count() const;
   void update_unreachable();
   std::optional<Peer *> find(const _KeyPub &key_pub);

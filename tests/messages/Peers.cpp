@@ -118,6 +118,22 @@ TEST_F(PeersF, iterator) {
   // TODO: operator*
 }
 
+TEST_F(PeersF, fill) {
+  ::neuro::messages::Peers peers(peer3.key_pub(), conf3.networking());
+  peers.insert(peer0);
+  peers.insert(peer1);
+  peers.insert(peer2);
+  peers.insert(peer3);
+  messages::_Peers net_peers;
+  peers.fill(&net_peers);
+  ASSERT_TRUE(net_peers.peers(0).has_endpoint());
+  ASSERT_TRUE(net_peers.peers(0).has_key_pub());
+  ASSERT_TRUE(net_peers.peers(0).has_port());
+  ASSERT_FALSE(net_peers.peers(0).has_status());
+  ASSERT_FALSE(net_peers.peers(0).has_next_update());
+  ASSERT_FALSE(net_peers.peers(0).has_connection_id());
+}
+
 }  // namespace test
 }  // namespace messages
 }  // namespace neuro
