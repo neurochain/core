@@ -275,31 +275,6 @@ void Bot::update_peerlist() {
   _networking.send(msg);
 }
 
-// void Bot::update_connection_graph() {
-//   if (!_config.has_connection_graph_uri()) {
-//     return;
-//   }
-//   std::string uri = _config.connection_graph_uri();
-//   messages::ConnectionsGraph graph;
-//   messages::_KeyPub own_key_pub = messages::_KeyPub(_keys.public_key());
-//   graph.mutable_own_key_pub()->CopyFrom(own_key_pub);
-//   messages::Peers peers;
-//   for (const auto &peer : _tcp_config->peers()) {
-//     if (!peer.has_key_pub()) {
-//       LOG_ERROR << "Missing key on peer " << peer;
-//       continue;
-//     }
-//     crypto::EccPub ecc_pub;
-//     ecc_pub.load_from_point(peer.key_pub());
-//     graph.add_peers_key_pubs()->CopyFrom(messages::_KeyPub(ecc_pub));
-//   }
-
-//   std::string json;
-//   messages::to_json(graph, &json);
-//   cpr::Post(cpr::Url{uri}, cpr::Body{json},
-//             cpr::Header{{"Content-Type", "text/plain"}});
-// }
-
 void Bot::handler_get_peers(const messages::Header &header,
                             const messages::Body &body) {
   // build list of peers reachable && connected to send
@@ -476,14 +451,6 @@ std::ostream &operator<<(std::ostream &os, const neuro::Bot &bot) {
   os << " }";
   return os;
 }
-
-// Bot::Status Bot::status() const {
-//   // std::lock_guard<std::mutex> lock_connections(_mutex_connections);
-//   auto peers_size = _tcp_config->peers().size();
-//   auto status =
-//       Bot::Status(_networking.peer_count(), _max_connections, peers_size);
-//   return status;
-// }
 
 std::vector<messages::Peer *> Bot::connected_peers() {
   return _peers.connected_peers();

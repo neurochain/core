@@ -14,13 +14,7 @@ message _NCCAmount {
   required uint64 value = 1;
 }
 
-enum KeyType {
-  ECP256K1 = 0;
-  ECP256R1 = 1;
-}
-
 message _KeyPub {
-  optional KeyType type = 1 [ default = ECP256K1 ];
   oneof data {
     bytes raw_data = 2;
     string hex_data = 3;
@@ -28,14 +22,10 @@ message _KeyPub {
 }
 
 message _KeyPriv {
-  required KeyType type = 1 [ default = ECP256K1 ];
   required bytes data = 2;
 }
 
 message Hash {
-  enum Type { SHA256 = 0; }
-
-  required Type type = 1 [ default = SHA256 ];
   required bytes data = 2;
 }
 

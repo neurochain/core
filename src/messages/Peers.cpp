@@ -125,18 +125,22 @@ std::optional<Peer *> Peers::peer_by_port(const Port port) const {
   return std::nullopt;
 }
 
-bool Peers::fill(_Peers *peers, uint8_t peer_count) {
-  const auto full_mask =
-      static_cast<Peer::Status>(_Peer_Status_Status_MAX * 2 - 1);
-
-  for (auto it = begin(full_mask), e = end(); it != e; ++it) {
+/**
+ * fill a peer list with managed peer so it can be send on the wire
+ * \param peers the list to be sent
+ * \param peer_count limit the number of peer we copy
+ */
+void Peers::fill(_Peers *peers, uint8_t peer_count) {
+  for (const auto *peer : *this) {
     if (peer_count <= 0) {
       break;
     }
-    peers->add_peers()->CopyFrom(**it);
+    auto *net_peer = peers->add_peers();
+    net_peer->set_endpoint(peer->endpoint());
+    net_peer->set_port(peer->port());
+    net_peer->mutable_key_pub()->CopyFrom(peer->key_pub());
     peer_count--;
   }
-  return true;
 }
 
 Peers::operator _Peers() const {

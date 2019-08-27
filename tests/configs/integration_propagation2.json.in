@@ -20,7 +20,6 @@
           "endpoint": "localhost",
           "port": 1337,
           "keyPub": {
-            "type": "ECP256K1",
             "rawData": "Awqh/GaK+zXAydO8h4sDf4apFNmW8SFaIqRqXioYDXy8"
           }
         }
