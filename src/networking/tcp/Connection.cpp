@@ -13,7 +13,7 @@ namespace tcp {
 
 Connection::Connection(const ID id, messages::Queue *queue,
                        const std::shared_ptr<tcp::socket> &socket,
-                       const messages::Peer &remote_peer)
+                       std::shared_ptr<messages::Peer> remote_peer)
     : ::neuro::networking::Connection::Connection(id, queue),
       _header(sizeof(HeaderPattern), 0),
       _buffer(128, 0),
@@ -21,18 +21,7 @@ Connection::Connection(const ID id, messages::Queue *queue,
       _remote_peer(remote_peer) {
   assert(_socket != nullptr);
 }
-
-Connection::Connection(const ID id, messages::Queue *queue,
-                       const std::shared_ptr<tcp::socket> &socket,
-                       const messages::config::Networking &config)
-    : ::neuro::networking::Connection::Connection(id, queue),
-      _header(sizeof(HeaderPattern), 0),
-      _buffer(128, 0),
-      _socket(socket),
-      _remote_peer(config) {
-  assert(_socket != nullptr);
-}
-
+  
 std::shared_ptr<const tcp::socket> Connection::socket() const {
   return _socket;
 }
@@ -113,7 +102,7 @@ void Connection::read_body(std::size_t body_size) {
               auto *hello = body.mutable_hello();
               hello->mutable_peer()->set_endpoint(
                   endpoint.address().to_string());
-              _remote_peer.CopyFrom(hello->peer());
+              _remote_peer->CopyFrom(hello->peer());
               LOG_TRACE << "remote ip> "
                         << _socket->remote_endpoint().address().to_string()
                         << std::endl;
@@ -121,14 +110,14 @@ void Connection::read_body(std::size_t body_size) {
           }
         }
 
-        if (!_this->_remote_peer.has_key_pub()) {
+        if (!_this->_remote_peer->has_key_pub()) {
           LOG_INFO
               << "Killing connection because received message without key pub "
               << ip();
           _this->terminate();
           return;
         }
-        const auto key_pub = _this->_remote_peer.key_pub();
+        const auto key_pub = _this->_remote_peer->key_pub();
 
         crypto::KeyPub ecc_pub(key_pub);
 
@@ -142,13 +131,13 @@ void Connection::read_body(std::size_t body_size) {
         }
         try {
           LOG_DEBUG << "Receiving [" << _socket->remote_endpoint() << ":"
-                    << _remote_peer.port() << "]: " << *message;
+                    << _remote_peer->port() << "]: " << *message;
         } catch (...) {
           _this->_buffer.save("conf/crashed.proto");
           return;
         }
         message->mutable_header()->mutable_key_pub()->CopyFrom(
-            _remote_peer.key_pub());
+            _remote_peer->key_pub());
         _this->_queue->publish(message);
         _this->read_header();
       });
@@ -206,7 +195,7 @@ const std::optional<Port> Connection::remote_port() const {
   return static_cast<Port>(endpoint.port());
 }
 
-const messages::Peer Connection::remote_peer() const { return _remote_peer; }
+std::shared_ptr<messages::Peer> Connection::remote_peer() const { return _remote_peer; }
 
 Connection::~Connection() { close(); }
 }  // namespace tcp

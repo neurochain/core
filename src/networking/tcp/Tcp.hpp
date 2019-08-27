@@ -52,7 +52,7 @@ class Tcp : public TransportLayer {
 
   void new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
                             const boost::system::error_code &error,
-                            messages::Peer *peer);
+                            std::shared_ptr<messages::Peer> peer);
 
   bool serialize(std::shared_ptr<messages::Message> message, Buffer *header_tcp,
                  Buffer *body_tcp) const;
@@ -67,7 +67,7 @@ class Tcp : public TransportLayer {
 
   Tcp(messages::Queue *queue, messages::Peers *peers, crypto::Ecc *keys,
       const messages::config::Networking &config);
-  bool connect(messages::Peer *peer);
+  bool connect(std::shared_ptr<messages::Peer> peer);
   SendResult send(std::shared_ptr<messages::Message> message) const;
   bool send_unicast(std::shared_ptr<messages::Message> message) const;
   Port listening_port() const;

@@ -49,7 +49,7 @@ Port Networking::listening_port() const {
   return _transport_layer->listening_port();
 }
 
-bool Networking::connect(messages::Peer *peer) {
+bool Networking::connect(std::shared_ptr<messages::Peer> peer) {
   return _transport_layer->connect(peer);
 }
 

@@ -13,28 +13,32 @@ const Peers::iterator Peers::begin() const { return iterator{_peers}; }
 Peers::iterator Peers::end() { return iterator{}; }
 const Peers::iterator Peers::end() const { return iterator{}; }
 
-std::optional<Peer *> Peers::insert(const Peer &peer) {
+std::optional<Peer *> Peers::insert(std::shared_ptr<Peer> peer) {
   std::unique_lock<std::shared_mutex> lock(_mutex);
-  if (peer.key_pub() == _own_key) {
+  if (peer->key_pub() == _own_key) {
     return {};
   }
 
   auto [found_element, is_inserted] = _peers.emplace(
-      std::piecewise_construct, std::forward_as_tuple(peer.key_pub()),
-      std::forward_as_tuple(std::make_unique<Peer>(peer)));
+      std::piecewise_construct, std::forward_as_tuple(peer->key_pub()),
+      std::forward_as_tuple(peer));
 
   auto &found_peer = found_element->second;
 
   if (!is_inserted) {
     // pub key already known, update peer
-    found_peer->set_port(peer.port());
-    found_peer->set_endpoint(peer.endpoint());
+    found_peer->set_port(peer->port());
+    found_peer->set_endpoint(peer->endpoint());
     return {found_peer.get()};
   }
 
   found_peer->set_status(Peer::DISCONNECTED);
 
   return found_peer.get();
+}
+
+std::optional<Peer *> Peers::insert(const Peer &peer) {
+  return insert(std::make_shared<Peer>(peer));
 }
 
 /**

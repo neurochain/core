@@ -487,10 +487,10 @@ TEST(INTEGRATION, connection_reconfig) {
   // worst case scenario, wait 8 sec after reset()
   std::this_thread::sleep_for(8s);
 
-  ASSERT_TRUE(bot0.check_peers_ports({13350, 13351, 13352})) << bot0->peers();
-  ASSERT_TRUE(bot4.check_peers_ports({1337, 13351, 13352})) << bot4->peers();
-  ASSERT_TRUE(bot5.check_peers_ports({1337, 13350, 13352})) << bot5->peers();
-  ASSERT_TRUE(bot6.check_peers_ports({1337, 13350, 13351})) << bot6->peers();
+  ASSERT_TRUE(bot0.check_peers_ports({13350, 13351, 13352})) << print_peers();
+  ASSERT_TRUE(bot4.check_peers_ports({1337, 13351, 13352}))  << print_peers();
+  ASSERT_TRUE(bot5.check_peers_ports({1337, 13350, 13352}))  << print_peers();
+  ASSERT_TRUE(bot6.check_peers_ports({1337, 13350, 13351}))  << print_peers();
 }
 
 TEST(INTEGRATION, ignore_bad_message) {
