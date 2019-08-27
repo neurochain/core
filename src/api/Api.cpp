@@ -71,7 +71,6 @@ messages::Transaction Api::build_transaction(
     const std::optional<messages::NCCAmount> &fees) {
   auto transaction =
       _bot->ledger()->build_transaction(sender_key_pub, outputs, fees);
-  transaction.mutable_id()->set_type(messages::Hash::SHA256);
   transaction.mutable_id()->set_data("");
   return transaction;
 }

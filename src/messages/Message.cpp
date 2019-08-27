@@ -111,7 +111,6 @@ void sort_transactions(Block *block) {
 void set_transaction_hash(Transaction *transaction) {
   // Fill the id which is a required field. This makes the transaction
   // serializable.
-  transaction->mutable_id()->set_type(messages::Hash::SHA256);
   transaction->mutable_id()->set_data("");
 
   const auto id = messages::Hasher(*transaction);
@@ -121,7 +120,6 @@ void set_transaction_hash(Transaction *transaction) {
 void set_default(messages::Signature *author) {
   author->Clear();
   author->mutable_key_pub()->set_raw_data("");
-  author->mutable_signature()->set_type(messages::Hash::SHA256);
   author->mutable_signature()->set_data("");
 }
 
@@ -130,7 +128,6 @@ void set_block_hash(Block *block) {
 
   // Fill the id which is a required field. This makes the block
   // serializable.
-  header->mutable_id()->set_type(messages::Hash::SHA256);
   header->mutable_id()->set_data("");
 
   // The author should always be filled after the hash is set because the author

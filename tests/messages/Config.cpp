@@ -46,8 +46,6 @@ TEST(Conf, load) {
     ASSERT_TRUE(peer.has_port());
     ASSERT_TRUE(peer.has_key_pub());
     const messages::_KeyPub& kp(peer.key_pub());
-    ASSERT_TRUE(kp.has_type());
-    ASSERT_EQ(kp.type(), messages::ECP256K1);
     ASSERT_TRUE(kp.has_raw_data());
   }
 

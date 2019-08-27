@@ -13,7 +13,6 @@ bool sign(const std::vector<const crypto::Ecc *> &keys,
   // serializable.
   // The transaction should always be hashed after setting the signature so this
   // should not be overwriting anything
-  transaction->mutable_id()->set_type(messages::Hash::SHA256);
   transaction->mutable_id()->set_data("");
   for (int i = 0; i < transaction->inputs_size(); i++) {
     transaction->mutable_inputs(i)->clear_signature();
@@ -28,7 +27,6 @@ bool sign(const std::vector<const crypto::Ecc *> &keys,
     const auto signature = key->key_priv().sign(serialized_transaction);
 
     input->mutable_signature()->set_data(signature.str());
-    input->mutable_signature()->set_type(messages::Hash::SHA256);
   }
 
   return true;
@@ -42,7 +40,6 @@ bool verify(const messages::Transaction &transaction) {
 
   // Fill the id which is a required field. This makes the transaction
   // serializable.
-  transaction_copy.mutable_id()->set_type(messages::Hash::SHA256);
   transaction_copy.mutable_id()->set_data("");
 
   Buffer buffer;
@@ -87,7 +84,6 @@ bool sign(const crypto::Ecc &keys, messages::Denunciation *denunciation) {
 
   const auto signature = keys.key_priv().sign(serialized);
   author->mutable_signature()->set_data(signature.str());
-  author->mutable_signature()->set_type(messages::Hash::SHA256);
   keys.key_pub().save(author->mutable_key_pub());
 
   return true;

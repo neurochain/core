@@ -88,7 +88,6 @@ void Connection::read_body(std::size_t body_size) {
 
         header->set_connection_id(_id);
         auto signature = header->mutable_signature();
-        signature->set_type(messages::Hash::SHA256);
         signature->set_data(
             reinterpret_cast<const char *>(header_pattern->signature),
             sizeof(header_pattern->signature));

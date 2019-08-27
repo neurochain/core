@@ -96,7 +96,6 @@ void Rest::get_balance(const Request &req, Response res) {
   if (!messages::from_json(json_query, &public_key)) {
     bad_request(res, "could not parse public key");
   }
-  public_key.set_type(messages::ECP256K1);
   const auto balance_amount = balance(public_key);
   send(res, balance_amount);
 }
@@ -166,7 +165,6 @@ void Rest::publish(const Request &req, Response res) {
 
   auto input = transaction.mutable_inputs(0);
   auto input_signature = input->mutable_signature();
-  input_signature->set_type(messages::Hash::SHA256);
   input_signature->set_data(signature.str());
 
   if (!crypto::verify(transaction)) {
