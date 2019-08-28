@@ -965,12 +965,19 @@ std::size_t LedgerMongodb::cleanup_transaction_pool() {
 }
 
 bool LedgerMongodb::insert_block(const messages::Block &block) {
+  const auto t0 = Timer::now();
   std::lock_guard lock(_ledger_mutex);
+  const auto t1 = Timer::now();
+  LOG_DEBUG << "Took " << (t1 - t0).count() / 1E6
+            << " ms to aquire lock in insert_block";
   messages::TaggedBlock tagged_block;
   tagged_block.mutable_block()->CopyFrom(block);
   tagged_block.set_branch(messages::Branch::DETACHED);
-  return insert_block(tagged_block) &&
-         set_branch_path(tagged_block.block().header());
+  bool result = insert_block(tagged_block) &&
+                set_branch_path(tagged_block.block().header());
+  LOG_DEBUG << "Insert block took " << (Timer::now() - t1).count() / 1E6
+            << " ms";
+  return result;
 }
 
 messages::BranchPath LedgerMongodb::fork_from(
