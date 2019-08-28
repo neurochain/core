@@ -1703,7 +1703,7 @@ bool LedgerMongodb::add_balances(messages::TaggedBlock *tagged_block) {
       enthalpy *= balance_ratio;
       balance->set_enthalpy_end(enthalpy.toString());
     } else {
-      balance->set_enthalpy_end(0);
+      balance->set_enthalpy_end("0");
     }
 
     Double new_balance =
