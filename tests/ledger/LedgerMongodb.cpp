@@ -967,6 +967,54 @@ TEST_F(LedgerMongodb, get_balance) {
   }
 }
 
+TEST_F(LedgerMongodb, compute_new_balance) {
+  auto &key_pub0 = simulator.key_pubs[0];
+  auto &key_pub1 = simulator.key_pubs[1];
+
+  simulator.consensus->add_transaction(
+      ledger->send_ncc(simulator.keys[0].key_priv(), key_pub1, 1));
+  auto block = simulator.new_block();
+  ASSERT_TRUE(simulator.consensus->add_block(block));
+  messages::TaggedBlock tagged_block1;
+  ledger->get_block(block.header().id(), &tagged_block1, false);
+
+  auto address0 = tagged_block1.balances(0).key_pub() == key_pub0 ? 0 : 1;
+  auto address1 = tagged_block1.balances(0).key_pub() == key_pub1 ? 0 : 1;
+  auto balance_block1_address0 = tagged_block1.balances(address0).value().value();
+  auto balance_block1_address1 = tagged_block1.balances(address1).value().value();
+  auto enthalpy_begin_block1_address0 = std::stoi(tagged_block1.balances(address0).enthalpy_begin());
+  auto enthalpy_end_block1_address0 = std::stoi(tagged_block1.balances(address0).enthalpy_end());
+  auto enthalpy_begin_block1_address1 = std::stoi(tagged_block1.balances(address1).enthalpy_begin());
+  auto enthalpy_end_block1_address1 = std::stoi(tagged_block1.balances(address1).enthalpy_end());
+
+  simulator.consensus->add_transaction(ledger->send_ncc(simulator.keys[1].key_priv(), key_pub0, 0.5));
+  block = simulator.new_block();
+  ASSERT_TRUE(simulator.consensus->add_block(block));
+  messages::TaggedBlock tagged_block2;
+  ledger->get_block(block.header().id(), &tagged_block2, false);
+
+  address0 = tagged_block2.balances(0).key_pub() == key_pub0 ? 0 : 1;
+  address1 = tagged_block2.balances(0).key_pub() == key_pub1 ? 0 : 1;
+  auto balance_block2_address0 = tagged_block2.balances(address0).value().value();
+  auto balance_block2_address1 = tagged_block2.balances(address1).value().value();
+  auto enthalpy_begin_block2_address0 = std::stoi(tagged_block2.balances(address0).enthalpy_begin());
+  auto enthalpy_end_block2_address0 = std::stoi(tagged_block2.balances(address0).enthalpy_end());
+  auto enthalpy_begin_block2_address1 = std::stoi(tagged_block2.balances(address1).enthalpy_begin());
+  auto enthalpy_end_block2_address1 = std::stoi(tagged_block2.balances(address1).enthalpy_end());
+
+  ASSERT_EQ(enthalpy_begin_block1_address0, ncc_block0.value());
+  ASSERT_EQ(enthalpy_begin_block1_address1, ncc_block0.value());
+  ASSERT_EQ(enthalpy_end_block1_address0, 0);  // we sent all our ncc
+  ASSERT_EQ(enthalpy_end_block1_address1, enthalpy_begin_block1_address1);
+
+  ASSERT_EQ(enthalpy_begin_block2_address0, enthalpy_end_block1_address0 + balance_block1_address0);
+  ASSERT_EQ(enthalpy_begin_block2_address1, enthalpy_end_block1_address1 + balance_block1_address1);
+  ASSERT_EQ(enthalpy_end_block2_address0, enthalpy_begin_block2_address0);
+  ASSERT_EQ(enthalpy_end_block2_address1, (enthalpy_begin_block1_address1 + balance_block1_address1) * 0.5);  // we sent 50% of all our ncc
+
+
+}
+
 }  // namespace tests
 }  // namespace ledger
 }  // namespace neuro

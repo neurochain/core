@@ -1650,29 +1650,29 @@ Double LedgerMongodb::compute_new_balance(messages::Balance *balance,
                                           const BalanceChange &change,
                                           messages::BlockHeight height) {
   const auto balance_value = balance->value().value();
-    Double enthalpy = balance->enthalpy_end();
+  Double enthalpy = balance->enthalpy_end();  // enthalpy from previous balance
 
-    // Enthalpy has increased since the last balance change
-    enthalpy += balance_value * (height - balance->block_height());
+  // Enthalpy has increased since the last balance change
+  enthalpy += balance_value * (height - balance->block_height());
 
-    balance->set_enthalpy_begin(enthalpy.toString());
+  balance->set_enthalpy_begin(enthalpy.toString());
 
-    // Enthalpy decreases if coins were sent away
-    if (balance_value > 0 && balance_value > change.negative) {
-      Double balance_ratio = balance_value - change.negative;
-      balance_ratio /= balance_value;
-      balance_ratio = mpfr::fmax(0, balance_ratio);
-      enthalpy *= balance_ratio;
-      balance->set_enthalpy_end(enthalpy.toString());
-    } else {
-      balance->set_enthalpy_end("0");
-    }
+  // Enthalpy decreases if coins were sent away
+  if (balance_value > 0 && balance_value > change.negative) {
+    Double balance_ratio = balance_value - change.negative;
+    balance_ratio /= balance_value;
+    balance_ratio = mpfr::fmax(0, balance_ratio);
+    enthalpy *= balance_ratio;
+    balance->set_enthalpy_end(enthalpy.toString());
+  } else {
+    balance->set_enthalpy_end("0");
+  }
 
     Double new_balance = balance_value + change.positive - change.negative;
 
-    // This is a dirty workaround because of a memory leak in mpfr
-    // it could be problematic if mpfr_free_cache is not thread safe
-    mpfr_free_cache();
+  // This is a dirty workaround because of a memory leak in mpfr
+  // it could be problematic if mpfr_free_cache is not thread safe
+  mpfr_free_cache();
 
   return new_balance;
 }
