@@ -1018,14 +1018,8 @@ bool Consensus::mine_block(const messages::Block &block0) {
     return false;
   }
 
-  const auto t0 = Timer::now();
-  LOG_DEBUG << "running _publish_block";
   _publish_block(new_block);
-  LOG_DEBUG << "_publish_block took " << (Timer::now() - t0).count() / 1E6
-            << " ms";
-  const auto t1 = Timer::now();
   add_block(new_block);
-  LOG_DEBUG << "add_block took " << (Timer::now() - t1).count() / 1E6 << " ms";
 
   LOG_INFO << "Mined block successfully with id " << new_block.header().id()
            << " with height " << new_block.header().height();

@@ -1646,6 +1646,37 @@ void LedgerMongodb::add_transaction_to_balances(
   }
 }
 
+Double LedgerMongodb::compute_new_balance(messages::Balance *balance,
+                                          const BalanceChange &change,
+                                          messages::BlockHeight height) {
+  const auto balance_value = balance->value().value();
+    Double enthalpy = balance->enthalpy_end();
+
+    // Enthalpy has increased since the last balance change
+    enthalpy += balance_value * (height - balance->block_height());
+
+    balance->set_enthalpy_begin(enthalpy.toString());
+
+    // Enthalpy decreases if coins were sent away
+    if (balance_value > 0 && balance_value > change.negative) {
+      Double balance_ratio = balance_value - change.negative;
+      balance_ratio /= balance_value;
+      balance_ratio = mpfr::fmax(0, balance_ratio);
+      enthalpy *= balance_ratio;
+      balance->set_enthalpy_end(enthalpy.toString());
+    } else {
+      balance->set_enthalpy_end("0");
+    }
+
+    Double new_balance = balance_value + change.positive - change.negative;
+
+    // This is a dirty workaround because of a memory leak in mpfr
+    // it could be problematic if mpfr_free_cache is not thread safe
+    mpfr_free_cache();
+
+  return new_balance;
+}
+
 bool LedgerMongodb::add_balances(messages::TaggedBlock *tagged_block) {
   std::lock_guard lock(_ledger_mutex);
   std::lock_guard lock_mpfr(mpfr_mutex);
@@ -1671,48 +1702,20 @@ bool LedgerMongodb::add_balances(messages::TaggedBlock *tagged_block) {
   add_transaction_to_balances(&balance_changes,
                               tagged_block->block().coinbase());
 
-  Double enthalpy = 0;
   for (const auto &[key_pub, change] : balance_changes) {
     auto balance = tagged_block->add_balances();
-    enthalpy = 0;
     if (is_block0) {
       balance->mutable_key_pub()->CopyFrom(key_pub);
       balance->mutable_value()->set_value(0);
-      balance->set_enthalpy_begin(enthalpy.toString());
-      balance->set_enthalpy_end(enthalpy.toString());
+      balance->set_enthalpy_begin("0");
+      balance->set_enthalpy_end("0");
       balance->set_block_height(0);
     } else {
       balance->CopyFrom(get_balance(key_pub, previous));
     }
 
-    enthalpy = balance->enthalpy_end();
-
-    // Enthalpy has increased since the last balance change
-    enthalpy +=
-        balance->value().value() *
-        (tagged_block->block().header().height() - balance->block_height());
-
-    balance->set_enthalpy_begin(enthalpy.toString());
-
-    // Enthalpy decreases if coins were sent away
-    const auto balance_value = balance->value().value();
-    if (balance_value > 0 && balance_value > change.negative) {
-      Double balance_ratio = balance_value - change.negative;
-      balance_ratio /= balance_value;
-      balance_ratio = mpfr::fmax(0, balance_ratio);
-      enthalpy *= balance_ratio;
-      balance->set_enthalpy_end(enthalpy.toString());
-    } else {
-      balance->set_enthalpy_end("0");
-    }
-
-    Double new_balance =
-        Double{balance->value().value()} + change.positive - change.negative;
-
-    // This is a dirty workaround because of a memory leak in mpfr
-    // it could be problematic if mpfr_free_cache is not thread safe
-    mpfr_free_cache();
-
+    Double new_balance = compute_new_balance(
+        balance, change, tagged_block->block().header().height());
     if (new_balance < 0) {
       LOG_WARNING << "Block " << tagged_block->block().header().id()
                   << " key pub " << key_pub << " would have a negative balance";
@@ -1725,7 +1728,6 @@ bool LedgerMongodb::add_balances(messages::TaggedBlock *tagged_block) {
 
     balance->mutable_value()->set_value(
         static_cast<messages::NCCValue>(new_balance));
-
     balance->clear_block_height();
   }
 
