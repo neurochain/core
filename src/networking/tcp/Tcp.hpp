@@ -59,6 +59,7 @@ class Tcp : public TransportLayer {
 
   void start_accept();
   void accept(const boost::system::error_code &error);
+  void stop();
 
  public:
   Tcp() = delete;
@@ -77,7 +78,6 @@ class Tcp : public TransportLayer {
   std::optional<messages::Peer *> find_peer(Connection::ID id);
   void clean_old_connections(int delta);
   std::size_t peer_count() const;
-  void stop();
   void join();
   ~Tcp();
 
