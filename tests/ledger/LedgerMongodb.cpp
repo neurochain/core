@@ -968,6 +968,8 @@ TEST_F(LedgerMongodb, get_balance) {
 }
 
 TEST_F(LedgerMongodb, compute_new_balance) {
+  // simple transaction, 2 block, 2 transaction, address0 send all it's ncc,
+  // then in next block address 2 send half of it's one
   auto &key_pub0 = simulator.key_pubs[0];
   auto &key_pub1 = simulator.key_pubs[1];
 
