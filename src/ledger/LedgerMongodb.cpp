@@ -1658,14 +1658,12 @@ Double LedgerMongodb::compute_new_balance(messages::Balance *balance,
   balance->set_enthalpy_begin(enthalpy.toString());
 
   // Enthalpy decreases if coins were sent away
-  if (balance_value > 0 && balance_value > change.negative) {
+  if (balance_value > 0) {
     Double balance_ratio = balance_value - change.negative;
     balance_ratio /= balance_value;
     balance_ratio = mpfr::fmax(0, balance_ratio);
     enthalpy *= balance_ratio;
     balance->set_enthalpy_end(enthalpy.toString());
-  } else {
-    balance->set_enthalpy_end("0");
   }
 
     Double new_balance = balance_value + change.positive - change.negative;
