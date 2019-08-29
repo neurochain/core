@@ -1014,7 +1014,27 @@ TEST_F(LedgerMongodb, compute_new_balance) {
   ASSERT_EQ(enthalpy_end_block2_address0, enthalpy_begin_block2_address0);
   ASSERT_EQ(enthalpy_end_block2_address1, (enthalpy_begin_block1_address1 + balance_block1_address1) * 0.5);  // we sent 50% of all our ncc
 
+  // try to spend more than we have (can be done if we receive more ncc in
+  // the same block
 
+  simulator.consensus->add_transaction(ledger->send_ncc(simulator.keys[0].key_priv(), key_pub0, 1.2));
+  simulator.consensus->add_transaction(ledger->send_ncc(simulator.keys[1].key_priv(), key_pub0, 0.3));
+  block = simulator.new_block();
+  ASSERT_TRUE(simulator.consensus->add_block(block));
+  messages::TaggedBlock tagged_block3;
+  ledger->get_block(block.header().id(), &tagged_block3, false);
+
+  address0 = tagged_block3.balances(0).key_pub() == key_pub0 ? 0 : 1;
+  address1 = tagged_block3.balances(0).key_pub() == key_pub1 ? 0 : 1;
+  auto enthalpy_begin_block3_address0 = std::stoi(tagged_block3.balances(address0).enthalpy_begin());
+  auto enthalpy_end_block3_address0 = std::stoi(tagged_block3.balances(address0).enthalpy_end());
+  auto enthalpy_begin_block3_address1 = std::stoi(tagged_block3.balances(address1).enthalpy_begin());
+  auto enthalpy_end_block3_address1 = std::stoi(tagged_block3.balances(address1).enthalpy_end());
+
+  ASSERT_EQ(enthalpy_begin_block3_address0, enthalpy_end_block2_address0 + balance_block2_address0);
+  ASSERT_EQ(enthalpy_begin_block3_address1, enthalpy_end_block2_address1 + balance_block2_address1);
+  ASSERT_EQ(enthalpy_end_block3_address0, 0);  // we sent more than 50% of all our ncc
+  ASSERT_EQ(enthalpy_end_block3_address1, enthalpy_begin_block3_address1 * 0.7);  // we sent 30% of all our ncc
 }
 
 }  // namespace tests
