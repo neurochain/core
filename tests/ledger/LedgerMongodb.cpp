@@ -978,7 +978,7 @@ TEST_F(LedgerMongodb, compute_new_balance) {
   auto block = simulator.new_block();
   ASSERT_TRUE(simulator.consensus->add_block(block));
   messages::TaggedBlock tagged_block1;
-  ledger->get_block(block.header().id(), &tagged_block1, false);
+  ledger->get_block(block.header().id(), &tagged_block1);
 
   auto address0 = tagged_block1.balances(0).key_pub() == key_pub0 ? 0 : 1;
   auto address1 = tagged_block1.balances(0).key_pub() == key_pub1 ? 0 : 1;
@@ -993,7 +993,7 @@ TEST_F(LedgerMongodb, compute_new_balance) {
   block = simulator.new_block();
   ASSERT_TRUE(simulator.consensus->add_block(block));
   messages::TaggedBlock tagged_block2;
-  ledger->get_block(block.header().id(), &tagged_block2, false);
+  ledger->get_block(block.header().id(), &tagged_block2);
 
   address0 = tagged_block2.balances(0).key_pub() == key_pub0 ? 0 : 1;
   address1 = tagged_block2.balances(0).key_pub() == key_pub1 ? 0 : 1;
@@ -1022,7 +1022,7 @@ TEST_F(LedgerMongodb, compute_new_balance) {
   block = simulator.new_block();
   ASSERT_TRUE(simulator.consensus->add_block(block));
   messages::TaggedBlock tagged_block3;
-  ledger->get_block(block.header().id(), &tagged_block3, false);
+  ledger->get_block(block.header().id(), &tagged_block3);
 
   address0 = tagged_block3.balances(0).key_pub() == key_pub0 ? 0 : 1;
   address1 = tagged_block3.balances(0).key_pub() == key_pub1 ? 0 : 1;
