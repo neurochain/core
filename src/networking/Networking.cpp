@@ -62,7 +62,7 @@ void Networking::clean_old_connections(int delta) {
  * \param id an identifiant of a connection
  * \return the associated peer for the connection
  */
-std::optional<messages::Peer *> Networking::find_peer(Connection::ID id) {
+std::optional<std::shared_ptr<messages::Peer> > Networking::find_peer(Connection::ID id) {
   return _transport_layer->find_peer(id);
 }
 

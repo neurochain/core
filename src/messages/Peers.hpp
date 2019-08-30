@@ -8,7 +8,7 @@
 #include <numeric>
 #include <optional>
 #include <random>
-#include <shared_mutex>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -25,7 +25,7 @@ namespace messages {
 class Peers {
  private:
   const _KeyPub _own_key;
-  mutable std::shared_mutex _mutex;
+  mutable std::mutex _mutex;
   using PeersByKey =
       std::unordered_map<_KeyPub, std::shared_ptr<Peer>, PacketHash<_KeyPub>>;
   PeersByKey _peers;
@@ -92,7 +92,7 @@ class Peers {
   std::size_t size() const { return _peers.size(); }
 
   std::optional<Peer *> insert(const Peer &peer);
-  std::optional<Peer *> insert(const std::shared_ptr<Peer> peer);
+  std::optional<Peer *> insert(std::shared_ptr<Peer> peer);
 
   bool fill(_Peers *peers, uint8_t peer_count = 10);
   std::size_t used_peers_count() const;

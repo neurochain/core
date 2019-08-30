@@ -39,7 +39,7 @@ class Networking {
   bool terminate(const Connection::ID id);
   Port listening_port() const;
   bool connect(std::shared_ptr<messages::Peer> peer);
-  std::optional<messages::Peer *> find_peer(Connection::ID id);
+  std::optional<std::shared_ptr<messages::Peer>> find_peer(Connection::ID id);
   void clean_old_connections(int delta);
 };
 

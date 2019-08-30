@@ -149,6 +149,7 @@ bool Tcp::terminate(const Connection::ID id) {
   std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   auto got = _connections.find(id);
   if (got == _connections.end()) {
+    LOG_TRACE << "trax> could not terminating " << id << " " << _connections.size();
     return false;
   }
   got->second->terminate();
@@ -156,13 +157,12 @@ bool Tcp::terminate(const Connection::ID id) {
   return true;
 }
 
-std::optional<messages::Peer *> Tcp::find_peer(const Connection::ID id) {
+std::optional<std::shared_ptr<messages::Peer> > Tcp::find_peer(const Connection::ID id) {
   auto connection = find(id);
   if (!connection) {
     return std::nullopt;
   }
-  auto remote_peer = (*connection)->remote_peer();
-  return _peers->find(remote_peer->key_pub());
+  return (*connection)->remote_peer();
 }
 
 bool Tcp::serialize(std::shared_ptr<messages::Message> message,

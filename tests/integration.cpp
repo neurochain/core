@@ -157,7 +157,7 @@ TEST(INTEGRATION, full_node) {
   BotTest bot1("bot1.json", port_offset);
   std::this_thread::sleep_for(6s);
 
-  ASSERT_EQ(bot0.peers().size(), 2);
+  ASSERT_EQ(bot0.peers().size(), 2) << bot0.peers();
   ASSERT_EQ(bot0->connected_peers().size(), 0);
   ASSERT_EQ(bot1.peers().size(), 2);
   ASSERT_EQ(bot1->connected_peers().size(), 0);

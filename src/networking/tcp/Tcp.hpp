@@ -75,7 +75,7 @@ class Tcp : public TransportLayer {
   IP local_ip() const;
   bool terminate(Connection::ID id);
   std::optional<tcp::Connection *> find(Connection::ID id) const;
-  std::optional<messages::Peer *> find_peer(Connection::ID id);
+  std::optional<std::shared_ptr<messages::Peer> > find_peer(Connection::ID id);
   void clean_old_connections(int delta);
   std::size_t peer_count() const;
   void join();

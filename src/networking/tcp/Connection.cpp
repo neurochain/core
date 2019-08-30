@@ -126,6 +126,7 @@ void Connection::read_body(std::size_t body_size) {
                            sizeof(header_pattern->signature));
 
         if (!check) {
+	  LOG_INFO << "Bad signature on incomming message";
           _this->terminate();
           return;
         }
@@ -165,7 +166,7 @@ void Connection::terminate() {
   boost::system::error_code ec;
   _socket->shutdown(tcp::socket::shutdown_both, ec);
   if (ec) {
-    LOG_DEBUG << "can't shutdown connection socket to : "
+    LOG_DEBUG << "can't shutdown connection socket to: id " << _id << " "
               << remote_port().value_or(0) << " : " << ec.message();
   }
   auto message = std::make_shared<messages::Message>();

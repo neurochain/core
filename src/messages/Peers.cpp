@@ -14,17 +14,20 @@ Peers::iterator Peers::end() { return iterator{}; }
 const Peers::iterator Peers::end() const { return iterator{}; }
 
 std::optional<Peer *> Peers::insert(std::shared_ptr<Peer> peer) {
-  std::unique_lock<std::shared_mutex> lock(_mutex);
+  if(!peer->has_key_pub()) {
+    return {};
+  }
+  
   if (peer->key_pub() == _own_key) {
     return {};
   }
 
+  std::unique_lock<std::mutex> lock(_mutex);
   auto [found_element, is_inserted] = _peers.emplace(
       std::piecewise_construct, std::forward_as_tuple(peer->key_pub()),
       std::forward_as_tuple(peer));
 
   auto &found_peer = found_element->second;
-
   if (!is_inserted) {
     // pub key already known, update peer
     found_peer->set_port(peer->port());
@@ -46,7 +49,7 @@ std::optional<Peer *> Peers::insert(const Peer &peer) {
  * \return number of connection | connected peers
  */
 std::size_t Peers::used_peers_count() const {
-  std::shared_lock<std::shared_mutex> lock(_mutex);
+  std::unique_lock<std::mutex> lock(_mutex);
   long used_peers_count =
       std::count_if(_peers.begin(), _peers.end(), [](const auto &it) {
         const auto &peer = it.second;
@@ -58,7 +61,7 @@ std::size_t Peers::used_peers_count() const {
 }
 
 std::optional<Peer *> Peers::find(const _KeyPub &key_pub) {
-  std::shared_lock<std::shared_mutex> lock(_mutex);
+  std::unique_lock<std::mutex> lock(_mutex);
   auto got = _peers.find(key_pub);
 
   if (got == _peers.end()) {
@@ -76,7 +79,7 @@ std::optional<Peer *> Peers::find(const _KeyPub &key_pub) {
  * \return the filtered list of peer
  */
 std::vector<Peer *> Peers::by_status(const Peer::Status status) {
-  std::shared_lock<std::shared_mutex> lock(_mutex);
+  std::unique_lock<std::mutex> lock(_mutex);
   std::vector<Peer *> res;
 
   const auto time = ::neuro::time();
@@ -101,7 +104,7 @@ std::vector<Peer *> Peers::connected_peers() {
 }
 
 std::vector<Peer> Peers::peers_copy() const {
-  std::shared_lock<std::shared_mutex> lock(_mutex);
+  std::unique_lock<std::mutex> lock(_mutex);
   std::vector<Peer> res;
 
   for (const auto &[_, peer] : _peers) {
@@ -119,7 +122,7 @@ void Peers::update_unreachable() {
 }
 
 std::optional<Peer *> Peers::peer_by_port(const Port port) const {
-  std::shared_lock<std::shared_mutex> lock(_mutex);
+  std::unique_lock<std::mutex> lock(_mutex);
   for (auto &[_, peer] : _peers) {
     if (peer->port() == port) {
       return std::make_optional(peer.get());
