@@ -211,14 +211,14 @@ TEST(INTEGRATION, disconnect) {
   BotTest bot0("bot0.json", port_offset);
   BotTest bot1("bot1.json", port_offset);
 
-  std::this_thread::sleep_for(2s);
+  std::this_thread::sleep_for(12s);
 
   ASSERT_EQ(bot0->connected_peers().size(), 1);
   ASSERT_EQ(bot1->connected_peers().size(), 1);
 
   bot1.operator->().reset();
 
-  std::this_thread::sleep_for(2s);
+  std::this_thread::sleep_for(1s);
 
   ASSERT_EQ(bot0->connected_peers().size(), 0);
 }
@@ -247,7 +247,7 @@ TEST(INTEGRATION, disconnect_message) {
   ASSERT_EQ(bot2->connected_peers().size(), 2) << bot2.peers();
 
   bot1.operator->().reset();
-  std::this_thread::sleep_for(2s);
+  std::this_thread::sleep_for(12s);
 
   ASSERT_TRUE(message_received0) << bot0.peers();
   ASSERT_TRUE(message_received2) << bot2.peers();
@@ -260,7 +260,7 @@ TEST(INTEGRATION, neighbors_propagation) {
   BotTest bot0("integration_propagation0.json", port_offset);
   BotTest bot1("integration_propagation1.json", port_offset);
   BotTest bot2("integration_propagation2.json", port_offset);
-  std::this_thread::sleep_for(2s);
+  std::this_thread::sleep_for(12s);
 
   ASSERT_TRUE(bot0.check_is_connected({1338, 1339})) << bot0->peers();
   ASSERT_TRUE(bot1.check_is_connected({1337})) << bot1->peers();
@@ -283,7 +283,7 @@ TEST(INTEGRATION, neighbors_connections) {
   BotTest bot1("bot1.json", port_offset);
   BotTest bot2("bot2.json", port_offset);
 
-  std::this_thread::sleep_for(2s);
+  std::this_thread::sleep_for(12s);
 
   ASSERT_TRUE(bot0.check_peers_ports({1338, 1339})) << bot0->peers();
   ASSERT_TRUE(bot1.check_peers_ports({1337, 1339})) << bot1->peers();
@@ -296,7 +296,7 @@ TEST(INTEGRATION, key_gen_connection) {
   BotTest bot0("bot0.json", port_offset);
   BotTest bot50("integration_propagation50.json", port_offset);
 
-  std::this_thread::sleep_for(2s);
+  std::this_thread::sleep_for(12s);
 
   ASSERT_TRUE(bot0.check_peers_ports({13350})) << bot0->peers();
   ASSERT_TRUE(bot50.check_peers_ports({1337})) << bot50->peers();
@@ -309,7 +309,7 @@ TEST(INTEGRATION, fullfill_network) {
   BotTest bot1("bot1.json", port_offset);
   BotTest bot2("bot2.json", port_offset);
 
-  std::this_thread::sleep_for(2s);
+  std::this_thread::sleep_for(12s);
 
   // Now adding last node
   BotTest bot40("integration_propagation40.json", port_offset);
@@ -357,7 +357,7 @@ TEST(INTEGRATION, connection_opportunity) {
           bot2_disconnect_received++;
         }
       });
-  std::this_thread::sleep_for(2s);
+  std::this_thread::sleep_for(12s);
   LOG_INFO  << "date";
   ASSERT_TRUE(bot0.check_peers_ports({1338, 1339, 13340}));
   ASSERT_TRUE(bot1.check_peers_ports({1337, 1339, 13340}));
@@ -369,7 +369,7 @@ TEST(INTEGRATION, connection_opportunity) {
 
   // Create additional node that cannot connect
   BotTest bot4("integration_propagation41.json", port_offset);
-  std::this_thread::sleep_for(2s);
+  std::this_thread::sleep_for(12s);
 
   ASSERT_TRUE(bot0.check_peers_ports({1338, 1339, 13340})) << bot0->peers();
   ASSERT_TRUE(bot1.check_peers_ports({1337, 1339, 13340})) << bot1->peers();
@@ -406,7 +406,7 @@ TEST(INTEGRATION, connection_opportunity_update) {
 
   // Create additional node that cannot connect
   BotTest bot4("integration_propagation50.json", port_offset);
-  std::this_thread::sleep_for(2s);
+  std::this_thread::sleep_for(12s);
 
   // Check no change on other nodes
   ASSERT_TRUE(bot0.check_peers_ports({1338, 1339, 13340}));
@@ -434,7 +434,7 @@ TEST(INTEGRATION, connection_reconfig) {
   BotTest bot1("bot1.json", port_offset);
   BotTest bot2("bot2.json", port_offset);
   BotTest bot3("integration_propagation40.json", port_offset);
-  std::this_thread::sleep_for(2s);
+  std::this_thread::sleep_for(12s);
 
   ASSERT_TRUE(bot0.check_peers_ports({1338, 1339, 13340})) << bot0->peers();
   ASSERT_TRUE(bot1.check_peers_ports({1337, 1339, 13340})) << bot1->peers();
@@ -502,7 +502,7 @@ TEST(INTEGRATION, ignore_bad_message) {
     EXPECT_EQ(header.version(), neuro::MessageVersion);
   });
 
-  std::this_thread::sleep_for(2s);
+  std::this_thread::sleep_for(12s);
 
   ASSERT_TRUE(bot0.check_peers_ports({1338}));
   ASSERT_TRUE(bot1.check_peers_ports({1337}));
@@ -519,7 +519,7 @@ TEST(INTEGRATION, keep_max_connections) {
   Port port_offset = random_port();
   BotTest bot0("bot0.json", port_offset);
   bot0.set_max_incoming_connections(1);
-  std::this_thread::sleep_for(2s);
+  std::this_thread::sleep_for(12s);
   BotTest bot1("bot1.json", port_offset);
   std::this_thread::sleep_for(4s);
   BotTest bot2("bot2.json", port_offset);
