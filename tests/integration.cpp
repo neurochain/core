@@ -194,7 +194,7 @@ TEST(INTEGRATION, simple_interaction) {
   ASSERT_GT(received_connection, 0);
   ASSERT_EQ(received_deconnection, 0);
 
-  std::this_thread::sleep_for(2s);
+  std::this_thread::sleep_for(12s);
 
   ASSERT_TRUE(bot0.check_peers_ports({1338, 1339})) << bot0->peers();
   ASSERT_TRUE(bot1.check_peers_ports({1337, 1339})) << bot1->peers();
