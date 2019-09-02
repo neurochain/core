@@ -73,8 +73,9 @@ bool Tcp::connect(std::shared_ptr<messages::Peer> peer) {
   bai::tcp::resolver::iterator endpoint_iterator = resolver.resolve(query);
 
   auto socket = std::make_shared<bai::tcp::socket>(_io_context);
-  auto handler = [this, socket, peer=std::move(peer)](boost::system::error_code error,
-                                      bai::tcp::resolver::iterator iterator) {
+  auto handler = [this, socket, peer = std::move(peer)](
+                     boost::system::error_code error,
+                     bai::tcp::resolver::iterator iterator) {
     this->new_connection_local(socket, error, peer);
   };
   boost::asio::async_connect(*socket, endpoint_iterator, handler);
@@ -95,8 +96,8 @@ void Tcp::new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
 
     msg_header->set_connection_id(_current_id);
     auto remote_peer = std::make_shared<messages::Peer>(_config);
-    auto connection =
-        std::make_shared<tcp::Connection>(_current_id, _queue, socket, remote_peer);
+    auto connection = std::make_shared<tcp::Connection>(_current_id, _queue,
+                                                        socket, remote_peer);
     _connections.insert(std::make_pair(_current_id, connection));
 
     auto connection_ready = msg_body->mutable_connection_ready();
@@ -140,6 +141,7 @@ void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
                 << error.message();
 
     auto connection_closed = msg_body->mutable_connection_closed();
+    peer->clear_connection_id();
     connection_closed->mutable_peer()->CopyFrom(*peer);
     _queue->publish(message);
   }
@@ -149,7 +151,8 @@ bool Tcp::terminate(const Connection::ID id) {
   std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   auto got = _connections.find(id);
   if (got == _connections.end()) {
-    LOG_TRACE << "trax> could not terminating " << id << " " << _connections.size();
+    LOG_TRACE << "trax> could not terminating " << id << " "
+              << _connections.size();
     return false;
   }
   got->second->terminate();
@@ -157,7 +160,8 @@ bool Tcp::terminate(const Connection::ID id) {
   return true;
 }
 
-std::optional<std::shared_ptr<messages::Peer> > Tcp::find_peer(const Connection::ID id) {
+std::optional<std::shared_ptr<messages::Peer> > Tcp::find_peer(
+    const Connection::ID id) {
   auto connection = find(id);
   if (!connection) {
     return std::nullopt;

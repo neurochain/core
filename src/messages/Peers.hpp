@@ -5,10 +5,10 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <numeric>
 #include <optional>
 #include <random>
-#include <mutex>
 #include <string>
 #include <vector>
 
@@ -33,7 +33,7 @@ class Peers {
  public:
   class iterator {
    private:
-    using Indexes = std::vector<std::shared_ptr<Peer> >;
+    using Indexes = std::vector<std::shared_ptr<Peer>>;
     Peer::Status _status;
     Indexes _peers;
     Indexes::iterator _it;
@@ -75,7 +75,7 @@ class Peers {
 
     bool operator==(const iterator &) { return _it == _peers.end(); }
     bool operator!=(const iterator &) { return _it != _peers.end(); }
-    std::shared_ptr<Peer> operator*() {  return *_it; }
+    std::shared_ptr<Peer> operator*() { return *_it; }
     std::shared_ptr<Peer> operator->() { return *_it; }
   };
 
@@ -93,6 +93,8 @@ class Peers {
 
   std::optional<Peer *> insert(const Peer &peer);
   std::optional<Peer *> insert(std::shared_ptr<Peer> peer);
+  std::optional<Peer *> upsert(const Peer &peer);
+  std::optional<Peer *> upsert(std::shared_ptr<Peer> peer);
 
   bool fill(_Peers *peers, uint8_t peer_count = 10);
   std::size_t used_peers_count() const;

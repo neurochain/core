@@ -20,8 +20,9 @@ Connection::Connection(const ID id, messages::Queue *queue,
       _socket(socket),
       _remote_peer(remote_peer) {
   assert(_socket != nullptr);
+  remote_peer->set_connection_id(id);
 }
-  
+
 std::shared_ptr<const tcp::socket> Connection::socket() const {
   return _socket;
 }
@@ -126,7 +127,7 @@ void Connection::read_body(std::size_t body_size) {
                            sizeof(header_pattern->signature));
 
         if (!check) {
-	  LOG_INFO << "Bad signature on incomming message";
+          LOG_INFO << "Bad signature on incomming message";
           _this->terminate();
           return;
         }
@@ -196,7 +197,9 @@ const std::optional<Port> Connection::remote_port() const {
   return static_cast<Port>(endpoint.port());
 }
 
-std::shared_ptr<messages::Peer> Connection::remote_peer() const { return _remote_peer; }
+std::shared_ptr<messages::Peer> Connection::remote_peer() const {
+  return _remote_peer;
+}
 
 Connection::~Connection() { close(); }
 }  // namespace tcp

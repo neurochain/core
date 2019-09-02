@@ -203,6 +203,9 @@ TEST(INTEGRATION, disconnect) {
 
   std::this_thread::sleep_for(2s);
 
+  LOG_DEBUG << bot0->peers() << std::endl;
+  LOG_DEBUG << bot1->peers() << std::endl;
+
   ASSERT_EQ(bot0->connected_peers().size(), 1);
   ASSERT_EQ(bot1->connected_peers().size(), 1);
 

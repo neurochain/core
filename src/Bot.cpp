@@ -19,12 +19,11 @@ Bot::Bot(const messages::config::Config &config,
       _ledger(std::make_shared<ledger::LedgerMongodb>(_config.database())),
       _update_timer(std::ref(*_io_context)),
       _consensus_config(consensus_config) {
-
   if (!init()) {
     throw std::runtime_error("Could not create bot from configuration file");
   }
 
-  LOG_DEBUG << this << " hello from bot " << _me.port() << std::endl
+  LOG_DEBUG << this << " Bot started " << _me.port() << std::endl
             << _keys.at(0).key_pub() << std::endl
             << "cons " << _consensus.get() << std::endl
             << "net  " << &_networking << std::endl
@@ -323,7 +322,7 @@ void Bot::handler_peers(const messages::Header &header,
             << " got a peers message, receiving : " << peers;
   for (const auto &remote_peer : peers) {
     messages::Peer peer(_config.networking(), remote_peer);
-    _peers.insert(peer);
+    _peers.upsert(peer);
   }
 }
 
@@ -363,7 +362,7 @@ void Bot::handler_deconnection(const messages::Header &header,
       LOG_DEBUG << this << " : " << _me.port() << " disconnected from "
                 << (*remote_peer)->port();
     }
-    //_networking.terminate(header.connection_id());
+    _networking.terminate(header.connection_id());
   } else {
     // peer didn't create a connection
     if (body.connection_closed().has_peer()) {
@@ -385,13 +384,15 @@ void Bot::handler_world(const messages::Header &header,
                         const messages::Body &body) {
   auto &world = body.world();
   auto remote_peer = _peers.find(header.key_pub());
-  auto remote_peer_by_connection_id = _networking.find_peer(header.connection_id());
+  auto remote_peer_by_connection_id =
+      _networking.find_peer(header.connection_id());
 
   assert(remote_peer);
   assert(remote_peer_by_connection_id);
   assert(*remote_peer == remote_peer_by_connection_id->get());
   if (!remote_peer) {
-    LOG_WARNING << "Received world message from unknown peer " << header.key_pub();
+    LOG_WARNING << "Received world message from unknown peer "
+                << header.key_pub();
     return;
   }
   if (!world.accepted()) {
@@ -417,26 +418,29 @@ void Bot::handler_hello(const messages::Header &header,
     return;
   }
   const auto &hello = body.hello();
+  const auto peer = _peers.find(header.key_pub());
+  if (peer && ((*peer)->status() & (messages::Peer::DISCONNECTED |
+                                    messages::Peer::UNREACHABLE)) != 0) {
+    LOG_WARNING << "Receiving an hello message from a peer we are already "
+                   "connected to"
+                << **peer;
+    return;
+  }
   const auto remote_peer_opt = _networking.find_peer(header.connection_id());
-  messages::Peer* remote_peer;
+  messages::Peer *remote_peer;
   if (!remote_peer_opt) {
-    LOG_WARNING << this << " : " << _me.port()
-                << "Received a message from ourself (from the futuru?)";
-    auto peer_from_connection = _networking.find_peer(header.connection_id());
-    if(!peer_from_connection) {
-      LOG_WARNING << "Could not find peer we received message from";
-      return;
-    }
-    const auto new_peer_opt = _peers.insert(*peer_from_connection);
-    if(!new_peer_opt) {
-      LOG_INFO << "Could not create peer";
+    LOG_WARNING << "Could not find peer we received message from";
+    return;
+  } else {
+    const auto new_peer_opt = _peers.insert(*remote_peer_opt);
+    if (!new_peer_opt) {
+      LOG_WARNING << "Could not create peer";
       return;
     }
     remote_peer = *new_peer_opt;
-    
-  } else {
-    remote_peer = remote_peer_opt->get();
   }
+  LOG_DEBUG << "TOTORO0 " << *remote_peer;
+  LOG_DEBUG << "TOTORO1 " << hello.peer();
   remote_peer->CopyFrom(hello.peer());
 
   LOG_DEBUG << this << " : " << _me.port() << " Got a HELLO message from "

@@ -14,10 +14,39 @@ Peers::iterator Peers::end() { return iterator{}; }
 const Peers::iterator Peers::end() const { return iterator{}; }
 
 std::optional<Peer *> Peers::insert(std::shared_ptr<Peer> peer) {
-  if(!peer->has_key_pub()) {
+  if (!peer->has_key_pub()) {
     return {};
   }
-  
+
+  if (peer->key_pub() == _own_key) {
+    return {};
+  }
+
+  std::unique_lock<std::mutex> lock(_mutex);
+  const auto previous_peer = _peers[peer->key_pub()];
+  _peers[peer->key_pub()] = peer;
+
+  // The port that we receive is not the right one, so we should keep the
+  // original port
+  if (previous_peer && previous_peer->has_port()) {
+    LOG_DEBUG << "PREVIOUS PEER PORT " << previous_peer->port();
+    peer->set_port(previous_peer->port());
+  } else {
+    LOG_DEBUG << "COULD NOT FIND PREVIOUS PEER PORT FOR PEER " << *peer;
+  }
+  peer->set_status(Peer::DISCONNECTED);
+  return peer.get();
+}
+
+std::optional<Peer *> Peers::insert(const Peer &peer) {
+  return insert(std::make_shared<Peer>(peer));
+}
+
+std::optional<Peer *> Peers::upsert(std::shared_ptr<Peer> peer) {
+  if (!peer->has_key_pub()) {
+    return {};
+  }
+
   if (peer->key_pub() == _own_key) {
     return {};
   }
@@ -29,19 +58,20 @@ std::optional<Peer *> Peers::insert(std::shared_ptr<Peer> peer) {
 
   auto &found_peer = found_element->second;
   if (!is_inserted) {
-    // pub key already known, update peer
-    found_peer->set_port(peer->port());
-    found_peer->set_endpoint(peer->endpoint());
+    if (found_peer->status() == messages::Peer::DISCONNECTED) {
+      // pub key already known, update peer
+      found_peer->set_port(peer->port());
+      found_peer->set_endpoint(peer->endpoint());
+    }
     return {found_peer.get()};
   }
 
   found_peer->set_status(Peer::DISCONNECTED);
-
   return found_peer.get();
 }
 
-std::optional<Peer *> Peers::insert(const Peer &peer) {
-  return insert(std::make_shared<Peer>(peer));
+std::optional<Peer *> Peers::upsert(const Peer &peer) {
+  return upsert(std::make_shared<Peer>(peer));
 }
 
 /**
