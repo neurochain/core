@@ -830,33 +830,46 @@ bool Consensus::cleanup_transactions(messages::Block *block) const {
              << " in cleanup transactions";
     return false;
   }
-  using TransactionPtr = std::shared_ptr<const messages::Transaction>;
-  using TransactionPtrList = std::vector<TransactionPtr>;
-  TransactionPtrList transactions;
-  TransactionPtrList rejected_transactions;
+  using TransactionRef = std::reference_wrapper<const messages::Transaction>;
   std::unordered_map<messages::_KeyPub, Double> balances;
-  std::unordered_map<messages::_KeyPub, TransactionPtrList>
-      associated_transaction;
 
-  // compute new balance using all transaction
-  for (const auto &transaction : block->transactions()) {
+  messages::Block accepted_transactions;
+  std::vector<TransactionRef> transactions_view(block->transactions().begin(),
+                                                block->transactions().end());
+  std::sort(transactions_view.rbegin(), transactions_view.rend(),
+            [](TransactionRef &lhs, TransactionRef &rhs) -> bool {
+              return lhs.get().fees().value() < rhs.get().fees().value();
+            });
+
+  for (const messages::Transaction &transaction : transactions_view) {
     if (!is_unexpired(transaction, *block)) {
       _ledger->delete_transaction(transaction.id());
       continue;
     }
 
+    bool is_transaction_valid = true;
     for (const auto &input : transaction.inputs()) {
       auto &key_pub = input.key_pub();
       if (balances.count(key_pub) == 0) {
         balances[key_pub] =
             _ledger->get_balance(key_pub, previous).value().value();
       }
-      if (associated_transaction.count(key_pub) == 0) {
-        associated_transaction[key_pub] = {};
-      }
       balances[key_pub] -= input.value().value();
-      associated_transaction[key_pub].push_back(
-          std::make_shared<TransactionPtr::element_type>(transaction));
+      if (balances[key_pub] < 0) {
+        is_transaction_valid = false;
+      }
+    }
+
+    if (!is_transaction_valid) {
+      std::cerr << "Transaction " << transaction
+                << " not included in the block because of insufficient funds\n";
+
+      // Reverse balance change
+      for (const auto &input : transaction.inputs()) {
+        auto &key_pub = input.key_pub();
+        balances[key_pub] += input.value().value();
+      }
+      continue;
     }
 
     for (const auto &output : transaction.outputs()) {
@@ -865,40 +878,13 @@ bool Consensus::cleanup_transactions(messages::Block *block) const {
         balances[key_pub] =
             _ledger->get_balance(key_pub, previous).value().value();
       }
-      if (associated_transaction.count(key_pub) == 0) {
-        associated_transaction[key_pub] = {};
-      }
       balances[key_pub] += output.value().value();
-      associated_transaction[key_pub].push_back(
-          std::make_shared<TransactionPtr::element_type>(transaction));
     }
-    transactions.push_back(
-        std::make_shared<TransactionPtr::element_type>(transaction));
+    accepted_transactions.add_transactions()->CopyFrom(transaction);
   }
 
-  // reject all transaction that would give someone a negative balance
-  for (const auto &[key_pub, balance] : balances) {
-    if (balance < 0) {
-      auto &transaction_to_reject = associated_transaction[key_pub];
-      rejected_transactions.insert(rejected_transactions.end(),
-                                   transaction_to_reject.begin(),
-                                   transaction_to_reject.end());
-      LOG_INFO << "Transaction involving " << key_pub
-               << " not included in the block because of insufficient funds";
-    }
-  }
+  block->mutable_transactions()->Swap(accepted_transactions.mutable_transactions());
 
-  block->clear_transactions();
-  std::set<TransactionPtr> accepted_transactions;
-  std::sort(transactions.begin(), transactions.end());
-  std::sort(rejected_transactions.begin(), rejected_transactions.end());
-  std::set_difference(
-      transactions.begin(), transactions.end(), rejected_transactions.begin(),
-      rejected_transactions.end(),
-      std::inserter(accepted_transactions, accepted_transactions.begin()));
-  for (const auto &transaction : accepted_transactions) {
-    block->add_transactions()->CopyFrom(*transaction);
-  }
   return true;
 }
 
