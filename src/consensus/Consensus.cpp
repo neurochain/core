@@ -830,9 +830,8 @@ bool Consensus::cleanup_transactions(messages::Block *block) const {
              << " in cleanup transactions";
     return false;
   }
-  using TransactionRef = std::reference_wrapper<const messages::Transaction>;
+  
   std::unordered_map<messages::_KeyPub, Double> balances;
-
   messages::Block accepted_transactions;
 
   for (const messages::Transaction &transaction : block->transactions()) {
