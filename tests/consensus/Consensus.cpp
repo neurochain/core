@@ -235,7 +235,7 @@ class Consensus : public testing::Test {
     } catch (std::runtime_error &) {
       did_throw = true;
     }
-    ASSERT_TRUE(did_throw);
+    ASSERT_FALSE(did_throw);
 
     auto fees = messages::NCCAmount(100);
     auto transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
