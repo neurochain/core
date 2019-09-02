@@ -144,7 +144,7 @@ Port random_port() {
 }
 
 void sleep_for_boot() {
-  std::this_thread::sleep_for(2s);
+  std::this_thread::sleep_for(12s);
 }
 
 TEST(INTEGRATION, full_node) {
@@ -261,7 +261,7 @@ TEST(INTEGRATION, neighbors_propagation) {
   BotTest bot1("integration_propagation1.json", port_offset);
   BotTest bot2("integration_propagation2.json", port_offset);
   std::this_thread::sleep_for(12s);
-
+  std::cout << "trax> wtf> "  << bot0->peers() << std::endl;
   ASSERT_TRUE(bot0.check_is_connected({1338, 1339})) << bot0->peers();
   ASSERT_TRUE(bot1.check_is_connected({1337})) << bot1->peers();
   ASSERT_TRUE(bot2.check_is_connected({1337})) << bot2->peers();
