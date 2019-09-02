@@ -830,9 +830,11 @@ bool Consensus::cleanup_transactions(messages::Block *block) const {
              << " in cleanup transactions";
     return false;
   }
-  std::vector<messages::Transaction> transactions;
+  
   std::unordered_map<messages::_KeyPub, Double> balances;
-  for (const auto &transaction : block->transactions()) {
+  messages::Block accepted_transactions;
+
+  for (const messages::Transaction &transaction : block->transactions()) {
     if (!is_unexpired(transaction, *block)) {
       _ledger->delete_transaction(transaction.id());
       continue;
@@ -840,20 +842,22 @@ bool Consensus::cleanup_transactions(messages::Block *block) const {
 
     bool is_transaction_valid = true;
     for (const auto &input : transaction.inputs()) {
-      if (balances.count(input.key_pub()) == 0) {
-        balances[input.key_pub()] =
-            _ledger->get_balance(input.key_pub(), previous).value().value();
+      auto &key_pub = input.key_pub();
+      if (balances.count(key_pub) == 0) {
+        balances[key_pub] =
+            _ledger->get_balance(key_pub, previous).value().value();
       }
-      balances[input.key_pub()] -= input.value().value();
-      if (balances[input.key_pub()] < 0) {
+      balances[key_pub] -= input.value().value();
+      if (balances[key_pub] < 0) {
         is_transaction_valid = false;
-        LOG_DEBUG << "Transaction " << transaction.id()
-                  << " not included in the block because of insufficient funds";
       }
     }
 
-    // Reverse balance changes
     if (!is_transaction_valid) {
+      LOG_INFO << "Transaction " << transaction
+               << " not included in the block because of insufficient funds";
+
+      // Reverse balance change
       for (const auto &input : transaction.inputs()) {
         balances[input.key_pub()] += input.value().value();
       }
@@ -861,18 +865,18 @@ bool Consensus::cleanup_transactions(messages::Block *block) const {
     }
 
     for (const auto &output : transaction.outputs()) {
-      if (balances.count(output.key_pub()) == 0) {
-        balances[output.key_pub()] =
-            _ledger->get_balance(output.key_pub(), previous).value().value();
+      auto &key_pub = output.key_pub();
+      if (balances.count(key_pub) == 0) {
+        balances[key_pub] =
+            _ledger->get_balance(key_pub, previous).value().value();
       }
-      balances[output.key_pub()] += output.value().value();
+      balances[key_pub] += output.value().value();
     }
-    transactions.push_back(transaction);
+    accepted_transactions.add_transactions()->CopyFrom(transaction);
   }
-  block->clear_transactions();
-  for (const auto &transaction : transactions) {
-    block->add_transactions()->CopyFrom(transaction);
-  }
+
+  block->mutable_transactions()->Swap(accepted_transactions.mutable_transactions());
+
   return true;
 }
 
@@ -1020,6 +1024,7 @@ bool Consensus::mine_block(const messages::Block &block0) {
 
   _publish_block(new_block);
   add_block(new_block);
+
   LOG_INFO << "Mined block successfully with id " << new_block.header().id()
            << " with height " << new_block.header().height();
   return true;

@@ -435,7 +435,7 @@ class Ledger {
       const crypto::KeyPriv &sender_key_priv,
       const messages::_KeyPub &recipient_key_pub, const float ratio_to_send,
       const std::optional<messages::NCCAmount> &fees = {}) const {
-    if (ratio_to_send > 1 || ratio_to_send < 0) {
+    if (ratio_to_send < 0) {
       throw std::runtime_error("Cannot send_ncc with a ratio of " +
                                std::to_string(ratio_to_send));
     }
