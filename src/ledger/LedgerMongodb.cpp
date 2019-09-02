@@ -45,6 +45,7 @@ const std::string COUNT = "count";
 const std::string DATA = "data";
 const std::string DOUBLE_MINING = "doubleMining";
 const std::string DENUNCIATIONS = "denunciations";
+const std::string FEES = "fees";
 const std::string FINISHED_COMPUTATION = "finishedComputation";
 const std::string FROM = "from";
 const std::string FOREIGN_FIELD = "foreignField";
@@ -938,7 +939,7 @@ std::vector<messages::TaggedTransaction> LedgerMongodb::get_transaction_pool()
                                << bss::finalize;
 
   auto options = remove_OID();
-  options.sort(bss::document{} << TRANSACTION + "." + ID << 1 << bss::finalize);
+  options.sort(bss::document{} << TRANSACTION + "." + FEES << 1 << bss::finalize);
   auto cursor = _transactions.find(std::move(query), options);
 
   for (const auto &bson_transaction : cursor) {
@@ -1650,7 +1651,7 @@ Double LedgerMongodb::compute_new_balance(messages::Balance *balance,
                                           const BalanceChange &change,
                                           messages::BlockHeight height) {
   const auto balance_value = balance->value().value();
-  Double enthalpy = balance->enthalpy_end();  // enthalpy from previous balance
+  Double enthalpy = balance->enthalpy_end(); // enthalpy from previous balance
 
   // Enthalpy has increased since the last balance change
   enthalpy += balance_value * (height - balance->block_height());
@@ -1668,7 +1669,7 @@ Double LedgerMongodb::compute_new_balance(messages::Balance *balance,
     balance->set_enthalpy_end("0");
   }
 
-    Double new_balance = balance_value + change.positive - change.negative;
+  Double new_balance = balance_value + change.positive - change.negative;
 
   // This is a dirty workaround because of a memory leak in mpfr
   // it could be problematic if mpfr_free_cache is not thread safe

@@ -834,14 +834,8 @@ bool Consensus::cleanup_transactions(messages::Block *block) const {
   std::unordered_map<messages::_KeyPub, Double> balances;
 
   messages::Block accepted_transactions;
-  std::vector<TransactionRef> transactions_view(block->transactions().begin(),
-                                                block->transactions().end());
-  std::sort(transactions_view.rbegin(), transactions_view.rend(),
-            [](TransactionRef &lhs, TransactionRef &rhs) -> bool {
-              return lhs.get().fees().value() < rhs.get().fees().value();
-            });
 
-  for (const messages::Transaction &transaction : transactions_view) {
+  for (const messages::Transaction &transaction : block->transactions()) {
     if (!is_unexpired(transaction, *block)) {
       _ledger->delete_transaction(transaction.id());
       continue;
@@ -861,13 +855,12 @@ bool Consensus::cleanup_transactions(messages::Block *block) const {
     }
 
     if (!is_transaction_valid) {
-      std::cerr << "Transaction " << transaction
-                << " not included in the block because of insufficient funds\n";
+      LOG_INFO << "Transaction " << transaction
+               << " not included in the block because of insufficient funds";
 
       // Reverse balance change
       for (const auto &input : transaction.inputs()) {
-        auto &key_pub = input.key_pub();
-        balances[key_pub] += input.value().value();
+        balances[input.key_pub()] += input.value().value();
       }
       continue;
     }
