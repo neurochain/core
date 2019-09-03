@@ -237,7 +237,7 @@ void Bot::regular_update() {
       _config.networking().keep_old_connection_time());
 
   if (_config.has_random_transaction() &&
-      rand() < _config.random_transaction() * RAND_MAX) {
+      rand() < _config.random_transaction() * static_cast<float>(RAND_MAX)) {
     send_random_transaction();
   }
   _update_timer.expires_at(_update_timer.expiry() +
@@ -328,16 +328,13 @@ void Bot::handler_peers(const messages::Header &header,
 
 void Bot::handler_connection(const messages::Header &header,
                              const messages::Body &body) {
-  LOG_DEBUG << this << " It entered in handler_connection in bot " << body;
-
   auto &connection_ready = body.connection_ready();
-
   if (connection_ready.from_remote()) {
-    // Nothing to do; just wait for the hello message from remote peer
+    // ignore connection message; wait for an hello
     return;
   }
 
-  // send hello msg
+  // successfully established tcp connection; send hello msg
   auto message = std::make_shared<messages::Message>();
   messages::fill_header_reply(header, message->mutable_header());
   auto hello = message->add_bodies()->mutable_hello();
@@ -348,7 +345,7 @@ void Bot::handler_connection(const messages::Header &header,
 
   if (!_networking.send_unicast(message)) {
     LOG_DEBUG << this << " : " << _me.port() << " can't send hello message "
-              << message;
+              << *message;
   }
   keep_max_connections();
 }
@@ -419,8 +416,8 @@ void Bot::handler_hello(const messages::Header &header,
   }
   const auto &hello = body.hello();
   const auto peer = _peers.find(header.key_pub());
-  if (peer && ((*peer)->status() & (messages::Peer::DISCONNECTED |
-                                    messages::Peer::UNREACHABLE)) != 0) {
+  if (peer && ((*peer)->status() == messages::Peer::CONNECTED ||
+               (*peer)->status() == messages::Peer::CONNECTING)) {
     LOG_WARNING << "Receiving an hello message from a peer we are already "
                    "connected to"
                 << **peer;
