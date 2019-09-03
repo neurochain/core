@@ -16,26 +16,28 @@ class BotTest : public Bot {
  private:
   Port _port_offset;
 
-  messages::config::Config apply_port_offset(const std::string &config_path,
-                                             const Port &port_offset) {
+  messages::config::Config as_message(const std::string &config_path) const {
     Path config_as_path(config_path);
     messages::config::Config config(config_as_path);
-    auto port = config.networking().tcp().port();
+    return config;
+  }
+
+  void apply_port_offset() {
+    auto port = _config.networking().tcp().port();
     messages::config::Tcp *tcp_config =
-        config.mutable_networking()->mutable_tcp();
+        _config.mutable_networking()->mutable_tcp();
     tcp_config->set_port(port + _port_offset);
 
     for (auto &peer : *tcp_config->mutable_peers()) {
       auto peer_port = peer.port();
       peer.set_port(peer_port + _port_offset);
     }
-    return config;
   }
 
  public:
-  explicit BotTest(const std::string config_path, const Port port_offset = 0)
-      : Bot(apply_port_offset(config_path, port_offset)),
-        _port_offset(port_offset) {
+  explicit BotTest(const std::string config_path, const Port port_offset)
+      : Bot(as_message(config_path)), _port_offset(port_offset) {
+    apply_port_offset();
     _max_incoming_connections = 3;
     _max_connections = 3;
   }
