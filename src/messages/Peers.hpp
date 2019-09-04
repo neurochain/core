@@ -99,7 +99,7 @@ class Peers {
   bool fill(_Peers *peers, uint8_t peer_count = 10);
   std::size_t used_peers_count() const;
   void update_unreachable();
-  std::optional<Peer *> find(const _KeyPub &key_pub);
+  std::shared_ptr<Peer> find(const _KeyPub &key_pub);
   std::vector<Peer *> by_status(const Peer::Status status);
   std::vector<Peer *> used_peers();
   std::vector<Peer *> connected_peers();

@@ -90,15 +90,15 @@ std::size_t Peers::used_peers_count() const {
   return used_peers_count;
 }
 
-std::optional<Peer *> Peers::find(const _KeyPub &key_pub) {
+std::shared_ptr<Peer> Peers::find(const _KeyPub &key_pub) {
   std::unique_lock<std::mutex> lock(_mutex);
   auto got = _peers.find(key_pub);
 
   if (got == _peers.end()) {
-    return std::nullopt;
+    return nullptr;
   }
 
-  return {got->second.get()};
+  return got->second;
 }
 
 /**
@@ -186,7 +186,8 @@ Peers::operator _Peers() const {
 
 std::ostream &operator<<(std::ostream &os, const Peers &peers) {
   for (const auto &peer : peers.peers_copy()) {
-    os << "peers> " << peer << std::endl;
+    os << "peers> " << "("<< peer.port() <<", "<< _Peer_Status_Name(peer.status()) <<")" << std::endl;
+//    os << "peers> " << peer << std::endl;
   }
 
   return os;

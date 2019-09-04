@@ -365,8 +365,8 @@ void Bot::handler_deconnection(const messages::Header &header,
     if (body.connection_closed().has_peer()) {
       auto peer = _peers.find(body.connection_closed().peer().key_pub());
       if (peer) {
-        (*peer)->set_status(messages::Peer::UNREACHABLE);
-        LOG_DEBUG << _me.port() << " can't connect to " << (*peer)->port();
+        peer->set_status(messages::Peer::UNREACHABLE);
+        LOG_DEBUG << _me.port() << " can't connect to " << peer->port();
       }
     }
   }
@@ -386,7 +386,7 @@ void Bot::handler_world(const messages::Header &header,
 
   assert(remote_peer);
   assert(remote_peer_by_connection_id);
-  assert(*remote_peer == remote_peer_by_connection_id->get());
+  assert(remote_peer.get() == remote_peer_by_connection_id->get());
   if (!remote_peer) {
     LOG_WARNING << "Received world message from unknown peer "
                 << header.key_pub();
@@ -394,11 +394,11 @@ void Bot::handler_world(const messages::Header &header,
   }
   if (!world.accepted()) {
     LOG_DEBUG << this << " : " << _me.port() << " Not accepted from "
-              << (*remote_peer)->port() << ", disconnecting";
+              << remote_peer->port() << ", disconnecting";
     _networking.terminate(header.connection_id());
-    (*remote_peer)->set_status(messages::Peer::UNREACHABLE);
+    remote_peer->set_status(messages::Peer::UNREACHABLE);
   } else {
-    (*remote_peer)->set_status(messages::Peer::CONNECTED);
+    remote_peer->set_status(messages::Peer::CONNECTED);
   }
 
   update_ledger(_ledger->new_missing_block(world));
@@ -410,8 +410,8 @@ void Bot::handler_hello(const messages::Header &header,
                         const messages::Body &body) {
   const auto peer = _peers.find(header.key_pub());
   auto remote_peer = _networking.find_peer(header.connection_id());
-  if (peer && ((*peer)->status() == messages::Peer::CONNECTED ||
-               (*peer)->status() == messages::Peer::CONNECTING)) {
+  if (peer && (peer->status() == messages::Peer::CONNECTED ||
+               peer->status() == messages::Peer::CONNECTING)) {
     LOG_WARNING << "Receiving an hello message from a peer we are already "
                    "connected to \n"
                 << **peer;
