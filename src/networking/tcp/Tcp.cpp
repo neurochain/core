@@ -160,11 +160,11 @@ bool Tcp::terminate(const Connection::ID id) {
   return true;
 }
 
-std::optional<std::shared_ptr<messages::Peer> > Tcp::find_peer(
+std::shared_ptr<messages::Peer> Tcp::find_peer(
     const Connection::ID id) {
   auto connection = find(id);
   if (!connection) {
-    return std::nullopt;
+    return nullptr;
   }
   return (*connection)->remote_peer();
 }

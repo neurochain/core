@@ -51,7 +51,7 @@ void Connection::read_header() {
           return;
         }
         const auto header_pattern =
-            reinterpret_cast<HeaderPattern *>(_this->_header.data());
+            reinterpret_cast<const HeaderPattern *>(_this->_header.data());
         _this->read_body(header_pattern->size);
       });
 }
@@ -163,7 +163,7 @@ bool Connection::send(std::shared_ptr<Buffer> &message) {
 
 void Connection::close() { _socket->close(); }
 
-void Connection::terminate() {
+void Connection::terminate() const {
   LOG_INFO << this << " " << _id << " Killing connection" << ip();
   boost::system::error_code ec;
   _socket->shutdown(tcp::socket::shutdown_both, ec);
@@ -200,6 +200,10 @@ const std::optional<Port> Connection::remote_port() const {
 
 std::shared_ptr<messages::Peer> Connection::remote_peer() const {
   return _remote_peer;
+}
+
+std::shared_ptr<Connection> Connection::ptr() {
+  return shared_from_this();
 }
 
 Connection::~Connection() { close(); }

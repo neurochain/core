@@ -33,7 +33,7 @@ class Connection : public networking::Connection,
 
   void read_header();
   void read_body(std::size_t body_size);
-  std::shared_ptr<Connection> ptr() { return shared_from_this(); }
+  std::shared_ptr<Connection> ptr();
   void close();
 
  public:
@@ -42,7 +42,7 @@ class Connection : public networking::Connection,
 	     std::shared_ptr<messages::Peer> remote_peer);
 
   std::shared_ptr<const tcp::socket> socket() const;
-  void terminate();
+  void terminate() const;
 
   void read();
 
