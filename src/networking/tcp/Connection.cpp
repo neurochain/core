@@ -104,6 +104,7 @@ void Connection::read_body(std::size_t body_size) {
               hello->mutable_peer()->set_endpoint(
                   endpoint.address().to_string());
               _remote_peer->CopyFrom(hello->peer());
+              _remote_peer->set_connection_id(_id);
               LOG_TRACE << "remote ip> "
                         << _socket->remote_endpoint().address().to_string()
                         << std::endl;

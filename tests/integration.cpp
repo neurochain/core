@@ -55,12 +55,12 @@ class BotTest : public Bot {
 
   auto &queue() { return _queue; }
 
-  const std::chrono::seconds unreachable_timeout() {
+  std::chrono::seconds unreachable_timeout() {
     auto t = _config.networking().default_next_update_time();
     return std::chrono::seconds{t};
   }
 
-  const std::chrono::seconds connecting_timeout() {
+  std::chrono::seconds connecting_timeout() {
     auto t = _config.networking().connecting_next_update_time();
     return std::chrono::seconds{t};
   }
@@ -258,7 +258,7 @@ TEST(INTEGRATION, neighbors_propagation) {
       std::make_unique<BotTest>("integration_propagation1.json", port_offset);
   auto bot2 =
       std::make_unique<BotTest>("integration_propagation2.json", port_offset);
-  std::this_thread::sleep_for(2s);
+  sleep_for_boot();
   std::cout << "trax> wtf> " << bot0->peers() << std::endl;
   ASSERT_TRUE(bot0->check_is_connected({1338, 1339})) << bot0->peers();
   ASSERT_TRUE(bot1->check_is_connected({1337})) << bot1->peers();
@@ -400,7 +400,8 @@ TEST(INTEGRATION, connection_opportunity_update) {
   auto bot2 = std::make_unique<BotTest>("bot2.json", port_offset);
   auto bot3 =
       std::make_unique<BotTest>("integration_propagation40.json", port_offset);
-  std::this_thread::sleep_for(5s);
+  sleep_for_boot();
+  std::this_thread::sleep_for(bot0->unreachable_timeout());
 
   ASSERT_TRUE(bot0->check_peers_ports({1338, 1339, 13340})) << bot0->peers();
   ASSERT_TRUE(bot1->check_peers_ports({1337, 1339, 13340})) << bot1->peers();
@@ -421,7 +422,8 @@ TEST(INTEGRATION, connection_opportunity_update) {
 
   // Make bot3 accept one more connection
   bot3->set_max_incoming_connections(4);
-  std::this_thread::sleep_for(10s);
+  std::this_thread::sleep_for(bot3->unreachable_timeout());
+
   ASSERT_TRUE(bot0->check_peers_ports({1338, 1339, 13340})) << bot0->peers();
   ASSERT_TRUE(bot1->check_peers_ports({1337, 1339, 13340})) << bot1->peers();
   ASSERT_TRUE(bot2->check_peers_ports({1337, 1338, 13340})) << bot2->peers();
