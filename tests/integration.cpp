@@ -419,7 +419,7 @@ TEST(INTEGRATION, connection_opportunity_update) {
 
   // Make bot3 accept one more connection
   bot3->set_max_incoming_connections(4);
-  std::this_thread::sleep_for(bot3->unreachable_timeout() + 5s);
+  std::this_thread::sleep_for(bot3->unreachable_timeout() + 8s);
 
   ASSERT_TRUE(bot0->check_peers_ports({1338, 1339, 13340})) << bot0->peers();
   ASSERT_TRUE(bot1->check_peers_ports({1337, 1339, 13340})) << bot1->peers();
@@ -452,8 +452,9 @@ TEST(INTEGRATION, connection_reconfig) {
       std::make_unique<BotTest>("integration_propagation51.json", port_offset);
   auto bot6 =
       std::make_unique<BotTest>("integration_propagation52.json", port_offset);
+
   // give them more time, they need to ask bot0 for more peer
-  std::this_thread::sleep_for(4s);
+  std::this_thread::sleep_for(8s);
 
   auto print_peers = [&bot0, &bot1, &bot2, &bot3, &bot4, &bot5,
                       &bot6]() -> std::string {
@@ -476,6 +477,7 @@ TEST(INTEGRATION, connection_reconfig) {
        << "==================================================" << std::endl;
     return os.str();
   };
+
   // Check there is no change for current network.
   ASSERT_TRUE(bot0->check_peers_ports({1338, 1339, 13340})) << print_peers();
   ASSERT_TRUE(bot1->check_peers_ports({1337, 1339, 13340})) << print_peers();
