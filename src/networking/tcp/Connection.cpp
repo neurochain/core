@@ -141,7 +141,26 @@ void Connection::read_body(std::size_t body_size) {
         }
         message->mutable_header()->mutable_key_pub()->CopyFrom(
             _remote_peer->key_pub());
-        _this->_queue->publish(message);
+
+        bool is_hello = false;
+        bool is_world = false;
+        if (message->bodies_size() > 0) {
+          const auto type = get_type(message->bodies(0));
+          if (type == messages::Type::kHello) {
+            is_hello = message->bodies_size() == 1;
+          } else if (type == messages::Type::kWorld) {
+            is_world = true;
+          }
+        }
+        if (_remote_peer->status() == messages::Peer::CONNECTED || is_hello ||
+            (_remote_peer->status() == messages::Peer::CONNECTING &&
+             is_world)) {
+          _this->_queue->publish(message);
+        } else {
+          LOG_WARNING << "Message was not sent to the queue because the sender "
+                         "is not a connected peer "
+                      << *message;
+        }
         _this->read_header();
       });
 }
@@ -202,9 +221,7 @@ std::shared_ptr<messages::Peer> Connection::remote_peer() const {
   return _remote_peer;
 }
 
-std::shared_ptr<Connection> Connection::ptr() {
-  return shared_from_this();
-}
+std::shared_ptr<Connection> Connection::ptr() { return shared_from_this(); }
 
 Connection::~Connection() { close(); }
 }  // namespace tcp

@@ -549,9 +549,9 @@ TEST(INTEGRATION, keep_max_connections) {
 TEST(INTEGRATION, handler_get_block) {
   Port port_offset = random_port();
   auto fake_bot = std::make_unique<BotTest>("bot0.json", port_offset);
-  fake_bot->unsubscribe();
   auto bot = std::make_unique<BotTest>("bot1.json", port_offset);
   sleep_for_boot();
+  fake_bot->unsubscribe();
 
   auto get_block_id = 0;
   bot->subscribe(messages::Type::kGetBlock, [&](const messages::Header &header,
