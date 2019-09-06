@@ -2,12 +2,12 @@
 #define NEURO_SRC_CONSENSUS_CONSENSUS_HPP
 
 #include <atomic>
+#include <condition_variable>
 #include <cstdint>
 #include <memory>
 #include <mutex>
 #include <thread>
 #include <unordered_set>
-#include <condition_variable>
 
 #include "common.pb.h"
 #include "consensus.pb.h"
@@ -53,9 +53,9 @@ class Consensus {
   std::optional<messages::AssemblyHeight> _current_assembly_height;
   std::thread _update_heights_thread;
   std::thread _miner_thread;
-  std::condition_variable _is_stoped_cv;
-  std::mutex _is_stoped_mutex;
-  bool _is_stoped;
+  std::condition_variable _is_stopped_cv;
+  std::mutex _is_stopped_mutex;
+  bool _is_stopped;
 
   bool check_outputs(
       const messages::TaggedTransaction &tagged_transaction) const;

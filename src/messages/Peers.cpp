@@ -26,14 +26,6 @@ std::optional<Peer *> Peers::insert(std::shared_ptr<Peer> peer) {
   const auto previous_peer = _peers[peer->key_pub()];
   _peers[peer->key_pub()] = peer;
 
-  // The port that we receive is not the right one, so we should keep the
-  // original port
-  if (previous_peer && previous_peer->has_port()) {
-    LOG_DEBUG << "PREVIOUS PEER PORT " << previous_peer->port();
-    peer->set_port(previous_peer->port());
-  } else {
-    LOG_DEBUG << "COULD NOT FIND PREVIOUS PEER PORT FOR PEER " << *peer;
-  }
   peer->set_status(Peer::DISCONNECTED);
   return peer.get();
 }
@@ -186,8 +178,10 @@ Peers::operator _Peers() const {
 
 std::ostream &operator<<(std::ostream &os, const Peers &peers) {
   for (const auto &peer : peers.peers_copy()) {
-    os << "peers> " << "("<< peer.port() <<", "<< _Peer_Status_Name(peer.status()) <<")" << std::endl;
-//    os << "peers> " << peer << std::endl;
+    // os << "peers> "
+    //<< "(" << peer.port() << ", " << _Peer_Status_Name(peer.status()) << ")"
+    //<< std::endl;
+    os << "peers> " << peer << std::endl;
   }
 
   return os;

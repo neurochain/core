@@ -205,9 +205,6 @@ TEST(INTEGRATION, disconnect) {
 
   std::this_thread::sleep_for(2s);
 
-  LOG_DEBUG << bot0->peers() << std::endl;
-  LOG_DEBUG << bot1->peers() << std::endl;
-
   ASSERT_EQ(bot0->connected_peers().size(), 1);
   ASSERT_EQ(bot1->connected_peers().size(), 1);
 
@@ -422,7 +419,7 @@ TEST(INTEGRATION, connection_opportunity_update) {
 
   // Make bot3 accept one more connection
   bot3->set_max_incoming_connections(4);
-  std::this_thread::sleep_for(bot3->unreachable_timeout());
+  std::this_thread::sleep_for(bot3->unreachable_timeout() + 5s);
 
   ASSERT_TRUE(bot0->check_peers_ports({1338, 1339, 13340})) << bot0->peers();
   ASSERT_TRUE(bot1->check_peers_ports({1337, 1339, 13340})) << bot1->peers();

@@ -126,6 +126,7 @@ void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
     ++_current_id;
 
     msg_header->set_connection_id(_current_id);
+    msg_header->mutable_key_pub()->CopyFrom(peer->key_pub());
     auto connection =
         std::make_shared<tcp::Connection>(_current_id, _queue, socket, peer);
     _connections.insert(std::make_pair(_current_id, connection));
@@ -160,8 +161,7 @@ bool Tcp::terminate(const Connection::ID id) {
   return true;
 }
 
-std::shared_ptr<messages::Peer> Tcp::find_peer(
-    const Connection::ID id) {
+std::shared_ptr<messages::Peer> Tcp::find_peer(const Connection::ID id) {
   auto connection = find(id);
   if (!connection) {
     return nullptr;

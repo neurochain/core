@@ -121,7 +121,7 @@ class Consensus : public testing::Test {
     std::this_thread::sleep_for(consensus->config().compute_pii_sleep);
 
     // Wait for the computation to be finished
-    consensus->_is_stoped = true;
+    consensus->_is_stopped = true;
     if (consensus->_compute_pii_thread.joinable()) {
       consensus->_compute_pii_thread.join();
     }

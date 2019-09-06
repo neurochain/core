@@ -334,6 +334,17 @@ void Bot::handler_connection(const messages::Header &header,
     return;
   }
 
+  auto peer = _peers.find(header.key_pub());
+  if (!peer) {
+    LOG_WARNING << "Missing peer in handler_connection " << header.key_pub();
+    return;
+  }
+  if (peer->status() == messages::Peer::CONNECTED) {
+    // There is already a connection with this bot
+    _networking.terminate(header.connection_id());
+    return;
+  }
+
   // successfully established tcp connection; send hello msg
   auto message = std::make_shared<messages::Message>();
   messages::fill_header_reply(header, message->mutable_header());
@@ -380,25 +391,31 @@ void Bot::handler_deconnection(const messages::Header &header,
 void Bot::handler_world(const messages::Header &header,
                         const messages::Body &body) {
   auto &world = body.world();
-  auto remote_peer = _peers.find(header.key_pub());
-  auto remote_peer_by_connection_id =
-      _networking.find_peer(header.connection_id());
+  auto remote_peer_bot = _peers.find(header.key_pub());
+  auto remote_peer_connection = _networking.find_peer(header.connection_id());
 
-  assert(remote_peer);
-  assert(remote_peer_by_connection_id);
-  assert(remote_peer.get() == remote_peer_by_connection_id.get());
-  if (!remote_peer) {
+  if (!remote_peer_connection) {
+    LOG_WARNING << "Received world message but the connection is missing "
+                << header.key_pub();
+    return;
+  }
+  if (!remote_peer_bot) {
     LOG_WARNING << "Received world message from unknown peer "
                 << header.key_pub();
     return;
   }
+
+  if (remote_peer_bot.get() != remote_peer_connection.get() &&
+      remote_peer_bot->status() != messages::Peer::CONNECTED) {
+    _peers.insert(remote_peer_connection);
+  }
   if (!world.accepted()) {
     LOG_DEBUG << this << " : " << _me.port() << " Not accepted from "
-              << remote_peer->port() << ", disconnecting";
+              << remote_peer_connection->port() << ", disconnecting";
     _networking.terminate(header.connection_id());
-    remote_peer->set_status(messages::Peer::UNREACHABLE);
+    remote_peer_connection->set_status(messages::Peer::UNREACHABLE);
   } else {
-    remote_peer->set_status(messages::Peer::CONNECTED);
+    remote_peer_connection->set_status(messages::Peer::CONNECTED);
   }
 
   update_ledger(_ledger->new_missing_block(world));
@@ -409,19 +426,17 @@ void Bot::handler_world(const messages::Header &header,
 void Bot::handler_hello(const messages::Header &header,
                         const messages::Body &body) {
   const auto peer = _peers.find(header.key_pub());
-  if (peer && (peer->status() == messages::Peer::CONNECTED ||
-               peer->status() == messages::Peer::CONNECTING)) {
-    LOG_WARNING << "Receiving an hello message from a peer we are already "
-                   "connected to \n"
-                << **peer;
-    _networking.terminate(header.connection_id());
+  auto remote_peer = _networking.find_peer(header.connection_id());
+  if (!remote_peer) {
+    LOG_WARNING << "Could not find peer we received message from";
     return;
   }
 
-  auto remote_peer = _networking.find_peer(header.connection_id());
-  _peers.insert(*remote_peer);
-  // already done in Connection.cpp
-  //remote_peer->CopyFrom(body.hello().peer());
+  const auto inserted_peer = _peers.insert(remote_peer);
+  if (!inserted_peer) {
+    LOG_WARNING << "Could not insert peer";
+    return;
+  }
 
   // == Create world message for replying ==
   auto message = std::make_shared<messages::Message>();
