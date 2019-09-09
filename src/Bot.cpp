@@ -100,7 +100,12 @@ void Bot::handler_block(const messages::Header &header,
 
 void Bot::handler_transaction(const messages::Header &header,
                               const messages::Body &body) {
-  _consensus->add_transaction(body.transaction());
+  if (_consensus->add_transaction(body.transaction())) {
+    const auto message = std::make_shared<messages::Message>();
+    messages::fill_header(message->mutable_header());
+    message->add_bodies()->mutable_transaction()->CopyFrom(body.transaction());
+    _networking.send_all(message);
+  }
 }
 
 bool Bot::update_ledger(const std::optional<messages::Hash> &missing_block) {
