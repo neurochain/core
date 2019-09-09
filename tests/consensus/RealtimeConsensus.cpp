@@ -33,7 +33,8 @@ class RealtimeConsensus : public testing::Test {
 
  public:
   void test_update_heights_thread() {
-    consensus->_is_stopped = true;
+    consensus->_is_miner_stopped = true;
+    consensus->_is_compute_pii_stopped = true;
     std::vector<std::pair<messages::BlockHeight, KeyPubIndex>> heights;
     consensus->get_heights_to_write(simulator.key_pubs, &heights);
     ASSERT_GT(heights.size(), 0);
