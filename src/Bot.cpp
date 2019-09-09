@@ -425,7 +425,6 @@ void Bot::handler_world(const messages::Header &header,
 
 void Bot::handler_hello(const messages::Header &header,
                         const messages::Body &body) {
-  const auto peer = _peers.find(header.key_pub());
   auto remote_peer = _networking.find_peer(header.connection_id());
   if (!remote_peer) {
     LOG_WARNING << "Could not find peer we received message from";
@@ -571,5 +570,4 @@ Bot::~Bot() {
             << &_subscriber;
 }
 
-messages::Peers *global_evil_peers;
 }  // namespace neuro

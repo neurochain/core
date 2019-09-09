@@ -55,7 +55,7 @@ std::optional<Peer *> Peers::upsert(std::shared_ptr<Peer> peer) {
       found_peer->set_port(peer->port());
       found_peer->set_endpoint(peer->endpoint());
     }
-    return {found_peer.get()};
+    return found_peer.get();
   }
 
   found_peer->set_status(Peer::DISCONNECTED);

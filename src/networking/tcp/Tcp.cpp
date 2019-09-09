@@ -152,8 +152,6 @@ bool Tcp::terminate(const Connection::ID id) {
   std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   auto got = _connections.find(id);
   if (got == _connections.end()) {
-    LOG_TRACE << "trax> could not terminating " << id << " "
-              << _connections.size();
     return false;
   }
   got->second->terminate();
