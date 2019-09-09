@@ -55,7 +55,9 @@ class Consensus {
   std::thread _miner_thread;
   std::condition_variable _is_stopped_cv;
   std::mutex _is_stopped_mutex;
-  bool _is_stopped;
+  bool _is_miner_stopped;
+  bool _is_update_heights_stopped;
+  bool _is_compute_pii_stopped;
 
   bool check_outputs(
       const messages::TaggedTransaction &tagged_transaction) const;
