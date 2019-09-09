@@ -21,17 +21,12 @@ Networking::Networking(messages::Queue *queue, crypto::Ecc *keys,
   _transport_layer = std::make_unique<Tcp>(queue, peers, _keys, *config);
 }
 
-TransportLayer::SendResult Networking::send_all(
-    std::shared_ptr<messages::Message> message) const {
-  return _transport_layer->send_all(message);
-}
-
-bool Networking::reply(
-    std::shared_ptr<messages::Message> message) const {
+bool Networking::reply(std::shared_ptr<messages::Message> message) const {
   return _transport_layer->reply(message);
 }
 
-TransportLayer::SendResult Networking::send(const messages::Message &message, const Connection::ID id) const {
+TransportLayer::SendResult Networking::send(const messages::Message &message,
+                                            const Connection::ID id) const {
   return _transport_layer->send(message, id);
 }
 

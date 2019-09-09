@@ -69,7 +69,6 @@ class Tcp : public TransportLayer {
   Tcp(messages::Queue *queue, messages::Peers *peers, crypto::Ecc *keys,
       const messages::config::Networking &config);
   bool connect(std::shared_ptr<messages::Peer> peer);
-  SendResult send_all(std::shared_ptr<messages::Message> message) const;
   SendResult send(const messages::Message &message,
                   const Connection::ID id) const;
   bool reply(std::shared_ptr<messages::Message> message) const;

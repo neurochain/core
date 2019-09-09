@@ -7,6 +7,10 @@ Peers::iterator Peers::begin(const Peer::Status status) {
   return iterator{_peers, status};
 }
 
+const Peers::iterator Peers::begin(const Peer::Status status) const {
+  return iterator{_peers, status};
+}
+
 Peers::iterator Peers::begin() { return iterator{_peers}; }
 const Peers::iterator Peers::begin() const { return iterator{_peers}; }
 
@@ -100,7 +104,7 @@ std::shared_ptr<Peer> Peers::find(const _KeyPub &key_pub) {
  * \param status a status to filter the list
  * \return the filtered list of peer
  */
-std::vector<Peer *> Peers::by_status(const Peer::Status status) {
+std::vector<Peer *> Peers::by_status(const Peer::Status status) const {
   std::unique_lock<std::mutex> lock(_mutex);
   std::vector<Peer *> res;
 
@@ -121,7 +125,7 @@ std::vector<Peer *> Peers::used_peers() {
       static_cast<Peer::Status>(Peer::CONNECTING | Peer::CONNECTED));
 }
 
-std::vector<Peer *> Peers::connected_peers() {
+std::vector<Peer *> Peers::connected_peers() const {
   return by_status(Peer::CONNECTED);
 }
 

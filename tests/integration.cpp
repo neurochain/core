@@ -60,6 +60,10 @@ class BotTest : public Bot {
     return std::chrono::seconds{t};
   }
 
+  bool send_all(const messages::Message &message) {
+    return Bot::send_all(message);
+  }
+
   std::chrono::seconds connecting_timeout() {
     auto t = _config.networking().connecting_next_update_time();
     return std::chrono::seconds{t};
@@ -523,12 +527,12 @@ TEST(INTEGRATION, ignore_bad_message) {
   ASSERT_TRUE(bot0->check_peers_ports({1338}));
   ASSERT_TRUE(bot1->check_peers_ports({1337}));
 
-  auto msg = std::make_shared<messages::Message>();
-  auto *header = msg->mutable_header();
+  messages::Message msg;
+  auto *header = msg.mutable_header();
   messages::fill_header(header);
-  msg->add_bodies()->mutable_get_peers();
+  msg.add_bodies()->mutable_get_peers();
   header->set_version(neuro::MessageVersion + 100);
-  bot0->networking().send_all(msg);
+  bot0->send_all(msg);
 }
 
 TEST(INTEGRATION, keep_max_connections) {
@@ -570,13 +574,13 @@ TEST(INTEGRATION, handler_get_block) {
         }
       });
 
-  auto message = std::make_shared<messages::Message>();
-  messages::fill_header(message->mutable_header());
-  auto get_block = message->add_bodies()->mutable_get_block();
+  messages::Message message;
+  messages::fill_header(message.mutable_header());
+  auto get_block = message.add_bodies()->mutable_get_block();
   get_block->set_height(0);
   get_block->set_count(1);
   // ask for block 0
-  fake_bot->networking().send_all(message);
+  fake_bot->send_all(message);
   std::this_thread::sleep_for(3s);
   ASSERT_TRUE(received_block);
 }

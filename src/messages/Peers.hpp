@@ -100,14 +100,15 @@ class Peers {
   std::size_t used_peers_count() const;
   void update_unreachable();
   std::shared_ptr<Peer> find(const _KeyPub &key_pub);
-  std::vector<Peer *> by_status(const Peer::Status status);
+  std::vector<Peer *> by_status(const Peer::Status status) const;
   std::vector<Peer *> used_peers();
-  std::vector<Peer *> connected_peers();
+  std::vector<Peer *> connected_peers() const;
   std::vector<Peer> peers_copy() const;
   std::optional<Peer *> peer_by_port(const Port port) const;
   iterator begin();
   const iterator begin() const;
   iterator begin(const Peer::Status);
+  const iterator begin(const Peer::Status) const;
   iterator end();
   const iterator end() const;
   operator _Peers() const;

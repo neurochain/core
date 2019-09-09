@@ -221,52 +221,6 @@ TransportLayer::SendResult Tcp::send(const messages::Message &message,
   }
 }
 
-TransportLayer::SendResult Tcp::send_all(
-    std::shared_ptr<messages::Message> message) const {
-  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
-  if (_connections.size() == 0) {
-    LOG_ERROR << "Could not send message because there is no connection "
-              << message;
-    return SendResult::FAILED;
-  }
-
-  if (_stopped) {
-    return SendResult::FAILED;
-  }
-  auto header_tcp =
-      std::make_shared<Buffer>(sizeof(networking::tcp::HeaderPattern), 0);
-  auto body_tcp = std::make_shared<Buffer>();
-
-  if (!serialize(*message, header_tcp.get(), body_tcp.get())) {
-    LOG_WARNING << "Could not serialize message";
-    return SendResult::FAILED;
-  }
-
-  LOG_DEBUG << "Sending message[" << this->listening_port() << "]: >>"
-            << *message << " " << _connections.size();
-
-  uint16_t res_count = 0;
-  for (auto &[_, connection] : _connections) {
-    bool res_send = true;
-    res_send &= connection->send(header_tcp);
-    res_send &= connection->send(body_tcp);
-    if (res_send) {
-      res_count++;
-    }
-  }
-
-  SendResult res;
-  if (res_count == 0) {
-    res = SendResult::FAILED;
-  } else if (res_count != _connections.size()) {
-    res = SendResult::FAILED;
-  } else {
-    res = SendResult::ALL_GOOD;
-  }
-
-  return res;
-}
-
 std::optional<tcp::Connection *> Tcp::find(const Connection::ID id) const {
   std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   auto got = _connections.find(id);
@@ -282,7 +236,7 @@ bool Tcp::reply(std::shared_ptr<messages::Message> message) const {
     LOG_WARNING << "not sending message " << _stopped;
     return false;
   }
-  return send(*message, message->header().has_connection_id()) ==
+  return send(*message, message->header().connection_id()) ==
          SendResult::ALL_GOOD;
 }
 

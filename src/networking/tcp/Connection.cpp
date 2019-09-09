@@ -115,6 +115,7 @@ void Connection::read_body(std::size_t body_size) {
           LOG_INFO
               << "Killing connection because received message without key pub "
               << ip();
+          LOG_DEBUG << "TOTORO " << *(_this->_remote_peer) << *message;
           _this->terminate();
           return;
         }

@@ -29,9 +29,8 @@ class Networking {
   Networking(messages::Queue *_queue, crypto::Ecc *keys, messages::Peers *peers,
              messages::config::Networking *config);
 
-  TransportLayer::SendResult send_all(
-      std::shared_ptr<messages::Message> message) const;
-  TransportLayer::SendResult send(const messages::Message &message, Connection::ID id) const;
+  TransportLayer::SendResult send(const messages::Message &message,
+                                  Connection::ID id) const;
   bool reply(std::shared_ptr<messages::Message> message) const;
   messages::Peers connected_peers() const;
   std::size_t peer_count() const;
