@@ -167,8 +167,8 @@ std::shared_ptr<messages::Peer> Tcp::find_peer(const Connection::ID id) {
   return (*connection)->remote_peer();
 }
 
-bool Tcp::serialize(const messages::Message &message,
-                    Buffer *header_tcp, Buffer *body_tcp) const {
+bool Tcp::serialize(const messages::Message &message, Buffer *header_tcp,
+                    Buffer *body_tcp) const {
   // TODO: use 1 output buffer
   LOG_DEBUG << this << " Before reinterpret and signing";
   auto header_pattern =
@@ -193,7 +193,8 @@ bool Tcp::serialize(const messages::Message &message,
  * \param id connection id of the peer to send to
  * \return failure or all_good
  */
-TransportLayer::SendResult Tcp::send(const messages::Message &message, const Connection::ID id) const {
+TransportLayer::SendResult Tcp::send(const messages::Message &message,
+                                     const Connection::ID id) const {
   const auto connection_opt = find(id);
   if (!connection_opt) {
     LOG_WARNING << "not sending message because could not find connection";
@@ -213,11 +214,11 @@ TransportLayer::SendResult Tcp::send(const messages::Message &message, const Con
   if (!serialize(message, header_tcp.get(), body_tcp.get())) {
     return SendResult::FAILED;
   }
-  bool res = true;
-  res &= connection->send(header_tcp);
-  res &= connection->send(body_tcp);
-
-  return res ? SendResult::ALL_GOOD : SendResult::FAILED;
+  if (connection->send(header_tcp) && connection->send(body_tcp)) {
+    return SendResult::ALL_GOOD;
+  } else {
+    return SendResult::FAILED;
+  }
 }
 
 TransportLayer::SendResult Tcp::send_all(
@@ -281,7 +282,8 @@ bool Tcp::reply(std::shared_ptr<messages::Message> message) const {
     LOG_WARNING << "not sending message " << _stopped;
     return false;
   }
-  return send(*message, message->header().has_connection_id()) != SendResult::ALL_GOOD;
+  return send(*message, message->header().has_connection_id()) ==
+         SendResult::ALL_GOOD;
 }
 
 void Tcp::clean_old_connections(int delta) {
