@@ -124,7 +124,7 @@ bool Bot::update_ledger(const std::optional<messages::Hash> &missing_block) {
   if (peer_it != _peers.end()) {
     _networking.send(*message, peer_it->connection_id());
   } else {
-    LOG_INFO << "no bot found to ask block " << *message
+    LOG_INFO << "no bot found to ask block " << *message;
   }
 
   _request_ids.insert(idheader);
