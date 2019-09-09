@@ -160,7 +160,7 @@ std::optional<Peer *> Peers::peer_by_port(const Port port) const {
  * \param peer_count limit the number of peer we copy
  */
 void Peers::fill(_Peers *peers, uint8_t peer_count) {
-  for (const auto *peer : *this) {
+  for (const auto peer : *this) {
     if (peer_count <= 0) {
       break;
     }
