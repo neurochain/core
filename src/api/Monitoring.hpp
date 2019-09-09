@@ -31,9 +31,11 @@ class Monitoring {
   float average_block_propagation_5m() const;
   float average_block_propagation_1h() const;
   messages::Status::Bot resource_usage() const;
-  messages::Status complete_status() const;
   messages::Status::FileSystem filesystem_usage() const;
   messages::Status::PeerCount peer_count() const;
+  messages::Status_BlockChain blockchain_health() const;
+  messages::Status fast_status() const;
+  messages::Status complete_status() const;
 };
 
 }  // namespace api

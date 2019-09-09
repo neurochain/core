@@ -56,6 +56,7 @@ class Rest : public Api {
   void allow_option(const Request &request, Response response);
 
   void get_status(const Request &request, Response response);
+  void get_all_status(const Request &request, Response response);
 
  public:
   Rest(const messages::config::Rest &config, Bot *bot);

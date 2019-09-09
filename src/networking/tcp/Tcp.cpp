@@ -164,13 +164,13 @@ std::optional<messages::Peer *> Tcp::find_peer(const Connection::ID id) {
   return _peers->find(remote_peer.key_pub());
 }
 
-bool Tcp::serialize(std::shared_ptr<messages::Message> message,
+bool Tcp::serialize(messages::Message message,
                     Buffer *header_tcp, Buffer *body_tcp) const {
   // TODO: use 1 output buffer
   LOG_DEBUG << this << " Before reinterpret and signing";
   auto header_pattern =
       reinterpret_cast<tcp::HeaderPattern *>(header_tcp->data());
-  messages::to_buffer(*message, body_tcp);
+  messages::to_buffer(message, body_tcp);
 
   if (body_tcp->size() > MAX_MESSAGE_SIZE) {
     LOG_ERROR << "Message is too big (" << body_tcp->size() << ")";
@@ -184,7 +184,40 @@ bool Tcp::serialize(std::shared_ptr<messages::Message> message,
   return true;
 }
 
-TransportLayer::SendResult Tcp::send(
+/**
+ * send a message to a specific peer
+ * \param message a message to send
+ * \param id connection id of the peer to send to
+ * \return failure or all_good
+ */
+TransportLayer::SendResult Tcp::send(const messages::Message &message, const Connection::ID id) const {
+  const auto connection_opt = find(id);
+  if (!connection_opt) {
+    LOG_WARNING << "not sending message because could not find connection";
+    return SendResult::FAILED;
+  }
+  const auto connection = *connection_opt;
+  const auto port_opt = connection->remote_port();
+  if (!port_opt) {
+    return SendResult::FAILED;
+  }
+  LOG_DEBUG << "Sending unicast [" << this->listening_port() << " -> "
+            << *port_opt << "]: >>" << message;
+
+  auto header_tcp =
+      std::make_shared<Buffer>(sizeof(networking::tcp::HeaderPattern), 0);
+  auto body_tcp = std::make_shared<Buffer>();
+  if (!serialize(message, header_tcp.get(), body_tcp.get())) {
+    return SendResult::FAILED;
+  }
+  bool res = true;
+  res &= connection->send(header_tcp);
+  res &= connection->send(body_tcp);
+
+  return res ? SendResult::ALL_GOOD : SendResult::FAILED;
+}
+
+TransportLayer::SendResult Tcp::send_all(
     std::shared_ptr<messages::Message> message) const {
   std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   if (_connections.size() == 0) {
@@ -200,7 +233,7 @@ TransportLayer::SendResult Tcp::send(
       std::make_shared<Buffer>(sizeof(networking::tcp::HeaderPattern), 0);
   auto body_tcp = std::make_shared<Buffer>();
 
-  if (!serialize(message, header_tcp.get(), body_tcp.get())) {
+  if (!serialize(*message, header_tcp.get(), body_tcp.get())) {
     LOG_WARNING << "Could not serialize message";
     return SendResult::FAILED;
   }
@@ -240,36 +273,12 @@ std::optional<tcp::Connection *> Tcp::find(const Connection::ID id) const {
   return got->second.get();
 }
 
-bool Tcp::send_unicast(std::shared_ptr<messages::Message> message) const {
+bool Tcp::reply(std::shared_ptr<messages::Message> message) const {
   if (_stopped || !message->header().has_connection_id()) {
     LOG_WARNING << "not sending message " << _stopped;
     return false;
   }
-
-  const auto connection_opt = find(message->header().connection_id());
-  if (!connection_opt) {
-    LOG_WARNING << "not sending message because could not find connection";
-    return false;
-  }
-  const auto connection = *connection_opt;
-  const auto port_opt = connection->remote_port();
-  if (!port_opt) {
-    return false;
-  }
-  LOG_DEBUG << "Sending unicast [" << this->listening_port() << " -> "
-            << *port_opt << "]: >>" << *message;
-
-  auto header_tcp =
-      std::make_shared<Buffer>(sizeof(networking::tcp::HeaderPattern), 0);
-  auto body_tcp = std::make_shared<Buffer>();
-  if (!serialize(message, header_tcp.get(), body_tcp.get())) {
-    return false;
-  }
-  bool res = true;
-  res &= connection->send(header_tcp);
-  res &= connection->send(body_tcp);
-
-  return res;
+  return send(*message, message->header().has_connection_id()) != SendResult::ALL_GOOD;
 }
 
 void Tcp::clean_old_connections(int delta) {

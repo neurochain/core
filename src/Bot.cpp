@@ -2,6 +2,8 @@
 #include "api/Rest.hpp"
 #include "common/logger.hpp"
 #include "messages/Subscriber.hpp"
+#include <boost/asio.hpp>
+#include <boost/asio/io_context.hpp>
 
 namespace neuro {
 using namespace std::chrono_literals;
@@ -71,7 +73,7 @@ void Bot::handler_get_block(const messages::Header &header,
   }
 
   _request_ids.insert(id);
-  _networking.send_unicast(message);
+  _networking.reply(message);
 }
 
 void Bot::handler_block(const messages::Header &header,
@@ -95,7 +97,7 @@ void Bot::handler_block(const messages::Header &header,
   auto header_reply = message->mutable_header();
   auto id = messages::fill_header(header_reply);
   message->add_bodies()->mutable_block()->CopyFrom(body.block());
-  _networking.send(message);
+  _networking.send_all(message);
 
   _request_ids.insert(id);
 }
@@ -117,7 +119,13 @@ bool Bot::update_ledger(const std::optional<messages::Hash> &missing_block) {
   auto get_block = message->add_bodies()->mutable_get_block();
   get_block->mutable_hash()->CopyFrom(*missing_block);
   get_block->set_count(1);
-  _networking.send(message);
+
+  auto peer_it = _peers.begin(messages::Peer::CONNECTED);
+  if (peer_it != _peers.end()) {
+    _networking.send(*message, peer_it->connection_id());
+  } else {
+    LOG_INFO << "no bot found to ask block " << *message
+  }
 
   _request_ids.insert(idheader);
   return false;
@@ -241,7 +249,7 @@ void Bot::regular_update() {
       _config.networking().keep_old_connection_time());
 
   if (_config.has_random_transaction() &&
-      rand() < _config.random_transaction() * RAND_MAX) {
+      rand() < _config.random_transaction() * float(RAND_MAX)) {
     send_random_transaction();
   }
   _update_timer.expires_at(_update_timer.expiry() +
@@ -272,7 +280,7 @@ void Bot::update_peerlist() {
   messages::fill_header(msg->mutable_header());
   msg->add_bodies()->mutable_get_peers();
 
-  _networking.send(msg);
+  _networking.send_all(msg);
 }
 
 void Bot::handler_get_peers(const messages::Header &header,
@@ -291,7 +299,7 @@ void Bot::handler_get_peers(const messages::Header &header,
   }
   LOG_DEBUG << this << " : " << _me.port()
             << " got a get_peers message : " << peers_body;
-  _networking.send_unicast(msg);
+  _networking.reply(msg);
 }
 
 void Bot::handler_peers(const messages::Header &header,
@@ -325,7 +333,7 @@ void Bot::handler_connection(const messages::Header &header,
   const auto tip = _ledger->get_main_branch_tip();
   hello->mutable_tip()->CopyFrom(tip.block().header().id());
 
-  if (!_networking.send_unicast(message)) {
+  if (!_networking.reply(message)) {
     LOG_DEBUG << this << " : " << _me.port() << " can't send hello message "
               << message;
   }
@@ -427,7 +435,7 @@ void Bot::handler_hello(const messages::Header &header,
 
   _peers.fill(peers);
 
-  if (!_networking.send_unicast(message)) {
+  if (!_networking.reply(message)) {
     LOG_ERROR << this << " : " << _me.port() << " Failed to send world message";
     (*remote_peer)->set_status(messages::Peer::UNREACHABLE);
   }
@@ -494,7 +502,7 @@ bool Bot::publish_transaction(const messages::Transaction &transaction) const {
   messages::fill_header(message->mutable_header());
   auto body = message->add_bodies();
   body->mutable_transaction()->CopyFrom(transaction);
-  return (_networking.send(message) !=
+  return (_networking.send_all(message) !=
           networking::TransportLayer::SendResult::FAILED);
 }
 
@@ -504,7 +512,7 @@ void Bot::publish_block(const messages::Block &block) const {
   messages::fill_header(message->mutable_header());
   auto body = message->add_bodies();
   body->mutable_block()->CopyFrom(block);
-  _networking.send(message);
+  _networking.send_all(message);
 }
 
 ledger::Ledger *Bot::ledger() { return _ledger.get(); }

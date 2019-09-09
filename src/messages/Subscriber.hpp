@@ -89,7 +89,7 @@ class Subscriber {
         if (process) {
           cb(message->header(), body);
         } else {
-          LOG_ERROR << "Dropping message because message is old " << *message;
+          LOG_ERROR << "message already seen" << *message;
         }
       }
     }

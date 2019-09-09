@@ -512,7 +512,7 @@ TEST(INTEGRATION, ignore_bad_message) {
   messages::fill_header(header);
   msg->add_bodies()->mutable_get_peers();
   header->set_version(neuro::MessageVersion + 100);
-  bot0.networking().send(msg);
+  bot0.networking().send_all(msg);
 }
 
 TEST(INTEGRATION, keep_max_connections) {
@@ -560,7 +560,7 @@ TEST(INTEGRATION, handler_get_block) {
   get_block->set_height(0);
   get_block->set_count(1);
   // ask for block 0
-  fake_bot.networking().send(message);
+  fake_bot.networking().send_all(message);
   std::this_thread::sleep_for(3s);
   ASSERT_TRUE(received_block);
 }

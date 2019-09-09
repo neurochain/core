@@ -35,10 +35,11 @@ class TransportLayer {
   TransportLayer(messages::Queue* queue, messages::Peers* peers,
                  crypto::Ecc* keys);
 
-  virtual SendResult send(
+  virtual SendResult send_all(
       const std::shared_ptr<messages::Message> message) const = 0;
-  virtual bool send_unicast(
-      const std::shared_ptr<messages::Message> message) const = 0;
+  virtual SendResult send(const messages::Message &message,
+                          const Connection::ID id) const = 0;
+  virtual bool reply(std::shared_ptr<messages::Message> message) const = 0;
   virtual std::size_t peer_count() const = 0;
   virtual bool terminate(const Connection::ID id) = 0;
   virtual std::optional<messages::Peer*> find_peer(const Connection::ID id) = 0;

@@ -83,7 +83,8 @@ class Ledger {
     if (!get_block(tagged_block.block().header().previous_block_hash(),
                    &prev_tagged_block, false)) {
       std::lock_guard lock(_missing_block_mutex);
-      _missing_blocks.insert(tagged_block.block().header().id());
+      _missing_blocks.insert(
+          tagged_block.block().header().previous_block_hash());
       return tagged_block.block().header().previous_block_hash();
     }
 

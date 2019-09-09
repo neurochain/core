@@ -83,6 +83,7 @@ void Rest::setupRoutes() {
   Get(_router, "/total_nb_blocks", bind(&Rest::get_total_nb_blocks, this));
   Get(_router, "/peers", bind(&Rest::get_peers, this));
   Get(_router, "/status", bind(&Rest::get_status, this));
+  Get(_router, "/status/all", bind(&Rest::get_all_status, this));
 }
 
 void Rest::get_balance(const Request &req, Response res) {
@@ -218,6 +219,11 @@ void Rest::get_peers(const Rest::Request &request, Rest::Response res) {
 }
 
 void Rest::get_status(const Rest::Request &req, Rest::Response res) {
+  auto status = _monitor.fast_status();
+  send(res, status);
+}
+
+void Rest::get_all_status(const Rest::Request &req, Rest::Response res) {
   auto status = _monitor.complete_status();
   send(res, status);
 }
