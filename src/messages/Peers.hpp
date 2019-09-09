@@ -5,10 +5,10 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <numeric>
 #include <optional>
 #include <random>
-#include <shared_mutex>
 #include <string>
 #include <vector>
 
@@ -25,15 +25,15 @@ namespace messages {
 class Peers {
  private:
   const _KeyPub _own_key;
-  mutable std::shared_mutex _mutex;
+  mutable std::mutex _mutex;
   using PeersByKey =
-      std::unordered_map<_KeyPub, std::unique_ptr<Peer>, PacketHash<_KeyPub>>;
+      std::unordered_map<_KeyPub, std::shared_ptr<Peer>, PacketHash<_KeyPub>>;
   PeersByKey _peers;
 
  public:
   class iterator {
    private:
-    using Indexes = std::vector<Peer *>;
+    using Indexes = std::vector<std::shared_ptr<Peer>>;
     Peer::Status _status;
     Indexes _peers;
     Indexes::iterator _it;
@@ -54,7 +54,7 @@ class Peers {
         : _status(status) {
       for (const auto &pair : peers) {
         if (pair.second->status() & _status) {
-          _peers.push_back(pair.second.get());
+          _peers.push_back(pair.second);
         }
       }
       shuffle();
@@ -62,7 +62,7 @@ class Peers {
 
     iterator(const PeersByKey &peers) : _status(ALLSTATUS) {
       for (const auto &pair : peers) {
-        _peers.push_back(pair.second.get());
+        _peers.push_back(pair.second);
       }
       shuffle();
     }
@@ -75,8 +75,8 @@ class Peers {
 
     bool operator==(const iterator &) { return _it == _peers.end(); }
     bool operator!=(const iterator &) { return _it != _peers.end(); }
-    Peer *operator*() { return *_it; }
-    Peer *operator->() { return *_it; }
+    std::shared_ptr<Peer> operator*() { return *_it; }
+    std::shared_ptr<Peer> operator->() { return *_it; }
   };
 
   Peers(const _KeyPub &own_key, const messages::config::Networking &config)
@@ -92,11 +92,14 @@ class Peers {
   std::size_t size() const { return _peers.size(); }
 
   std::optional<Peer *> insert(const Peer &peer);
+  std::optional<Peer *> insert(std::shared_ptr<Peer> peer);
+  std::optional<Peer *> upsert(const Peer &peer);
+  std::optional<Peer *> upsert(std::shared_ptr<Peer> peer);
 
   void fill(_Peers *peers, uint8_t peer_count = 10);
   std::size_t used_peers_count() const;
   void update_unreachable();
-  std::optional<Peer *> find(const _KeyPub &key_pub);
+  std::shared_ptr<Peer> find(const _KeyPub &key_pub);
   std::vector<Peer *> by_status(const Peer::Status status);
   std::vector<Peer *> used_peers();
   std::vector<Peer *> connected_peers();

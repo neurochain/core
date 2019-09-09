@@ -534,6 +534,8 @@ void Consensus::init(bool start_threads) {
   for (const auto &key : _keys) {
     _key_pubs.emplace_back(key.key_pub());
   }
+
+  _is_stopped = false;
   if (start_threads) {
     start_compute_pii_thread();
     start_update_heights_thread();
@@ -542,9 +544,8 @@ void Consensus::init(bool start_threads) {
 }
 
 Consensus::~Consensus() {
-  _stop_compute_pii = true;
-  _stop_update_heights = true;
-  _stop_miner = true;
+  _is_stopped = true;
+  _is_stopped_cv.notify_all();
   if (_compute_pii_thread.joinable()) {
     _compute_pii_thread.join();
   }
@@ -607,17 +608,18 @@ bool Consensus::add_block(const messages::Block &block) {
 }
 
 void Consensus::start_compute_pii_thread() {
-  _stop_compute_pii = false;
   if (!_compute_pii_thread.joinable()) {
     _compute_pii_thread = std::thread([this]() {
-      while (!_stop_compute_pii) {
+      while (!_is_stopped) {
         std::vector<messages::Assembly> assemblies;
         _ledger->get_assemblies_to_compute(&assemblies);
         if (!assemblies.empty()) {
           compute_assembly_pii(assemblies[0]);
           cleanup_expired_transactions();
         } else {
-          std::this_thread::sleep_for(_config.compute_pii_sleep);
+          std::unique_lock cv_lock(_is_stopped_mutex);
+          _is_stopped_cv.wait_for(cv_lock, _config.compute_pii_sleep,
+                                  [&]() { return _is_stopped; });
         }
       }
     });
@@ -937,12 +939,13 @@ bool Consensus::build_block(const crypto::Ecc &keys,
 }
 
 void Consensus::start_update_heights_thread() {
-  _stop_update_heights = false;
   if (!_update_heights_thread.joinable()) {
     _update_heights_thread = std::thread([this]() {
-      while (!_stop_update_heights) {
+      while (!_is_stopped) {
         update_heights_to_write();
-        std::this_thread::sleep_for(_config.update_heights_sleep);
+        std::unique_lock cv_lock(_is_stopped_mutex);
+        _is_stopped_cv.wait_for(cv_lock, _config.update_heights_sleep,
+                                [&]() { return _is_stopped; });
       }
     });
   }
@@ -985,7 +988,6 @@ void Consensus::update_heights_to_write() {
 }
 
 void Consensus::start_miner_thread() {
-  _stop_miner = false;
   if (!_miner_thread.joinable()) {
     _miner_thread = std::thread([this]() { mine_blocks(); });
   }
@@ -1035,9 +1037,11 @@ void Consensus::mine_blocks() {
   if (!_ledger->get_block(0, &block0)) {
     throw std::runtime_error("Failed to get block0 in start_miner_thread");
   }
-  while (!_stop_miner) {
+  while (!_is_stopped) {
     if (!mine_block(block0)) {
-      std::this_thread::sleep_for(_config.miner_sleep);
+      std::unique_lock cv_lock(_is_stopped_mutex);
+      _is_stopped_cv.wait_for(cv_lock, _config.miner_sleep,
+                              [&]() { return _is_stopped; });
     }
   }
 }
