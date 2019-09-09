@@ -2,6 +2,7 @@
 #define NEURO_SRC_NETWORKING_TCP_TCP_HPP
 
 #include <boost/asio.hpp>
+#include <boost/asio/io_context.hpp>
 #include <boost/bind.hpp>
 #include <unordered_map>
 
@@ -54,7 +55,7 @@ class Tcp : public TransportLayer {
                             const boost::system::error_code &error,
                             std::shared_ptr<messages::Peer> peer);
 
-  bool serialize(const messages::Message &message, Buffer *header_tcp,
+  bool serialize(messages::Message message, Buffer *header_tcp,
                  Buffer *body_tcp) const;
 
   void start_accept();
@@ -68,11 +69,17 @@ class Tcp : public TransportLayer {
 
   Tcp(messages::Queue *queue, messages::Peers *peers, crypto::Ecc *keys,
       const messages::config::Networking &config);
-  bool connect(std::shared_ptr<messages::Peer> peer);
+<<<<<<< HEAD
+  bool connect(messages::Peer *peer);
   SendResult send_all(std::shared_ptr<messages::Message> message) const;
   SendResult send(const messages::Message &message,
                   const Connection::ID id) const;
   bool reply(std::shared_ptr<messages::Message> message) const;
+=======
+  bool connect(std::shared_ptr<messages::Peer> peer);
+  SendResult send(std::shared_ptr<messages::Message> message) const;
+  bool send_unicast(std::shared_ptr<messages::Message> message) const;
+>>>>>>> dev
   Port listening_port() const;
   IP local_ip() const;
   bool terminate(Connection::ID id);

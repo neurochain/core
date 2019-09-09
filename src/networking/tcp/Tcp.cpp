@@ -62,7 +62,7 @@ void Tcp::accept(const boost::system::error_code &error) {
   start_accept();
 }
 
-bool Tcp::connect(messages::Peer *peer) {
+bool Tcp::connect(std::shared_ptr<messages::Peer> peer) {
   if (_stopped) {
     return false;
   }
@@ -73,8 +73,9 @@ bool Tcp::connect(messages::Peer *peer) {
   bai::tcp::resolver::iterator endpoint_iterator = resolver.resolve(query);
 
   auto socket = std::make_shared<bai::tcp::socket>(_io_context);
-  auto handler = [this, socket, peer](boost::system::error_code error,
-                                      bai::tcp::resolver::iterator iterator) {
+  auto handler = [this, socket, peer = std::move(peer)](
+                     boost::system::error_code error,
+                     bai::tcp::resolver::iterator iterator) {
     this->new_connection_local(socket, error, peer);
   };
   boost::asio::async_connect(*socket, endpoint_iterator, handler);
@@ -94,8 +95,9 @@ void Tcp::new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
     ++_current_id;
 
     msg_header->set_connection_id(_current_id);
-    auto connection =
-        std::make_shared<tcp::Connection>(_current_id, _queue, socket, _config);
+    auto remote_peer = std::make_shared<messages::Peer>(_config);
+    auto connection = std::make_shared<tcp::Connection>(_current_id, _queue,
+                                                        socket, remote_peer);
     _connections.insert(std::make_pair(_current_id, connection));
 
     auto connection_ready = msg_body->mutable_connection_ready();
@@ -114,7 +116,7 @@ void Tcp::new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
 
 void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
                                const boost::system::error_code &error,
-                               messages::Peer *peer) {
+                               std::shared_ptr<messages::Peer> peer) {
   std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   auto message = std::make_shared<messages::Message>();
   auto msg_header = message->mutable_header();
@@ -124,8 +126,9 @@ void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
     ++_current_id;
 
     msg_header->set_connection_id(_current_id);
+    msg_header->mutable_key_pub()->CopyFrom(peer->key_pub());
     auto connection =
-        std::make_shared<tcp::Connection>(_current_id, _queue, socket, *peer);
+        std::make_shared<tcp::Connection>(_current_id, _queue, socket, peer);
     _connections.insert(std::make_pair(_current_id, connection));
 
     auto connection_ready = msg_body->mutable_connection_ready();
@@ -139,6 +142,7 @@ void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
                 << error.message();
 
     auto connection_closed = msg_body->mutable_connection_closed();
+    peer->clear_connection_id();
     connection_closed->mutable_peer()->CopyFrom(*peer);
     _queue->publish(message);
   }
@@ -155,16 +159,15 @@ bool Tcp::terminate(const Connection::ID id) {
   return true;
 }
 
-std::optional<messages::Peer *> Tcp::find_peer(const Connection::ID id) {
+std::shared_ptr<messages::Peer> Tcp::find_peer(const Connection::ID id) {
   auto connection = find(id);
   if (!connection) {
-    return std::nullopt;
+    return nullptr;
   }
-  auto remote_peer = (*connection)->remote_peer();
-  return _peers->find(remote_peer.key_pub());
+  return (*connection)->remote_peer();
 }
 
-bool Tcp::serialize(messages::Message message,
+bool Tcp::serialize(const messages::Message &message,
                     Buffer *header_tcp, Buffer *body_tcp) const {
   // TODO: use 1 output buffer
   LOG_DEBUG << this << " Before reinterpret and signing";
@@ -285,9 +288,9 @@ void Tcp::clean_old_connections(int delta) {
   std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   const auto current_time = ::neuro::time() - delta;
   for (auto &[_, connection] : _connections) {
-    auto remote_peer = _peers->find(connection->remote_peer().key_pub());
-    if (remote_peer && (connection->init_ts() < current_time) &&
-        ((*remote_peer)->status() != messages::Peer::CONNECTED)) {
+    auto remote_peer = connection->remote_peer();
+    if ((connection->init_ts() < current_time) &&
+        (remote_peer->status() != messages::Peer::CONNECTED)) {
       connection->terminate();
     }
   }

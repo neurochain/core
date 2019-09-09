@@ -53,7 +53,7 @@ Port Networking::listening_port() const {
   return _transport_layer->listening_port();
 }
 
-bool Networking::connect(messages::Peer *peer) {
+bool Networking::connect(std::shared_ptr<messages::Peer> peer) {
   return _transport_layer->connect(peer);
 }
 
@@ -66,7 +66,7 @@ void Networking::clean_old_connections(int delta) {
  * \param id an identifiant of a connection
  * \return the associated peer for the connection
  */
-std::optional<messages::Peer *> Networking::find_peer(Connection::ID id) {
+std::shared_ptr<messages::Peer> Networking::find_peer(Connection::ID id) {
   return _transport_layer->find_peer(id);
 }
 
