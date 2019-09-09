@@ -2,6 +2,7 @@
 #define NEURO_SRC_CONSENSUS_CONSENSUS_HPP
 
 #include <atomic>
+#include <condition_variable>
 #include <cstdint>
 #include <memory>
 #include <mutex>
@@ -44,17 +45,19 @@ class Consensus {
   const std::vector<crypto::Ecc> &_keys;
   std::vector<messages::_KeyPub> _key_pubs;
   const PublishBlock _publish_block;
-  std::atomic<bool> _stop_compute_pii;
   std::thread _compute_pii_thread;
   std::vector<std::pair<messages::BlockHeight, KeyPubIndex>> _heights_to_write;
   std::mutex _heights_to_write_mutex;
   std::recursive_mutex _verify_blocks_mutex;
   std::optional<messages::AssemblyID> _previous_assembly_id;
   std::optional<messages::AssemblyHeight> _current_assembly_height;
-  std::atomic<bool> _stop_update_heights;
   std::thread _update_heights_thread;
-  std::atomic<bool> _stop_miner;
   std::thread _miner_thread;
+  std::condition_variable _is_stopped_cv;
+  std::mutex _is_stopped_mutex;
+  bool _is_miner_stopped;
+  bool _is_update_heights_stopped;
+  bool _is_compute_pii_stopped;
 
   bool check_outputs(
       const messages::TaggedTransaction &tagged_transaction) const;

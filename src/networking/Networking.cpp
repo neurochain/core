@@ -21,14 +21,13 @@ Networking::Networking(messages::Queue *queue, crypto::Ecc *keys,
   _transport_layer = std::make_unique<Tcp>(queue, peers, _keys, *config);
 }
 
-TransportLayer::SendResult Networking::send(
-    std::shared_ptr<messages::Message> message) const {
-  return _transport_layer->send(message);
+bool Networking::reply(std::shared_ptr<messages::Message> message) const {
+  return _transport_layer->reply(message);
 }
 
-bool Networking::send_unicast(
-    std::shared_ptr<messages::Message> message) const {
-  return _transport_layer->send_unicast(message);
+TransportLayer::SendResult Networking::send(const messages::Message &message,
+                                            const Connection::ID id) const {
+  return _transport_layer->send(message, id);
 }
 
 /**
@@ -49,7 +48,7 @@ Port Networking::listening_port() const {
   return _transport_layer->listening_port();
 }
 
-bool Networking::connect(messages::Peer *peer) {
+bool Networking::connect(std::shared_ptr<messages::Peer> peer) {
   return _transport_layer->connect(peer);
 }
 
@@ -62,7 +61,7 @@ void Networking::clean_old_connections(int delta) {
  * \param id an identifiant of a connection
  * \return the associated peer for the connection
  */
-std::optional<messages::Peer *> Networking::find_peer(Connection::ID id) {
+std::shared_ptr<messages::Peer> Networking::find_peer(Connection::ID id) {
   return _transport_layer->find_peer(id);
 }
 

@@ -114,7 +114,11 @@ class LedgerMongodb : public Ledger {
       mongocxx::collection &collection, bsoncxx::document::view_or_value filter,
       const mongocxx::options::find &options = remove_OID()) const;
 
- public:
+  Double compute_new_balance(messages::Balance *balance,
+                             const BalanceChange &change,
+                             messages::BlockHeight height);
+
+public:
   LedgerMongodb(const std::string &url, const std::string &db_name);
   LedgerMongodb(const std::string &url, const std::string &db_name,
                 const messages::Block &block0);

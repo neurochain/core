@@ -52,13 +52,14 @@ class Tcp : public TransportLayer {
 
   void new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
                             const boost::system::error_code &error,
-                            messages::Peer *peer);
+                            std::shared_ptr<messages::Peer> peer);
 
-  bool serialize(std::shared_ptr<messages::Message> message, Buffer *header_tcp,
+  bool serialize(const messages::Message &message, Buffer *header_tcp,
                  Buffer *body_tcp) const;
 
   void start_accept();
   void accept(const boost::system::error_code &error);
+  void stop();
 
  public:
   Tcp() = delete;
@@ -67,17 +68,17 @@ class Tcp : public TransportLayer {
 
   Tcp(messages::Queue *queue, messages::Peers *peers, crypto::Ecc *keys,
       const messages::config::Networking &config);
-  bool connect(messages::Peer *peer);
-  SendResult send(std::shared_ptr<messages::Message> message) const;
-  bool send_unicast(std::shared_ptr<messages::Message> message) const;
+  bool connect(std::shared_ptr<messages::Peer> peer);
+  SendResult send(const messages::Message &message,
+                  const Connection::ID id) const;
+  bool reply(std::shared_ptr<messages::Message> message) const;
   Port listening_port() const;
   IP local_ip() const;
   bool terminate(Connection::ID id);
   std::optional<tcp::Connection *> find(Connection::ID id) const;
-  std::optional<messages::Peer *> find_peer(Connection::ID id);
+  std::shared_ptr<messages::Peer> find_peer(Connection::ID id);
   void clean_old_connections(int delta);
   std::size_t peer_count() const;
-  void stop();
   void join();
   ~Tcp();
 

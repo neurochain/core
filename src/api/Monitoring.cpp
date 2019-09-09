@@ -6,8 +6,7 @@
 #include "Bot.hpp"
 #include "version.h"
 
-namespace neuro {
-namespace api {
+namespace neuro::api {
 
 using Rusage = struct rusage;
 using Statfs = struct statfs;
@@ -179,25 +178,35 @@ messages::Status::PeerCount Monitoring::peer_count() const {
   return peerCount;
 }
 
-messages::Status Monitoring::complete_status() const {
-  messages::Status status;
-  auto *chain_status = status.mutable_blockchain();
-  chain_status->set_last_block_ts(last_block_ts());
-  chain_status->set_current_height(current_height());
-  chain_status->set_mined_block(_bot->ledger()->total_nb_blocks());
-  chain_status->set_transaction_count(_bot->ledger()->total_nb_transactions());
-  chain_status->set_nb_blocks_5m(nb_blocks_5m());
-  chain_status->set_nb_blocks_1h(nb_blocks_1h());
-  chain_status->set_nb_transactions_5m(nb_transactions_5m());
-  chain_status->set_nb_transactions_1h(nb_transactions_1h());
-  chain_status->set_average_block_propagation_5m(
+messages::Status_BlockChain Monitoring::blockchain_health() const {
+  messages::Status_BlockChain health;
+  health.set_last_block_ts(last_block_ts());
+  health.set_current_height(current_height());
+  health.set_nb_blocks_5m(nb_blocks_5m());
+  health.set_nb_blocks_1h(nb_blocks_1h());
+  health.set_nb_transactions_5m(nb_transactions_5m());
+  health.set_nb_transactions_1h(nb_transactions_1h());
+  health.set_average_block_propagation_5m(
       average_block_propagation_5m());
-  chain_status->set_average_block_propagation_1h(
+  health.set_average_block_propagation_1h(
       average_block_propagation_1h());
+  return health;
+}
+
+messages::Status Monitoring::fast_status() const {
+  messages::Status status;
   status.mutable_bot()->CopyFrom(resource_usage());
   status.mutable_fs()->CopyFrom(filesystem_usage());
   status.mutable_peer()->CopyFrom(peer_count());
+  status.mutable_blockchain()->CopyFrom(blockchain_health());
   return status;
 }
-}  // namespace api
-}  // namespace neuro
+
+messages::Status Monitoring::complete_status() const {
+  messages::Status status = fast_status();
+  status.mutable_blockchain()->set_mined_block(_bot->ledger()->total_nb_blocks());
+  status.mutable_blockchain()->set_transaction_count(_bot->ledger()->total_nb_transactions());
+  return status;
+}
+
+}  // namespace neuro::api

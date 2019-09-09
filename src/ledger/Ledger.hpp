@@ -83,7 +83,8 @@ class Ledger {
     if (!get_block(tagged_block.block().header().previous_block_hash(),
                    &prev_tagged_block, false)) {
       std::lock_guard lock(_missing_block_mutex);
-      _missing_blocks.insert(tagged_block.block().header().id());
+      _missing_blocks.insert(
+          tagged_block.block().header().previous_block_hash());
       return tagged_block.block().header().previous_block_hash();
     }
 
@@ -106,16 +107,19 @@ class Ledger {
   std::optional<messages::Hash> new_missing_block(
       const messages::Block &block) {
     messages::TaggedBlock tagged_block;
-    std::lock_guard lock(_missing_block_mutex);
-
-    if (!get_block(block.header().id(), &tagged_block, false)) {
+    const bool block_found =
+        get_block(block.header().id(), &tagged_block, false);
+    if (!block_found) {
       // this is weird, we should receive a block if it not inserted
       LOG_ERROR << "unknown new block " << block.header().id();
+      std::lock_guard lock(_missing_block_mutex);
       _missing_blocks.insert(block.header().id());
       return block.header().id();
+    } else {
+      std::lock_guard lock(_missing_block_mutex);
+      _missing_blocks.erase(block.header().id());
+      return new_missing_block(tagged_block);
     }
-    _missing_blocks.erase(block.header().id());
-    return new_missing_block(tagged_block);
   }
 
   std::optional<messages::Hash> new_missing_block(
@@ -125,9 +129,8 @@ class Ledger {
     }
     messages::TaggedBlock tagged_block;
 
-    std::lock_guard lock(_missing_block_mutex);
-
     if (!get_block(world.missing_block(), &tagged_block)) {
+      std::lock_guard lock(_missing_block_mutex);
       _missing_blocks.insert(world.missing_block());
       return world.missing_block();
     }
@@ -435,7 +438,7 @@ class Ledger {
       const crypto::KeyPriv &sender_key_priv,
       const messages::_KeyPub &recipient_key_pub, const float ratio_to_send,
       const std::optional<messages::NCCAmount> &fees = {}) const {
-    if (ratio_to_send > 1 || ratio_to_send < 0) {
+    if (ratio_to_send < 0) {
       throw std::runtime_error("Cannot send_ncc with a ratio of " +
                                std::to_string(ratio_to_send));
     }

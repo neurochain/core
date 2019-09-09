@@ -79,7 +79,6 @@ class Subscriber {
     const auto time = std::time(nullptr);
     for (const auto &body : message->bodies()) {
       const auto type = get_type(body);
-      for (const auto &cb : _callbacks_by_type[type]) {
         bool process{true};
         if (type == messages::Type::kTransaction ||
             type == messages::Type::kBlock) {
@@ -87,11 +86,12 @@ class Subscriber {
         }
 
         if (process) {
-          cb(message->header(), body);
+	  for (const auto &cb : _callbacks_by_type[type]) {
+	    cb(message->header(), body);
+	  }
         } else {
-          LOG_ERROR << "Dropping message because message is old " << *message;
+          LOG_ERROR << "message already seen" << *message;
         }
-      }
     }
   }
 

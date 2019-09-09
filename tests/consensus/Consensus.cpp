@@ -121,7 +121,7 @@ class Consensus : public testing::Test {
     std::this_thread::sleep_for(consensus->config().compute_pii_sleep);
 
     // Wait for the computation to be finished
-    consensus->_stop_compute_pii = true;
+    consensus->_is_compute_pii_stopped = true;
     if (consensus->_compute_pii_thread.joinable()) {
       consensus->_compute_pii_thread.join();
     }
@@ -235,7 +235,7 @@ class Consensus : public testing::Test {
     } catch (std::runtime_error &) {
       did_throw = true;
     }
-    ASSERT_TRUE(did_throw);
+    ASSERT_FALSE(did_throw);
 
     auto fees = messages::NCCAmount(100);
     auto transaction = ledger->send_ncc(simulator.keys[0].key_priv(),

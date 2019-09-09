@@ -13,24 +13,14 @@ namespace tcp {
 
 Connection::Connection(const ID id, messages::Queue *queue,
                        const std::shared_ptr<tcp::socket> &socket,
-                       const messages::Peer &remote_peer)
+                       std::shared_ptr<messages::Peer> remote_peer)
     : ::neuro::networking::Connection::Connection(id, queue),
       _header(sizeof(HeaderPattern), 0),
       _buffer(128, 0),
       _socket(socket),
       _remote_peer(remote_peer) {
   assert(_socket != nullptr);
-}
-
-Connection::Connection(const ID id, messages::Queue *queue,
-                       const std::shared_ptr<tcp::socket> &socket,
-                       const messages::config::Networking &config)
-    : ::neuro::networking::Connection::Connection(id, queue),
-      _header(sizeof(HeaderPattern), 0),
-      _buffer(128, 0),
-      _socket(socket),
-      _remote_peer(config) {
-  assert(_socket != nullptr);
+  remote_peer->set_connection_id(id);
 }
 
 std::shared_ptr<const tcp::socket> Connection::socket() const {
@@ -61,7 +51,7 @@ void Connection::read_header() {
           return;
         }
         const auto header_pattern =
-            reinterpret_cast<HeaderPattern *>(_this->_header.data());
+            reinterpret_cast<const HeaderPattern *>(_this->_header.data());
         _this->read_body(header_pattern->size);
       });
 }
@@ -112,7 +102,8 @@ void Connection::read_body(std::size_t body_size) {
               auto *hello = body.mutable_hello();
               hello->mutable_peer()->set_endpoint(
                   endpoint.address().to_string());
-              _remote_peer.CopyFrom(hello->peer());
+              _remote_peer->CopyFrom(hello->peer());
+              _remote_peer->set_connection_id(_id);
               LOG_TRACE << "remote ip> "
                         << _socket->remote_endpoint().address().to_string()
                         << std::endl;
@@ -120,14 +111,15 @@ void Connection::read_body(std::size_t body_size) {
           }
         }
 
-        if (!_this->_remote_peer.has_key_pub()) {
+        if (!_this->_remote_peer->has_key_pub()) {
           LOG_INFO
               << "Killing connection because received message without key pub "
               << ip();
+          LOG_DEBUG << "TOTORO " << *(_this->_remote_peer) << *message;
           _this->terminate();
           return;
         }
-        const auto key_pub = _this->_remote_peer.key_pub();
+        const auto key_pub = _this->_remote_peer->key_pub();
 
         crypto::KeyPub ecc_pub(key_pub);
 
@@ -136,19 +128,39 @@ void Connection::read_body(std::size_t body_size) {
                            sizeof(header_pattern->signature));
 
         if (!check) {
+          LOG_INFO << "Bad signature on incomming message";
           _this->terminate();
           return;
         }
         try {
           LOG_DEBUG << "Receiving [" << _socket->remote_endpoint() << ":"
-                    << _remote_peer.port() << "]: " << *message;
+                    << _remote_peer->port() << "]: " << *message;
         } catch (...) {
           _this->_buffer.save("conf/crashed.proto");
           return;
         }
         message->mutable_header()->mutable_key_pub()->CopyFrom(
-            _remote_peer.key_pub());
-        _this->_queue->publish(message);
+            _remote_peer->key_pub());
+
+        bool is_hello = false;
+        bool is_world = false;
+        if (message->bodies_size() > 0) {
+          const auto type = get_type(message->bodies(0));
+          if (type == messages::Type::kHello) {
+            is_hello = message->bodies_size() == 1;
+          } else if (type == messages::Type::kWorld) {
+            is_world = true;
+          }
+        }
+        if (_remote_peer->status() == messages::Peer::CONNECTED || is_hello ||
+            (_remote_peer->status() == messages::Peer::CONNECTING &&
+             is_world)) {
+          _this->_queue->publish(message);
+        } else {
+          LOG_WARNING << "Message was not sent to the queue because the sender "
+                         "is not a connected peer "
+                      << *message;
+        }
         _this->read_header();
       });
 }
@@ -170,12 +182,12 @@ bool Connection::send(std::shared_ptr<Buffer> &message) {
 
 void Connection::close() { _socket->close(); }
 
-void Connection::terminate() {
+void Connection::terminate() const {
   LOG_INFO << this << " " << _id << " Killing connection" << ip();
   boost::system::error_code ec;
   _socket->shutdown(tcp::socket::shutdown_both, ec);
   if (ec) {
-    LOG_DEBUG << "can't shutdown connection socket to : "
+    LOG_DEBUG << "can't shutdown connection socket to: id " << _id << " "
               << remote_port().value_or(0) << " : " << ec.message();
   }
   auto message = std::make_shared<messages::Message>();
@@ -205,7 +217,11 @@ const std::optional<Port> Connection::remote_port() const {
   return static_cast<Port>(endpoint.port());
 }
 
-const messages::Peer Connection::remote_peer() const { return _remote_peer; }
+std::shared_ptr<messages::Peer> Connection::remote_peer() const {
+  return _remote_peer;
+}
+
+std::shared_ptr<Connection> Connection::ptr() { return shared_from_this(); }
 
 Connection::~Connection() { close(); }
 }  // namespace tcp

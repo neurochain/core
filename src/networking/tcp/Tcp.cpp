@@ -62,7 +62,7 @@ void Tcp::accept(const boost::system::error_code &error) {
   start_accept();
 }
 
-bool Tcp::connect(messages::Peer *peer) {
+bool Tcp::connect(std::shared_ptr<messages::Peer> peer) {
   if (_stopped) {
     return false;
   }
@@ -73,8 +73,9 @@ bool Tcp::connect(messages::Peer *peer) {
   bai::tcp::resolver::iterator endpoint_iterator = resolver.resolve(query);
 
   auto socket = std::make_shared<bai::tcp::socket>(_io_context);
-  auto handler = [this, socket, peer](boost::system::error_code error,
-                                      bai::tcp::resolver::iterator iterator) {
+  auto handler = [this, socket, peer = std::move(peer)](
+                     boost::system::error_code error,
+                     bai::tcp::resolver::iterator iterator) {
     this->new_connection_local(socket, error, peer);
   };
   boost::asio::async_connect(*socket, endpoint_iterator, handler);
@@ -94,8 +95,9 @@ void Tcp::new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
     ++_current_id;
 
     msg_header->set_connection_id(_current_id);
-    auto connection =
-        std::make_shared<tcp::Connection>(_current_id, _queue, socket, _config);
+    auto remote_peer = std::make_shared<messages::Peer>(_config);
+    auto connection = std::make_shared<tcp::Connection>(_current_id, _queue,
+                                                        socket, remote_peer);
     _connections.insert(std::make_pair(_current_id, connection));
 
     auto connection_ready = msg_body->mutable_connection_ready();
@@ -114,7 +116,7 @@ void Tcp::new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
 
 void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
                                const boost::system::error_code &error,
-                               messages::Peer *peer) {
+                               std::shared_ptr<messages::Peer> peer) {
   std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   auto message = std::make_shared<messages::Message>();
   auto msg_header = message->mutable_header();
@@ -124,8 +126,9 @@ void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
     ++_current_id;
 
     msg_header->set_connection_id(_current_id);
+    msg_header->mutable_key_pub()->CopyFrom(peer->key_pub());
     auto connection =
-        std::make_shared<tcp::Connection>(_current_id, _queue, socket, *peer);
+        std::make_shared<tcp::Connection>(_current_id, _queue, socket, peer);
     _connections.insert(std::make_pair(_current_id, connection));
 
     auto connection_ready = msg_body->mutable_connection_ready();
@@ -139,6 +142,7 @@ void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
                 << error.message();
 
     auto connection_closed = msg_body->mutable_connection_closed();
+    peer->clear_connection_id();
     connection_closed->mutable_peer()->CopyFrom(*peer);
     _queue->publish(message);
   }
@@ -155,22 +159,21 @@ bool Tcp::terminate(const Connection::ID id) {
   return true;
 }
 
-std::optional<messages::Peer *> Tcp::find_peer(const Connection::ID id) {
+std::shared_ptr<messages::Peer> Tcp::find_peer(const Connection::ID id) {
   auto connection = find(id);
   if (!connection) {
-    return std::nullopt;
+    return nullptr;
   }
-  auto remote_peer = (*connection)->remote_peer();
-  return _peers->find(remote_peer.key_pub());
+  return (*connection)->remote_peer();
 }
 
-bool Tcp::serialize(std::shared_ptr<messages::Message> message,
-                    Buffer *header_tcp, Buffer *body_tcp) const {
+bool Tcp::serialize(const messages::Message &message, Buffer *header_tcp,
+                    Buffer *body_tcp) const {
   // TODO: use 1 output buffer
   LOG_DEBUG << this << " Before reinterpret and signing";
   auto header_pattern =
       reinterpret_cast<tcp::HeaderPattern *>(header_tcp->data());
-  messages::to_buffer(*message, body_tcp);
+  messages::to_buffer(message, body_tcp);
 
   if (body_tcp->size() > MAX_MESSAGE_SIZE) {
     LOG_ERROR << "Message is too big (" << body_tcp->size() << ")";
@@ -184,50 +187,38 @@ bool Tcp::serialize(std::shared_ptr<messages::Message> message,
   return true;
 }
 
-TransportLayer::SendResult Tcp::send(
-    std::shared_ptr<messages::Message> message) const {
-  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
-  if (_connections.size() == 0) {
-    LOG_ERROR << "Could not send message because there is no connection "
-              << message;
+/**
+ * send a message to a specific peer
+ * \param message a message to send
+ * \param id connection id of the peer to send to
+ * \return failure or all_good
+ */
+TransportLayer::SendResult Tcp::send(const messages::Message &message,
+                                     const Connection::ID id) const {
+  const auto connection_opt = find(id);
+  if (!connection_opt) {
+    LOG_WARNING << "not sending message because could not find connection";
     return SendResult::FAILED;
   }
+  const auto connection = *connection_opt;
+  const auto port_opt = connection->remote_port();
+  if (!port_opt) {
+    return SendResult::FAILED;
+  }
+  LOG_DEBUG << "Sending unicast [" << this->listening_port() << " -> "
+            << *port_opt << "]: >>" << message;
 
-  if (_stopped) {
-    return SendResult::FAILED;
-  }
   auto header_tcp =
       std::make_shared<Buffer>(sizeof(networking::tcp::HeaderPattern), 0);
   auto body_tcp = std::make_shared<Buffer>();
-
   if (!serialize(message, header_tcp.get(), body_tcp.get())) {
-    LOG_WARNING << "Could not serialize message";
     return SendResult::FAILED;
   }
-
-  LOG_DEBUG << "Sending message[" << this->listening_port() << "]: >>"
-            << *message << " " << _connections.size();
-
-  uint16_t res_count = 0;
-  for (auto &[_, connection] : _connections) {
-    bool res_send = true;
-    res_send &= connection->send(header_tcp);
-    res_send &= connection->send(body_tcp);
-    if (res_send) {
-      res_count++;
-    }
-  }
-
-  SendResult res;
-  if (res_count == 0) {
-    res = SendResult::FAILED;
-  } else if (res_count != _connections.size()) {
-    res = SendResult::FAILED;
+  if (connection->send(header_tcp) && connection->send(body_tcp)) {
+    return SendResult::ALL_GOOD;
   } else {
-    res = SendResult::ALL_GOOD;
+    return SendResult::FAILED;
   }
-
-  return res;
 }
 
 std::optional<tcp::Connection *> Tcp::find(const Connection::ID id) const {
@@ -240,45 +231,22 @@ std::optional<tcp::Connection *> Tcp::find(const Connection::ID id) const {
   return got->second.get();
 }
 
-bool Tcp::send_unicast(std::shared_ptr<messages::Message> message) const {
+bool Tcp::reply(std::shared_ptr<messages::Message> message) const {
   if (_stopped || !message->header().has_connection_id()) {
     LOG_WARNING << "not sending message " << _stopped;
     return false;
   }
-
-  const auto connection_opt = find(message->header().connection_id());
-  if (!connection_opt) {
-    LOG_WARNING << "not sending message because could not find connection";
-    return false;
-  }
-  const auto connection = *connection_opt;
-  const auto port_opt = connection->remote_port();
-  if (!port_opt) {
-    return false;
-  }
-  LOG_DEBUG << "Sending unicast [" << this->listening_port() << " -> "
-            << *port_opt << "]: >>" << *message;
-
-  auto header_tcp =
-      std::make_shared<Buffer>(sizeof(networking::tcp::HeaderPattern), 0);
-  auto body_tcp = std::make_shared<Buffer>();
-  if (!serialize(message, header_tcp.get(), body_tcp.get())) {
-    return false;
-  }
-  bool res = true;
-  res &= connection->send(header_tcp);
-  res &= connection->send(body_tcp);
-
-  return res;
+  return send(*message, message->header().connection_id()) ==
+         SendResult::ALL_GOOD;
 }
 
 void Tcp::clean_old_connections(int delta) {
   std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   const auto current_time = ::neuro::time() - delta;
   for (auto &[_, connection] : _connections) {
-    auto remote_peer = _peers->find(connection->remote_peer().key_pub());
-    if (remote_peer && (connection->init_ts() < current_time) &&
-        ((*remote_peer)->status() != messages::Peer::CONNECTED)) {
+    auto remote_peer = connection->remote_peer();
+    if ((connection->init_ts() < current_time) &&
+        (remote_peer->status() != messages::Peer::CONNECTED)) {
       connection->terminate();
     }
   }
