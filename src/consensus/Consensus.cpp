@@ -609,9 +609,27 @@ bool Consensus::add_double_mining(const messages::Block &block) {
 bool Consensus::add_block(const messages::Block &block) {
   // Check the transactions order before inserting because the order is lost at
   // insertion
-  return check_transactions_order(block) && _ledger->insert_block(block) &&
-         verify_blocks() && _ledger->update_main_branch() &&
-         add_double_mining(block);
+  if (!check_transactions_order(block)) {
+    LOG_WARNING << "failed to add block du to transaction order : " << block;
+    return false;
+  }
+  if (!_ledger->insert_block(block)) {
+    LOG_WARNING << "failed to add block du to insert_block : " << block;
+    return false;
+  }
+  if (!verify_blocks()) {
+    LOG_WARNING << "failed to add block du to verify_block : " << block;
+    return false;
+  }
+  if (!_ledger->update_main_branch()) {
+    LOG_WARNING << "failed to add block du to update_main_branch : " << block;
+    return false;
+  }
+  if (!add_double_mining(block)) {
+    LOG_WARNING << "failed to add block du to double mining : " << block;
+    return false;
+  }
+  return true;
 }
 
 void Consensus::start_compute_pii_thread() {
