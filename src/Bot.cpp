@@ -38,8 +38,8 @@ Bot::Bot(const std::string &config_path)
 
 void Bot::handler_get_block(const messages::Header &header,
                             const messages::Body &body) {
-  LOG_DEBUG << this << " : " << _me.port() << " Got a get_block message";
   const auto &get_block = body.get_block();
+  LOG_DEBUG << this << " : " << _me.port() << " Got a get_block message ";
 
   auto message = std::make_shared<messages::Message>();
   auto header_reply = message->mutable_header();
@@ -75,7 +75,7 @@ void Bot::handler_get_block(const messages::Header &header,
 void Bot::handler_block(const messages::Header &header,
                         const messages::Body &body) {
   // bool reply_message = header.has_request_id();
-  LOG_TRACE;
+  std::cout << "trax> got block " << body.block().header().id() << std::endl;
   if (!_consensus->add_block(body.block())) {
     LOG_WARNING << "Consensus rejected block";
     return;
@@ -85,6 +85,7 @@ void Bot::handler_block(const messages::Header &header,
   if (header.has_request_id()) {
     auto got = _request_ids.find(header.request_id());
     if (got != _request_ids.end()) {
+      std::cout << "trax> dropping block " << body.block().header().id() << std::endl;
       return;
     }
   }
@@ -124,13 +125,15 @@ bool Bot::update_ledger(const std::optional<messages::Hash> &missing_block) {
   if (!send_one(*message)) {
     LOG_INFO << "no bot found to ask block " << *message;
   }
+  std::cout << "trax> asking for block " << *missing_block << "-------" << std::endl;
 
   _request_ids.insert(idheader);
   return false;
 }
 
 void Bot::update_ledger() {
-  for (const auto &missing_block : _ledger->missing_blocks()) {
+  const auto missing_blocks = _ledger->missing_blocks();
+  for (const auto &missing_block : missing_blocks) {
     update_ledger(missing_block);
   }
 }
