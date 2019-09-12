@@ -573,15 +573,18 @@ bool Consensus::is_valid(
 
 bool Consensus::is_valid(const messages::TaggedBlock &tagged_block) const {
   // This method should be only be called after the block has been inserted
-  return check_block_id(tagged_block) &&
-         check_block_transactions(tagged_block) &&
-         check_block_size(tagged_block) &&
-         check_transactions_order(tagged_block) &&
-         check_block_height(tagged_block) &&
-         check_block_timestamp(tagged_block) &&
-         check_block_author(tagged_block) &&
-         check_block_denunciations(tagged_block) &&
-         check_balances(tagged_block);
+  bool result =
+      check_block_id(tagged_block) && check_block_transactions(tagged_block) &&
+      check_block_size(tagged_block) &&
+      check_transactions_order(tagged_block) &&
+      check_block_height(tagged_block) && check_block_timestamp(tagged_block) &&
+      check_block_author(tagged_block) &&
+      check_block_denunciations(tagged_block) && check_balances(tagged_block);
+  if (!result) {
+    LOG_WARNING << "Invalid block " << tagged_block.block().header().id()
+                << " at height " << tagged_block.block().header().height();
+  }
+  return result;
 }
 
 bool Consensus::add_transaction(const messages::Transaction &transaction) {
@@ -836,7 +839,7 @@ bool Consensus::cleanup_transactions(messages::Block *block) const {
              << " in cleanup transactions";
     return false;
   }
-  
+
   std::unordered_map<messages::_KeyPub, Double> balances;
   messages::Block accepted_transactions;
 
@@ -881,7 +884,8 @@ bool Consensus::cleanup_transactions(messages::Block *block) const {
     accepted_transactions.add_transactions()->CopyFrom(transaction);
   }
 
-  block->mutable_transactions()->Swap(accepted_transactions.mutable_transactions());
+  block->mutable_transactions()->Swap(
+      accepted_transactions.mutable_transactions());
 
   return true;
 }
