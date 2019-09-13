@@ -260,6 +260,8 @@ void LedgerMongodb::create_indexes() {
                              << TRANSACTION + "." + INPUTS + "." + ID << 1
                              << TRANSACTION + "." + INPUTS + "." + OUTPUT_ID
                              << 1 << bss::finalize);
+  _transactions.create_index(bss::document{} << TRANSACTION + "." + FEES << -1
+                                             << bss::finalize);
   _pii.create_index(bss::document{} << KEY_PUB << 1 << ASSEMBLY_ID << 1
                                     << bss::finalize);
   _pii.create_index(bss::document{} << RANK << 1 << ASSEMBLY_ID << 1
