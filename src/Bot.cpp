@@ -43,7 +43,7 @@ void Bot::handler_get_block(const messages::Header &header,
 
   auto message = std::make_shared<messages::Message>();
   auto header_reply = message->mutable_header();
-  auto request_id = messages::fill_header_reply(header, header_reply);
+  auto id = messages::fill_header_reply(header, header_reply);
 
   if (get_block.has_hash()) {
     const auto &id = get_block.hash();
@@ -68,7 +68,7 @@ void Bot::handler_get_block(const messages::Header &header,
     return;
   }
 
-  _request_ids.insert(request_id);
+  _request_ids.insert(id);
   _networking.reply(message);
 }
 
@@ -221,7 +221,7 @@ bool Bot::init() {
   _consensus = std::make_shared<consensus::Consensus>(
       _ledger, _keys, _consensus_config,
       [this](const messages::Block &block) { publish_block(block); });
-  _ledger = std::make_shared<ledger::LedgerMongodb>(_config.database()),
+
   _io_context_thread = std::thread([this]() { _io_context->run(); });
 
   while (_io_context->stopped()) {
