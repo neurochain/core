@@ -69,12 +69,6 @@ class LedgerMongodb : public Ledger {
   bool load_block0(const messages::config::Database &config,
                    messages::Block *block0);
 
-  bool is_ancestor(const messages::BranchPath &ancestor_path,
-                   const messages::BranchPath &block_path) const;
-
-  bool is_ancestor(const messages::TaggedBlock &ancestor,
-                   const messages::TaggedBlock &block) const;
-
   bool is_main_branch(
       const messages::TaggedTransaction &tagged_transaction) const;
 
@@ -118,13 +112,19 @@ class LedgerMongodb : public Ledger {
                              const BalanceChange &change,
                              messages::BlockHeight height);
 
-public:
+ public:
   LedgerMongodb(const std::string &url, const std::string &db_name);
   LedgerMongodb(const std::string &url, const std::string &db_name,
                 const messages::Block &block0);
   explicit LedgerMongodb(const messages::config::Database &config);
 
   ~LedgerMongodb();
+
+  bool is_ancestor(const messages::BranchPath &ancestor_path,
+                   const messages::BranchPath &block_path) const;
+
+  bool is_ancestor(const messages::TaggedBlock &ancestor,
+                   const messages::TaggedBlock &block) const;
 
   void remove_all();
 
