@@ -3,10 +3,15 @@
 
 #include "messages.pb.h"
 
-namespace neuro {
-namespace ledger {
-namespace Transaction {}  // namespace Transaction
-}  // namespace ledger
-}  // namespace neuro
+namespace neuro::ledger::Transaction {
+messages::TaggedTransaction
+make_tagged_detached(const neuro::messages::Transaction &transaction);
+messages::TaggedTransaction
+make_tagged(const messages::Hash &id, const messages::Transaction &transaction);
+messages::TaggedTransaction
+make_tagged_coinbase(const messages::Hash &id,
+                     const messages::Transaction &transaction);
+
+} // namespace neuro::ledger::Transaction
 
 #endif /* NEURO_SRC_LEDGER_TRANSACTION_HPP */

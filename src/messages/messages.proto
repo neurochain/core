@@ -162,6 +162,7 @@ message TaggedTransaction {
   required Transaction transaction = 1;
   required bool is_coinbase = 2;
   optional Hash block_id = 3;
+  optional float fee_per_bytes = 4;
 }
 
 message ConnectionClosed {

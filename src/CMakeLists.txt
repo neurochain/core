@@ -81,6 +81,7 @@ add_library(core
   ./ledger/LedgerMongodb.hpp
   ./ledger/LedgerMongodb.cpp
   ./ledger/Transaction.hpp
+  ./ledger/Transaction.cpp
   ./Bot.hpp
   ./api/Rest.cpp
   ./api/Rest.hpp

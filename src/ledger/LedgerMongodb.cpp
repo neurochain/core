@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <mpreal.h>
 
+#include "Transaction.hpp"
 #include "bsoncxx/builder/basic/array.hpp"
 #include "bsoncxx/builder/stream/document.hpp"
 #include "common/logger.hpp"
@@ -626,10 +627,8 @@ bool LedgerMongodb::insert_block(const messages::TaggedBlock &tagged_block) {
   std::vector<bsoncxx::document::value> bson_transactions;
 
   for (const auto &transaction : tagged_block.block().transactions()) {
-    messages::TaggedTransaction tagged_transaction;
-    tagged_transaction.set_is_coinbase(false);
-    tagged_transaction.mutable_transaction()->CopyFrom(transaction);
-    tagged_transaction.mutable_block_id()->CopyFrom(header.id());
+    auto tagged_transaction =
+        Transaction::make_tagged(header.id(), transaction);
     bson_transactions.push_back(to_bson(tagged_transaction));
     if (tagged_block.branch() == messages::Branch::MAIN) {
       auto query = bss::document{} << TRANSACTION + "." + ID
@@ -640,12 +639,8 @@ bool LedgerMongodb::insert_block(const messages::TaggedBlock &tagged_block) {
   }
 
   if (tagged_block.block().has_coinbase()) {
-    messages::TaggedTransaction tagged_transaction;
-    tagged_transaction.set_is_coinbase(true);
-    tagged_transaction.mutable_transaction()->CopyFrom(
-        tagged_block.block().coinbase());
-    tagged_transaction.mutable_block_id()->CopyFrom(header.id());
-    tagged_transaction.mutable_block_id()->CopyFrom(header.id());
+    auto tagged_transaction = Transaction::make_tagged_coinbase(
+        header.id(), tagged_block.block().coinbase());
     bson_transactions.push_back(to_bson(tagged_transaction));
   }
 
@@ -910,8 +905,9 @@ bool LedgerMongodb::add_to_transaction_pool(
                       include_transaction_pool)) {
     return false;
   }
-  tagged_transaction.set_is_coinbase(false);
-  tagged_transaction.mutable_transaction()->CopyFrom(transaction);
+  tagged_transaction =
+      Transaction::make_tagged(tagged_transaction.block_id(), transaction);
+
   return add_transaction(tagged_transaction);
 }
 

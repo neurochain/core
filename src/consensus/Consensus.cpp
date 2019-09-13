@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <ledger/Transaction.hpp>
 #include <random>
 #include <thread>
 
@@ -253,10 +254,8 @@ bool Consensus::check_block_transactions(
     return false;
   }
 
-  messages::TaggedTransaction tagged_coinbase;
-  tagged_coinbase.set_is_coinbase(true);
-  tagged_coinbase.mutable_block_id()->CopyFrom(block.header().id());
-  tagged_coinbase.mutable_transaction()->CopyFrom(block.coinbase());
+  auto tagged_coinbase = ledger::Transaction::make_tagged_coinbase(
+      block.header().id(), block.coinbase());
   if (!is_block_transaction_valid(tagged_coinbase, block)) {
     LOG_INFO << "Failed check_block_transactions for block "
              << block.header().id();
@@ -264,10 +263,8 @@ bool Consensus::check_block_transactions(
   }
 
   for (const auto transaction : block.transactions()) {
-    messages::TaggedTransaction tagged_transaction;
-    tagged_transaction.set_is_coinbase(false);
-    tagged_transaction.mutable_block_id()->CopyFrom(block.header().id());
-    tagged_transaction.mutable_transaction()->CopyFrom(transaction);
+    auto tagged_transaction =
+        ledger::Transaction::make_tagged(block.header().id(), transaction);
     if (!is_block_transaction_valid(tagged_transaction, block)) {
       LOG_INFO << "Failed check_block_transactions for block "
                << block.header().id();
@@ -588,9 +585,8 @@ bool Consensus::is_valid(const messages::TaggedBlock &tagged_block) const {
 }
 
 bool Consensus::add_transaction(const messages::Transaction &transaction) {
-  messages::TaggedTransaction tagged_transaction;
-  tagged_transaction.set_is_coinbase(false);
-  tagged_transaction.mutable_transaction()->CopyFrom(transaction);
+  auto tagged_transaction =
+      ledger::Transaction::make_tagged_detached(transaction);
   return is_valid(tagged_transaction) &&
          _ledger->add_to_transaction_pool(transaction);
 }
