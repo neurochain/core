@@ -137,6 +137,10 @@ class Ledger {
     return new_missing_block(tagged_block);
   }
 
+  virtual bool is_ancestor(const messages::BranchPath &ancestor_path,
+                           const messages::BranchPath &block_path) const = 0;
+  virtual bool is_ancestor(const messages::TaggedBlock &ancestor,
+                           const messages::TaggedBlock &block) const = 0;
   virtual messages::TaggedBlock get_main_branch_tip() const = 0;
   virtual bool set_main_branch_tip() = 0;
   virtual messages::BlockHeight height() const = 0;
