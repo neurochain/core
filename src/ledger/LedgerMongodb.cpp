@@ -1029,9 +1029,12 @@ messages::BranchPath LedgerMongodb::first_child(
 }
 
 bool LedgerMongodb::set_branch_path
-(std::list <std::pair<messages::BlockHeader, messages::BranchPath>> *block_headers,
- const messages::BlockHeader &block_header,
- const messages::BranchPath &branch_path) {
+(std::list <std::pair<messages::BlockHeader, messages::BranchPath>> *block_headers) {
+
+  const auto pair = block_headers->front();
+  block_headers->pop_front();
+  const auto &block_header = pair.first;
+  const auto &branch_path = pair.second;
 
   // Set the branch path of the given block
   std::lock_guard lock(_ledger_mutex);
@@ -1093,7 +1096,7 @@ bool LedgerMongodb::set_branch_path(const messages::BlockHeader &block_header) {
 
   bool result = true;
   while(!block_headers.empty()){
-    result &= set_branch_path(&block_headers, block_header, branch_path);
+    result &= set_branch_path(&block_headers);
   }
   return result;
 }
