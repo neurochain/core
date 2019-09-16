@@ -1028,8 +1028,11 @@ messages::BranchPath LedgerMongodb::first_child(
   return new_branch_path;
 }
 
-bool LedgerMongodb::set_branch_path(const messages::BlockHeader &block_header,
-                                    const messages::BranchPath &branch_path) {
+bool LedgerMongodb::set_branch_path
+(std::list <std::pair<messages::BlockHeader, messages::BranchPath>> *block_headers,
+ const messages::BlockHeader &block_header,
+ const messages::BranchPath &branch_path) {
+
   // Set the branch path of the given block
   std::lock_guard lock(_ledger_mutex);
   auto filter = bss::document{} << BLOCK + "." + HEADER + "." + ID
@@ -1043,7 +1046,7 @@ bool LedgerMongodb::set_branch_path(const messages::BlockHeader &block_header,
     return false;
   }
   messages::TaggedBlock tagged_block;
-  get_block(block_header.id(), &tagged_block);
+  get_block(block_header.id(), &tagged_block, false);
 
   // Set the branch path of the children
   std::vector<messages::TaggedBlock> tagged_blocks;
@@ -1053,17 +1056,13 @@ bool LedgerMongodb::set_branch_path(const messages::BlockHeader &block_header,
     assert(!tagged_block.has_branch_path());
     assert(tagged_block.branch() == messages::Branch::DETACHED);
     if (i == 0) {
-      if (!set_branch_path(tagged_block.block().header(),
-                           first_child(branch_path))) {
-        return false;
-      }
+      block_headers->push_back({tagged_block.block().header(),
+				first_child(branch_path)});
     } else {
       // If there are several children there is a fork which needs a new branch
       // ID
-      if (!set_branch_path(tagged_block.block().header(),
-                           fork_from(branch_path))) {
-        return false;
-      }
+      block_headers->push_back({tagged_block.block().header(),
+				fork_from(branch_path)});
     }
   }
   return true;
@@ -1089,8 +1088,15 @@ bool LedgerMongodb::set_branch_path(const messages::BlockHeader &block_header) {
   const auto branch_path = children.size() > 1
                                ? fork_from(parent.branch_path())
                                : first_child(parent.branch_path());
-  return set_branch_path(block_header, branch_path);
-};
+  std::list <std::pair<messages::BlockHeader, messages::BranchPath>> block_headers;
+  block_headers.push_back({block_header, branch_path});
+
+  bool result = true;
+  while(!block_headers.empty()){
+    result &= set_branch_path(&block_headers, block_header, branch_path);
+  }
+  return result;
+}
 
 bool LedgerMongodb::get_unverified_blocks(
     std::vector<messages::TaggedBlock> *tagged_blocks) const {
