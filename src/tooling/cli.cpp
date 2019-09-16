@@ -3,6 +3,7 @@
 #include <functional>
 
 #include "tooling/cli.hpp"
+#include "api/Monitoring.hpp"
 
 namespace neuro::tooling::cli {
 
@@ -27,12 +28,29 @@ int main(int argc, char* argv[]) {
   const Path configuration_filepath = vm["configuration"].as<std::string>();
   auto configuration = messages::config::Config{configuration_filepath};
   BotCli bot(configuration);
+  api::Monitoring mon(&bot);
 
   auto menu = std::make_unique<Menu>("bot-cli");
   menu->Insert(
       "key",
-      [&](std::ostream &os) { bot.key(os); },
+      [&](std::ostream &os) {
+        bot.key(os);
+        os << std::endl;
+      },
       "display public key");
+  menu->Insert(
+      "status",
+      [&](std::ostream &os) {
+        os << messages::to_json(mon.fast_status()) << std::endl;
+      },
+      "get bot status");
+
+  menu->Insert(
+      "get_block", {"block_id"},
+      [&](std::ostream &os, std::string id) {
+        bot.get_block(id);
+      },
+      "send a get_block request on network");
 
   Cli bot_cli(std::move(menu));
   SetColor();
