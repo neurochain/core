@@ -38,8 +38,8 @@ Bot::Bot(const std::string &config_path)
 
 void Bot::handler_get_block(const messages::Header &header,
                             const messages::Body &body) {
-  LOG_DEBUG << this << " : " << _me.port() << " Got a get_block message";
   const auto &get_block = body.get_block();
+  LOG_DEBUG << this << " : " << _me.port() << " Got a get_block message ";
 
   auto message = std::make_shared<messages::Message>();
   auto header_reply = message->mutable_header();
@@ -523,6 +523,10 @@ void Bot::keep_max_connections() {
   }
 }
 
+const messages::Peer Bot::me() const {
+  return _me;
+}
+  
 const messages::Peers &Bot::peers() const { return _peers; }
 void Bot::subscribe(const messages::Type type,
                     messages::Subscriber::Callback callback) {

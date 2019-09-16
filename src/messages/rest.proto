@@ -27,6 +27,7 @@ message Status {
     optional uint32 net_in = 6;
     optional uint32 net_out = 7;
     optional string version = 8;
+    optional _Peer me = 9;
   }
 
   message FileSystem {
