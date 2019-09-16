@@ -8,7 +8,8 @@
 namespace neuro {
 using namespace std::chrono_literals;
 
-Bot::Bot(const messages::config::Config &config,
+Bot::Bot(NoInit,
+         const messages::config::Config &config,
          const consensus::Config &consensus_config)
     : _config(config),
       _io_context(std::make_shared<boost::asio::io_context>()),
@@ -21,6 +22,10 @@ Bot::Bot(const messages::config::Config &config,
       _ledger(std::make_shared<ledger::LedgerMongodb>(_config.database())),
       _update_timer(std::ref(*_io_context)),
       _consensus_config(consensus_config) {
+}
+
+Bot::Bot(const messages::config::Config &config,
+         const consensus::Config &consensus_config) : Bot(NoInit(), config, consensus_config) {
   if (!init()) {
     throw std::runtime_error("Could not create bot from configuration file");
   }
@@ -33,6 +38,8 @@ Bot::Bot(const messages::config::Config &config,
             << _peers << std::endl;
 }
 
+Bot::Bot(NoInit, const std::string &config_path)
+    : Bot::Bot(NoInit(), messages::config::Config(config_path)) {}
 Bot::Bot(const std::string &config_path)
     : Bot::Bot(messages::config::Config(config_path)) {}
 
@@ -205,8 +212,6 @@ bool Bot::init() {
   if (_config.has_logs()) {
     log::from_config(_config.logs());
   }
-
-  _tcp_config = _config.mutable_networking()->mutable_tcp();
 
   if (!_config.has_database()) {
     LOG_ERROR << "Missing db configuration";

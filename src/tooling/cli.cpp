@@ -9,6 +9,7 @@ namespace neuro::tooling::cli {
 
 using namespace ::cli;
 namespace po = boost::program_options;
+static auto a = logging::core::get()->set_logging_enabled(false);
 int main(int argc, char* argv[]) {
   po::options_description desc("Launch a bot and open a cli to manage it");
   desc.add_options()("configuration,c", po::value<std::string>());
@@ -41,16 +42,29 @@ int main(int argc, char* argv[]) {
   menu->Insert(
       "status",
       [&](std::ostream &os) {
-        os << messages::to_json(mon.fast_status()) << std::endl;
+        os << messages::to_json(mon.fast_status(), true) << std::endl;
       },
       "get bot status");
 
   menu->Insert(
       "get_block", {"block_id"},
       [&](std::ostream &os, std::string id) {
-        bot.get_block(id);
+        bot.get_block(os, id);
       },
       "send a get_block request on network");
+  menu->Insert(
+      "connect",
+      [&](std::ostream &os) {
+        bot.connectOne(os);
+      },
+      "connect to the network");
+
+  menu->Insert(
+      "peers",
+      [&](std::ostream &os) {
+        os << to_json(bot.peers(), true);
+      },
+      "list known peers");
 
   Cli bot_cli(std::move(menu));
   SetColor();

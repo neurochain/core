@@ -42,7 +42,8 @@ class FullSimulator;
 }  // namespace tooling
 
 class Bot {
- public:
+  struct NoInit {};
+
  private:
   messages::config::Config _config;
   std::shared_ptr<boost::asio::io_context> _io_context;
@@ -61,7 +62,6 @@ class Bot {
   std::thread _io_context_thread;
 
   // for the peers
-  messages::config::Tcp *_tcp_config;
   std::size_t _max_connections;
   std::size_t
       _max_incoming_connections;  //!< number of connexion this bot can accept
@@ -106,8 +106,12 @@ class Bot {
   bool send_all(const messages::Message &message) const;
 
  public:
+  explicit Bot(NoInit,
+               const messages::config::Config &config,
+               const consensus::Config &consensus_config = consensus::Config());
   explicit Bot(const messages::config::Config &config,
                const consensus::Config &consensus_config = consensus::Config());
+  explicit Bot(NoInit, const std::string &config_path);
   explicit Bot(const std::string &config_path);
   Bot(const Bot &) = delete;
 
