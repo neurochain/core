@@ -1078,10 +1078,7 @@ bool LedgerMongodb::set_branch_path(const messages::BlockHeader &block_header,
   std::lock_guard lock(_ledger_mutex);
   auto branch_paths = get_branch_paths(block_header, branch_path);
 
-  for (BranchPaths::reverse_iterator it = branch_paths.rbegin();
-       it != branch_paths.rend(); it++) {
-    const auto block_id = it->first;
-    const auto block_branch_path = it->second;
+  for (const auto &[block_id, block_branch_path] : branch_paths) {
     auto filter = bss::document{} << BLOCK + "." + HEADER + "." + ID
                                   << to_bson(block_id) << bss::finalize;
     auto update = bss::document{} << $SET << bss::open_document << BRANCH_PATH
