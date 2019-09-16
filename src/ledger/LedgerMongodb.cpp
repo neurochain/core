@@ -722,7 +722,7 @@ bool LedgerMongodb::set_branch_invalid(const messages::BlockID &id) {
   std::vector<messages::TaggedBlock> tagged_blocks;
   get_blocks_by_previd(id, &tagged_blocks);
   bool result = true;
-  for (auto tagged_block : tagged_blocks) {
+  for (const auto &tagged_block : tagged_blocks) {
     result &= set_branch_invalid(tagged_block.block().header().id());
   }
   if (result) {
