@@ -82,6 +82,15 @@ find_package(libmongocxx-static CONFIG REQUIRED)
 hunter_add_package(cpr)
 find_package(cpr CONFIG REQUIRED)
 
+include(ExternalProject)
+ExternalProject_Add(cli
+  GIT_REPOSITORY https://github.com/daniele77/cli.git
+  GIT_TAG master
+  GIT_SHALLOW TRUE
+  GIT_PROGRESS TRUE
+  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/cli
+)
+
 add_subdirectory(src)
 add_subdirectory(tests)
 

@@ -33,7 +33,9 @@ class BotTest;
 
 namespace tooling {
 class FullSimulator;
-
+namespace cli {
+class BotCli;
+}
 namespace tests {
 class FullSimulator;
 }
@@ -125,6 +127,7 @@ class Bot {
 
   friend class neuro::tests::BotTest;
   friend class neuro::tooling::FullSimulator;
+  friend class neuro::tooling::cli::BotCli;
   friend class neuro::tooling::tests::FullSimulator;
 };
 

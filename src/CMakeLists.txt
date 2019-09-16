@@ -209,5 +209,18 @@ target_link_libraries(transaction
   Boost::program_options
   )
 
-include_directories(${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/src ${LIBMONGOCXX_STATIC_INCLUDE_DIRS})
+add_executable(bot-cli
+        tooling/cli.cpp
+        tooling/cli.hpp)
+
+target_link_libraries(bot-cli
+  core
+  )
+
+include_directories(
+  ${CMAKE_SOURCE_DIR}/src
+  ${CMAKE_BINARY_DIR}/src
+  ${LIBMONGOCXX_STATIC_INCLUDE_DIRS}
+  ${CMAKE_BINARY_DIR}/cli/include
+  )
 
