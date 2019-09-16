@@ -42,6 +42,9 @@ class LedgerMongodb : public Ledger {
   };
 
  private:
+  using BranchPaths =
+      std::vector<std::pair<messages::BlockID, messages::BranchPath>>;
+
   static mongocxx::instance _instance;
   mutable mongocxx::uri _uri;
   mutable mongocxx::client _client;
@@ -86,7 +89,8 @@ class LedgerMongodb : public Ledger {
 
   messages::BranchID new_branch_id() const;
 
-  bool set_branch_path(std::list <std::pair<messages::BlockHeader, messages::BranchPath>> *block_headers);
+  bool set_branch_path(const messages::BlockHeader &block_header,
+                       const messages::BranchPath &branch_path);
 
   bool set_branch_path(const messages::BlockHeader &block_header);
 
@@ -112,6 +116,9 @@ class LedgerMongodb : public Ledger {
   Double compute_new_balance(messages::Balance *balance,
                              const BalanceChange &change,
                              messages::BlockHeight height);
+
+  BranchPaths get_branch_paths(const messages::BlockHeader &block_header,
+                               const messages::BranchPath &branch_path) const;
 
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);
@@ -223,6 +230,9 @@ class LedgerMongodb : public Ledger {
   bool update_main_branch();
 
   messages::BranchPath fork_from(const messages::BranchPath &branch_path) const;
+
+  messages::BranchPath fork_from(const messages::BranchPath &branch_path,
+                                 const messages::BranchID &branch_id) const;
 
   messages::BranchPath first_child(
       const messages::BranchPath &branch_path) const;
