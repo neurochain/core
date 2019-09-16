@@ -51,26 +51,27 @@ class Consensus : public testing::Test {
     ASSERT_EQ(tip.block().header().height(), 3);
 
     for (int i = 0; i <= 3; i++) {
-      messages::Block block;
+      messages::TaggedBlock block;
       ledger->get_block(i, &block);
-      for (const auto &transaction : block.transactions()) {
+      for (const auto &transaction : block.block().transactions()) {
         messages::TaggedTransaction tagged_transaction;
         tagged_transaction.mutable_transaction()->CopyFrom(transaction);
-        tagged_transaction.mutable_block_id()->CopyFrom(block.header().id());
+        tagged_transaction.mutable_block_id()->CopyFrom(
+            block.block().header().id());
         tagged_transaction.set_is_coinbase(false);
-        ASSERT_TRUE(consensus->check_id(tagged_transaction));
+        ASSERT_TRUE(consensus->check_id(tagged_transaction, block));
         ASSERT_TRUE(consensus->check_signatures(tagged_transaction));
         ASSERT_TRUE(consensus->check_double_inputs(tagged_transaction));
         ASSERT_TRUE(consensus->check_outputs(tagged_transaction));
-        ASSERT_TRUE(consensus->is_valid(tagged_transaction));
+        ASSERT_TRUE(consensus->is_valid(tagged_transaction, block));
       }
       messages::TaggedTransaction tagged_coinbase;
-      tagged_coinbase.mutable_transaction()->CopyFrom(block.coinbase());
-      tagged_coinbase.mutable_block_id()->CopyFrom(block.header().id());
+      tagged_coinbase.mutable_transaction()->CopyFrom(block.block().coinbase());
+      tagged_coinbase.mutable_block_id()->CopyFrom(block.block().header().id());
       tagged_coinbase.set_is_coinbase(true);
-      ASSERT_TRUE(consensus->check_id(tagged_coinbase));
-      ASSERT_TRUE(consensus->check_coinbase(tagged_coinbase));
-      ASSERT_TRUE(consensus->is_valid(tagged_coinbase));
+      ASSERT_TRUE(consensus->check_id(tagged_coinbase, block));
+      ASSERT_TRUE(consensus->check_coinbase(tagged_coinbase, block));
+      ASSERT_TRUE(consensus->is_valid(tagged_coinbase, block));
     }
   }
 
@@ -263,55 +264,59 @@ class Consensus : public testing::Test {
 
   void test_check_transaction_id() {
     auto tagged_transaction = new_tagged_transaction();
-    ASSERT_TRUE(consensus->check_id(tagged_transaction));
-    ASSERT_TRUE(consensus->is_valid(tagged_transaction));
+    auto tip = ledger->get_main_branch_tip();
+    ASSERT_TRUE(consensus->check_id(tagged_transaction, tip));
+    ASSERT_TRUE(consensus->is_valid(tagged_transaction, tip));
     auto data =
         tagged_transaction.mutable_transaction()->mutable_id()->mutable_data();
     (*data)[0] += 1;
-    ASSERT_FALSE(consensus->check_id(tagged_transaction));
-    ASSERT_FALSE(consensus->is_valid(tagged_transaction));
+    ASSERT_FALSE(consensus->check_id(tagged_transaction, tip));
+    ASSERT_FALSE(consensus->is_valid(tagged_transaction, tip));
   }
 
   void test_check_transaction_signatures() {
     auto tagged_transaction = new_tagged_transaction();
+    auto tip = ledger->get_main_branch_tip();
     ASSERT_TRUE(consensus->check_signatures(tagged_transaction));
-    ASSERT_TRUE(consensus->is_valid(tagged_transaction));
+    ASSERT_TRUE(consensus->is_valid(tagged_transaction, tip));
     auto signature = tagged_transaction.mutable_transaction()
                          ->mutable_inputs(0)
                          ->mutable_signature();
     auto data = signature->mutable_data();
     (*data)[0] += 1;
     messages::set_transaction_hash(tagged_transaction.mutable_transaction());
-    ASSERT_TRUE(consensus->check_id(tagged_transaction));
+    ASSERT_TRUE(consensus->check_id(tagged_transaction, tip));
     ASSERT_FALSE(consensus->check_signatures(tagged_transaction));
-    ASSERT_FALSE(consensus->is_valid(tagged_transaction));
+    ASSERT_FALSE(consensus->is_valid(tagged_transaction, tip));
   }
 
   void test_check_transaction_outputs() {
     auto tagged_transaction = new_tagged_transaction();
+    auto tip = ledger->get_main_branch_tip();
     ASSERT_TRUE(consensus->check_outputs(tagged_transaction));
-    ASSERT_TRUE(consensus->is_valid(tagged_transaction));
+    ASSERT_TRUE(consensus->is_valid(tagged_transaction, tip));
     auto tagged_transaction_orig = tagged_transaction;
 
     // Empty inputs
     tagged_transaction.mutable_transaction()->mutable_inputs()->Clear();
     messages::set_transaction_hash(tagged_transaction.mutable_transaction());
-    ASSERT_TRUE(consensus->check_id(tagged_transaction));
+    ASSERT_TRUE(consensus->check_id(tagged_transaction, tip));
     ASSERT_FALSE(consensus->check_outputs(tagged_transaction));
-    ASSERT_FALSE(consensus->is_valid(tagged_transaction));
+    ASSERT_FALSE(consensus->is_valid(tagged_transaction, tip));
   }
 
   void test_check_transaction_double_inputs() {
     auto tagged_transaction = new_tagged_transaction();
+    auto tip = ledger->get_main_branch_tip();
     ASSERT_TRUE(consensus->check_double_inputs(tagged_transaction));
-    ASSERT_TRUE(consensus->is_valid(tagged_transaction));
+    ASSERT_TRUE(consensus->is_valid(tagged_transaction, tip));
     ASSERT_EQ(tagged_transaction.transaction().inputs_size(), 1);
     auto input = tagged_transaction.transaction().inputs(0);
     tagged_transaction.mutable_transaction()->add_inputs()->CopyFrom(input);
     messages::set_transaction_hash(tagged_transaction.mutable_transaction());
-    ASSERT_TRUE(consensus->check_id(tagged_transaction));
+    ASSERT_TRUE(consensus->check_id(tagged_transaction, tip));
     ASSERT_FALSE(consensus->check_double_inputs(tagged_transaction));
-    ASSERT_FALSE(consensus->is_valid(tagged_transaction));
+    ASSERT_FALSE(consensus->is_valid(tagged_transaction, tip));
   }
 
   void test_check_coinbase() {
@@ -328,7 +333,7 @@ class Consensus : public testing::Test {
         last_block.block().header().id());
     tagged_coinbase.mutable_transaction()->CopyFrom(coinbase);
     tagged_coinbase.set_is_coinbase(true);
-    ASSERT_TRUE(consensus->check_coinbase(tagged_coinbase));
+    ASSERT_TRUE(consensus->check_coinbase(tagged_coinbase, last_block));
     return;
 
     // Reward too big
@@ -339,7 +344,7 @@ class Consensus : public testing::Test {
     auto output = coinbase.mutable_outputs(0);
     output->mutable_value()->set_value(output->value().value() + 1);
     messages::set_transaction_hash(tagged_coinbase.mutable_transaction());
-    ASSERT_FALSE(consensus->check_coinbase(tagged_coinbase));
+    ASSERT_FALSE(consensus->check_coinbase(tagged_coinbase, last_block));
   }
 
   void test_check_transactions_order() {
