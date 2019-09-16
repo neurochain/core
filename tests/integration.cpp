@@ -248,7 +248,7 @@ TEST(INTEGRATION, disconnect_message) {
   ASSERT_TRUE(message_received0) << bot0->peers();
   ASSERT_TRUE(message_received2) << bot2->peers();
   ASSERT_EQ(bot0->connected_peers().size(), 1) << bot0->peers();
-  ASSERT_EQ(bot2->connected_peers().size(), 1) << bot1->peers();
+  ASSERT_EQ(bot2->connected_peers().size(), 1) << bot2->peers();
 }
 
 TEST(INTEGRATION, neighbors_propagation) {
@@ -517,9 +517,11 @@ TEST(INTEGRATION, ignore_bad_message) {
   Port port_offset = random_port();
   auto bot0 = std::make_unique<BotTest>("bot0.json", port_offset);
   auto bot1 = std::make_unique<BotTest>("bot1.json", port_offset);
-  bot1->subscribe(messages::Type::kGetPeers, [](const messages::Header &header,
-                                                const messages::Body &body) {
+  bool passed = false;
+  bot1->subscribe(messages::Type::kGetPeers, [&passed](const messages::Header &header,
+						       const messages::Body &body) {
     EXPECT_EQ(header.version(), neuro::MessageVersion);
+    passed = true;
   });
 
   std::this_thread::sleep_for(2s);
@@ -530,9 +532,10 @@ TEST(INTEGRATION, ignore_bad_message) {
   messages::Message msg;
   auto *header = msg.mutable_header();
   messages::fill_header(header);
-  msg.add_bodies()->mutable_get_peers();
+  (void)msg.add_bodies()->mutable_get_peers();
   header->set_version(neuro::MessageVersion + 100);
   bot0->send_all(msg);
+  EXPECT_TRUE(passed);
 }
 
 TEST(INTEGRATION, keep_max_connections) {

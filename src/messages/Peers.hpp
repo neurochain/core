@@ -38,8 +38,7 @@ class Peers {
     Indexes _peers;
     Indexes::iterator _it;
     static constexpr auto ALLSTATUS =
-        static_cast<Peer::Status>(Peer::CONNECTED | Peer::CONNECTED |
-                                  Peer::UNREACHABLE | Peer::DISCONNECTED);
+      static_cast<Peer::Status>(_Peer_Status_Status_MAX*2 -1);
 
     void shuffle() {
       std::mt19937 g(_rd());

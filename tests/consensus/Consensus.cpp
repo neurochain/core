@@ -334,7 +334,6 @@ class Consensus : public testing::Test {
     tagged_coinbase.mutable_transaction()->CopyFrom(coinbase);
     tagged_coinbase.set_is_coinbase(true);
     ASSERT_TRUE(consensus->check_coinbase(tagged_coinbase, last_block));
-    return;
 
     // Reward too big
     block = simulator.new_block(0, last_block);

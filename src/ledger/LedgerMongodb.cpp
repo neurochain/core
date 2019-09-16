@@ -1144,8 +1144,6 @@ bool LedgerMongodb::cleanup_transaction_pool(
                                << bss::finalize;
   auto cursor = _transactions.find(std::move(query), remove_OID());
 
-  int deleted_count = 0;
-
   std::vector<messages::TransactionID> ids;
   bsoncxx::builder::basic::array bson_ids;
   for (const auto &bson_transaction : cursor) {
@@ -1158,9 +1156,7 @@ bool LedgerMongodb::cleanup_transaction_pool(
                           << bson_ids << bss::close_document << BLOCK_ID
                           << bss::open_document << $EXISTS << false
                           << bss::close_document << bss::finalize;
-  return deleted_count +
-         static_cast<bool>(_transactions.delete_many(query.view()));
-  return true;
+  return static_cast<bool>(_transactions.delete_many(query.view()));
 }
 
 bool LedgerMongodb::update_main_branch() {

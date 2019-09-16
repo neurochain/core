@@ -9,8 +9,8 @@ class FullSimulator : public ::testing::Test {
  public:
   const std::string db_url = "mongodb://mongo:27017";
   const std::string db_name = "test_simulator";
-  const int nb_bots = 4;
   const messages::NCCAmount ncc_block0 = messages::NCCAmount(1000000);
+  int nb_bots = 4;
 
  protected:
   void check_bots() {
@@ -34,7 +34,7 @@ class FullSimulator : public ::testing::Test {
     consensus::Config consensus_config = default_consensus_config;
     consensus_config.block_period = 3600;
     double random_transaction = 0;
-    int nb_bots = 2;
+    nb_bots = 2;
     tooling::FullSimulator simulator(db_url, db_name, nb_bots, ncc_block0,
                                      consensus_config, random_transaction);
     ASSERT_EQ(simulator.bots.size(), nb_bots);
