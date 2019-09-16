@@ -65,13 +65,14 @@ class Consensus {
   bool check_signatures(
       const messages::TaggedTransaction &tagged_transaction) const;
 
-  bool check_id(const messages::TaggedTransaction &tagged_transaction) const;
+  bool check_id(const messages::TaggedTransaction &tagged_transaction,
+                const messages::TaggedBlock &tip) const;
 
   bool check_double_inputs(
       const messages::TaggedTransaction &tagged_transaction) const;
 
-  bool check_coinbase(
-      const messages::TaggedTransaction &tagged_transaction) const;
+  bool check_coinbase(const messages::TaggedTransaction &tagged_transaction,
+                      const messages::TaggedBlock &tip) const;
 
   messages::NCCAmount block_reward(const messages::BlockHeight height,
                                    const messages::NCCValue fees) const;
@@ -80,12 +81,12 @@ class Consensus {
 
   bool is_unexpired(const messages::Transaction &transaction,
                     const messages::Block &block,
-                    const messages::BranchPath &branch_path) const;
+                    const messages::TaggedBlock &tip) const;
 
   bool is_block_transaction_valid(
       const messages::TaggedTransaction &tagged_transaction,
       const messages::Block &block,
-      const messages::BranchPath &branch_path) const;
+      const messages::TaggedBlock &tagged_block) const;
 
   bool check_block_transactions(
       const messages::TaggedBlock &tagged_block) const;
@@ -138,7 +139,8 @@ class Consensus {
 
   ~Consensus();
 
-  bool is_valid(const messages::TaggedTransaction &tagged_transaction) const;
+  bool is_valid(const messages::TaggedTransaction &tagged_transaction,
+                const messages::TaggedBlock &tip) const;
 
   bool is_valid(const messages::TaggedBlock &tagged_block) const;
 

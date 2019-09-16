@@ -59,6 +59,8 @@ class LedgerMongodb : public Ledger {
 
   static mongocxx::options::find remove_OID();
 
+  static mongocxx::options::find remove_balances();
+
   mongocxx::options::find projection(const std::string &field) const;
 
   mongocxx::options::find projection(const std::string &field0,
@@ -145,6 +147,9 @@ class LedgerMongodb : public Ledger {
   bool get_block(const messages::BlockID &id,
                  messages::TaggedBlock *tagged_block,
                  bool include_transactions = true) const;
+
+  bool get_tagged_block_balances(const messages::BlockID &id,
+                                 messages::TaggedBlock *tagged_block) const;
 
   bool get_block(const messages::BlockID &id, messages::Block *block,
                  bool include_transactions = true) const;

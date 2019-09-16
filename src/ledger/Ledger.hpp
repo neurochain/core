@@ -155,6 +155,9 @@ class Ledger {
   virtual bool get_block(const messages::BlockID &id,
                          messages::TaggedBlock *tagged_block,
                          bool include_transactions = true) const = 0;
+  virtual bool get_tagged_block_balances(
+      const messages::BlockID &id,
+      messages::TaggedBlock *tagged_block) const = 0;
   virtual bool get_block_by_previd(const messages::BlockID &previd,
                                    messages::Block *block,
                                    bool include_transactions = true) const = 0;

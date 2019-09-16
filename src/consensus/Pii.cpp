@@ -69,7 +69,10 @@ TotalSpent Pii::get_total_spent(const messages::Block &block) const {
 
 Balances Pii::get_balances(const messages::TaggedBlock &tagged_block) const {
   Balances balances;
-  for (const auto &balance : tagged_block.balances()) {
+  messages::TaggedBlock tagged_block_balances;
+  _ledger->get_tagged_block_balances(tagged_block.block().header().id(),
+                                     &tagged_block_balances);
+  for (const auto &balance : tagged_block_balances.balances()) {
     balances[balance.key_pub()] = balance;
   }
   return balances;
