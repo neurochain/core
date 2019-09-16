@@ -1099,7 +1099,8 @@ bool LedgerMongodb::set_branch_path(const messages::BlockHeader &block_header,
 }
 
 bool LedgerMongodb::set_branch_path(const messages::BlockHeader &block_header) {
-  // Set the branch path of a block depending on the branch path of its parent
+  // Set the branch path of a block depending on the branch path of its
+  // parent
   std::lock_guard lock(_ledger_mutex);
   messages::TaggedBlock parent;
 
@@ -1118,7 +1119,6 @@ bool LedgerMongodb::set_branch_path(const messages::BlockHeader &block_header) {
   const auto branch_path = children.size() > 1
                                ? fork_from(parent.branch_path())
                                : first_child(parent.branch_path());
-
   return set_branch_path(block_header, branch_path);
 }
 
