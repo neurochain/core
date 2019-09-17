@@ -36,7 +36,6 @@ int main(int argc, char* argv[]) {
       "key",
       [&](std::ostream &os) {
         bot.key(os);
-        os << std::endl;
       },
       "display public key");
   menu->Insert(
@@ -55,14 +54,16 @@ int main(int argc, char* argv[]) {
   menu->Insert(
       "connect",
       [&](std::ostream &os) {
-        bot.connectOne(os);
+        bot.connect(os);
       },
       "connect to the network");
 
   menu->Insert(
       "peers",
       [&](std::ostream &os) {
-        os << to_json(bot.peers(), true);
+        for (auto peer : bot.peers()) {
+          os << pretty_peer(*peer) << std::endl;
+        }
       },
       "list known peers");
 
