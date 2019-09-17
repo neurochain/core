@@ -5,6 +5,7 @@
 #include "consensus/Config.hpp"
 #include "messages/Message.hpp"
 #include "tooling/Simulator.hpp"
+#include "messages/TaggedTransaction.hpp"
 
 namespace neuro {
 namespace tooling {
@@ -81,9 +82,7 @@ messages::Block Simulator::new_block(
 
   for (int i = 0; i < nb_transactions; i++) {
     auto transaction = random_transaction();
-    messages::TaggedTransaction tagged_transaction;
-    tagged_transaction.mutable_transaction()->CopyFrom(transaction);
-    tagged_transaction.set_is_coinbase(false);
+    messages::TaggedTransaction tagged_transaction(transaction);
     ledger->add_transaction(tagged_transaction);
   }
 

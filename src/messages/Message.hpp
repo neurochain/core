@@ -166,9 +166,9 @@ struct hash<neuro::messages::Hash> {
 };
 
 template <>
-struct hash<neuro::messages::TaggedTransaction> {
+struct hash<neuro::messages::_TaggedTransaction> {
   size_t operator()(
-      const neuro::messages::TaggedTransaction &tagged_transaction) const {
+      const neuro::messages::_TaggedTransaction &tagged_transaction) const {
     return hash<string>()(neuro::messages::to_json(tagged_transaction));
   }
 };

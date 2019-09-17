@@ -158,7 +158,7 @@ message TaggedBlock {
   optional Timestamp reception_time = 7;
 }
 
-message TaggedTransaction {
+message _TaggedTransaction {
   required Transaction transaction = 1;
   required bool is_coinbase = 2;
   optional Hash block_id = 3;

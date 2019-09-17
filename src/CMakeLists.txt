@@ -71,6 +71,8 @@ add_library(core
   ./messages/Peers.cpp
   ./messages/Peer.hpp
   ./messages/Peer.cpp
+  ./messages/TaggedTransaction.hpp
+  ./messages/TaggedTransaction.cpp
   ./messages/NCCAmount.hpp
   ./messages/config/Config.hpp
   ./messages/config/Config.cpp
@@ -80,8 +82,6 @@ add_library(core
   ./ledger/Ledger.hpp
   ./ledger/LedgerMongodb.hpp
   ./ledger/LedgerMongodb.cpp
-  ./ledger/Transaction.hpp
-  ./ledger/Transaction.cpp
   ./Bot.hpp
   ./api/Rest.cpp
   ./api/Rest.hpp

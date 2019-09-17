@@ -1,11 +1,11 @@
-#include <assert.h>
-#include <ledger/Transaction.hpp>
+#include <cassert>
 #include <random>
 #include <thread>
 
 #include "common/Buffer.hpp"
 #include "common/logger.hpp"
 #include "consensus/Consensus.hpp"
+#include "messages/TaggedTransaction.hpp"
 
 namespace neuro {
 
@@ -254,8 +254,8 @@ bool Consensus::check_block_transactions(
     return false;
   }
 
-  auto tagged_coinbase = ledger::Transaction::make_tagged_coinbase(
-      block.header().id(), block.coinbase());
+  messages::TaggedTransaction tagged_coinbase(block.header().id(), block.coinbase(),
+                                    true);
   if (!is_block_transaction_valid(tagged_coinbase, block)) {
     LOG_INFO << "Failed check_block_transactions for block "
              << block.header().id();
@@ -263,8 +263,7 @@ bool Consensus::check_block_transactions(
   }
 
   for (const auto transaction : block.transactions()) {
-    auto tagged_transaction =
-        ledger::Transaction::make_tagged(block.header().id(), transaction);
+    messages::TaggedTransaction tagged_transaction(block.header().id(), transaction);
     if (!is_block_transaction_valid(tagged_transaction, block)) {
       LOG_INFO << "Failed check_block_transactions for block "
                << block.header().id();
@@ -585,8 +584,7 @@ bool Consensus::is_valid(const messages::TaggedBlock &tagged_block) const {
 }
 
 bool Consensus::add_transaction(const messages::Transaction &transaction) {
-  auto tagged_transaction =
-      ledger::Transaction::make_tagged_detached(transaction);
+  messages::TaggedTransaction tagged_transaction(transaction);
   return is_valid(tagged_transaction) &&
          _ledger->add_to_transaction_pool(transaction);
 }

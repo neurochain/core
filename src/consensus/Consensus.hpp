@@ -19,6 +19,7 @@
 #include "ledger/Ledger.hpp"
 #include "messages.pb.h"
 #include "messages/NCCAmount.hpp"
+#include "messages/TaggedTransaction.hpp"
 #include "tooling/blockgen.hpp"
 
 namespace neuro {
