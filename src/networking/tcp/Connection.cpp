@@ -194,7 +194,7 @@ void Connection::terminate() const {
   auto header = message->mutable_header();
   header->set_connection_id(_id);
   auto body = message->add_bodies();
-  (void)body->mutable_connection_closed();
+  (void)body->mutable_connection_closed(); //-V773
 
   _queue->publish(message);
 }

@@ -532,7 +532,7 @@ TEST(INTEGRATION, ignore_bad_message) {
   messages::Message msg;
   auto *header = msg.mutable_header();
   messages::fill_header(header);
-  (void)msg.add_bodies()->mutable_get_peers();
+  (void)msg.add_bodies()->mutable_get_peers(); //+V773:SUPPRESS
   header->set_version(neuro::MessageVersion + 100);
   bot0->send_all(msg);
   EXPECT_TRUE(passed);

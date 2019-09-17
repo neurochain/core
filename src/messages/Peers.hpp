@@ -38,7 +38,7 @@ class Peers {
     Indexes _peers;
     Indexes::iterator _it;
     static constexpr auto ALLSTATUS =
-      static_cast<Peer::Status>(_Peer_Status_Status_MAX*2 -1);
+      static_cast<Peer::Status>(static_cast<uint32_t>(_Peer_Status_Status_MAX-1)*2);
 
     void shuffle() {
       std::mt19937 g(_rd());

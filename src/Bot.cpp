@@ -276,7 +276,7 @@ void Bot::send_random_transaction() {
 void Bot::update_peerlist() {
   messages::Message msg;
   messages::fill_header(msg.mutable_header());
-  (void)msg.add_bodies()->mutable_get_peers();
+  (void)msg.add_bodies()->mutable_get_peers(); //+V773:SUPPRESS
   send_one(msg);
 }
 

@@ -109,7 +109,7 @@ void Tcp::new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
   } else {
     LOG_WARNING << "Could not create new connection : " << error.message();
 
-    (void)msg_body->mutable_connection_closed();
+    (void)msg_body->mutable_connection_closed(); //+V773:SUPPRESS
     _queue->publish(message);
   }
 }
