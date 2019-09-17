@@ -1,13 +1,13 @@
 #include <assert.h>
 #include <mpreal.h>
 
-#include "Transaction.hpp"
 #include "bsoncxx/builder/basic/array.hpp"
 #include "bsoncxx/builder/stream/document.hpp"
 #include "common/logger.hpp"
 #include "ledger/LedgerMongodb.hpp"
 #include "messages.pb.h"
 #include "messages/Hasher.hpp"
+#include "messages/TaggedTransaction.hpp"
 
 namespace neuro {
 namespace ledger {
@@ -47,6 +47,7 @@ const std::string DATA = "data";
 const std::string DOUBLE_MINING = "doubleMining";
 const std::string DENUNCIATIONS = "denunciations";
 const std::string FEES = "fees";
+const std::string FEE_PER_BYTES = "feePerBytes";
 const std::string FINISHED_COMPUTATION = "finishedComputation";
 const std::string FROM = "from";
 const std::string FOREIGN_FIELD = "foreignField";
@@ -262,6 +263,8 @@ void LedgerMongodb::create_indexes() {
                              << TRANSACTION + "." + INPUTS + "." + OUTPUT_ID
                              << 1 << bss::finalize);
   _transactions.create_index(bss::document{} << TRANSACTION + "." + FEES << -1
+                                             << bss::finalize);
+  _transactions.create_index(bss::document{} << TRANSACTION + "." + FEE_PER_BYTES << -1
                                              << bss::finalize);
   _pii.create_index(bss::document{} << KEY_PUB << 1 << ASSEMBLY_ID << 1
                                     << bss::finalize);
@@ -627,8 +630,7 @@ bool LedgerMongodb::insert_block(const messages::TaggedBlock &tagged_block) {
   std::vector<bsoncxx::document::value> bson_transactions;
 
   for (const auto &transaction : tagged_block.block().transactions()) {
-    auto tagged_transaction =
-        Transaction::make_tagged(header.id(), transaction);
+    messages::TaggedTransaction tagged_transaction(transaction);
     bson_transactions.push_back(to_bson(tagged_transaction));
     if (tagged_block.branch() == messages::Branch::MAIN) {
       auto query = bss::document{} << TRANSACTION + "." + ID
@@ -639,8 +641,8 @@ bool LedgerMongodb::insert_block(const messages::TaggedBlock &tagged_block) {
   }
 
   if (tagged_block.block().has_coinbase()) {
-    auto tagged_transaction = Transaction::make_tagged_coinbase(
-        header.id(), tagged_block.block().coinbase());
+    messages::TaggedTransaction tagged_transaction(
+        header.id(), tagged_block.block().coinbase(), true);
     bson_transactions.push_back(to_bson(tagged_transaction));
   }
 
@@ -897,17 +899,16 @@ bool LedgerMongodb::add_transaction(
 bool LedgerMongodb::add_to_transaction_pool(
     const messages::Transaction &transaction) {
   std::lock_guard lock(_ledger_mutex);
-  messages::TaggedTransaction tagged_transaction;
+  messages::TaggedTransaction found_transaction;
   bool include_transaction_pool = true;
 
   // Check that the transaction doesn't already exist
-  if (get_transaction(transaction.id(), &tagged_transaction, _main_branch_tip,
+  if (get_transaction(transaction.id(), &found_transaction, _main_branch_tip,
                       include_transaction_pool)) {
     return false;
   }
-  tagged_transaction =
-      Transaction::make_tagged(tagged_transaction.block_id(), transaction);
-
+  messages::TaggedTransaction tagged_transaction(found_transaction.block_id(),
+                                                 transaction);
   return add_transaction(tagged_transaction);
 }
 
@@ -926,8 +927,8 @@ bool LedgerMongodb::delete_transaction(const messages::TransactionID &id) {
   return did_delete;
 }
 
-std::vector<messages::TaggedTransaction> LedgerMongodb::get_transaction_pool()
-    const {
+std::vector<messages::TaggedTransaction>
+LedgerMongodb::get_transaction_pool() const {
   // This method put the whole transaction pool in a block but does not cleanup
   // the transaction pool.
   // TODO add a way to limit the number of transactions you want to include
@@ -937,7 +938,7 @@ std::vector<messages::TaggedTransaction> LedgerMongodb::get_transaction_pool()
                                << bss::finalize;
 
   auto options = remove_OID();
-  options.sort(bss::document{} << TRANSACTION + "." + FEES << -1 << bss::finalize);
+  options.sort(bss::document{} << TRANSACTION + "." + FEE_PER_BYTES << -1 << bss::finalize);
   auto cursor = _transactions.find(std::move(query), options);
 
   for (const auto &bson_transaction : cursor) {
@@ -947,11 +948,17 @@ std::vector<messages::TaggedTransaction> LedgerMongodb::get_transaction_pool()
   return tagged_transactions;
 }
 
-std::size_t LedgerMongodb::get_transaction_pool(messages::Block *block) const {
+std::size_t LedgerMongodb::get_transaction_pool(messages::Block *block,
+                                                uint32_t max_size_block) const {
   std::lock_guard lock(_ledger_mutex);
   auto tagged_transactions = get_transaction_pool();
   for (const auto &tagged_transaction : tagged_transactions) {
-    block->add_transactions()->CopyFrom(tagged_transaction.transaction());
+    const auto next_size = block->ByteSizeLong() + tagged_transaction.ByteSizeLong();
+    if (next_size < max_size_block) {
+      block->add_transactions()->CopyFrom(tagged_transaction.transaction());
+    } else {
+      break;
+    }
   }
   return tagged_transactions.size();
 }

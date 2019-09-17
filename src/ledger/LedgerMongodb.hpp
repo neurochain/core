@@ -207,7 +207,8 @@ public:
 
   std::vector<messages::TaggedTransaction> get_transaction_pool() const;
 
-  std::size_t get_transaction_pool(messages::Block *block) const;
+  std::size_t get_transaction_pool(messages::Block *block,
+                                   uint32_t max_size_block) const;
 
   bool get_unverified_blocks(
       std::vector<messages::TaggedBlock> *tagged_blocks) const;

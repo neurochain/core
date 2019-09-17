@@ -1,13 +1,14 @@
 #ifndef NEURO_SRC_LEDGER_LEDGER_HPP
 #define NEURO_SRC_LEDGER_LEDGER_HPP
 
-#include <functional>
-#include <optional>
 #include "crypto/Hash.hpp"
 #include "crypto/Sign.hpp"
 #include "ledger/Filter.hpp"
 #include "messages.pb.h"
 #include "messages/Message.hpp"
+#include "messages/TaggedTransaction.hpp"
+#include <functional>
+#include <optional>
 
 namespace neuro {
 namespace ledger {
@@ -199,7 +200,8 @@ class Ledger {
   virtual bool add_to_transaction_pool(
       const messages::Transaction &transaction) = 0;
   virtual bool delete_transaction(const messages::TransactionID &id) = 0;
-  virtual std::size_t get_transaction_pool(messages::Block *block) const = 0;
+  virtual std::size_t get_transaction_pool(messages::Block *block,
+                                           uint32_t max_block_size) const = 0;
   virtual std::vector<messages::TaggedTransaction> get_transaction_pool()
       const = 0;
 

@@ -922,7 +922,7 @@ bool Consensus::build_block(const crypto::Ecc &keys,
   header->mutable_previous_block_hash()->CopyFrom(last_block_header.id());
   header->mutable_timestamp()->set_data(std::time(nullptr));
 
-  _ledger->get_transaction_pool(block);
+  _ledger->get_transaction_pool(block, _config.max_block_size);
   if (!cleanup_transactions(block)) {
     LOG_WARNING
         << "Failed to cleanup_transactions while mining block with height "

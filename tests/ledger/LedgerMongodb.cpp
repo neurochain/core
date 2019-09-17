@@ -20,6 +20,7 @@ class LedgerMongodb : public ::testing::Test {
   const std::string db_url = "mongodb://mongo:27017";
   const std::string db_name = "test_ledger";
   const messages::NCCAmount ncc_block0 = messages::NCCAmount(1000000);
+  const uint32_t max_block_size = 128000;
   const int nb_keys = 2;
   tooling::Simulator simulator;
   std::shared_ptr<::neuro::ledger::LedgerMongodb> ledger;
@@ -256,11 +257,11 @@ TEST_F(LedgerMongodb, transactions) {
   tagged_transaction.set_is_coinbase(true);
   ledger->add_transaction(tagged_transaction);
   messages::Block block;
-  ledger->get_transaction_pool(&block);
+  ledger->get_transaction_pool(&block, max_block_size);
   ASSERT_EQ(block.transactions_size(), 1);
   ASSERT_TRUE(ledger->delete_transaction(transaction0.id()));
   block.Clear();
-  ledger->get_transaction_pool(&block);
+  ledger->get_transaction_pool(&block, max_block_size);
   ASSERT_EQ(block.transactions_size(), 0);
 }
 
