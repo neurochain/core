@@ -485,7 +485,7 @@ bool Consensus::verify_blocks() {
     if (_ledger->add_balances(&tagged_block) && is_valid(tagged_block)) {
       _ledger->set_block_verified(tagged_block.block().header().id(),
                                   get_block_score(tagged_block), assembly_id);
-    } else if (!_ledger->delete_block_and_children(
+    } else if (!_ledger->set_branch_invalid(
                    tagged_block.block().header().id())) {
       throw std::runtime_error("Failed to delete an invalid block");
     } else {

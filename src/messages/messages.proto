@@ -111,8 +111,9 @@ message Blocks {
 enum Branch {
   MAIN = 0;
   FORK = 1;
-  UNVERIFIED = 3;
   DETACHED = 2;
+  UNVERIFIED = 3;
+  INVALID = 4;
 }
 
 // The branch path is a strange beast.

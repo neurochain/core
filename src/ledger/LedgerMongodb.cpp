@@ -717,6 +717,20 @@ bool LedgerMongodb::delete_block_and_children(const messages::BlockID &id) {
   return result;
 }
 
+bool LedgerMongodb::set_branch_invalid(const messages::BlockID &id) {
+  std::lock_guard lock(_ledger_mutex);
+  std::vector<messages::TaggedBlock> tagged_blocks;
+  get_blocks_by_previd(id, &tagged_blocks);
+  bool result = true;
+  for (const auto &tagged_block : tagged_blocks) {
+    result &= set_branch_invalid(tagged_block.block().header().id());
+  }
+  if (result) {
+    result &= update_branch_tag(id, messages::Branch::INVALID);
+  }
+  return result;
+}
+
 bool LedgerMongodb::get_transaction(
     const messages::TransactionID &id,
     messages::TaggedTransaction *tagged_transaction,

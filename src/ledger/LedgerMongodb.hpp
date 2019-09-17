@@ -176,6 +176,8 @@ class LedgerMongodb : public Ledger {
 
   bool delete_block_and_children(const messages::BlockID &id);
 
+  bool set_branch_invalid(const messages::BlockID &id);
+
   bool get_transaction(const messages::TransactionID &id,
                        messages::Transaction *transaction) const;
 
