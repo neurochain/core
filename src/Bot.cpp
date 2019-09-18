@@ -86,7 +86,6 @@ void Bot::handler_block(const messages::Header &header,
     auto got = _request_ids.find(header.request_id());
     if (got != _request_ids.end()) {
       LOG_WARNING << "Reply rejected block " << body.block().header().id();
-      return;
     }
   }
 
