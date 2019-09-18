@@ -64,7 +64,7 @@ using Duration = std::chrono::seconds;
 using Endpoint = std::string;
 using Port = uint16_t;
 using Ports = std::vector<Port>;
-const int32_t MessageVersion = 5;
+const int32_t MessageVersion = 6;
 const int32_t MESSAGE_TTL = 60;
 const int32_t MAX_MESSAGE_SIZE = 256 * 1024;
 
