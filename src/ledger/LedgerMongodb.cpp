@@ -630,7 +630,7 @@ bool LedgerMongodb::insert_block(const messages::TaggedBlock &tagged_block) {
   std::vector<bsoncxx::document::value> bson_transactions;
 
   for (const auto &transaction : tagged_block.block().transactions()) {
-    messages::TaggedTransaction tagged_transaction(transaction);
+    messages::TaggedTransaction tagged_transaction(header.id(), transaction);
     bson_transactions.push_back(to_bson(tagged_transaction));
     if (tagged_block.branch() == messages::Branch::MAIN) {
       auto query = bss::document{} << TRANSACTION + "." + ID
@@ -899,16 +899,17 @@ bool LedgerMongodb::add_transaction(
 bool LedgerMongodb::add_to_transaction_pool(
     const messages::Transaction &transaction) {
   std::lock_guard lock(_ledger_mutex);
-  messages::TaggedTransaction found_transaction;
+  messages::TaggedTransaction tagged_transaction;
   bool include_transaction_pool = true;
 
   // Check that the transaction doesn't already exist
-  if (get_transaction(transaction.id(), &found_transaction, _main_branch_tip,
+  if (get_transaction(transaction.id(), &tagged_transaction, _main_branch_tip,
                       include_transaction_pool)) {
     return false;
   }
-  messages::TaggedTransaction tagged_transaction(found_transaction.block_id(),
-                                                 transaction);
+
+  tagged_transaction.set_is_coinbase(false);
+  tagged_transaction.mutable_transaction()->CopyFrom(transaction);
   return add_transaction(tagged_transaction);
 }
 
