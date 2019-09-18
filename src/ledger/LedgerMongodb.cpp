@@ -987,11 +987,19 @@ std::vector<messages::TaggedTransaction> LedgerMongodb::get_transaction_pool()
   return tagged_transactions;
 }
 
-std::size_t LedgerMongodb::get_transaction_pool(messages::Block *block) const {
+std::size_t LedgerMongodb::get_transaction_pool(messages::Block *block,
+                                                const std::size_t size_limit) const {
   std::lock_guard lock(_ledger_mutex);
   auto tagged_transactions = get_transaction_pool();
   for (const auto &tagged_transaction : tagged_transactions) {
     block->add_transactions()->CopyFrom(tagged_transaction.transaction());
+    if(block->ByteSizeLong() > size_limit) {
+      block->mutable_transactions()->RemoveLast();
+      if(block->transactions().size() == 0) {
+        LOG_WARNING << "transaction is so fat, it can't be alone in a block";
+        // TODO remove it from the pool
+      }
+    }
   }
   return tagged_transactions.size();
 }
