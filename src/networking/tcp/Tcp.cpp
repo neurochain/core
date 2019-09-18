@@ -164,7 +164,7 @@ std::shared_ptr<messages::Peer> Tcp::find_peer(const Connection::ID id) {
   if (!connection) {
     return nullptr;
   }
-  return (*connection)->remote_peer();
+  return connection->remote_peer();
 }
 
 bool Tcp::serialize(const messages::Message &message, Buffer *header_tcp,
@@ -195,12 +195,11 @@ bool Tcp::serialize(const messages::Message &message, Buffer *header_tcp,
  */
 TransportLayer::SendResult Tcp::send(const messages::Message &message,
                                      const Connection::ID id) const {
-  const auto connection_opt = find(id);
-  if (!connection_opt) {
+  const auto connection = find(id);
+  if (!connection) {
     LOG_WARNING << "not sending message because could not find connection";
     return SendResult::FAILED;
   }
-  const auto connection = *connection_opt;
   const auto port_opt = connection->remote_port();
   if (!port_opt) {
     return SendResult::FAILED;
@@ -221,14 +220,14 @@ TransportLayer::SendResult Tcp::send(const messages::Message &message,
   }
 }
 
-std::optional<tcp::Connection *> Tcp::find(const Connection::ID id) const {
+std::shared_ptr<tcp::Connection> Tcp::find(const Connection::ID id) const {
   std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   auto got = _connections.find(id);
   if (got == _connections.end()) {
-    return std::nullopt;
+    return nullptr;
   }
 
-  return got->second.get();
+  return got->second;
 }
 
 bool Tcp::reply(std::shared_ptr<messages::Message> message) const {

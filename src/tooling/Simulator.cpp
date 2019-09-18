@@ -14,7 +14,7 @@ consensus::Config config{
     10,                                  // members_per_assembly
     1,                                   // block_period
     messages::NCCAmount{uint64_t{100}},  // block_reward
-    128000,                              // max_block_size
+    256000,                              // max_block_size
     1s,                                  // update_heights_sleep
     1s,                                  // compute_pii_sleep
     100ms,                               // miner_sleep
@@ -108,7 +108,7 @@ messages::Block Simulator::new_block(
       last_block.block().header().id());
   header->set_height(height);
 
-  ledger->get_transaction_pool(&block);
+  ledger->get_transaction_pool(&block, config.max_block_size);
   consensus->cleanup_transactions(&block);
 
   messages::NCCValue total_fees = 0;

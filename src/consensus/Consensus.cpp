@@ -40,17 +40,6 @@ Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
 
 bool Consensus::check_outputs(
     const messages::TaggedTransaction &tagged_transaction) const {
-  messages::TaggedBlock tip;
-  if (tagged_transaction.has_block_id()) {
-    if (!_ledger->get_block(tagged_transaction.block_id(), &tip, false)) {
-      LOG_INFO << "Failed check_output for transaction "
-               << tagged_transaction.transaction().id();
-      return false;
-    }
-  } else {
-    tip = _ledger->get_main_branch_tip();
-  }
-
   messages::NCCValue total_received = 0;
   for (const auto &input : tagged_transaction.transaction().inputs()) {
     total_received += input.value().value();
@@ -85,8 +74,8 @@ bool Consensus::check_signatures(
   return result;
 }
 
-bool Consensus::check_id(
-    const messages::TaggedTransaction &tagged_transaction) const {
+bool Consensus::check_id(const messages::TaggedTransaction &tagged_transaction,
+                         const messages::TaggedBlock &tip) const {
   auto transaction = messages::Transaction(tagged_transaction.transaction());
   messages::set_transaction_hash(&transaction);
   if (!tagged_transaction.transaction().has_id()) {
@@ -99,18 +88,6 @@ bool Consensus::check_id(
     return false;
   }
 
-  // Check that there is no other transaction with the same id in the same
-  // branch
-  messages::TaggedBlock tip;
-  if (tagged_transaction.has_block_id()) {
-    if (!_ledger->get_block(tagged_transaction.block_id(), &tip, false)) {
-      LOG_INFO << "Could not find transaction block for transaction "
-               << tagged_transaction.transaction().id();
-      return false;
-    }
-  } else {
-    tip = _ledger->get_main_branch_tip();
-  }
   bool include_transaction_pool = !tagged_transaction.has_block_id();
   auto transactions = _ledger->get_transactions(transaction.id(), tip,
                                                 include_transaction_pool);
@@ -139,10 +116,11 @@ bool Consensus::check_double_inputs(
 }
 
 bool Consensus::check_coinbase(
-    const messages::TaggedTransaction &tagged_transaction) const {
+    const messages::TaggedTransaction &tagged_transaction,
+    const messages::TaggedBlock &tip) const {
   messages::TaggedBlock tagged_block;
   if (!tagged_transaction.has_block_id() ||
-      !_ledger->get_block(tagged_transaction.block_id(), &tagged_block)) {
+      tagged_transaction.block_id() != tip.block().header().id()) {
     LOG_INFO << "Invalid coinbase for transaction "
              << tagged_transaction.transaction().id();
     return false;
@@ -211,8 +189,9 @@ bool Consensus::check_block_id(
 }
 
 bool Consensus::is_unexpired(const messages::Transaction &transaction,
-                             const messages::Block &block) const {
-  messages::Block last_seen_block;
+                             const messages::Block &block,
+                             const messages::TaggedBlock &tip) const {
+  messages::TaggedBlock last_seen_block;
   bool include_transactions = false;
   if (!_ledger->get_block(transaction.last_seen_block_id(), &last_seen_block,
                           include_transactions)) {
@@ -222,10 +201,20 @@ bool Consensus::is_unexpired(const messages::Transaction &transaction,
              << " is expired in block " << block.header().id();
     return false;
   }
+  if (!_ledger->is_ancestor(last_seen_block.branch_path(), tip.branch_path())) {
+    LOG_INFO << "The transaction is invalid because the last_seen_block_id "
+             << transaction.last_seen_block_id()
+             << " is not in the correct branch when checking if transaction "
+             << transaction.id() << " is expired in block "
+             << block.header().id();
+    return false;
+  }
+
   int32_t expires = transaction.has_expires()
                         ? transaction.expires()
                         : _config.default_transaction_expires;
-  if (block.header().height() - last_seen_block.header().height() > expires) {
+  if (block.header().height() - last_seen_block.block().header().height() >
+      expires) {
     if (!block.header().has_id()) {
       LOG_INFO << "Transaction " << transaction.id() << " is expired";
       return false;
@@ -239,9 +228,9 @@ bool Consensus::is_unexpired(const messages::Transaction &transaction,
 
 bool Consensus::is_block_transaction_valid(
     const messages::TaggedTransaction &tagged_transaction,
-    const messages::Block &block) const {
-  return is_valid(tagged_transaction) &&
-         is_unexpired(tagged_transaction.transaction(), block);
+    const messages::Block &block, const messages::TaggedBlock &tip) const {
+  return is_valid(tagged_transaction, tip) &&
+         is_unexpired(tagged_transaction.transaction(), block, tip);
 }
 
 bool Consensus::check_block_transactions(
@@ -257,7 +246,7 @@ bool Consensus::check_block_transactions(
   tagged_coinbase.set_is_coinbase(true);
   tagged_coinbase.mutable_block_id()->CopyFrom(block.header().id());
   tagged_coinbase.mutable_transaction()->CopyFrom(block.coinbase());
-  if (!is_block_transaction_valid(tagged_coinbase, block)) {
+  if (!is_block_transaction_valid(tagged_coinbase, block, tagged_block)) {
     LOG_INFO << "Failed check_block_transactions for block "
              << block.header().id();
     return false;
@@ -268,7 +257,7 @@ bool Consensus::check_block_transactions(
     tagged_transaction.set_is_coinbase(false);
     tagged_transaction.mutable_block_id()->CopyFrom(block.header().id());
     tagged_transaction.mutable_transaction()->CopyFrom(transaction);
-    if (!is_block_transaction_valid(tagged_transaction, block)) {
+    if (!is_block_transaction_valid(tagged_transaction, block, tagged_block)) {
       LOG_INFO << "Failed check_block_transactions for block "
                << block.header().id();
       return false;
@@ -443,12 +432,6 @@ bool Consensus::check_block_denunciations(
   return true;
 }
 
-bool Consensus::check_balances(
-    const messages::TaggedBlock &tagged_block) const {
-  // The balance was checked when it was added
-  return tagged_block.balances_size() > 0;
-}
-
 messages::BlockScore Consensus::get_block_score(
     const messages::TaggedBlock &tagged_block) const {
   messages::TaggedBlock previous;
@@ -502,7 +485,7 @@ bool Consensus::verify_blocks() {
     if (_ledger->add_balances(&tagged_block) && is_valid(tagged_block)) {
       _ledger->set_block_verified(tagged_block.block().header().id(),
                                   get_block_score(tagged_block), assembly_id);
-    } else if (!_ledger->delete_block_and_children(
+    } else if (!_ledger->set_branch_invalid(
                    tagged_block.block().header().id())) {
       throw std::runtime_error("Failed to delete an invalid block");
     } else {
@@ -561,34 +544,39 @@ Consensus::~Consensus() {
   }
 }
 
-bool Consensus::is_valid(
-    const messages::TaggedTransaction &tagged_transaction) const {
+bool Consensus::is_valid(const messages::TaggedTransaction &tagged_transaction,
+                         const messages::TaggedBlock &tip) const {
   if (tagged_transaction.is_coinbase()) {
-    return check_id(tagged_transaction) && check_coinbase(tagged_transaction);
+    return check_id(tagged_transaction, tip) &&
+           check_coinbase(tagged_transaction, tip);
   }
-  return check_id(tagged_transaction) && check_signatures(tagged_transaction) &&
+  return check_id(tagged_transaction, tip) &&
+         check_signatures(tagged_transaction) &&
          check_double_inputs(tagged_transaction) &&
          check_outputs(tagged_transaction);
 }
 
 bool Consensus::is_valid(const messages::TaggedBlock &tagged_block) const {
   // This method should be only be called after the block has been inserted
-  return check_block_id(tagged_block) &&
-         check_block_transactions(tagged_block) &&
-         check_block_size(tagged_block) &&
-         check_transactions_order(tagged_block) &&
-         check_block_height(tagged_block) &&
-         check_block_timestamp(tagged_block) &&
-         check_block_author(tagged_block) &&
-         check_block_denunciations(tagged_block) &&
-         check_balances(tagged_block);
+  bool result =
+      check_block_id(tagged_block) && check_block_transactions(tagged_block) &&
+      check_block_size(tagged_block) &&
+      check_transactions_order(tagged_block) &&
+      check_block_height(tagged_block) && check_block_timestamp(tagged_block) &&
+      check_block_author(tagged_block) &&
+      check_block_denunciations(tagged_block);
+  if (!result) {
+    LOG_WARNING << "Invalid block " << tagged_block.block().header().id()
+                << " at height " << tagged_block.block().header().height();
+  }
+  return result;
 }
 
 bool Consensus::add_transaction(const messages::Transaction &transaction) {
   messages::TaggedTransaction tagged_transaction;
   tagged_transaction.set_is_coinbase(false);
   tagged_transaction.mutable_transaction()->CopyFrom(transaction);
-  return is_valid(tagged_transaction) &&
+  return is_valid(tagged_transaction, _ledger->get_main_branch_tip()) &&
          _ledger->add_to_transaction_pool(transaction);
 }
 
@@ -606,9 +594,27 @@ bool Consensus::add_double_mining(const messages::Block &block) {
 bool Consensus::add_block(const messages::Block &block) {
   // Check the transactions order before inserting because the order is lost at
   // insertion
-  return check_transactions_order(block) && _ledger->insert_block(block) &&
-         verify_blocks() && _ledger->update_main_branch() &&
-         add_double_mining(block);
+  if (!check_transactions_order(block)) {
+    LOG_WARNING << "failed to add block du to transaction order : " << block;
+    return false;
+  }
+  if (!_ledger->insert_block(block)) {
+    LOG_WARNING << "failed to add block du to insert_block : " << block;
+    return false;
+  }
+  if (!verify_blocks()) {
+    LOG_WARNING << "failed to add block du to verify_block : " << block;
+    return false;
+  }
+  if (!_ledger->update_main_branch()) {
+    LOG_WARNING << "failed to add block du to update_main_branch : " << block;
+    return false;
+  }
+  if (!add_double_mining(block)) {
+    LOG_WARNING << "failed to add block du to double mining : " << block;
+    return false;
+  }
+  return true;
 }
 
 void Consensus::start_compute_pii_thread() {
@@ -836,12 +842,12 @@ bool Consensus::cleanup_transactions(messages::Block *block) const {
              << " in cleanup transactions";
     return false;
   }
-  
+
   std::unordered_map<messages::_KeyPub, Double> balances;
   messages::Block accepted_transactions;
 
   for (const messages::Transaction &transaction : block->transactions()) {
-    if (!is_unexpired(transaction, *block)) {
+    if (!is_unexpired(transaction, *block, previous)) {
       _ledger->delete_transaction(transaction.id());
       continue;
     }
@@ -881,7 +887,8 @@ bool Consensus::cleanup_transactions(messages::Block *block) const {
     accepted_transactions.add_transactions()->CopyFrom(transaction);
   }
 
-  block->mutable_transactions()->Swap(accepted_transactions.mutable_transactions());
+  block->mutable_transactions()->Swap(
+      accepted_transactions.mutable_transactions());
 
   return true;
 }
@@ -906,7 +913,7 @@ bool Consensus::build_block(const crypto::Ecc &keys,
   header->mutable_previous_block_hash()->CopyFrom(last_block_header.id());
   header->mutable_timestamp()->set_data(std::time(nullptr));
 
-  _ledger->get_transaction_pool(block);
+  _ledger->get_transaction_pool(block, _config.max_block_size);
   if (!cleanup_transactions(block)) {
     LOG_WARNING
         << "Failed to cleanup_transactions while mining block with height "
@@ -927,7 +934,7 @@ bool Consensus::build_block(const crypto::Ecc &keys,
       block->mutable_coinbase(), last_block.block().header().id());
 
   // Check if the coinbase needs a longer expires
-  if (!is_unexpired(block->coinbase(), *block)) {
+  if (!is_unexpired(block->coinbase(), *block, last_block)) {
     block->mutable_coinbase()->set_expires(
         block->header().height() - last_block.block().header().height());
     messages::set_transaction_hash(block->mutable_coinbase());
@@ -1059,7 +1066,7 @@ void Consensus::mine_blocks() {
 void Consensus::cleanup_expired_transactions() {
   const auto &tip = _ledger->get_main_branch_tip();
   for (const auto &tagged_transaction : _ledger->get_transaction_pool()) {
-    if (!is_unexpired(tagged_transaction.transaction(), tip.block())) {
+    if (!is_unexpired(tagged_transaction.transaction(), tip.block(), tip)) {
       _ledger->delete_transaction(tagged_transaction.transaction().id());
     }
   }

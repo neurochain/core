@@ -59,6 +59,8 @@ class LedgerMongodb : public Ledger {
 
   static mongocxx::options::find remove_OID();
 
+  static mongocxx::options::find remove_balances();
+
   mongocxx::options::find projection(const std::string &field) const;
 
   mongocxx::options::find projection(const std::string &field0,
@@ -68,12 +70,6 @@ class LedgerMongodb : public Ledger {
 
   bool load_block0(const messages::config::Database &config,
                    messages::Block *block0);
-
-  bool is_ancestor(const messages::BranchPath &ancestor_path,
-                   const messages::BranchPath &block_path) const;
-
-  bool is_ancestor(const messages::TaggedBlock &ancestor,
-                   const messages::TaggedBlock &block) const;
 
   bool is_main_branch(
       const messages::TaggedTransaction &tagged_transaction) const;
@@ -118,13 +114,19 @@ class LedgerMongodb : public Ledger {
                              const BalanceChange &change,
                              messages::BlockHeight height);
 
-public:
+ public:
   LedgerMongodb(const std::string &url, const std::string &db_name);
   LedgerMongodb(const std::string &url, const std::string &db_name,
                 const messages::Block &block0);
   explicit LedgerMongodb(const messages::config::Database &config);
 
   ~LedgerMongodb();
+
+  bool is_ancestor(const messages::BranchPath &ancestor_path,
+                   const messages::BranchPath &block_path) const;
+
+  bool is_ancestor(const messages::TaggedBlock &ancestor,
+                   const messages::TaggedBlock &block) const;
 
   void remove_all();
 
@@ -145,6 +147,9 @@ public:
   bool get_block(const messages::BlockID &id,
                  messages::TaggedBlock *tagged_block,
                  bool include_transactions = true) const;
+
+  bool get_tagged_block_balances(const messages::BlockID &id,
+                                 messages::TaggedBlock *tagged_block) const;
 
   bool get_block(const messages::BlockID &id, messages::Block *block,
                  bool include_transactions = true) const;
@@ -171,6 +176,8 @@ public:
   bool delete_block(const messages::BlockID &id);
 
   bool delete_block_and_children(const messages::BlockID &id);
+
+  bool set_branch_invalid(const messages::BlockID &id);
 
   bool get_transaction(const messages::TransactionID &id,
                        messages::Transaction *transaction) const;
@@ -207,7 +214,8 @@ public:
 
   std::vector<messages::TaggedTransaction> get_transaction_pool() const;
 
-  std::size_t get_transaction_pool(messages::Block *block) const;
+  std::size_t get_transaction_pool(messages::Block *block,
+				   const std::size_t size_limit) const;
 
   bool get_unverified_blocks(
       std::vector<messages::TaggedBlock> *tagged_blocks) const;

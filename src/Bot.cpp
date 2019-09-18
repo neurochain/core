@@ -526,6 +526,10 @@ void Bot::keep_max_connections() {
   }
 }
 
+const messages::Peer Bot::me() const {
+  return _me;
+}
+  
 const messages::Peers &Bot::peers() const { return _peers; }
 void Bot::subscribe(const messages::Type type,
                     messages::Subscriber::Callback callback) {

@@ -12,7 +12,7 @@ struct Config {
   uint32_t members_per_assembly{500};
   uint32_t block_period{3};
   messages::NCCAmount block_reward{uint64_t{100}};
-  uint32_t max_block_size{128000};
+  uint32_t max_block_size{256000};
   std::chrono::seconds update_heights_sleep{5};
   std::chrono::seconds compute_pii_sleep{5};
   std::chrono::milliseconds miner_sleep{100};

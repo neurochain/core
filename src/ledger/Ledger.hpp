@@ -138,6 +138,10 @@ class Ledger {
     return new_missing_block(tagged_block);
   }
 
+  virtual bool is_ancestor(const messages::BranchPath &ancestor_path,
+                           const messages::BranchPath &block_path) const = 0;
+  virtual bool is_ancestor(const messages::TaggedBlock &ancestor,
+                           const messages::TaggedBlock &block) const = 0;
   virtual messages::TaggedBlock get_main_branch_tip() const = 0;
   virtual bool set_main_branch_tip() = 0;
   virtual messages::BlockHeight height() const = 0;
@@ -152,6 +156,9 @@ class Ledger {
   virtual bool get_block(const messages::BlockID &id,
                          messages::TaggedBlock *tagged_block,
                          bool include_transactions = true) const = 0;
+  virtual bool get_tagged_block_balances(
+      const messages::BlockID &id,
+      messages::TaggedBlock *tagged_block) const = 0;
   virtual bool get_block_by_previd(const messages::BlockID &previd,
                                    messages::Block *block,
                                    bool include_transactions = true) const = 0;
@@ -178,6 +185,7 @@ class Ledger {
   virtual bool insert_block(const messages::Block &block) = 0;
   virtual bool delete_block(const messages::BlockID &id) = 0;
   virtual bool delete_block_and_children(const messages::BlockID &id) = 0;
+  virtual bool set_branch_invalid(const messages::BlockID &id) = 0;
   virtual bool for_each(const Filter &filter, const messages::TaggedBlock &tip,
                         bool include_transaction_pool,
                         Functor functor) const = 0;
@@ -200,7 +208,8 @@ class Ledger {
   virtual bool add_to_transaction_pool(
       const messages::Transaction &transaction) = 0;
   virtual bool delete_transaction(const messages::TransactionID &id) = 0;
-  virtual std::size_t get_transaction_pool(messages::Block *block) const = 0;
+  virtual std::size_t get_transaction_pool(messages::Block *block,
+					   const std::size_t size_limit) const = 0;
   virtual std::vector<messages::TaggedTransaction> get_transaction_pool()
       const = 0;
 
