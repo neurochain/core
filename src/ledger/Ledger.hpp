@@ -184,6 +184,7 @@ class Ledger {
   virtual bool insert_block(const messages::Block &block) = 0;
   virtual bool delete_block(const messages::BlockID &id) = 0;
   virtual bool delete_block_and_children(const messages::BlockID &id) = 0;
+  virtual bool set_branch_invalid(const messages::BlockID &id) = 0;
   virtual bool for_each(const Filter &filter, const messages::TaggedBlock &tip,
                         bool include_transaction_pool,
                         Functor functor) const = 0;
