@@ -468,8 +468,10 @@ bool Consensus::verify_blocks() {
         return false;
       }
     }
-    assert(previous.branch() == messages::Branch::MAIN ||
-           previous.branch() == messages::Branch::FORK);
+    if (previous.branch() == messages::UNVERIFIED) {
+      // Probably because the assembly computations are not finished
+      continue;
+    }
     bool added_new_assembly = false;
     if (is_new_assembly(tagged_block, previous)) {
       const auto height =
@@ -640,7 +642,9 @@ void Consensus::start_compute_pii_thread() {
         std::vector<messages::Assembly> assemblies;
         _ledger->get_assemblies_to_compute(&assemblies);
         if (!assemblies.empty()) {
+          LOG_DEBUG << "Starting assembly computations " << assemblies[0].id();
           compute_assembly_pii(assemblies[0]);
+          LOG_DEBUG << "Finished assembly computations " << assemblies[0].id();
           cleanup_expired_transactions();
         } else {
           std::unique_lock cv_lock(_is_stopped_mutex);
