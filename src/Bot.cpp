@@ -74,17 +74,18 @@ void Bot::handler_get_block(const messages::Header &header,
 
 void Bot::handler_block(const messages::Header &header,
                         const messages::Body &body) {
-  // bool reply_message = header.has_request_id();
   messages::Message message;
   auto header_reply = message.mutable_header();
-  auto id = messages::fill_header(header_reply);
+  messages::fill_header(header_reply);
   message.add_bodies()->mutable_block()->CopyFrom(body.block());
-  send_all(message);
-  _request_ids.insert(id);
+  if (header.has_request_id()) {
+    send_all(message);
+  }
 
   LOG_TRACE;
   if (!_consensus->add_block(body.block())) {
-    LOG_WARNING << "Consensus rejected block" << body.block().header().id().data();
+    LOG_WARNING << "Consensus rejected block"
+                << body.block().header().id().data();
     return;
   }
   update_ledger(_ledger->new_missing_block(body.block()));
@@ -92,10 +93,10 @@ void Bot::handler_block(const messages::Header &header,
   if (header.has_request_id()) {
     auto got = _request_ids.find(header.request_id());
     if (got != _request_ids.end()) {
-      LOG_WARNING << "Reply rejected block " << body.block().header().id().data();
+      LOG_WARNING << "Reply rejected block "
+                  << body.block().header().id().data();
     }
   }
-
 }
 
 void Bot::handler_transaction(const messages::Header &header,
@@ -523,10 +524,8 @@ void Bot::keep_max_connections() {
   }
 }
 
-const messages::Peer Bot::me() const {
-  return _me;
-}
-  
+const messages::Peer Bot::me() const { return _me; }
+
 const messages::Peers &Bot::peers() const { return _peers; }
 void Bot::subscribe(const messages::Type type,
                     messages::Subscriber::Callback callback) {
