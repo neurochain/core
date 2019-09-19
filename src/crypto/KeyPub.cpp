@@ -174,11 +174,28 @@ bool KeyPub::verify(const Buffer &data, const Buffer &signature) const {
 }
 
 bool KeyPub::operator==(const KeyPub &key) const {
-  CryptoPP::ByteQueue queue0;
-  CryptoPP::ByteQueue queue1;
+  CryptoPP::ByteQueue queue0, queue1;
   _key.Save(queue0);
   key._key.Save(queue1);
-  return (queue0 == queue1);
+  return queue0 == queue1;
+}
+
+bool KeyPub::operator<(const KeyPub &key) const {
+  std::string own_raw_data, key_raw_data;
+  messages::_KeyPub key_pub;
+  if (!has_raw_data()) {
+    save(&key_pub);
+    own_raw_data = key_pub.raw_data();
+  } else {
+    own_raw_data = raw_data();
+  }
+  if (!key.has_raw_data()) {
+    save(&key_pub);
+    key_raw_data = key_pub.raw_data();
+  } else {
+    key_raw_data = key.raw_data();
+  }
+  return own_raw_data < key_raw_data;
 }
 
 std::ostream &operator<<(std::ostream &os, const KeyPub &pub) {

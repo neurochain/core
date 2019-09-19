@@ -248,7 +248,7 @@ TEST(INTEGRATION, disconnect_message) {
   ASSERT_TRUE(message_received0) << bot0->peers();
   ASSERT_TRUE(message_received2) << bot2->peers();
   ASSERT_EQ(bot0->connected_peers().size(), 1) << bot0->peers();
-  ASSERT_EQ(bot2->connected_peers().size(), 1) << bot1->peers();
+  ASSERT_EQ(bot2->connected_peers().size(), 1) << bot2->peers();
 }
 
 TEST(INTEGRATION, neighbors_propagation) {
@@ -507,10 +507,10 @@ TEST(INTEGRATION, connection_reconfig) {
   // worst case scenario, wait 8 sec after reset()
   std::this_thread::sleep_for(8s);
 
-  ASSERT_TRUE(bot0->check_peers_ports({13350, 13351, 13352})) << print_peers();
-  ASSERT_TRUE(bot4->check_peers_ports({1337, 13351, 13352})) << print_peers();
-  ASSERT_TRUE(bot5->check_peers_ports({1337, 13350, 13352})) << print_peers();
-  ASSERT_TRUE(bot6->check_peers_ports({1337, 13350, 13351})) << print_peers();
+  ASSERT_TRUE(bot0->check_peers_ports({13350, 13351, 13352}));
+  ASSERT_TRUE(bot4->check_peers_ports({1337, 13351, 13352}));
+  ASSERT_TRUE(bot5->check_peers_ports({1337, 13350, 13352}));
+  ASSERT_TRUE(bot6->check_peers_ports({1337, 13350, 13351}));
 }
 
 TEST(INTEGRATION, ignore_bad_message) {

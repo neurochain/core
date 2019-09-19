@@ -415,10 +415,8 @@ void Bot::handler_world(const messages::Header &header,
     return;
   }
 
-  if (remote_peer_bot.get() != remote_peer_connection.get() &&
-      remote_peer_bot->status() != messages::Peer::CONNECTED) {
-    _peers.insert(remote_peer_connection);
-  }
+  assert(remote_peer_bot == remote_peer_connection);
+
   if (!world.accepted()) {
     LOG_DEBUG << this << " : " << _me.port() << " Not accepted from "
               << remote_peer_connection->port() << ", disconnecting";
@@ -435,13 +433,34 @@ void Bot::handler_world(const messages::Header &header,
 
 void Bot::handler_hello(const messages::Header &header,
                         const messages::Body &body) {
-  auto remote_peer = _networking.find_peer(header.connection_id());
-  if (!remote_peer) {
+  auto remote_peer_connection = _networking.find_peer(header.connection_id());
+  auto remote_peer_bot = _peers.find(header.key_pub());
+
+  if (!remote_peer_connection) {
     LOG_WARNING << "Could not find peer we received message from";
     return;
   }
 
-  const auto inserted_peer = _peers.insert(remote_peer);
+  if (remote_peer_bot && remote_peer_bot != remote_peer_connection) {
+    if (remote_peer_bot->status() == messages::Peer::CONNECTED) {
+      LOG_DEBUG << "Refusing hello from a bot we are already connected to "
+                << remote_peer_bot.get();
+      _networking.terminate(remote_peer_connection->connection_id());
+      return;
+    }
+    if (remote_peer_bot->status() == messages::Peer::CONNECTING) {
+      if (crypto::KeyPub(header.key_pub()) < _keys[0].key_pub()) {
+        LOG_DEBUG << "Refusing hello from a bot we are connecting to "
+                  << remote_peer_bot.get();
+        _networking.terminate(remote_peer_connection->connection_id());
+        return;
+      } else {
+        _networking.terminate(remote_peer_bot->connection_id());
+      }
+    }
+  }
+
+  const auto inserted_peer = _peers.insert(remote_peer_connection);
   if (!inserted_peer) {
     LOG_WARNING << "Could not insert peer";
     return;
@@ -458,12 +477,13 @@ void Bot::handler_hello(const messages::Header &header,
 
   // update peer status
   if (accepted) {
-    remote_peer->set_status(messages::Peer::CONNECTED);
+    remote_peer_connection->set_status(messages::Peer::CONNECTED);
     LOG_DEBUG << this << " : " << _me.port() << " Accept status "
-              << std::boolalpha << accepted << " " << *remote_peer << std::endl
+              << std::boolalpha << accepted << " " << *remote_peer_connection
+              << std::endl
               << _peers;
   } else {
-    remote_peer->set_status(messages::Peer::DISCONNECTED);
+    remote_peer_connection->set_status(messages::Peer::DISCONNECTED);
   }
 
   auto header_reply = message->mutable_header();
@@ -474,7 +494,7 @@ void Bot::handler_hello(const messages::Header &header,
 
   if (!_networking.reply(message)) {
     LOG_ERROR << this << " : " << _me.port() << " Failed to send world message";
-    remote_peer->set_status(messages::Peer::UNREACHABLE);
+    remote_peer_connection->set_status(messages::Peer::UNREACHABLE);
   }
 }
 
