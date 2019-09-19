@@ -47,6 +47,7 @@ class Subscriber {
 
     const auto hash = crypto::hash_sha3_256(serialized_body);
     const auto pair = _seen_messages_hash.emplace(hash);
+    std::cout << "trax> msg hist " << body << " " << pair.second << std::endl;
     if (!pair.second) {
       return false;
     }
@@ -90,7 +91,7 @@ class Subscriber {
 	    cb(message->header(), body);
 	  }
         } else {
-          LOG_ERROR << "message already seen" << *message;
+	  std::cout << "trax> message already seen" << *message << std::endl;
         }
     }
   }

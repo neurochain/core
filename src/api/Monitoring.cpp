@@ -1,5 +1,5 @@
 #include "Monitoring.hpp"
-#include <rest.pb.h>
+#include "rest.pb.h"
 #include <sys/resource.h>
 #include <sys/statfs.h>
 #include <ctime>
@@ -114,22 +114,26 @@ float Monitoring::average_block_propagation_1h() const {
   return average_block_propagation_since(3600);
 }
 
-messages::Status::Bot Monitoring::resource_usage() const {
-  messages::Status::Bot bot;
-
+void Monitoring::resource_usage(messages::Status::Bot *bot) const {
   Rusage usage;
   getrusage(RUSAGE_SELF, &usage);
 
   auto current_uptime = uptime();
-  bot.set_uptime(current_uptime);
-  bot.set_utime(usage.ru_utime.tv_sec);
-  bot.set_stime(usage.ru_stime.tv_sec);
+  bot->set_uptime(current_uptime);
+  bot->set_utime(usage.ru_utime.tv_sec);
+  bot->set_stime(usage.ru_stime.tv_sec);
   double vtime = usage.ru_utime.tv_sec + usage.ru_stime.tv_sec;
-  bot.set_cpu_usage(100 * vtime / current_uptime);
-  bot.set_memory(usage.ru_maxrss);
-  bot.set_net_in(usage.ru_msgrcv);
-  bot.set_net_out(usage.ru_msgsnd);
-  bot.set_version(GIT_COMMIT_HASH);
+  bot->set_cpu_usage(100 * vtime / current_uptime);
+  bot->set_memory(usage.ru_maxrss);
+  bot->set_net_in(usage.ru_msgrcv);
+  bot->set_net_out(usage.ru_msgsnd);
+  bot->set_version(GIT_COMMIT_HASH);
+}
+
+messages::Status::Bot Monitoring::bot() const {
+  messages::Status::Bot bot;
+  resource_usage(&bot);
+  bot.mutable_me()->CopyFrom(_bot->me());
 
   return bot;
 }
@@ -195,7 +199,7 @@ messages::Status_BlockChain Monitoring::blockchain_health() const {
 
 messages::Status Monitoring::fast_status() const {
   messages::Status status;
-  status.mutable_bot()->CopyFrom(resource_usage());
+  status.mutable_bot()->CopyFrom(bot());
   status.mutable_fs()->CopyFrom(filesystem_usage());
   status.mutable_peer()->CopyFrom(peer_count());
   status.mutable_blockchain()->CopyFrom(blockchain_health());

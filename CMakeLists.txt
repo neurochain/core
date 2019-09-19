@@ -54,6 +54,10 @@ set(CMAKE_CXX_FLAGS_RELEASE " -O3")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 --coverage -fsanitize=address")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g -O2 -fsanitize=address")
 
+option (ENABLE_PROFILING "Enable profiling with google performance" OFF)
+if (ENABLE_PROFILING)
+  set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -lprofiler")
+endif (ENABLE_PROFILING)
 
 
 include(GNUInstallDirs)

@@ -111,13 +111,14 @@ class Ledger {
         get_block(block.header().id(), &tagged_block, false);
     if (!block_found) {
       // this is weird, we should receive a block if it not inserted
-      LOG_ERROR << "unknown new block " << block.header().id();
+      std::cout << "trax> unknown new block " << block.header().id() << std::endl;
       std::lock_guard lock(_missing_block_mutex);
       _missing_blocks.insert(block.header().id());
       return block.header().id();
     } else {
       std::lock_guard lock(_missing_block_mutex);
-      _missing_blocks.erase(block.header().id());
+      const auto erased = _missing_blocks.erase(block.header().id());
+      std::cout << "trax> erasing " << erased << " " << block.header().id() << std::endl;
       return new_missing_block(tagged_block);
     }
   }
@@ -155,6 +156,9 @@ class Ledger {
   virtual bool get_block(const messages::BlockID &id,
                          messages::TaggedBlock *tagged_block,
                          bool include_transactions = true) const = 0;
+  virtual bool get_tagged_block_balances(
+      const messages::BlockID &id,
+      messages::TaggedBlock *tagged_block) const = 0;
   virtual bool get_block_by_previd(const messages::BlockID &previd,
                                    messages::Block *block,
                                    bool include_transactions = true) const = 0;
@@ -181,6 +185,7 @@ class Ledger {
   virtual bool insert_block(const messages::Block &block) = 0;
   virtual bool delete_block(const messages::BlockID &id) = 0;
   virtual bool delete_block_and_children(const messages::BlockID &id) = 0;
+  virtual bool set_branch_invalid(const messages::BlockID &id) = 0;
   virtual bool for_each(const Filter &filter, const messages::TaggedBlock &tip,
                         bool include_transaction_pool,
                         Functor functor) const = 0;
@@ -203,7 +208,8 @@ class Ledger {
   virtual bool add_to_transaction_pool(
       const messages::Transaction &transaction) = 0;
   virtual bool delete_transaction(const messages::TransactionID &id) = 0;
-  virtual std::size_t get_transaction_pool(messages::Block *block) const = 0;
+  virtual std::size_t get_transaction_pool(messages::Block *block,
+					   const std::size_t size_limit) const = 0;
   virtual std::vector<messages::TaggedTransaction> get_transaction_pool()
       const = 0;
 

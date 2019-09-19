@@ -115,6 +115,15 @@ mongocxx::options::find LedgerMongodb::remove_OID() {
   return find_options;
 }
 
+mongocxx::options::find LedgerMongodb::remove_balances() {
+  std::lock_guard lock(_ledger_mutex);
+  mongocxx::options::find find_options;
+  auto projection = bss::document{} << _ID << 0 << BALANCES << 0
+                                    << bss::finalize;
+  find_options.projection(std::move(projection));
+  return find_options;
+}
+
 mongocxx::options::find LedgerMongodb::projection(
     const std::string &field) const {
   std::lock_guard lock(_ledger_mutex);
@@ -420,7 +429,7 @@ bool LedgerMongodb::get_last_block(messages::TaggedBlock *tagged_block,
                                    bool include_transactions) const {
   std::lock_guard lock(_ledger_mutex);
   auto query = bss::document{} << BRANCH << MAIN_BRANCH_NAME << bss::finalize;
-  auto options = remove_OID();
+  auto options = remove_balances();
   options.sort(bss::document{} << BLOCK + "." + HEADER + "." + HEIGHT << -1
                                << bss::finalize);
 
@@ -465,7 +474,7 @@ bool LedgerMongodb::get_block(const messages::BlockID &id,
   std::lock_guard lock(_ledger_mutex);
   auto query = bss::document{} << BLOCK + "." + HEADER + "." + ID << to_bson(id)
                                << bss::finalize;
-  auto result = _blocks.find_one(std::move(query), remove_OID());
+  auto result = _blocks.find_one(std::move(query), remove_balances());
   if (!result) {
     return false;
   }
@@ -476,6 +485,20 @@ bool LedgerMongodb::get_block(const messages::BlockID &id,
     fill_block_transactions(tagged_block->mutable_block());
   }
 
+  return true;
+}
+
+bool LedgerMongodb::get_tagged_block_balances(
+    const messages::BlockID &id, messages::TaggedBlock *tagged_block) const {
+  std::lock_guard lock(_ledger_mutex);
+  auto query = bss::document{} << BLOCK + "." + HEADER + "." + ID << to_bson(id)
+                               << bss::finalize;
+  auto result = _blocks.find_one(std::move(query), remove_OID());
+  if (!result) {
+    return false;
+  }
+
+  from_bson(result->view(), tagged_block);
   return true;
 }
 
@@ -527,7 +550,7 @@ bool LedgerMongodb::get_blocks_by_previd(
                << BLOCK + "." + HEADER + "." + PREVIOUS_BLOCK_HASH
                << to_bson(previd) << bss::finalize;
 
-  auto bson_blocks = _blocks.find(std::move(query), remove_OID());
+  auto bson_blocks = _blocks.find(std::move(query), remove_balances());
 
   if (bson_blocks.begin() == bson_blocks.end()) {
     return false;
@@ -575,7 +598,7 @@ bool LedgerMongodb::get_block(const messages::BlockHeight height,
   auto query = bss::document{} << BLOCK + "." + HEADER + "." + HEIGHT << height
                                << bss::finalize;
 
-  auto cursor = _blocks.find(std::move(query), remove_OID());
+  auto cursor = _blocks.find(std::move(query), remove_balances());
   for (const auto &bson_tagged_block : cursor) {
     from_bson(bson_tagged_block, tagged_block);
     if (is_ancestor(tagged_block->branch_path(), branch_path)) {
@@ -593,7 +616,7 @@ bool LedgerMongodb::get_block(const messages::BlockHeight height,
                                << BLOCK + "." + HEADER + "." + HEIGHT << height
                                << bss::finalize;
 
-  const auto result = _blocks.find_one(std::move(query), remove_OID());
+  const auto result = _blocks.find_one(std::move(query), remove_balances());
   if (!result) {
     return false;
   }
@@ -690,6 +713,20 @@ bool LedgerMongodb::delete_block_and_children(const messages::BlockID &id) {
   }
   if (result) {
     result &= delete_block(id);
+  }
+  return result;
+}
+
+bool LedgerMongodb::set_branch_invalid(const messages::BlockID &id) {
+  std::lock_guard lock(_ledger_mutex);
+  std::vector<messages::TaggedBlock> tagged_blocks;
+  get_blocks_by_previd(id, &tagged_blocks);
+  bool result = true;
+  for (const auto &tagged_block : tagged_blocks) {
+    result &= set_branch_invalid(tagged_block.block().header().id());
+  }
+  if (result) {
+    result &= update_branch_tag(id, messages::Branch::INVALID);
   }
   return result;
 }
@@ -939,7 +976,8 @@ std::vector<messages::TaggedTransaction> LedgerMongodb::get_transaction_pool()
                                << bss::finalize;
 
   auto options = remove_OID();
-  options.sort(bss::document{} << TRANSACTION + "." + FEES << -1 << bss::finalize);
+  options.sort(bss::document{} << TRANSACTION + "." + FEES << -1
+                               << bss::finalize);
   auto cursor = _transactions.find(std::move(query), options);
 
   for (const auto &bson_transaction : cursor) {
@@ -949,11 +987,19 @@ std::vector<messages::TaggedTransaction> LedgerMongodb::get_transaction_pool()
   return tagged_transactions;
 }
 
-std::size_t LedgerMongodb::get_transaction_pool(messages::Block *block) const {
+std::size_t LedgerMongodb::get_transaction_pool(messages::Block *block,
+                                                const std::size_t size_limit) const {
   std::lock_guard lock(_ledger_mutex);
   auto tagged_transactions = get_transaction_pool();
   for (const auto &tagged_transaction : tagged_transactions) {
     block->add_transactions()->CopyFrom(tagged_transaction.transaction());
+    if(block->ByteSizeLong() > size_limit) {
+      block->mutable_transactions()->RemoveLast();
+      if(block->transactions().size() == 0) {
+        LOG_WARNING << "transaction is so fat, it can't be alone in a block";
+        // TODO remove it from the pool
+      }
+    }
   }
   return tagged_transactions.size();
 }
@@ -966,12 +1012,19 @@ std::size_t LedgerMongodb::cleanup_transaction_pool() {
 }
 
 bool LedgerMongodb::insert_block(const messages::Block &block) {
+  const auto t0 = Timer::now();
   std::lock_guard lock(_ledger_mutex);
+  const auto t1 = Timer::now();
+  LOG_DEBUG << "Took " << (t1 - t0).count() / 1E6
+            << " ms to aquire lock in insert_block";
   messages::TaggedBlock tagged_block;
   tagged_block.mutable_block()->CopyFrom(block);
   tagged_block.set_branch(messages::Branch::DETACHED);
-  return insert_block(tagged_block) &&
-         set_branch_path(tagged_block.block().header());
+  bool result = insert_block(tagged_block) &&
+                set_branch_path(tagged_block.block().header());
+  LOG_DEBUG << "Insert block took " << (Timer::now() - t1).count() / 1E6
+            << " ms";
+  return result;
 }
 
 messages::BranchPath LedgerMongodb::fork_from(
@@ -1073,7 +1126,7 @@ bool LedgerMongodb::get_unverified_blocks(
   std::lock_guard lock(_ledger_mutex);
   auto query = bss::document{} << BRANCH << UNVERIFIED_BRANCH_NAME
                                << bss::finalize;
-  auto options = remove_OID();
+  auto options = remove_balances();
   options.sort(bss::document{} << BLOCK + "." + HEADER + "." + HEIGHT << 1
                                << bss::finalize);
   auto result = _blocks.find(std::move(query), options);
@@ -1143,7 +1196,7 @@ bool LedgerMongodb::update_main_branch() {
   std::lock_guard lock(_ledger_mutex);
   messages::TaggedBlock main_branch_tip;
   auto query = bss::document{} << bss::finalize;
-  auto options = remove_OID();
+  auto options = remove_balances();
   options.sort(bss::document{} << SCORE << -1 << bss::finalize);
   auto bson_block = _blocks.find_one(std::move(query), options);
   if (!bson_block) {
@@ -1496,7 +1549,7 @@ messages::TaggedBlocks LedgerMongodb::get_blocks(
 messages::TaggedBlocks LedgerMongodb::get_blocks(
     const messages::Branch name) const {
   auto query = bss::document{} << BRANCH << name << bss::finalize;
-  mongocxx::cursor cursor = find(_blocks, std::move(query));
+  mongocxx::cursor cursor = find(_blocks, std::move(query), remove_balances());
   return get_blocks(cursor, false);
 }
 
@@ -1509,7 +1562,7 @@ std::vector<messages::TaggedBlock> LedgerMongodb::get_blocks(
                << BLOCK + "." + HEADER + "." + HEIGHT << height
                << BLOCK + "." + HEADER + "." + AUTHOR + "." + KEY_PUB
                << to_bson(author) << bss::finalize;
-  auto cursor = find(_blocks, std::move(query));
+  auto cursor = find(_blocks, std::move(query), remove_balances());
   return get_blocks(cursor, include_transactions);
 }
 
@@ -1651,7 +1704,7 @@ Double LedgerMongodb::compute_new_balance(messages::Balance *balance,
                                           const BalanceChange &change,
                                           messages::BlockHeight height) {
   const auto balance_value = balance->value().value();
-  Double enthalpy = balance->enthalpy_end(); // enthalpy from previous balance
+  Double enthalpy = balance->enthalpy_end();  // enthalpy from previous balance
 
   // Enthalpy has increased since the last balance change
   enthalpy += balance_value * (height - balance->block_height());

@@ -59,6 +59,8 @@ class LedgerMongodb : public Ledger {
 
   static mongocxx::options::find remove_OID();
 
+  static mongocxx::options::find remove_balances();
+
   mongocxx::options::find projection(const std::string &field) const;
 
   mongocxx::options::find projection(const std::string &field0,
@@ -146,6 +148,9 @@ class LedgerMongodb : public Ledger {
                  messages::TaggedBlock *tagged_block,
                  bool include_transactions = true) const;
 
+  bool get_tagged_block_balances(const messages::BlockID &id,
+                                 messages::TaggedBlock *tagged_block) const;
+
   bool get_block(const messages::BlockID &id, messages::Block *block,
                  bool include_transactions = true) const;
 
@@ -171,6 +176,8 @@ class LedgerMongodb : public Ledger {
   bool delete_block(const messages::BlockID &id);
 
   bool delete_block_and_children(const messages::BlockID &id);
+
+  bool set_branch_invalid(const messages::BlockID &id);
 
   bool get_transaction(const messages::TransactionID &id,
                        messages::Transaction *transaction) const;
@@ -207,7 +214,8 @@ class LedgerMongodb : public Ledger {
 
   std::vector<messages::TaggedTransaction> get_transaction_pool() const;
 
-  std::size_t get_transaction_pool(messages::Block *block) const;
+  std::size_t get_transaction_pool(messages::Block *block,
+				   const std::size_t size_limit) const;
 
   bool get_unverified_blocks(
       std::vector<messages::TaggedBlock> *tagged_blocks) const;

@@ -1,48 +1,53 @@
 {
-  "logs": {
-    "severity": "trace",
-    "toStdout": true
-  },
-  "networking": {
-    "maxConnections": 3,
-    "tcp": {
-      "port": 1337,
-      "endpoint": "localhost",
-      "peers": [
-        {
-          "endpoint": "boot0.test.neurochaintech.io",
-          "keyPub": {
-            "type": "ECP256K1",
-            "rawData": "At2zvnKjc8FhInceEx4LWJ3Yy6DyD83MR3jlCneoZZpP"
-          },
-          "port": 1337
-        },
-        {
-          "endpoint": "boot1.test.neurochaintech.io",
-          "keyPub": {
-            "type": "ECP256K1",
-            "rawData": "A5mc7ff4DMn9DyLq2qcbAUMyHfmzlvKKbLWuXHlQmuCD"
-          },
-          "port": 1337
-        }
-      ]
+ "logs": {
+  "severity": "trace",
+  "toStdout": true
+ },
+ "networking": {
+  "maxConnections": 3,
+  "tcp": {
+   "port": 1337,
+   "endpoint": "localhost",
+   "peers": [
+    {
+     "endpoint": "boot0.test.neurochaintech.io",
+     "keyPub": {
+      "rawData": "A2SY4btZmJFFz+VShMgTkt3CSlx/mcCcFYvxrETFhHGZ"
+     },
+     "port": 1337
     },
-    "keysPaths": [
-      {
-        "keyPubPath": "conf/key.pub",
-        "keyPrivPath": "conf/key.priv"
-      }
-    ]
-  },
-  "database": {
-    "url": "mongodb://localhost:27017/testnet",
-    "dbName": "testnet",
-    "block0File": {
-      "blockFormat": "PROTO",
-      "blockPath": "conf/data.0.testnet"
+    {
+     "endpoint": "boot1.test.neurochaintech.io",
+     "keyPub": {
+      "rawData": "A2PyZvh4Y2Twu7X+KpSzNPO5eeJM90aRuY3396667zy7"
+     },
+     "port": 1337
+    },
+    {
+     "endpoint": "boot2.test.neurochaintech.io",
+     "keyPub": {
+      "rawData": "AnRLEo1GzklizIyN3rp/NjPS7Rsb4whBECw2eBRoqfVp"
+     },
+     "port": 1337
     }
+   ]
   },
-    "rest": {
-	"port": 8080
-    }
+  "keysPaths": [
+   {
+    "keyPubPath": "conf/key.pub",
+    "keyPrivPath": "conf/key.priv"
+   }
+  ]
+ },
+ "database": {
+  "url": "mongodb://mongo:27017/testnet",
+  "dbName": "testnet",
+  "block0File": {
+   "blockFormat": "PROTO",
+   "blockPath": "conf/data.0.testnet"
+  }
+ },
+ "rest": {
+  "port": 8080
+ }
 }

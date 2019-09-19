@@ -9,13 +9,14 @@ namespace po = boost::program_options;
 int main(int argc, char *argv[]) {
   po::options_description desc("Allowed options");
   desc.add_options()("help,h", "Produce help message.")(
-      "keys,k", po::value<std::vector<std::string>>()->multitoken(),
-      "Public Key file to include")(
-      "endpoint,e", po::value<std::vector<std::string>>()->multitoken(),
-      "Endpoint in same order as keys")("conf,c",
-                                        po::value<std::string>()->required(),
-                                        "Configuration file to update")(
-      "output,o", po::value<std::string>()->required(), "Output filepath");
+      "endpoints,e", po::value<std::vector<Path>>()->multitoken(),
+      "Endpoints")("conf,c",
+                   po::value<Path>()->required(),
+                   "Configuration file to update")
+      (
+          "port,p", po::value<uint16_t>()->default_value(1337),
+          "Listenning port")    (
+              "output,o", po::value<Path>()->required(), "Output filepath");
 
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -31,39 +32,28 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  const auto conf_path = vm["conf"].as<std::string>();
-  const auto keys_path = vm["keys"].as<std::vector<Path>>();
-  const auto endpoints = vm["endpoint"].as<std::vector<std::string>>();
-  const auto output = vm["output"].as<std::string>();
-
+  const auto conf_path = vm["conf"].as<Path>();
+  const auto endpoints = vm["endpoints"].as<std::vector<Path>>();
+  const auto output = vm["output"].as<Path>();
+  const auto port = vm["port"].as<uint16_t>();
+  
   messages::config::Config config;
-  if (!messages::from_json_file(conf_path, &config)) {
+  if (!messages::from_json_file(conf_path.string(), &config)) {
     std::cout << "Could not load_from_point configuration" << std::endl;
     std::cout << desc << "\n";
     return 1;
   }
 
-  if (keys_path.size() != endpoints.size()) {
-    std::cout << "keys and endpoints should have the same number of elements";
-    std::cout << desc << "\n";
-    return 1;
-  }
-
-  auto itKey = keys_path.cbegin();
-  auto endKey = keys_path.cend();
-  auto itEndpoint = endpoints.cbegin();
-
-  while (itKey != endKey) {
-    messages::_KeyPub key_pub;
-    crypto::KeyPub ecc_pub(*itKey);
-    ecc_pub.save(&key_pub);
+  for (const auto &endpoint: endpoints) {
+    if(!filesystem::exists(endpoint)) {
+      filesystem::create_directories(endpoint);
+    }
+    crypto::Ecc ecc;
+    ecc.save(endpoint);
     auto peer = config.mutable_networking()->mutable_tcp()->add_peers();
-    peer->set_endpoint(*itEndpoint);
-    peer->set_port(1337);
-    peer->mutable_key_pub()->CopyFrom(key_pub);
-
-    ++itKey;
-    ++itEndpoint;
+    peer->set_endpoint(endpoint.string());
+    peer->set_port(port);
+    peer->mutable_key_pub()->CopyFrom(ecc.key_pub());
   }
   std::string s;
   messages::to_json(config, &s, true);

@@ -26,7 +26,7 @@ bool from_json(const std::string &json, Packet *packet) {
   return r.ok();
 }
 
-bool from_json_file(const std::string &path, Packet *packet) {
+bool from_json_file(const Path &path, Packet *packet) {
   std::ifstream t(path);
   std::string str((std::istreambuf_iterator<char>(t)),
                   std::istreambuf_iterator<char>());
