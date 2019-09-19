@@ -995,9 +995,9 @@ std::size_t LedgerMongodb::get_transaction_pool(messages::Block *block,
     block->add_transactions()->CopyFrom(tagged_transaction.transaction());
     if(block->ByteSizeLong() > size_limit) {
       block->mutable_transactions()->RemoveLast();
-      if(block->transactions().size() == 0) {
-        LOG_WARNING << "transaction is so fat, it can't be alone in a block";
-        // TODO remove it from the pool
+      const auto transaction_size = tagged_transaction.transaction().ByteSizeLong();
+      if(transaction_size > (size_limit / 2)) {
+	LOG_DEBUG << "big transaction " << transaction_size << " " << tagged_transaction.transaction();
       }
     }
   }
