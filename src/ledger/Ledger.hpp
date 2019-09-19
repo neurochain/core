@@ -111,14 +111,16 @@ class Ledger {
         get_block(block.header().id(), &tagged_block, false);
     if (!block_found) {
       // this is weird, we should receive a block if it not inserted
-      std::cout << "trax> unknown new block " << block.header().id() << std::endl;
+      std::cout << "trax> unknown new block " << block.header().id()
+                << std::endl;
       std::lock_guard lock(_missing_block_mutex);
       _missing_blocks.insert(block.header().id());
       return block.header().id();
     } else {
       std::lock_guard lock(_missing_block_mutex);
       const auto erased = _missing_blocks.erase(block.header().id());
-      std::cout << "trax> erasing " << erased << " " << block.header().id() << std::endl;
+      std::cout << "trax> erasing " << erased << " " << block.header().id()
+                << std::endl;
       return new_missing_block(tagged_block);
     }
   }
@@ -208,8 +210,8 @@ class Ledger {
   virtual bool add_to_transaction_pool(
       const messages::Transaction &transaction) = 0;
   virtual bool delete_transaction(const messages::TransactionID &id) = 0;
-  virtual std::size_t get_transaction_pool(messages::Block *block,
-					   const std::size_t size_limit) const = 0;
+  virtual std::size_t get_transaction_pool(
+      messages::Block *block, const std::size_t size_limit) const = 0;
   virtual std::vector<messages::TaggedTransaction> get_transaction_pool()
       const = 0;
 
@@ -467,6 +469,21 @@ class Ledger {
     crypto::sign(keys, &transaction);
     messages::set_transaction_hash(&transaction);
     return transaction;
+  }
+
+  bool is_assembly_computation_finished(
+      const messages::TaggedBlock &tagged_block) {
+    if (!tagged_block.has_previous_assembly_id()) {
+      return false;
+    }
+    messages::Assembly assembly;
+    if (!get_assembly(tagged_block.previous_assembly_id(), &assembly)) {
+      return false;
+    }
+    if (!get_assembly(assembly.previous_assembly_id(), &assembly)) {
+      return false;
+    }
+    return assembly.finished_computation();
   }
 
   virtual ~Ledger() {}

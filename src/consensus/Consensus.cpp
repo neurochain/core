@@ -491,6 +491,13 @@ bool Consensus::verify_blocks() {
     // can work
     tagged_block.mutable_previous_assembly_id()->CopyFrom(assembly_id);
 
+    if (!_ledger->is_assembly_computation_finished(tagged_block)) {
+      LOG_DEBUG << "Cannot validate block "
+                << tagged_block.block().header().id()
+                << " because the assembly computation is not finished.";
+      continue;
+    }
+
     if (_ledger->add_balances(&tagged_block) && is_valid(tagged_block)) {
       _ledger->set_block_verified(tagged_block.block().header().id(),
                                   get_block_score(tagged_block), assembly_id);
