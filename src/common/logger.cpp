@@ -52,13 +52,12 @@ void add_stdout_sink() {
 }
 
 void from_config(const messages::config::Logs &logs) {
-  if (logs.has_to_stdout() && logs.to_stdout()) {
-    add_stdout_sink();
-  }
+  
 
-  const auto log_file = logs.file_path();
-  if (logs.has_file_path()) {
+  if (!logs.has_to_stdout() || logs.to_stdout() == false) {
     add_file_sink(logs.file_path(), logs.rotation_size());
+  } else {
+    add_stdout_sink();
   }
 
   switch (logs.severity()) {

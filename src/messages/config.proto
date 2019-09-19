@@ -15,8 +15,8 @@ message Logs {
     fatal = 5;
   }
   
-  optional string file_path = 1;
-  optional int32 rotation_size = 2 [default = 10];
+  optional string file_path = 1 [ default = "core.log" ];
+  optional int32 rotation_size = 2 [default = 100];
   optional Severity severity = 3 [default = warning];
   optional bool to_stdout = 4;
 }
