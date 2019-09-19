@@ -131,7 +131,9 @@ bool Bot::update_ledger(const std::optional<messages::Hash> &missing_block) {
 }
 
 void Bot::update_ledger() {
-  for (const auto &missing_block : _ledger->missing_blocks()) {
+  const auto missing_blocks = _ledger->missing_blocks();
+  LOG_INFO << "Missing block count " << missing_blocks.size();
+  for (const auto &missing_block : missing_blocks) {
     update_ledger(missing_block);
   }
 }
@@ -571,6 +573,7 @@ void Bot::publish_block(const messages::Block &block) const {
   auto body = message.add_bodies();
   body->mutable_block()->CopyFrom(block);
   send_all(message);
+  LOG_INFO << "Publishing block " << block;
 }
 
 ledger::Ledger *Bot::ledger() { return _ledger.get(); }
