@@ -459,6 +459,15 @@ bool Consensus::verify_blocks() {
           "Could not find the previous block of an unverified block " +
           messages::to_json(tagged_block.block().header().id()));
     }
+    if (previous.branch() == messages::INVALID) {
+      if (!_ledger->set_branch_invalid(tagged_block.block().header().id())) {
+        throw std::runtime_error("Failed to mark a block as invalid");
+      } else {
+        // The list of unverified blocks should have changed
+        verify_blocks();
+        return false;
+      }
+    }
     assert(previous.branch() == messages::Branch::MAIN ||
            previous.branch() == messages::Branch::FORK);
     bool added_new_assembly = false;
@@ -487,7 +496,7 @@ bool Consensus::verify_blocks() {
                                   get_block_score(tagged_block), assembly_id);
     } else if (!_ledger->set_branch_invalid(
                    tagged_block.block().header().id())) {
-      throw std::runtime_error("Failed to delete an invalid block");
+      throw std::runtime_error("Failed to mark a block as invalid");
     } else {
       // The list of unverified blocks should have changed
       verify_blocks();
