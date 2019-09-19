@@ -78,7 +78,7 @@ void Bot::handler_block(const messages::Header &header,
   auto header_reply = message.mutable_header();
   messages::fill_header(header_reply);
   message.add_bodies()->mutable_block()->CopyFrom(body.block());
-  if (header.has_request_id()) {
+  if (!header.has_request_id()) {
     send_all(message);
   }
 
@@ -93,7 +93,7 @@ void Bot::handler_block(const messages::Header &header,
   if (header.has_request_id()) {
     auto got = _request_ids.find(header.request_id());
     if (got != _request_ids.end()) {
-      LOG_WARNING << "Reply rejected block "
+      LOG_WARNING << "The request_id is wrong "
                   << body.block().header().id().data();
     }
   }
@@ -409,11 +409,13 @@ void Bot::handler_world(const messages::Header &header,
   if (!remote_peer_connection) {
     LOG_WARNING << "Received world message but the connection is missing "
                 << header.key_pub();
+    _networking.terminate(header.connection_id());
     return;
   }
   if (!remote_peer_bot) {
     LOG_WARNING << "Received world message from unknown peer "
                 << header.key_pub();
+    _networking.terminate(header.connection_id());
     return;
   }
 
@@ -440,6 +442,7 @@ void Bot::handler_hello(const messages::Header &header,
 
   if (!remote_peer_connection) {
     LOG_WARNING << "Could not find peer we received message from";
+    _networking.terminate(header.connection_id());
     return;
   }
 
