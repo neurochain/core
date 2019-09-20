@@ -232,9 +232,6 @@ TransportLayer::SendResult Tcp::send_one(
 TransportLayer::SendResult Tcp::send_all(
     const messages::Message &message) const {
   const auto connected_peers = _peers->connected_peers();
-  if (connected_peers.empty()) {
-    return SendResult::FAILED;
-  }
   bool one_good = false;
   bool one_failed = false;
   for (const auto peer : connected_peers) {
