@@ -71,6 +71,9 @@ class Tcp : public TransportLayer {
   bool connect(std::shared_ptr<messages::Peer> peer);
   SendResult send(const messages::Message &message,
                   const Connection::ID id) const;
+  SendResult send_one(const messages::Message &message) const;
+  SendResult send_all(const messages::Message &message) const;
+
   bool reply(std::shared_ptr<messages::Message> message) const;
   Port listening_port() const;
   IP local_ip() const;

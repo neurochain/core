@@ -61,7 +61,8 @@ class BotTest : public Bot {
   }
 
   bool send_all(const messages::Message &message) {
-    return Bot::send_all(message);
+    return _networking.send_all(message) !=
+           networking::TransportLayer::SendResult::FAILED;
   }
 
   std::chrono::seconds connecting_timeout() {

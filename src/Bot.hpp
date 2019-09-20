@@ -100,8 +100,6 @@ class Bot {
   void update_ledger();
   bool update_ledger(const std::optional<messages::Hash> &missing_block);
   void update_peerlist();
-  bool send_one(const messages::Message &message) const;
-  bool send_all(const messages::Message &message) const;
 
  public:
   explicit Bot(const messages::config::Config &config,

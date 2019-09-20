@@ -30,6 +30,16 @@ TransportLayer::SendResult Networking::send(const messages::Message &message,
   return _transport_layer->send(message, id);
 }
 
+TransportLayer::SendResult Networking::send_one(
+    const messages::Message &message) const {
+  return _transport_layer->send_one(message);
+}
+
+TransportLayer::SendResult Networking::send_all(
+    const messages::Message &message) const {
+  return _transport_layer->send_all(message);
+}
+
 /**
  * count the number of active connexion (either accepted one or attempting one)
  * \return the number of active connexion

@@ -220,6 +220,36 @@ TransportLayer::SendResult Tcp::send(const messages::Message &message,
   }
 }
 
+TransportLayer::SendResult Tcp::send_one(
+    const messages::Message &message) const {
+  auto peer_it = _peers->begin(messages::Peer::CONNECTED);
+  if (peer_it != _peers->end()) {
+    return send(message, peer_it->connection_id());
+  }
+  return SendResult::FAILED;
+}
+
+TransportLayer::SendResult Tcp::send_all(
+    const messages::Message &message) const {
+  const auto connected_peers = _peers->connected_peers();
+  bool one_good = false;
+  bool one_failed = false;
+  for (const auto peer : connected_peers) {
+    if (send(message, peer->connection_id()) == SendResult::ALL_GOOD) {
+      one_good = true;
+    } else {
+      one_failed = true;
+    }
+  }
+  if (!one_good) {
+    return SendResult::FAILED;
+  }
+  if (one_failed) {
+    return SendResult::ONE_OR_MORE_SENT;
+  }
+  return SendResult::ALL_GOOD;
+}
+
 std::shared_ptr<tcp::Connection> Tcp::find(const Connection::ID id) const {
   std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   auto got = _connections.find(id);
