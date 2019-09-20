@@ -780,9 +780,8 @@ messages::BlockHeight Consensus::get_current_assembly_height() const {
 bool Consensus::get_heights_to_write(
     const std::vector<messages::_KeyPub> &key_pubs,
     std::vector<std::pair<messages::BlockHeight, KeyPubIndex>> *heights) const {
-  const auto last_block_height = _ledger->height();
-  messages::TaggedBlock last_block;
-  _ledger->get_block(last_block_height, &last_block);
+  const messages::TaggedBlock last_block = _ledger->get_main_branch_tip();
+  const auto last_block_height = last_block.block().header().height();
   messages::Assembly previous_assembly, previous_previous_assembly;
 
   if (!_ledger->get_assembly(last_block.previous_assembly_id(),
@@ -916,11 +915,7 @@ bool Consensus::cleanup_transactions(messages::Block *block) const {
 bool Consensus::build_block(const crypto::Ecc &keys,
                             const messages::BlockHeight &height,
                             messages::Block *block) const {
-  messages::TaggedBlock last_block;
-  bool include_transactions = false;
-  if (!_ledger->get_last_block(&last_block, include_transactions)) {
-    return false;
-  }
+  messages::TaggedBlock last_block = _ledger->get_main_branch_tip();
   auto &last_block_header = last_block.block().header();
   if (last_block_header.height() >= height) {
     LOG_WARNING << "Trying to mine block with height " << height
