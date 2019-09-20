@@ -478,9 +478,6 @@ bool Consensus::verify_blocks() {
           previous.block().header().height() / _config.blocks_per_assembly;
       _ledger->add_assembly(previous, height);
       added_new_assembly = true;
-      tagged_block.mutable_previous_assembly_id()->CopyFrom(
-          previous.block().header().id());
-
     } else if (!previous.has_previous_assembly_id()) {
       throw std::runtime_error(
           "A verified tagged_block is missing a previous_assembly_id " +
@@ -820,8 +817,7 @@ bool Consensus::get_heights_to_write(
     if (!get_block_writer(previous_previous_assembly, i, &writer)) {
       LOG_WARNING << "Did not manage to get the block writer for assembly "
                   << previous_previous_assembly.id() << " at height " << i;
-    }
-    if (key_pubs_map.count(writer) > 0) {
+    } else if (key_pubs_map.count(writer) > 0) {
       heights->push_back({i, key_pubs_map[writer]});
     }
   }
@@ -843,8 +839,7 @@ bool Consensus::get_heights_to_write(
       if (!get_block_writer(previous_assembly, i, &writer)) {
         LOG_WARNING << "Did not manage to get the block writer for assembly "
                     << previous_assembly.id() << " at height " << i;
-      }
-      if (key_pubs_map.count(writer) > 0) {
+      } else if (key_pubs_map.count(writer) > 0) {
         heights->push_back({i, key_pubs_map[writer]});
       }
     }
