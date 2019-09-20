@@ -94,7 +94,7 @@ void Bot::handler_block(const messages::Header &header,
     auto got = _request_ids.find(header.request_id());
     if (got != _request_ids.end()) {
       LOG_WARNING << "The request_id is wrong "
-                  << body.block().header().id().data();
+                  << body.block().header().id();
     }
   }
 }
