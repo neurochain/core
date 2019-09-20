@@ -47,7 +47,6 @@ class Subscriber {
 
     const auto hash = crypto::hash_sha3_256(serialized_body);
     const auto pair = _seen_messages_hash.emplace(hash);
-    std::cout << "trax> msg hist " << body << " " << pair.second << std::endl;
     if (!pair.second) {
       return false;
     }
@@ -80,19 +79,17 @@ class Subscriber {
     const auto time = std::time(nullptr);
     for (const auto &body : message->bodies()) {
       const auto type = get_type(body);
-        bool process{true};
-        if (type == messages::Type::kTransaction ||
-            type == messages::Type::kBlock) {
-          process = is_new_body(time, body);
-        }
+      bool process{true};
+      if (type == messages::Type::kTransaction ||
+          type == messages::Type::kBlock) {
+        process = is_new_body(time, body);
+      }
 
-        if (process) {
-	  for (const auto &cb : _callbacks_by_type[type]) {
-	    cb(message->header(), body);
-	  }
-        } else {
-	  std::cout << "trax> message already seen" << *message << std::endl;
+      if (process) {
+        for (const auto &cb : _callbacks_by_type[type]) {
+          cb(message->header(), body);
         }
+      }
     }
   }
 

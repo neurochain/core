@@ -111,16 +111,12 @@ class Ledger {
         get_block(block.header().id(), &tagged_block, false);
     if (!block_found) {
       // this is weird, we should receive a block if it not inserted
-      std::cout << "trax> unknown new block " << block.header().id()
-                << std::endl;
       std::lock_guard lock(_missing_block_mutex);
       _missing_blocks.insert(block.header().id());
       return block.header().id();
     } else {
       std::lock_guard lock(_missing_block_mutex);
-      const auto erased = _missing_blocks.erase(block.header().id());
-      std::cout << "trax> erasing " << erased << " " << block.header().id()
-                << std::endl;
+      _missing_blocks.erase(block.header().id());
       return new_missing_block(tagged_block);
     }
   }
