@@ -378,6 +378,7 @@ void Bot::handler_deconnection(const messages::Header &header,
   if (header.has_connection_id()) {
     auto remote_peer = _networking.find_peer(header.connection_id());
     if (remote_peer) {
+      assert(peer->key_pub() == remote_peer->key_pub());
       remote_peer->set_status(messages::Peer::UNREACHABLE);
       LOG_DEBUG << this << " : " << _me.port() << " disconnected from "
                 << remote_peer->port();
@@ -463,6 +464,12 @@ void Bot::handler_hello(const messages::Header &header,
         _networking.terminate(remote_peer_bot->connection_id());
       }
     }
+  } else {
+    std::stringstream m;
+    m << "You should not be here (handler_hello) "
+	 << *remote_peer_bot.get() 
+	 << " " <<  remote_peer_connection;
+    throw std::runtime_error(m.str());
   }
 
   const auto inserted_peer = _peers.insert(remote_peer_connection);
@@ -488,7 +495,7 @@ void Bot::handler_hello(const messages::Header &header,
               << std::endl
               << _peers;
   } else {
-    remote_peer_connection->set_status(messages::Peer::DISCONNECTED);
+    remote_peer_connection->set_status(messages::Peer::UNREACHABLE);
   }
 
   auto header_reply = message->mutable_header();

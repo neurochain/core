@@ -195,7 +195,7 @@ void Connection::terminate() const {
   header->set_connection_id(_id);
   auto body = message->add_bodies();
   body->mutable_connection_closed();
-
+  _remote_peer->set_status(messages::Peer::UNREACHABLE);
   _queue->publish(message);
 }
 
