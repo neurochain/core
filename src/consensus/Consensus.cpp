@@ -474,7 +474,7 @@ bool Consensus::verify_blocks() {
     }
     bool added_new_assembly = false;
     if (is_new_assembly(tagged_block, previous)) {
-      const auto height =
+      const messages::AssemblyHeight height =
           previous.block().header().height() / _config.blocks_per_assembly;
       _ledger->add_assembly(previous, height);
       added_new_assembly = true;
