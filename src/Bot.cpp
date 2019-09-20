@@ -378,7 +378,6 @@ void Bot::handler_deconnection(const messages::Header &header,
   if (header.has_connection_id()) {
     auto remote_peer = _networking.find_peer(header.connection_id());
     if (remote_peer) {
-      assert(peer->key_pub() == remote_peer->key_pub());
       remote_peer->set_status(messages::Peer::UNREACHABLE);
       LOG_DEBUG << this << " : " << _me.port() << " disconnected from "
                 << remote_peer->port();
