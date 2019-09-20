@@ -463,11 +463,10 @@ void Bot::handler_hello(const messages::Header &header,
         _networking.terminate(remote_peer_bot->connection_id());
       }
     }
-  } else {
+  } else if (remote_peer_bot && remote_peer_bot == remote_peer_connection) {
     std::stringstream m;
-    m << "You should not be here (handler_hello) "
-	 << *remote_peer_bot.get() 
-	 << " " <<  remote_peer_connection;
+    m << "You should not be here (handler_hello) " << *remote_peer_bot.get()
+      << " " << remote_peer_connection;
     throw std::runtime_error(m.str());
   }
 
