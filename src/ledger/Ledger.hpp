@@ -467,21 +467,6 @@ class Ledger {
     return transaction;
   }
 
-  bool is_assembly_computation_finished(
-      const messages::TaggedBlock &tagged_block) {
-    if (!tagged_block.has_previous_assembly_id()) {
-      return false;
-    }
-    messages::Assembly assembly;
-    if (!get_assembly(tagged_block.previous_assembly_id(), &assembly)) {
-      return false;
-    }
-    if (!get_assembly(assembly.previous_assembly_id(), &assembly)) {
-      return false;
-    }
-    return assembly.finished_computation();
-  }
-
   virtual ~Ledger() {}
 };
 
