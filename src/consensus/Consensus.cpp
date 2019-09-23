@@ -355,15 +355,23 @@ bool Consensus::check_block_timestamp(
 
 bool Consensus::check_block_author(
     const messages::TaggedBlock &tagged_block) const {
+  messages::TaggedBlock previous;
   messages::Assembly previous_assembly, previous_previous_assembly;
   const auto &block = tagged_block.block();
 
-  if (!tagged_block.has_previous_assembly_id()) {
-    LOG_INFO << "Failed check_block_author for block " << block.header().id()
-             << " tagged block is missing field previous_assembly_id";
+  if (!_ledger->get_block(tagged_block.block().header().previous_block_hash(),
+                          &previous, false)) {
+    LOG_INFO << "Failed check_block_author because it failed to get the "
+                "previous block "
+             << tagged_block.block().header().previous_block_hash();
     return false;
   }
-  if (!_ledger->get_assembly(tagged_block.previous_assembly_id(),
+  if (!previous.has_previous_assembly_id()) {
+    LOG_INFO << "Failed check_block_author for block " << block.header().id()
+             << " the previous block is missing field previous_assembly_id";
+    return false;
+  }
+  if (!_ledger->get_assembly(previous.previous_assembly_id(),
                              &previous_assembly)) {
     LOG_INFO << "Failed check_block_author for block " << block.header().id()
              << " failed to get previous assembly "
@@ -376,6 +384,9 @@ bool Consensus::check_block_author(
              << " failed to get previous previous assembly "
              << previous_assembly.previous_assembly_id();
     return false;
+  }
+  if (is_new_assembly(tagged_block, previous)) {
+    previous_previous_assembly = previous_assembly;
   }
 
   messages::_KeyPub key_pub;
@@ -472,25 +483,42 @@ bool Consensus::verify_blocks() {
       // Probably because the assembly computations are not finished
       continue;
     }
-    bool added_new_assembly = false;
+
+    messages::AssemblyID assembly_id;
+    messages::Assembly previous_assembly, previous_previous_assembly;
     if (is_new_assembly(tagged_block, previous)) {
       const messages::AssemblyHeight height =
           previous.block().header().height() / _config.blocks_per_assembly;
       _ledger->add_assembly(previous, height);
-      added_new_assembly = true;
-    } else if (!previous.has_previous_assembly_id()) {
-      throw std::runtime_error(
-          "A verified tagged_block is missing a previous_assembly_id " +
-          messages::to_json(previous.block().header().id()));
+      assembly_id = previous.block().header().id();
+      if (!_ledger->get_assembly(previous.previous_assembly_id(),
+                                 &previous_previous_assembly)) {
+        LOG_ERROR << "Failed to get assembly "
+                  << previous_assembly.previous_assembly_id();
+        return false;
+      }
+    } else {
+      if (!previous.has_previous_assembly_id()) {
+        throw std::runtime_error(
+            "A verified tagged_block is missing a previous_assembly_id " +
+            messages::to_json(previous.block().header().id()));
+      }
+      assembly_id = previous.previous_assembly_id();
+      if (!_ledger->get_assembly(previous.previous_assembly_id(),
+                                 &previous_assembly)) {
+        LOG_ERROR << "Failed to get assembly "
+                  << previous.previous_assembly_id();
+        return false;
+      }
+      if (!_ledger->get_assembly(previous_assembly.previous_assembly_id(),
+                                 &previous_previous_assembly)) {
+        LOG_ERROR << "Failed to get assembly "
+                  << previous_assembly.previous_assembly_id();
+        return false;
+      }
     }
-    auto assembly_id = added_new_assembly ? previous.block().header().id()
-                                          : previous.previous_assembly_id();
 
-    // Temporarily setup the previous_assembly_id so that check_block_author
-    // can work
-    tagged_block.mutable_previous_assembly_id()->CopyFrom(assembly_id);
-
-    if (!_ledger->is_assembly_computation_finished(tagged_block)) {
+    if (!previous_previous_assembly.finished_computation()) {
       LOG_DEBUG << "Cannot validate block "
                 << tagged_block.block().header().id()
                 << " because the assembly computation is not finished.";
@@ -514,11 +542,6 @@ bool Consensus::verify_blocks() {
 
 bool Consensus::is_new_assembly(const messages::TaggedBlock &tagged_block,
                                 const messages::TaggedBlock &previous) const {
-  if (!previous.has_previous_assembly_id()) {
-    throw std::runtime_error("Something is wrong here block " +
-                             messages::to_json(previous.block().header().id()) +
-                             " is missing the previous_assembly_id");
-  }
   auto block_assembly_height =
       tagged_block.block().header().height() / _config.blocks_per_assembly;
   auto previous_assembly_height =
@@ -1037,6 +1060,14 @@ bool Consensus::mine_block(const messages::Block &block0) {
 
   messages::Block new_block;
   if (!build_block(_keys[key_pub_index], height, &new_block)) {
+    return false;
+  }
+
+  // Check that the block author is correct
+  messages::TaggedBlock tagged_block;
+  tagged_block.mutable_block()->CopyFrom(new_block);
+  if (!check_block_author(tagged_block)) {
+    LOG_WARNING << "Failed to mine block because the block author is wrong";
     return false;
   }
 
