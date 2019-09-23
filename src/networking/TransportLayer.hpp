@@ -37,6 +37,10 @@ class TransportLayer {
 
   virtual SendResult send(const messages::Message& message,
                           const Connection::ID id) const = 0;
+  virtual TransportLayer::SendResult send_one(
+      const messages::Message& message) const = 0;
+  virtual TransportLayer::SendResult send_all(
+      const messages::Message& message) const = 0;
   virtual bool reply(std::shared_ptr<messages::Message> message) const = 0;
   virtual std::size_t peer_count() const = 0;
   virtual bool terminate(const Connection::ID id) = 0;

@@ -79,13 +79,12 @@ void Bot::handler_block(const messages::Header &header,
   messages::fill_header(header_reply);
   message.add_bodies()->mutable_block()->CopyFrom(body.block());
   if (!header.has_request_id()) {
-    send_all(message);
+    _networking.send_all(message);
   }
 
   LOG_TRACE;
   if (!_consensus->add_block(body.block())) {
-    LOG_WARNING << "Consensus rejected block"
-                << body.block().header().id();
+    LOG_WARNING << "Consensus rejected block" << body.block().header().id();
     return;
   }
   update_ledger(_ledger->new_missing_block(body.block()));
@@ -93,8 +92,7 @@ void Bot::handler_block(const messages::Header &header,
   if (header.has_request_id()) {
     auto got = _request_ids.find(header.request_id());
     if (got != _request_ids.end()) {
-      LOG_WARNING << "The request_id is wrong "
-                  << body.block().header().id();
+      LOG_WARNING << "The request_id is wrong " << body.block().header().id();
     }
   }
 }
@@ -105,7 +103,7 @@ void Bot::handler_transaction(const messages::Header &header,
     messages::Message message;
     messages::fill_header(message.mutable_header());
     message.add_bodies()->mutable_transaction()->CopyFrom(body.transaction());
-    send_all(message);
+    _networking.send_all(message);
   }
 }
 
@@ -122,7 +120,8 @@ bool Bot::update_ledger(const std::optional<messages::Hash> &missing_block) {
   get_block->mutable_hash()->CopyFrom(*missing_block);
   get_block->set_count(1);
 
-  if (!send_one(*message)) {
+  if (_networking.send_one(*message) ==
+      networking::TransportLayer::SendResult::FAILED) {
     LOG_INFO << "no bot found to ask block " << *message;
   }
 
@@ -280,32 +279,7 @@ void Bot::update_peerlist() {
   messages::Message msg;
   messages::fill_header(msg.mutable_header());
   msg.add_bodies()->mutable_get_peers();
-  send_one(msg);
-}
-
-bool Bot::send_one(const messages::Message &message) const {
-  auto peer_it = _peers.begin(messages::Peer::CONNECTED);
-  if (peer_it != _peers.end()) {
-    _networking.send(message, peer_it->connection_id());
-    return true;
-  } else {
-    return false;
-  }
-}
-
-bool Bot::send_all(const messages::Message &message) const {
-  const auto connected_peers = _peers.connected_peers();
-  if (connected_peers.empty()) {
-    return false;
-  }
-  bool result = true;
-  for (const auto peer : connected_peers) {
-    if (_networking.send(message, peer->connection_id()) !=
-        networking::TransportLayer::SendResult::ALL_GOOD) {
-      result = false;
-    }
-  }
-  return result;
+  _networking.send_one(msg);
 }
 
 void Bot::handler_get_peers(const messages::Header &header,
@@ -571,7 +545,8 @@ bool Bot::publish_transaction(const messages::Transaction &transaction) const {
   messages::fill_header(message.mutable_header());
   auto body = message.add_bodies();
   body->mutable_transaction()->CopyFrom(transaction);
-  return send_all(message);
+  return _networking.send_all(message) !=
+         networking::TransportLayer::SendResult::FAILED;
 }
 
 void Bot::publish_block(const messages::Block &block) const {
@@ -580,7 +555,7 @@ void Bot::publish_block(const messages::Block &block) const {
   messages::fill_header(message.mutable_header());
   auto body = message.add_bodies();
   body->mutable_block()->CopyFrom(block);
-  send_all(message);
+  _networking.send_all(message);
   LOG_INFO << "Publishing block " << block;
 }
 
