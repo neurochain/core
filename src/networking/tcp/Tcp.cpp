@@ -171,8 +171,14 @@ std::shared_ptr<messages::Peer> Tcp::find_peer(const Connection::ID id) {
 
 bool Tcp::serialize(const messages::Message &message, Buffer *header_tcp,
                     Buffer *body_tcp) const {
+
+
+  if(!message.IsInitialized() || message.header().version() == 0) {
+    std::cout << "trax> err ser>" << message.InitializationErrorString() << std::endl;
+    std::cout << "trax> d " << message.DebugString() << std::endl;
+  }
+
   // TODO: use 1 output buffer
-  LOG_DEBUG << this << " Before reinterpret and signing";
   auto header_pattern =
       reinterpret_cast<tcp::HeaderPattern *>(header_tcp->data());
   messages::to_buffer(message, body_tcp);

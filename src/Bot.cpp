@@ -92,9 +92,11 @@ void Bot::handler_block(const messages::Header &header,
 
   if (header.has_request_id()) {
     auto got = _request_ids.find(header.request_id());
-    if (got != _request_ids.end()) {
-      LOG_WARNING << "The request_id is wrong "
-                  << body.block().header().id();
+    if (got == _request_ids.end()) {
+      auto peer = _peers.find(header.key_pub());
+      LOG_WARNING << "The request_id is wrong " << std::endl
+		  << "warning " << header << std::endl
+		  << "warning " << *peer;
     }
   }
 }
@@ -117,16 +119,17 @@ bool Bot::update_ledger(const std::optional<messages::Hash> &missing_block) {
   auto message = std::make_shared<messages::Message>();
   auto header = message->mutable_header();
   auto idheader = messages::fill_header(header);
+  _request_ids.insert(idheader);
 
   auto get_block = message->add_bodies()->mutable_get_block();
   get_block->mutable_hash()->CopyFrom(*missing_block);
   get_block->set_count(1);
 
+  LOG_WARNING << "requesting block " << idheader << std::endl;
   if (!send_one(*message)) {
     LOG_INFO << "no bot found to ask block " << *message;
   }
 
-  _request_ids.insert(idheader);
   return false;
 }
 

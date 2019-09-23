@@ -84,6 +84,7 @@ void Connection::read_body(std::size_t body_size) {
 
         // validate the MessageVersion from the header
         if (header->version() != neuro::MessageVersion) {
+	  std::cout << "trax> bad message> " << message->DebugString() << std::endl;
           LOG_INFO << "Killing connection because received message from wrong "
                       "version ("
                    << header->version() << ") " << ip();
