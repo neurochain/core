@@ -74,14 +74,7 @@ void Bot::handler_get_block(const messages::Header &header,
 
 void Bot::handler_block(const messages::Header &header,
                         const messages::Body &body) {
-  messages::Message message;
-  auto header_reply = message.mutable_header();
-  messages::fill_header(header_reply);
-  message.add_bodies()->mutable_block()->CopyFrom(body.block());
-  if (!header.has_request_id()) {
-    send_all(message);
-  }
-
+  // bool reply_message = header.has_request_id();
   LOG_TRACE;
   if (!_consensus->add_block(body.block())) {
     LOG_WARNING << "Consensus rejected block"
@@ -99,6 +92,14 @@ void Bot::handler_block(const messages::Header &header,
 		  << "warning " << *peer;
     }
   }
+
+  messages::Message message;
+  auto header_reply = message.mutable_header();
+  auto id = messages::fill_header(header_reply);
+  message.add_bodies()->mutable_block()->CopyFrom(body.block());
+  _networking.send_all(message);
+
+  _request_ids.insert(id);
 }
 
 void Bot::handler_transaction(const messages::Header &header,
@@ -107,7 +108,7 @@ void Bot::handler_transaction(const messages::Header &header,
     messages::Message message;
     messages::fill_header(message.mutable_header());
     message.add_bodies()->mutable_transaction()->CopyFrom(body.transaction());
-    send_all(message);
+    _networking.send_all(message);
   }
 }
 
@@ -119,24 +120,22 @@ bool Bot::update_ledger(const std::optional<messages::Hash> &missing_block) {
   auto message = std::make_shared<messages::Message>();
   auto header = message->mutable_header();
   auto idheader = messages::fill_header(header);
-  _request_ids.insert(idheader);
 
   auto get_block = message->add_bodies()->mutable_get_block();
   get_block->mutable_hash()->CopyFrom(*missing_block);
   get_block->set_count(1);
 
-  LOG_WARNING << "requesting block " << idheader << std::endl;
-  if (!send_one(*message)) {
+  if (_networking.send_one(*message) ==
+      networking::TransportLayer::SendResult::FAILED) {
     LOG_INFO << "no bot found to ask block " << *message;
   }
 
+  _request_ids.insert(idheader);
   return false;
 }
 
 void Bot::update_ledger() {
-  const auto missing_blocks = _ledger->missing_blocks();
-  LOG_INFO << "Missing block count " << missing_blocks.size();
-  for (const auto &missing_block : missing_blocks) {
+  for (const auto &missing_block : _ledger->missing_blocks()) {
     update_ledger(missing_block);
   }
 }
@@ -283,32 +282,7 @@ void Bot::update_peerlist() {
   messages::Message msg;
   messages::fill_header(msg.mutable_header());
   msg.add_bodies()->mutable_get_peers();
-  send_one(msg);
-}
-
-bool Bot::send_one(const messages::Message &message) const {
-  auto peer_it = _peers.begin(messages::Peer::CONNECTED);
-  if (peer_it != _peers.end()) {
-    _networking.send(message, peer_it->connection_id());
-    return true;
-  } else {
-    return false;
-  }
-}
-
-bool Bot::send_all(const messages::Message &message) const {
-  const auto connected_peers = _peers.connected_peers();
-  if (connected_peers.empty()) {
-    return false;
-  }
-  bool result = true;
-  for (const auto peer : connected_peers) {
-    if (_networking.send(message, peer->connection_id()) !=
-        networking::TransportLayer::SendResult::ALL_GOOD) {
-      result = false;
-    }
-  }
-  return result;
+  _networking.send_one(msg);
 }
 
 void Bot::handler_get_peers(const messages::Header &header,
@@ -574,7 +548,8 @@ bool Bot::publish_transaction(const messages::Transaction &transaction) const {
   messages::fill_header(message.mutable_header());
   auto body = message.add_bodies();
   body->mutable_transaction()->CopyFrom(transaction);
-  return send_all(message);
+  return _networking.send_all(message) !=
+         networking::TransportLayer::SendResult::FAILED;
 }
 
 void Bot::publish_block(const messages::Block &block) const {
@@ -583,8 +558,7 @@ void Bot::publish_block(const messages::Block &block) const {
   messages::fill_header(message.mutable_header());
   auto body = message.add_bodies();
   body->mutable_block()->CopyFrom(block);
-  send_all(message);
-  LOG_INFO << "Publishing block " << block;
+  _networking.send_all(message);
 }
 
 ledger::Ledger *Bot::ledger() { return _ledger.get(); }
