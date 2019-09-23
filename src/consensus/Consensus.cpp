@@ -484,14 +484,12 @@ bool Consensus::verify_blocks() {
       continue;
     }
 
-    bool added_new_assembly = false;
     messages::AssemblyID assembly_id;
     messages::Assembly previous_assembly, previous_previous_assembly;
     if (is_new_assembly(tagged_block, previous)) {
       const messages::AssemblyHeight height =
           previous.block().header().height() / _config.blocks_per_assembly;
       _ledger->add_assembly(previous, height);
-      added_new_assembly = true;
       assembly_id = previous.block().header().id();
       if (!_ledger->get_assembly(previous.previous_assembly_id(),
                                  &previous_previous_assembly)) {
