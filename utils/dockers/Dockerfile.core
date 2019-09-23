@@ -8,7 +8,7 @@ LABEL Description "Generic Bot Image"
 USER neuro
 WORKDIR /home/neuro
 RUN mkdir conf
-COPY build/src/* ./
+COPY build_release/src/* ./
 COPY testnet/bot.json conf/bot.json
 COPY testnet/data.0.testnet conf/data.0.testnet
 COPY utils/dockers/entrypoint.sh entrypoint.sh

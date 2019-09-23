@@ -60,7 +60,7 @@ void Connection::read_body(std::size_t body_size) {
   _buffer.resize(body_size);
   boost::asio::async_read(
       *_socket, boost::asio::buffer(_buffer.data(), _buffer.size()),
-      [_this = ptr(), this](const boost::system::error_code &error,
+      [_this = ptr(), this, body_size](const boost::system::error_code &error,
                             std::size_t bytes_read) {
         if (error) {
           LOG_WARNING << this << " read body error " << error.message() << " "
@@ -84,7 +84,7 @@ void Connection::read_body(std::size_t body_size) {
 
         // validate the MessageVersion from the header
         if (header->version() != neuro::MessageVersion) {
-	  std::cout << "trax> bad message> " << message->DebugString() << std::endl;
+	  std::cout << "trax> bad message> " << body_size << " " << bytes_read <<" " << message->DebugString() << std::endl;
           LOG_INFO << "Killing connection because received message from wrong "
                       "version ("
                    << header->version() << ") " << ip();
