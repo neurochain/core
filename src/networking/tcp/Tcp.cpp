@@ -96,9 +96,13 @@ void Tcp::new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
 
     msg_header->set_connection_id(_current_id);
     auto remote_peer = std::make_shared<messages::Peer>(_config);
+    LOG_DEBUG << pretty_connections();
     auto connection = std::make_shared<tcp::Connection>(_current_id, _queue,
                                                         socket, remote_peer);
+    LOG_DEBUG << listening_port() << " NEW REMOTE CONNECTION "
+              << *connection->remote_port() << ":" << _current_id;
     _connections.insert(std::make_pair(_current_id, connection));
+    LOG_DEBUG << pretty_connections();
 
     auto connection_ready = msg_body->mutable_connection_ready();
 
@@ -127,9 +131,13 @@ void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
 
     msg_header->set_connection_id(_current_id);
     msg_header->mutable_key_pub()->CopyFrom(peer->key_pub());
+    LOG_DEBUG << pretty_connections();
     auto connection =
         std::make_shared<tcp::Connection>(_current_id, _queue, socket, peer);
+    LOG_DEBUG << listening_port() << " NEW LOCAL CONNECTION "
+              << *connection->remote_port() << ":" << _current_id;
     _connections.insert(std::make_pair(_current_id, connection));
+    LOG_DEBUG << pretty_connections();
 
     auto connection_ready = msg_body->mutable_connection_ready();
 
@@ -278,6 +286,7 @@ void Tcp::clean_old_connections(int delta) {
     auto remote_peer = connection->remote_peer();
     if ((connection->init_ts() < current_time) &&
         (remote_peer->status() != messages::Peer::CONNECTED)) {
+      LOG_TRACE << "CLEAN OLD CONNECTIONS TERMINATE";
       connection->terminate();
     }
   }
@@ -289,6 +298,15 @@ void Tcp::clean_old_connections(int delta) {
  * \return the number of active connexion
  */
 std::size_t Tcp::peer_count() const { return _connections.size(); }
+
+std::vector<messages::Peer *> Tcp::peers() const {
+  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
+  std::vector<messages::Peer *> peers;
+  for (const auto &[_, connection] : _connections) {
+    peers.push_back(connection->remote_peer().get());
+  }
+  return peers;
+}
 
 void Tcp::stop() {
   std::unique_lock<std::mutex> lock_connection(_connections_mutex);
@@ -308,6 +326,17 @@ void Tcp::join() {
     _io_context_thread.join();
   }
   LOG_DEBUG << this << " TCP joined";
+}
+
+std::string Tcp::pretty_connections() {
+  std::stringstream result;
+  result << listening_port() << " PRETTY CONNECTIONS";
+  for (const auto &[id, connection] : _connections) {
+    auto peer = connection->remote_peer();
+    result << " " << id << ":" << peer->port() << ":"
+           << _Peer_Status_Name(peer->status()) << ":" << peer->connection_id();
+  }
+  return result.str();
 }
 
 Tcp::~Tcp() {

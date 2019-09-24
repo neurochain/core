@@ -82,7 +82,9 @@ class Tcp : public TransportLayer {
   std::shared_ptr<messages::Peer> find_peer(Connection::ID id);
   void clean_old_connections(int delta);
   std::size_t peer_count() const;
+  std::vector<messages::Peer *> peers() const;
   void join();
+  std::string pretty_connections();
   ~Tcp();
 
   friend class neuro::networking::test::Tcp;

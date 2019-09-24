@@ -20,7 +20,10 @@ namespace messages {
 class Queue;
 }  // namespace messages
 namespace networking {
+class Tcp;
+
 namespace tcp {
+
 using boost::asio::ip::tcp;
 
 class Connection : public networking::Connection,
@@ -39,7 +42,7 @@ class Connection : public networking::Connection,
  public:
   Connection(const ID id, messages::Queue* queue,
              const std::shared_ptr<tcp::socket>& socket,
-	     std::shared_ptr<messages::Peer> remote_peer);
+             std::shared_ptr<messages::Peer> remote_peer);
 
   std::shared_ptr<const tcp::socket> socket() const;
   void terminate() const;

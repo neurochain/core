@@ -34,7 +34,9 @@ class Networking {
   TransportLayer::SendResult send_one(const messages::Message &message) const;
   TransportLayer::SendResult send_all(const messages::Message &message) const;
   bool reply(std::shared_ptr<messages::Message> message) const;
-  messages::Peers connected_peers() const;
+  messages::Peers *connected_peers() const;
+  std::vector<messages::Peer *> peers() const;
+  std::string pretty_peers() const;
   std::size_t peer_count() const;
   void join();
 
