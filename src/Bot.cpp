@@ -309,6 +309,7 @@ void Bot::handler_peers(const messages::Header &header,
     messages::Peer peer(_config.networking(), remote_peer);
     _peers.upsert(peer);
   }
+  keep_max_connections();
 }
 
 void Bot::handler_connection(const messages::Header &header,
@@ -334,7 +335,11 @@ void Bot::handler_connection(const messages::Header &header,
     // There is already a connection with this bot
     if (peer->has_connection_id() &&
         peer->connection_id() == header.connection_id()) {
-      LOG_WARNING << "TOTORO I SHOULD NEVER GO THERE";
+      std::stringstream m;
+      m << "You should not be here: entering handler_connection with a "
+           "connected connection"
+        << *peer;
+      throw std::runtime_error(m.str());
       keep_max_connections();
       return;
     }
@@ -443,9 +448,6 @@ void Bot::handler_hello(const messages::Header &header,
   LOG_DEBUG << _me.port() << " NETWORKING PEERS " << _networking.pretty_peers()
             << std::endl;
   auto remote_peer_bot = _peers.find(header.key_pub());
-  LOG_DEBUG << _me.port() << " REMOTE PEER BOT " << *remote_peer_bot;
-  LOG_DEBUG << _me.port() << " REMOTE PEER CONNECTION "
-            << *remote_peer_connection;
 
   if (!remote_peer_connection) {
     LOG_WARNING << "Could not find peer we received message from";
