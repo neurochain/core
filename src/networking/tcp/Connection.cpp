@@ -218,6 +218,15 @@ const std::optional<Port> Connection::remote_port() const {
   return static_cast<Port>(endpoint.port());
 }
 
+const std::optional<Port> Connection::local_port() const {
+  boost::system::error_code ec;
+  const auto endpoint = _socket->local_endpoint(ec);
+  if (ec) {
+    return {};
+  }
+  return static_cast<Port>(endpoint.port());
+}
+
 std::shared_ptr<messages::Peer> Connection::remote_peer() const {
   return _remote_peer;
 }
@@ -225,7 +234,7 @@ std::shared_ptr<messages::Peer> Connection::remote_peer() const {
 std::shared_ptr<Connection> Connection::ptr() { return shared_from_this(); }
 
 Connection::~Connection() {
-  LOG_DEBUG << _socket->local_endpoint().port() << " CLOSING CONNECTION "
+  LOG_DEBUG << local_port().value_or(0) << " closing connection "
             << remote_port().value_or(0) << ":" << _id;
   close();
 }

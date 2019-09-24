@@ -53,6 +53,7 @@ class Connection : public networking::Connection,
   std::shared_ptr<messages::Peer> remote_peer() const;
   const std::optional<IP> remote_ip() const;
   const std::optional<Port> remote_port() const;
+  const std::optional<Port> local_port() const;
   const std::string ip() const;
   ~Connection();
 };
