@@ -55,8 +55,8 @@ std::vector<messages::Peer *> Networking::peers() const {
 std::string Networking::pretty_peers() const {
   std::stringstream result;
   for (const auto peer : peers()) {
-    result << " " << peer->port() << ":" << _Peer_Status_Name(peer->status())
-           << ":" << peer->connection_id();
+    result << " " << peer->endpoint() << ":" << peer->port() << ":"
+           << _Peer_Status_Name(peer->status()) << ":" << peer->connection_id();
   }
   return result.str();
 }
