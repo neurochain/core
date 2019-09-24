@@ -20,8 +20,6 @@ namespace messages {
 class Queue;
 }  // namespace messages
 namespace networking {
-class Tcp;
-
 namespace tcp {
 
 using boost::asio::ip::tcp;

@@ -96,11 +96,11 @@ void Tcp::new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
 
     msg_header->set_connection_id(_current_id);
     auto remote_peer = std::make_shared<messages::Peer>(_config);
-    LOG_DEBUG << pretty_connections();
     auto connection = std::make_shared<tcp::Connection>(_current_id, _queue,
                                                         socket, remote_peer);
-    LOG_DEBUG << listening_port() << " NEW REMOTE CONNECTION "
-              << *connection->remote_port() << ":" << _current_id;
+    LOG_DEBUG << listening_port() << " new remote connection "
+              << connection->remote_ip().value_or(0) << ":"
+              << connection->remote_port().value_or(0) << ":" << _current_id;
     _connections.insert(std::make_pair(_current_id, connection));
     LOG_DEBUG << pretty_connections();
 
@@ -131,10 +131,9 @@ void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
 
     msg_header->set_connection_id(_current_id);
     msg_header->mutable_key_pub()->CopyFrom(peer->key_pub());
-    LOG_DEBUG << pretty_connections();
     auto connection =
         std::make_shared<tcp::Connection>(_current_id, _queue, socket, peer);
-    LOG_DEBUG << listening_port() << " NEW LOCAL CONNECTION "
+    LOG_DEBUG << listening_port() << " new local connection "
               << *connection->remote_port() << ":" << _current_id;
     _connections.insert(std::make_pair(_current_id, connection));
     LOG_DEBUG << pretty_connections();
@@ -286,7 +285,6 @@ void Tcp::clean_old_connections(int delta) {
     auto remote_peer = connection->remote_peer();
     if ((connection->init_ts() < current_time) &&
         (remote_peer->status() != messages::Peer::CONNECTED)) {
-      LOG_TRACE << "CLEAN OLD CONNECTIONS TERMINATE";
       connection->terminate();
     }
   }
@@ -330,10 +328,10 @@ void Tcp::join() {
 
 std::string Tcp::pretty_connections() {
   std::stringstream result;
-  result << listening_port() << " PRETTY CONNECTIONS";
+  result << listening_port() << " pretty connections";
   for (const auto &[id, connection] : _connections) {
     auto peer = connection->remote_peer();
-    result << " " << id << ":" << peer->port() << ":"
+    result << " " << id << ":" << peer->endpoint() << ":" << peer->port() << ":"
            << _Peer_Status_Name(peer->status()) << ":" << peer->connection_id();
   }
   return result.str();
