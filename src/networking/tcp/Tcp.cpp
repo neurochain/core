@@ -298,13 +298,13 @@ void Tcp::clean_old_connections(int delta) {
  */
 std::size_t Tcp::peer_count() const { return _connections.size(); }
 
-std::vector<messages::Peer *> Tcp::peers() const {
+std::vector<std::shared_ptr<messages::Peer>> Tcp::remote_peers() const {
   std::unique_lock<std::mutex> lock_connection(_connections_mutex);
-  std::vector<messages::Peer *> peers;
+  std::vector<std::shared_ptr<messages::Peer>> remote_peers;
   for (const auto &[_, connection] : _connections) {
-    peers.push_back(connection->remote_peer().get());
+    remote_peers.push_back(connection->remote_peer());
   }
-  return peers;
+  return remote_peers;
 }
 
 void Tcp::stop() {

@@ -115,6 +115,7 @@ class Bot {
 
   const messages::Peer me() const;
   const messages::Peers &peers() const;
+  const messages::_Peers remote_peers() const;
   void keep_max_connections();
   std::vector<messages::Peer *> connected_peers();
   void subscribe(const messages::Type type,

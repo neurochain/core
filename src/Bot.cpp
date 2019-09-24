@@ -563,6 +563,16 @@ void Bot::keep_max_connections() {
 const messages::Peer Bot::me() const { return _me; }
 
 const messages::Peers &Bot::peers() const { return _peers; }
+
+const messages::_Peers Bot::remote_peers() const {
+  messages::_Peers peers;
+  const auto remote_peers = _networking.remote_peers();
+  for (const auto &remote_peer : remote_peers) {
+    peers.add_peers()->CopyFrom(*remote_peer);
+  }
+  return peers;
+}
+
 void Bot::subscribe(const messages::Type type,
                     messages::Subscriber::Callback callback) {
   _subscriber.subscribe(type, callback);
