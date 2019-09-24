@@ -190,6 +190,11 @@ void Bot::subscribe() {
       [this](const messages::Header &header, const messages::Body &body) {
         this->handler_peers(header, body);
       });
+  _subscriber.subscribe(
+      messages::Type::kHeartBeat,
+      [this](const messages::Header &header, const messages::Body &body) {
+        this->handler_heart_beat(header, body);
+      });
 }
 
 bool Bot::configure_networking(messages::config::Config *config) {
@@ -240,6 +245,16 @@ bool Bot::init() {
 }
 
 void Bot::regular_update() {
+  auto message = std::make_shared<messages::Message> ();
+  message->add_bodies()->mutable_heart_beat();
+  _queue.publish(message);
+  _update_timer.expires_at(_update_timer.expiry() +
+                           boost::asio::chrono::seconds(_update_time));
+  _update_timer.async_wait(boost::bind(&Bot::regular_update, this));
+}
+
+void Bot::handler_heart_beat(const messages::Header &header,
+                             const messages::Body &body) {
   _peers.update_unreachable();
   update_peerlist();
   update_ledger();
@@ -250,9 +265,6 @@ void Bot::regular_update() {
       rand() < _config.random_transaction() * float(RAND_MAX)) {
     send_random_transaction();
   }
-  _update_timer.expires_at(_update_timer.expiry() +
-                           boost::asio::chrono::seconds(_update_time));
-  _update_timer.async_wait(boost::bind(&Bot::regular_update, this));
 }
 
 void Bot::send_random_transaction() {
