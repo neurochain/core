@@ -99,7 +99,7 @@ void Tcp::new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
     auto connection = std::make_shared<tcp::Connection>(_current_id, _queue,
                                                         socket, remote_peer);
     LOG_DEBUG << listening_port() << " new remote connection "
-              << connection->remote_ip().value_or(0) << ":"
+              << connection->ip() << ":"
               << connection->remote_port().value_or(0) << ":" << _current_id;
     _connections.insert(std::make_pair(_current_id, connection));
     LOG_DEBUG << pretty_connections();
@@ -134,7 +134,8 @@ void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
     auto connection =
         std::make_shared<tcp::Connection>(_current_id, _queue, socket, peer);
     LOG_DEBUG << listening_port() << " new local connection "
-              << *connection->remote_port() << ":" << _current_id;
+              << connection->ip() << ":"
+              << connection->remote_port().value_or(0) << ":" << _current_id;
     _connections.insert(std::make_pair(_current_id, connection));
     LOG_DEBUG << pretty_connections();
 
