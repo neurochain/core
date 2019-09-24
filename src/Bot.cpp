@@ -245,7 +245,7 @@ bool Bot::init() {
 }
 
 void Bot::regular_update() {
-  auto message = std::make_shared<messages::Message> ();
+  auto message = std::make_shared<messages::Message>();
   message->add_bodies()->mutable_heart_beat();
   _queue.publish(message);
   _update_timer.expires_at(_update_timer.expiry() +
@@ -257,6 +257,7 @@ void Bot::handler_heart_beat(const messages::Header &header,
                              const messages::Body &body) {
   _peers.update_unreachable();
   update_peerlist();
+  keep_max_connections();
   update_ledger();
   _networking.clean_old_connections(
       _config.networking().keep_old_connection_time());
