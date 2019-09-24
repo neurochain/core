@@ -82,7 +82,6 @@ void Bot::handler_block(const messages::Header &header,
     _networking.send_all(message);
   }
 
-  LOG_TRACE;
   if (!_consensus->add_block(body.block())) {
     LOG_WARNING << "Consensus rejected block" << body.block().header().id();
     return;
@@ -258,7 +257,6 @@ void Bot::handler_heart_beat(const messages::Header &header,
                              const messages::Body &body) {
   _peers.update_unreachable();
   update_peerlist();
-  keep_max_connections();
   update_ledger();
   _networking.clean_old_connections(
       _config.networking().keep_old_connection_time());
@@ -322,6 +320,7 @@ void Bot::handler_peers(const messages::Header &header,
     messages::Peer peer(_config.networking(), remote_peer);
     _peers.upsert(peer);
   }
+  keep_max_connections();
 }
 
 void Bot::handler_connection(const messages::Header &header,
@@ -329,17 +328,28 @@ void Bot::handler_connection(const messages::Header &header,
   auto &connection_ready = body.connection_ready();
   if (connection_ready.from_remote()) {
     // ignore connection message; wait for an hello
+    keep_max_connections();
     return;
   }
 
   auto peer = _peers.find(header.key_pub());
   if (!peer) {
     LOG_WARNING << "Missing peer in handler_connection " << header.key_pub();
+    keep_max_connections();
     return;
   }
   if (peer->status() == messages::Peer::CONNECTED) {
     // There is already a connection with this bot
+    if (peer->has_connection_id() &&
+        peer->connection_id() == header.connection_id()) {
+      std::stringstream m;
+      m << "You should not be here: entering handler_connection with a "
+           "connected connection"
+        << *peer;
+      throw std::runtime_error(m.str());
+    }
     _networking.terminate(header.connection_id());
+    keep_max_connections();
     return;
   }
 
@@ -361,6 +371,10 @@ void Bot::handler_connection(const messages::Header &header,
 
 void Bot::handler_deconnection(const messages::Header &header,
                                const messages::Body &body) {
+  LOG_DEBUG << _me.port() << " bot peers " << _peers;
+  LOG_DEBUG << _me.port() << " networking peers " << _networking.pretty_peers()
+            << std::endl;
+
   if (header.has_connection_id()) {
     auto remote_peer = _networking.find_peer(header.connection_id());
     if (remote_peer) {
@@ -383,7 +397,7 @@ void Bot::handler_deconnection(const messages::Header &header,
   LOG_DEBUG << this << " : " << _me.port() << " " << __LINE__
             << " _networking.peer_count(): " << _networking.peer_count();
 
-  this->keep_max_connections();
+  keep_max_connections();
 }
 
 void Bot::handler_world(const messages::Header &header,
@@ -418,7 +432,7 @@ void Bot::handler_world(const messages::Header &header,
 
   update_ledger(_ledger->new_missing_block(world));
 
-  this->keep_max_connections();
+  keep_max_connections();
 }
 
 void Bot::handler_hello(const messages::Header &header,
@@ -434,8 +448,9 @@ void Bot::handler_hello(const messages::Header &header,
 
   if (remote_peer_bot && remote_peer_bot != remote_peer_connection) {
     if (remote_peer_bot->status() == messages::Peer::CONNECTED) {
-      LOG_DEBUG << "Refusing hello from a bot we are already connected to "
-                << remote_peer_bot.get();
+      LOG_DEBUG << _me.port()
+                << " Refusing hello from a bot we are already connected to "
+                << *remote_peer_bot;
       _networking.terminate(remote_peer_connection->connection_id());
       return;
     }
@@ -518,6 +533,10 @@ std::vector<messages::Peer *> Bot::connected_peers() {
 }
 
 void Bot::keep_max_connections() {
+  LOG_DEBUG << _me.port() << " bot peers " << _peers;
+  LOG_DEBUG << _me.port() << " networking peers " << _networking.pretty_peers()
+            << std::endl;
+
   const auto peer_count = _peers.used_peers_count();
   if (peer_count >= _max_connections) {
     LOG_INFO << this << " : " << _me.port() << " Already connected to "
