@@ -26,7 +26,7 @@ bool from_json(const std::string &json, Packet *packet) {
   return r.ok();
 }
 
-bool from_json_file(const std::string &path, Packet *packet) {
+bool from_json_file(const Path &path, Packet *packet) {
   std::ifstream t(path);
   std::string str((std::istreambuf_iterator<char>(t)),
                   std::istreambuf_iterator<char>());
@@ -63,9 +63,13 @@ std::optional<Buffer> to_buffer(const Packet &packet) {
   return std::make_optional(buffer);
 }
 
-void to_json(const Packet &packet, std::string *output) {
+void to_json(const Packet &packet, std::string *output, bool pretty) {
   try {
-    google::protobuf::util::MessageToJsonString(packet, output);
+    google::protobuf::util::JsonPrintOptions options;
+    if(pretty) {
+      options.add_whitespace = true;
+    }
+    google::protobuf::util::MessageToJsonString(packet, output, options);
   } catch (...) {
     auto buff = to_buffer(packet);
     if (!buff) {
@@ -77,9 +81,9 @@ void to_json(const Packet &packet, std::string *output) {
   }
 }
 
-std::string to_json(const Packet &packet) {
+std::string to_json(const Packet &packet, bool pretty) {
   std::string output;
-  to_json(packet, &output);
+  to_json(packet, &output, pretty);
   return output;
 }
 

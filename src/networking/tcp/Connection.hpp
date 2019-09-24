@@ -21,6 +21,7 @@ class Queue;
 }  // namespace messages
 namespace networking {
 namespace tcp {
+
 using boost::asio::ip::tcp;
 
 class Connection : public networking::Connection,
@@ -39,7 +40,7 @@ class Connection : public networking::Connection,
  public:
   Connection(const ID id, messages::Queue* queue,
              const std::shared_ptr<tcp::socket>& socket,
-	     std::shared_ptr<messages::Peer> remote_peer);
+             std::shared_ptr<messages::Peer> remote_peer);
 
   std::shared_ptr<const tcp::socket> socket() const;
   void terminate() const;
@@ -50,6 +51,7 @@ class Connection : public networking::Connection,
   std::shared_ptr<messages::Peer> remote_peer() const;
   const std::optional<IP> remote_ip() const;
   const std::optional<Port> remote_port() const;
+  const std::optional<Port> local_port() const;
   const std::string ip() const;
   ~Connection();
 };

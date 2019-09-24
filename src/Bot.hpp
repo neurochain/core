@@ -73,6 +73,8 @@ class Bot {
  private:
   bool init();
 
+  void handler_heart_beat(const messages::Header &header,
+			  const messages::Body &body);
   void handler_hello(const messages::Header &header,
                      const messages::Body &body);
   void handler_world(const messages::Header &header,

@@ -157,12 +157,14 @@ void LedgerMongodb::create_first_assemblies(
   assembly_minus_1.set_seed(0);
   assembly_minus_1.set_nb_key_pubs(key_pubs.size());
   assembly_minus_1.set_height(-1);
+  assembly_minus_1.set_finished_computation(true);
   assembly_minus_2.mutable_id()->CopyFrom(
       assembly_minus_1.previous_assembly_id());
   assembly_minus_2.set_finished_computation(true);
   assembly_minus_2.set_seed(0);
   assembly_minus_2.set_height(-2);
   assembly_minus_2.set_nb_key_pubs(key_pubs.size());
+  assembly_minus_2.set_finished_computation(true);
 
   // Insert the Piis
   for (const auto &assembly : {assembly_minus_1, assembly_minus_2}) {
@@ -253,8 +255,9 @@ void LedgerMongodb::create_indexes() {
   _blocks.create_index(bss::document{} << BRANCH_PATH + "." + BRANCH_IDS + ".0"
                                        << 1 << bss::finalize);
   _blocks.create_index(bss::document{} << SCORE << -1 << bss::finalize);
-  _blocks.create_index(bss::document{} << DENUNCIATIONS + "." + ID << 1
-                                       << bss::finalize);
+  _blocks.create_index(bss::document{}
+                       << BLOCK + "." + DENUNCIATIONS + "." + BLOCK_ID << 1
+                       << bss::finalize);
   _blocks.create_index(bss::document{} << BALANCES + "." + KEY_PUB << -1
                                        << BRANCH_PATH + "." + BRANCH_ID << -1
                                        << BRANCH_PATH + "." + BLOCK_NUMBER << -1
@@ -987,17 +990,19 @@ std::vector<messages::TaggedTransaction> LedgerMongodb::get_transaction_pool()
   return tagged_transactions;
 }
 
-std::size_t LedgerMongodb::get_transaction_pool(messages::Block *block,
-                                                const std::size_t size_limit) const {
+std::size_t LedgerMongodb::get_transaction_pool(
+    messages::Block *block, const std::size_t size_limit) const {
   std::lock_guard lock(_ledger_mutex);
   auto tagged_transactions = get_transaction_pool();
   for (const auto &tagged_transaction : tagged_transactions) {
     block->add_transactions()->CopyFrom(tagged_transaction.transaction());
-    if(block->ByteSizeLong() > size_limit) {
+    if (block->ByteSizeLong() > size_limit) {
       block->mutable_transactions()->RemoveLast();
-      if(block->transactions().size() == 0) {
-        LOG_WARNING << "transaction is so fat, it can't be alone in a block";
-        // TODO remove it from the pool
+      const auto transaction_size =
+          tagged_transaction.transaction().ByteSizeLong();
+      if (transaction_size > (size_limit / 2)) {
+        LOG_DEBUG << "big transaction " << transaction_size << " "
+                  << tagged_transaction.transaction();
       }
     }
   }
@@ -1012,12 +1017,19 @@ std::size_t LedgerMongodb::cleanup_transaction_pool() {
 }
 
 bool LedgerMongodb::insert_block(const messages::Block &block) {
+  const auto t0 = Timer::now();
   std::lock_guard lock(_ledger_mutex);
+  const auto t1 = Timer::now();
+  LOG_DEBUG << "Took " << (t1 - t0).count() / 1E6
+            << " ms to aquire lock in insert_block";
   messages::TaggedBlock tagged_block;
   tagged_block.mutable_block()->CopyFrom(block);
   tagged_block.set_branch(messages::Branch::DETACHED);
-  return insert_block(tagged_block) &&
-         set_branch_path(tagged_block.block().header());
+  bool result = insert_block(tagged_block) &&
+                set_branch_path(tagged_block.block().header());
+  LOG_DEBUG << "Insert block took " << (Timer::now() - t1).count() / 1E6
+            << " ms";
+  return result;
 }
 
 messages::BranchPath LedgerMongodb::fork_from(

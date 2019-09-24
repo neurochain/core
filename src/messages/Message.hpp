@@ -48,14 +48,14 @@ Type get_type(const Body &body);
 
 bool from_buffer(const Buffer &buffer, Packet *packet);
 bool from_json(const std::string &json, Packet *packet);
-bool from_json_file(const std::string &path, Packet *packet);
+bool from_json_file(const Path &path, Packet *packet);
 bool from_bson(const bsoncxx::document::value &doc, Packet *packet);
 bool from_bson(const bsoncxx::document::view &doc, Packet *packet);
 
 bool to_buffer(const Packet &packet, Buffer *buffer);
 std::optional<Buffer> to_buffer(const Packet &packet);
-void to_json(const Packet &packet, std::string *output);
-std::string to_json(const Packet &packet);
+void to_json(const Packet &packet, std::string *output, bool pretty = false);
+std::string to_json(const Packet &packet, bool pretty = false);
 bsoncxx::document::value to_bson(const Packet &packet);
 std::ostream &operator<<(std::ostream &os, const Packet &packet);
 

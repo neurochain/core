@@ -67,6 +67,10 @@ const KeyPub &Ecc::key_pub() const { return *_key_public; }
 KeyPriv *Ecc::mutable_key_priv() { return _key_private.get(); }
 KeyPub *Ecc::mutable_key_pub() { return _key_public.get(); }
 
+bool Ecc::save(const Path &dirpath) const {
+  return save({dirpath / "key.priv"}, {dirpath / "key.pub"});
+}
+  
 bool Ecc::save(const Path &filepath_private,
                const Path &filepath_public) const {
   if (!_key_private->save(filepath_private)) {

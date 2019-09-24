@@ -79,19 +79,17 @@ class Subscriber {
     const auto time = std::time(nullptr);
     for (const auto &body : message->bodies()) {
       const auto type = get_type(body);
-        bool process{true};
-        if (type == messages::Type::kTransaction ||
-            type == messages::Type::kBlock) {
-          process = is_new_body(time, body);
-        }
+      bool process{true};
+      if (type == messages::Type::kTransaction ||
+          type == messages::Type::kBlock) {
+        process = is_new_body(time, body);
+      }
 
-        if (process) {
-	  for (const auto &cb : _callbacks_by_type[type]) {
-	    cb(message->header(), body);
-	  }
-        } else {
-          LOG_ERROR << "message already seen" << *message;
+      if (process) {
+        for (const auto &cb : _callbacks_by_type[type]) {
+          cb(message->header(), body);
         }
+      }
     }
   }
 
