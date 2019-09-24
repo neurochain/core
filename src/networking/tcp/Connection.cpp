@@ -98,6 +98,8 @@ void Connection::read_body(std::size_t body_size) {
             if (ec) {
               LOG_DEBUG << "got an hello message from disconnected endpoint "
                         << ec.message() << std::endl;
+              _this->terminate();
+              return;
             } else {
               auto *hello = body.mutable_hello();
               hello->mutable_peer()->set_endpoint(
@@ -137,6 +139,7 @@ void Connection::read_body(std::size_t body_size) {
                     << _remote_peer->port() << "]: " << *message;
         } catch (...) {
           _this->_buffer.save("conf/crashed.proto");
+          _this->terminate();
           return;
         }
         message->mutable_header()->mutable_key_pub()->CopyFrom(
@@ -160,6 +163,8 @@ void Connection::read_body(std::size_t body_size) {
           LOG_WARNING << "Message was not sent to the queue because the sender "
                          "is not a connected peer "
                       << *message;
+          _this->terminate();
+          return;
         }
         _this->read_header();
       });
