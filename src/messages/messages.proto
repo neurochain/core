@@ -27,6 +27,9 @@ message _Peers {
   repeated _Peer peers = 1;
 }
 
+message HeartBeat {
+}
+
 // Ask for block hash
 // ------------------
 message GetRoots {
@@ -194,8 +197,10 @@ message Body {
     Block block = 9;
     ConnectionClosed connection_closed = 10;
     ConnectionReady connection_ready = 11;
-    BodyCount body_count = 12;
-    Publish publish = 13;
+    Publish publish = 12;
+    HeartBeat heart_beat = 13;
+    // should be last with hightest index
+    BodyCount body_count = 14;
   }
 }
 

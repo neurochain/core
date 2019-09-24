@@ -71,6 +71,9 @@ class Tcp : public TransportLayer {
   bool connect(std::shared_ptr<messages::Peer> peer);
   SendResult send(const messages::Message &message,
                   const Connection::ID id) const;
+  SendResult send_one(const messages::Message &message) const;
+  SendResult send_all(const messages::Message &message) const;
+
   bool reply(std::shared_ptr<messages::Message> message) const;
   Port listening_port() const;
   IP local_ip() const;
@@ -79,7 +82,9 @@ class Tcp : public TransportLayer {
   std::shared_ptr<messages::Peer> find_peer(Connection::ID id);
   void clean_old_connections(int delta);
   std::size_t peer_count() const;
+  std::vector<messages::Peer *> peers() const;
   void join();
+  std::string pretty_connections();
   ~Tcp();
 
   friend class neuro::networking::test::Tcp;

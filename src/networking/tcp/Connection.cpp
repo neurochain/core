@@ -46,7 +46,8 @@ void Connection::read_header() {
                       std::size_t bytes_read) {
         if (error) {
           LOG_WARNING << " read header error " << error.message() << " "
-                      << _this->ip();
+                      << _this->ip() << ":" << *_this->remote_port() << ":"
+                      << _this->id();
           _this->terminate();
           return;
         }
@@ -86,7 +87,9 @@ void Connection::read_body(std::size_t body_size) {
         if (header->version() != neuro::MessageVersion) {
           LOG_INFO << "Killing connection because received message from wrong "
                       "version ("
-                   << header->version() << ") " << ip();
+                   << header->version() << ") " << ip() << ":"
+                   << remote_port().value_or(0);
+          LOG_DEBUG << "HEADER " << header->DebugString();
           _this->terminate();
           return;
         }
@@ -104,9 +107,6 @@ void Connection::read_body(std::size_t body_size) {
                   endpoint.address().to_string());
               _remote_peer->CopyFrom(hello->peer());
               _remote_peer->set_connection_id(_id);
-              LOG_TRACE << "remote ip> "
-                        << _socket->remote_endpoint().address().to_string()
-                        << std::endl;
             }
           }
         }
@@ -114,8 +114,7 @@ void Connection::read_body(std::size_t body_size) {
         if (!_this->_remote_peer->has_key_pub()) {
           LOG_INFO
               << "Killing connection because received message without key pub "
-              << ip();
-          LOG_DEBUG << "TOTORO " << *(_this->_remote_peer) << *message;
+              << ip() << ":" << remote_port().value_or(0) << ":" << _id;
           _this->terminate();
           return;
         }
@@ -157,7 +156,8 @@ void Connection::read_body(std::size_t body_size) {
              is_world)) {
           _this->_queue->publish(message);
         } else {
-          LOG_WARNING << "Message was not sent to the queue because the sender "
+          LOG_WARNING << "Message from " << _remote_peer
+                      << " was not sent to the queue because the sender "
                          "is not a connected peer "
                       << *message;
         }
@@ -183,7 +183,8 @@ bool Connection::send(std::shared_ptr<Buffer> &message) {
 void Connection::close() { _socket->close(); }
 
 void Connection::terminate() const {
-  LOG_INFO << this << " " << _id << " Killing connection" << ip();
+  LOG_INFO << this << " " << _id << " Killing connection " << ip() << ":"
+           << remote_port().value_or(0);
   boost::system::error_code ec;
   _socket->shutdown(tcp::socket::shutdown_both, ec);
   if (ec) {
@@ -195,7 +196,7 @@ void Connection::terminate() const {
   header->set_connection_id(_id);
   auto body = message->add_bodies();
   body->mutable_connection_closed();
-
+  _remote_peer->set_status(messages::Peer::UNREACHABLE);
   _queue->publish(message);
 }
 
@@ -217,13 +218,26 @@ const std::optional<Port> Connection::remote_port() const {
   return static_cast<Port>(endpoint.port());
 }
 
+const std::optional<Port> Connection::local_port() const {
+  boost::system::error_code ec;
+  const auto endpoint = _socket->local_endpoint(ec);
+  if (ec) {
+    return {};
+  }
+  return static_cast<Port>(endpoint.port());
+}
+
 std::shared_ptr<messages::Peer> Connection::remote_peer() const {
   return _remote_peer;
 }
 
 std::shared_ptr<Connection> Connection::ptr() { return shared_from_this(); }
 
-Connection::~Connection() { close(); }
+Connection::~Connection() {
+  LOG_DEBUG << local_port().value_or(0) << " closing connection "
+            << remote_port().value_or(0) << ":" << _id;
+  close();
+}
 }  // namespace tcp
 }  // namespace networking
 }  // namespace neuro

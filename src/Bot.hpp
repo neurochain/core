@@ -75,6 +75,8 @@ class Bot {
  private:
   bool init();
 
+  void handler_heart_beat(const messages::Header &header,
+			  const messages::Body &body);
   void handler_hello(const messages::Header &header,
                      const messages::Body &body);
   void handler_world(const messages::Header &header,
@@ -102,8 +104,6 @@ class Bot {
   void update_ledger();
   bool update_ledger(const std::optional<messages::Hash> &missing_block);
   void update_peerlist();
-  bool send_one(const messages::Message &message) const;
-  bool send_all(const messages::Message &message) const;
 
  public:
   explicit Bot(NoInit,

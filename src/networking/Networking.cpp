@@ -30,12 +30,35 @@ TransportLayer::SendResult Networking::send(const messages::Message &message,
   return _transport_layer->send(message, id);
 }
 
+TransportLayer::SendResult Networking::send_one(
+    const messages::Message &message) const {
+  return _transport_layer->send_one(message);
+}
+
+TransportLayer::SendResult Networking::send_all(
+    const messages::Message &message) const {
+  return _transport_layer->send_all(message);
+}
+
 /**
  * count the number of active connexion (either accepted one or attempting one)
  * \return the number of active connexion
  */
 std::size_t Networking::peer_count() const {
   return _transport_layer->peer_count();
+}
+
+std::vector<messages::Peer *> Networking::peers() const {
+  return _transport_layer->peers();
+}
+
+std::string Networking::pretty_peers() const {
+  std::stringstream result;
+  for (const auto peer : peers()) {
+    result << " " << peer->port() << ":" << _Peer_Status_Name(peer->status())
+           << ":" << peer->connection_id();
+  }
+  return result.str();
 }
 
 void Networking::join() { _transport_layer->join(); }
