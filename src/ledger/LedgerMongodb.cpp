@@ -1108,11 +1108,12 @@ bool LedgerMongodb::set_branch_path(const messages::BlockHeader &block_header) {
   std::list <std::pair<messages::BlockHeader, messages::BranchPath>> block_headers;
   block_headers.push_back({block_header, branch_path});
 
-  bool result = true;
-  while(!block_headers.empty()){
-    result &= set_branch_path(&block_headers);
+  while (!block_headers.empty()){
+    if (!set_branch_path(&block_headers)) {
+      return false;   
+    }
   }
-  return result;
+  return true;
 }
 
 bool LedgerMongodb::get_unverified_blocks(
