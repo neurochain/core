@@ -79,6 +79,10 @@ class Ledger {
       return std::nullopt;
     }
 
+    if (_not_missing_blocks.count(tagged_block.block().header().id()) > 0) {
+      return std::nullopt;
+    }
+
     messages::TaggedBlock prev_tagged_block;
     if (!get_block(tagged_block.block().header().previous_block_hash(),
                    &prev_tagged_block, false)) {
@@ -88,12 +92,15 @@ class Ledger {
       return tagged_block.block().header().previous_block_hash();
     }
 
+    _not_missing_blocks.insert(tagged_block.block().header().id());
+
     return new_missing_block(prev_tagged_block);
   }
 
  protected:
   mutable std::recursive_mutex _missing_block_mutex;
   MissingBlocks _missing_blocks;
+  MissingBlocks _not_missing_blocks;
 
  public:
   Ledger() {}
