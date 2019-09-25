@@ -30,6 +30,9 @@ message _Peers {
 message HeartBeat {
 }
 
+message Ping {
+}
+
 // Ask for block hash
 // ------------------
 message GetRoots {
@@ -199,8 +202,9 @@ message Body {
     ConnectionReady connection_ready = 11;
     Publish publish = 12;
     HeartBeat heart_beat = 13;
+    Ping ping = 14;
     // should be last with hightest index
-    BodyCount body_count = 14;
+    BodyCount body_count = 15;
   }
 }
 

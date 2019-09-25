@@ -43,6 +43,9 @@ void Peer::set_status(::neuro::messages::_Peer_Status value) {
     case _Peer_Status_CONNECTING:
       update_timestamp(_config.connecting_next_update_time());
       break;
+    case _Peer_Status_CONNECTED:
+      update_timestamp(_config.connected_next_update_time());
+      break;
     default:
       update_timestamp(_config.default_next_update_time());
       break;
