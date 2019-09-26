@@ -276,11 +276,11 @@ TEST_F(LedgerMongodb, transactions) {
   tagged_transaction.set_is_coinbase(true);
   ledger->add_transaction(tagged_transaction);
   messages::Block block;
-  ledger->get_transaction_pool(&block, 256000);
+  ledger->get_transaction_pool(&block, 256000, 300);
   ASSERT_EQ(block.transactions_size(), 1);
   ASSERT_TRUE(ledger->delete_transaction(transaction0.id()));
   block.Clear();
-  ledger->get_transaction_pool(&block, 256000);
+  ledger->get_transaction_pool(&block, 256000, 300);
   ASSERT_EQ(block.transactions_size(), 0);
 }
 

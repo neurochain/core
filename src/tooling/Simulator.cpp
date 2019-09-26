@@ -110,7 +110,7 @@ messages::Block Simulator::new_block(
       last_block.block().header().id());
   header->set_height(height);
 
-  ledger->get_transaction_pool(&block, config.max_block_size);
+  ledger->get_transaction_pool(&block, config.max_block_size, config.max_transaction_per_block);
   consensus->cleanup_transactions(&block);
 
   messages::NCCValue total_fees = 0;
