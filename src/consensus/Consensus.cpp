@@ -70,7 +70,7 @@ bool Consensus::check_inputs(
   // Check that the sender have sufficient funds. There is no need to check it
   // when inserting a block because then the balances are checked in bulks. This
   // is used for cleaning up the transaction pool.
-  for (const auto input : tagged_transaction.transaction().inputs()) {
+  for (const auto &input : tagged_transaction.transaction().inputs()) {
     if (_ledger->get_balance(input.key_pub(), tip).value().value() <
         input.value().value()) {
       LOG_DEBUG << "In transaction " << tagged_transaction.transaction().id()
