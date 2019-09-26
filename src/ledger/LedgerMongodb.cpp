@@ -1803,7 +1803,7 @@ bool LedgerMongodb::add_balances(messages::TaggedBlock *tagged_block) {
                                   << bss::finalize;
     auto update_result =
         _blocks.update_one(std::move(filter), std::move(update));
-    if (!(update_result && update_result->modified_count() > 0)) {
+    if (!(update_result && update_result->matched_count() > 0)) {
       std::stringstream error_message;
       error_message << "Mongo failed to update block balances "
                     << tagged_block->block().header().id();
