@@ -245,7 +245,7 @@ bool Bot::init() {
 }
 
 void Bot::regular_update() {
-  auto message = std::make_shared<messages::Message> ();
+  auto message = std::make_shared<messages::Message>();
   message->add_bodies()->mutable_heart_beat();
   _queue.publish(message);
   _update_timer.expires_at(_update_timer.expiry() +
@@ -273,8 +273,16 @@ void Bot::send_random_transaction() {
     return;
   }
   const auto recipient = peers[rand() % peers.size()];
+  messages::NCCAmount amount_to_send;
+  if (_config.has_random_transaction_amount()) {
+    amount_to_send.CopyFrom(_config.random_transaction_amount());
+  } else {
+    amount_to_send.CopyFrom(messages::NCCAmount(100));
+  }
+
   const auto transaction = _ledger->send_ncc(
-      _keys[0].key_priv(), messages::_KeyPub(recipient->key_pub()), 0.5);
+      _keys[0].key_priv(), messages::_KeyPub(recipient->key_pub()),
+      amount_to_send);
   if (_consensus->add_transaction(transaction)) {
     LOG_DEBUG << this << " : " << _me.port() << " Sending random transaction "
               << transaction;

@@ -445,16 +445,25 @@ class Ledger {
   messages::Transaction send_ncc(
       const crypto::KeyPriv &sender_key_priv,
       const messages::_KeyPub &recipient_key_pub, const float ratio_to_send,
+
       const std::optional<messages::NCCAmount> &fees = {}) const {
     if (ratio_to_send < 0) {
       throw std::runtime_error("Cannot send_ncc with a ratio of " +
                                std::to_string(ratio_to_send));
     }
-    std::lock_guard<std::mutex> lock(_send_ncc_mutex);
     const auto sender_key_pub = sender_key_priv.make_key_pub();
-
     auto amount_to_send =
         messages::NCCAmount(balance(sender_key_pub).value() * ratio_to_send);
+    return send_ncc(sender_key_priv, recipient_key_pub, amount_to_send, fees);
+  }
+
+  messages::Transaction send_ncc(
+      const crypto::KeyPriv &sender_key_priv,
+      const messages::_KeyPub &recipient_key_pub,
+      const messages::NCCAmount &amount_to_send,
+      const std::optional<messages::NCCAmount> &fees = {}) const {
+    std::lock_guard<std::mutex> lock(_send_ncc_mutex);
+    const auto sender_key_pub = sender_key_priv.make_key_pub();
 
     auto transaction = build_transaction(sender_key_pub, recipient_key_pub,
                                          amount_to_send, fees);
