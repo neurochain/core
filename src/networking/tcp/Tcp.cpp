@@ -349,10 +349,10 @@ std::string Tcp::pretty_connections() {
     auto peer = connection->remote_peer();
     result << " " << id << ":" << peer->endpoint() << ":" << peer->port() << ":"
            << _Peer_Status_Name(peer->status()) << ":" << peer->connection_id();
-    if (id != peer->connection_id()) {
+    if (peer->has_connection_id() && id != peer->connection_id()) {
       std::stringstream m;
       m << "Connection id " << id
-        << " does not match the conection_id in the peer " << *peer;
+        << " does not match the connection_id in the peer " << *peer;
       throw std::runtime_error(m.str());
     }
   }
