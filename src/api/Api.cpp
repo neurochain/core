@@ -91,6 +91,8 @@ messages::Transaction Api::transaction(const messages::TransactionID &id) {
 
 const messages::Peers &Api::peers() const { return _bot->peers(); }
 
+const messages::_Peers Api::connections() const { return _bot->remote_peers(); }
+
 // messages::Transactions Api::transactions_in(const messages::_KeyPub &key_pub)
 // {
 

@@ -86,8 +86,7 @@ class LedgerMongodb : public Ledger {
 
   messages::BranchID new_branch_id() const;
 
-  bool set_branch_path(const messages::BlockHeader &block_header,
-                       const messages::BranchPath &branch_path);
+  bool set_branch_path(std::list <std::pair<messages::BlockHeader, messages::BranchPath>> *block_headers);
 
   bool set_branch_path(const messages::BlockHeader &block_header);
 

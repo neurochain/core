@@ -74,7 +74,8 @@ class Bot {
   bool init();
 
   void handler_heart_beat(const messages::Header &header,
-			  const messages::Body &body);
+                          const messages::Body &body);
+  void handler_ping(const messages::Header &header, const messages::Body &body);
   void handler_hello(const messages::Header &header,
                      const messages::Body &body);
   void handler_world(const messages::Header &header,
@@ -99,6 +100,7 @@ class Bot {
   void subscribe();
   void regular_update();
   void send_random_transaction();
+  void send_pings();
   void update_ledger();
   bool update_ledger(const std::optional<messages::Hash> &missing_block);
   void update_peerlist();
@@ -115,6 +117,7 @@ class Bot {
 
   const messages::Peer me() const;
   const messages::Peers &peers() const;
+  const messages::_Peers remote_peers() const;
   void keep_max_connections();
   std::vector<messages::Peer *> connected_peers();
   void subscribe(const messages::Type type,

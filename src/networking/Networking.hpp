@@ -38,6 +38,7 @@ class Networking {
   std::vector<messages::Peer *> peers() const;
   std::string pretty_peers() const;
   std::size_t peer_count() const;
+  std::vector<std::shared_ptr<messages::Peer>> remote_peers() const;
   void join();
 
   bool terminate(const Connection::ID id);

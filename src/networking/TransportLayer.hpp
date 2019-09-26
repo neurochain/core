@@ -43,7 +43,7 @@ class TransportLayer {
       const messages::Message& message) const = 0;
   virtual bool reply(std::shared_ptr<messages::Message> message) const = 0;
   virtual std::size_t peer_count() const = 0;
-  virtual std::vector<messages::Peer*> peers() const = 0;
+  virtual std::vector<std::shared_ptr<messages::Peer>> remote_peers() const = 0;
   virtual bool terminate(const Connection::ID id) = 0;
   virtual std::shared_ptr<messages::Peer> find_peer(
       const Connection::ID id) = 0;

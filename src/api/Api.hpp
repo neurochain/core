@@ -45,6 +45,7 @@ class Api {
       const messages::Transaction &transaction) final;
 
   virtual const messages::Peers &peers() const final;
+  virtual const messages::_Peers connections() const final;
 };
 
 }  // namespace api

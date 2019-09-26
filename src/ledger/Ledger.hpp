@@ -15,7 +15,7 @@ namespace ledger {
 class Ledger {
  public:
   using Functor = std::function<bool(const messages::TaggedTransaction &)>;
-  using MissingBlocks = std::unordered_set<messages::BlockID>;
+  using BlocksIds = std::unordered_set<messages::BlockID>;
   struct MainBranchTip {
     messages::TaggedBlock main_branch_tip;
     bool updated;
@@ -79,6 +79,10 @@ class Ledger {
       return std::nullopt;
     }
 
+    if (_seen_blocks.count(tagged_block.block().header().id()) > 0) {
+      return std::nullopt;
+    }
+
     messages::TaggedBlock prev_tagged_block;
     if (!get_block(tagged_block.block().header().previous_block_hash(),
                    &prev_tagged_block, false)) {
@@ -88,17 +92,20 @@ class Ledger {
       return tagged_block.block().header().previous_block_hash();
     }
 
+    _seen_blocks.insert(tagged_block.block().header().id());
+
     return new_missing_block(prev_tagged_block);
   }
 
  protected:
   mutable std::recursive_mutex _missing_block_mutex;
-  MissingBlocks _missing_blocks;
+  BlocksIds _missing_blocks;
+  BlocksIds _seen_blocks;
 
  public:
   Ledger() {}
 
-  const MissingBlocks missing_blocks() {
+  const BlocksIds missing_blocks() {
     std::lock_guard lock(_missing_block_mutex);
     const auto copy = _missing_blocks;
     return copy;

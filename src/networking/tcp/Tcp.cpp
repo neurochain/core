@@ -44,6 +44,7 @@ Tcp::Tcp(messages::Queue *queue, messages::Peers *peers, crypto::Ecc *keys,
 void Tcp::start_accept() {
   if (!_stopped) {
     _new_socket = std::make_shared<bai::tcp::socket>(_io_context);
+
     _acceptor.async_accept(
         *_new_socket.get(),
         boost::bind(&Tcp::accept, this, boost::asio::placeholders::error));
@@ -70,9 +71,14 @@ bool Tcp::connect(std::shared_ptr<messages::Peer> peer) {
   bai::tcp::resolver resolver(_io_context);
   bai::tcp::resolver::query query(peer->endpoint(),
                                   std::to_string(peer->port()));
-  bai::tcp::resolver::iterator endpoint_iterator = resolver.resolve(query);
-
+  boost::system::error_code ec;
+  bai::tcp::resolver::iterator endpoint_iterator = resolver.resolve(query, ec);
+  if (ec) {
+    LOG_WARNING << "Resolver failed " << ec;
+    return false;
+  }
   auto socket = std::make_shared<bai::tcp::socket>(_io_context);
+
   auto handler = [this, socket, peer = std::move(peer)](
                      boost::system::error_code error,
                      bai::tcp::resolver::iterator iterator) {
@@ -180,7 +186,6 @@ std::shared_ptr<messages::Peer> Tcp::find_peer(const Connection::ID id) {
 bool Tcp::serialize(const messages::Message &message, Buffer *header_tcp,
                     Buffer *body_tcp) const {
   // TODO: use 1 output buffer
-  LOG_DEBUG << this << " Before reinterpret and signing";
   auto header_pattern =
       reinterpret_cast<tcp::HeaderPattern *>(header_tcp->data());
   messages::to_buffer(message, body_tcp);
@@ -212,6 +217,7 @@ TransportLayer::SendResult Tcp::send(const messages::Message &message,
   }
   const auto port_opt = connection->remote_port();
   if (!port_opt) {
+    LOG_WARNING << "not sending message because there is no port";
     return SendResult::FAILED;
   }
   LOG_DEBUG << "Sending unicast [" << this->listening_port() << " -> "
@@ -221,6 +227,7 @@ TransportLayer::SendResult Tcp::send(const messages::Message &message,
       std::make_shared<Buffer>(sizeof(networking::tcp::HeaderPattern), 0);
   auto body_tcp = std::make_shared<Buffer>();
   if (!serialize(message, header_tcp.get(), body_tcp.get())) {
+    LOG_WARNING << "not sending message because we failed to serialize";
     return SendResult::FAILED;
   }
   if (connection->send(header_tcp) && connection->send(body_tcp)) {
@@ -288,6 +295,14 @@ void Tcp::clean_old_connections(int delta) {
         (remote_peer->status() != messages::Peer::CONNECTED)) {
       connection->terminate();
     }
+    if (remote_peer->status() == messages::Peer::CONNECTED &&
+        remote_peer->next_update().data() <
+            static_cast<int32_t>(std::time(nullptr))) {
+      LOG_DEBUG
+          << "Terminating connection, did not receive ping for too long from "
+          << *remote_peer;
+      connection->terminate();
+    }
   }
 }
 
@@ -298,13 +313,13 @@ void Tcp::clean_old_connections(int delta) {
  */
 std::size_t Tcp::peer_count() const { return _connections.size(); }
 
-std::vector<messages::Peer *> Tcp::peers() const {
+std::vector<std::shared_ptr<messages::Peer>> Tcp::remote_peers() const {
   std::unique_lock<std::mutex> lock_connection(_connections_mutex);
-  std::vector<messages::Peer *> peers;
+  std::vector<std::shared_ptr<messages::Peer>> remote_peers;
   for (const auto &[_, connection] : _connections) {
-    peers.push_back(connection->remote_peer().get());
+    remote_peers.push_back(connection->remote_peer());
   }
-  return peers;
+  return remote_peers;
 }
 
 void Tcp::stop() {
@@ -334,6 +349,12 @@ std::string Tcp::pretty_connections() {
     auto peer = connection->remote_peer();
     result << " " << id << ":" << peer->endpoint() << ":" << peer->port() << ":"
            << _Peer_Status_Name(peer->status()) << ":" << peer->connection_id();
+    if (id != peer->connection_id()) {
+      std::stringstream m;
+      m << "Connection id " << id
+        << " does not match the conection_id in the peer " << *peer;
+      throw std::runtime_error(m.str());
+    }
   }
   return result.str();
 }

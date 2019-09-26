@@ -474,6 +474,10 @@ bool Consensus::verify_blocks() {
       if (!_ledger->set_branch_invalid(tagged_block.block().header().id())) {
         throw std::runtime_error("Failed to mark a block as invalid");
       } else {
+        LOG_WARNING << "Invalid block in verify_blocks "
+                    << tagged_block.block().header().id() << " at height "
+                    << tagged_block.block().header().height();
+
         // The list of unverified blocks should have changed
         verify_blocks();
         return false;

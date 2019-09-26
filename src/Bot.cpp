@@ -195,6 +195,11 @@ void Bot::subscribe() {
       [this](const messages::Header &header, const messages::Body &body) {
         this->handler_heart_beat(header, body);
       });
+  _subscriber.subscribe(
+      messages::Type::kPing,
+      [this](const messages::Header &header, const messages::Body &body) {
+        this->handler_ping(header, body);
+      });
 }
 
 bool Bot::configure_networking(messages::config::Config *config) {
@@ -239,13 +244,11 @@ bool Bot::init() {
     LOG_INFO << "api launched on : " << _config.rest().port();
   }
 
-  this->keep_max_connections();
-
   return true;
 }
 
 void Bot::regular_update() {
-  auto message = std::make_shared<messages::Message> ();
+  auto message = std::make_shared<messages::Message>();
   message->add_bodies()->mutable_heart_beat();
   _queue.publish(message);
   _update_timer.expires_at(_update_timer.expiry() +
@@ -255,8 +258,10 @@ void Bot::regular_update() {
 
 void Bot::handler_heart_beat(const messages::Header &header,
                              const messages::Body &body) {
+  send_pings();
   _peers.update_unreachable();
   update_peerlist();
+  keep_max_connections();
   update_ledger();
   _networking.clean_old_connections(
       _config.networking().keep_old_connection_time());
@@ -265,6 +270,25 @@ void Bot::handler_heart_beat(const messages::Header &header,
       rand() < _config.random_transaction() * float(RAND_MAX)) {
     send_random_transaction();
   }
+}
+
+void Bot::handler_ping(const messages::Header &header,
+                       const messages::Body &body) {
+  auto remote_peer = _networking.find_peer(header.connection_id());
+  if (remote_peer) {
+    remote_peer->update_timestamp(
+        _config.networking().connected_next_update_time());
+  } else {
+    LOG_WARNING << "Remote peer not found in handler_ping "
+                << header.connection_id();
+  }
+}
+
+void Bot::send_pings() {
+  messages::Message message;
+  messages::fill_header(message.mutable_header());
+  message.add_bodies()->mutable_ping();
+  _networking.send_all(message);
 }
 
 void Bot::send_random_transaction() {
@@ -562,6 +586,16 @@ void Bot::keep_max_connections() {
 const messages::Peer Bot::me() const { return _me; }
 
 const messages::Peers &Bot::peers() const { return _peers; }
+
+const messages::_Peers Bot::remote_peers() const {
+  messages::_Peers peers;
+  const auto remote_peers = _networking.remote_peers();
+  for (const auto &remote_peer : remote_peers) {
+    peers.add_peers()->CopyFrom(*remote_peer);
+  }
+  return peers;
+}
+
 void Bot::subscribe(const messages::Type type,
                     messages::Subscriber::Callback callback) {
   _subscriber.subscribe(type, callback);

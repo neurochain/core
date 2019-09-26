@@ -48,15 +48,16 @@ std::size_t Networking::peer_count() const {
   return _transport_layer->peer_count();
 }
 
-std::vector<messages::Peer *> Networking::peers() const {
-  return _transport_layer->peers();
+std::vector<std::shared_ptr<messages::Peer>> Networking::remote_peers() const {
+  return _transport_layer->remote_peers();
 }
 
 std::string Networking::pretty_peers() const {
   std::stringstream result;
-  for (const auto peer : peers()) {
-    result << " " << peer->port() << ":" << _Peer_Status_Name(peer->status())
-           << ":" << peer->connection_id();
+  auto remote_peers = this->remote_peers();
+  for (const auto &peer : remote_peers) {
+    result << " " << peer->endpoint() << ":" << peer->port() << ":"
+           << _Peer_Status_Name(peer->status()) << ":" << peer->connection_id();
   }
   return result.str();
 }
