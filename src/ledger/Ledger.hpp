@@ -72,29 +72,30 @@ class Ledger {
   mutable std::mutex _send_ncc_mutex;
 
   std::optional<messages::Hash> new_missing_block(
-      const messages::TaggedBlock &tagged_block) {
-    if (tagged_block.branch() != messages::Branch::DETACHED) {
-      std::lock_guard lock(_missing_block_mutex);
-      _missing_blocks.erase(tagged_block.block().header().id());
-      return std::nullopt;
-    }
-
-    if (_seen_blocks.count(tagged_block.block().header().id()) > 0) {
-      return std::nullopt;
-    }
-
+      const messages::TaggedBlock &new_block) {
+    std::lock_guard lock(_missing_block_mutex);
+    messages::TaggedBlock tagged_block = new_block;
     messages::TaggedBlock prev_tagged_block;
-    if (!get_block(tagged_block.block().header().previous_block_hash(),
-                   &prev_tagged_block, false)) {
-      std::lock_guard lock(_missing_block_mutex);
-      _missing_blocks.insert(
-          tagged_block.block().header().previous_block_hash());
-      return tagged_block.block().header().previous_block_hash();
+    while (true) {
+      if (tagged_block.branch() != messages::Branch::DETACHED) {
+        _missing_blocks.erase(tagged_block.block().header().id());
+        return std::nullopt;
+      }
+
+      if (_seen_blocks.count(tagged_block.block().header().id()) > 0) {
+        return std::nullopt;
+      }
+
+      if (!get_block(tagged_block.block().header().previous_block_hash(),
+                     &prev_tagged_block, false)) {
+        _missing_blocks.insert(
+            tagged_block.block().header().previous_block_hash());
+        return tagged_block.block().header().previous_block_hash();
+      }
+
+      _seen_blocks.insert(tagged_block.block().header().id());
+      tagged_block = prev_tagged_block;
     }
-
-    _seen_blocks.insert(tagged_block.block().header().id());
-
-    return new_missing_block(prev_tagged_block);
   }
 
  protected:

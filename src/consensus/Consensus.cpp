@@ -637,23 +637,23 @@ bool Consensus::add_block(const messages::Block &block) {
   // Check the transactions order before inserting because the order is lost at
   // insertion
   if (!check_transactions_order(block)) {
-    LOG_WARNING << "failed to add block du to transaction order : " << block;
+    LOG_WARNING << "failed to add block due to transaction order : " << block;
     return false;
   }
   if (!_ledger->insert_block(block)) {
-    LOG_WARNING << "failed to add block du to insert_block : " << block;
+    LOG_WARNING << "failed to add block due to insert_block : " << block;
     return false;
   }
   if (!verify_blocks()) {
-    LOG_WARNING << "failed to add block du to verify_block : " << block;
+    LOG_WARNING << "failed to add block due to verify_block : " << block;
     return false;
   }
   if (!_ledger->update_main_branch()) {
-    LOG_WARNING << "failed to add block du to update_main_branch : " << block;
+    LOG_WARNING << "failed to add block due to update_main_branch : " << block;
     return false;
   }
   if (!add_double_mining(block)) {
-    LOG_WARNING << "failed to add block du to double mining : " << block;
+    LOG_WARNING << "failed to add block due to double mining : " << block;
     return false;
   }
   return true;
