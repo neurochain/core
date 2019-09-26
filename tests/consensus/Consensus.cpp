@@ -249,7 +249,7 @@ class Consensus : public testing::Test {
 
     transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
                                    simulator.key_pubs[1], 1, fees);
-    ASSERT_TRUE(consensus->add_transaction(transaction));
+    ASSERT_FALSE(consensus->add_transaction(transaction));
   }
 
   messages::TaggedTransaction new_tagged_transaction() {

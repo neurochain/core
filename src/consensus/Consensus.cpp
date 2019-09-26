@@ -64,6 +64,25 @@ bool Consensus::check_outputs(
   return result;
 }
 
+bool Consensus::check_inputs(
+    const messages::TaggedTransaction &tagged_transaction,
+    const messages::TaggedBlock &tip) const {
+  // Check that the sender have sufficient funds. There is no need to check it
+  // when inserting a block because then the balances are checked in bulks. This
+  // is used for cleaning up the transaction pool.
+  for (const auto &input : tagged_transaction.transaction().inputs()) {
+    if (_ledger->get_balance(input.key_pub(), tip).value().value() <
+        input.value().value()) {
+      LOG_DEBUG << "In transaction " << tagged_transaction.transaction().id()
+                << " input " << input.key_pub()
+                << " has insufficient funds at block "
+                << tip.block().header().id();
+      return false;
+    }
+  }
+  return true;
+}
+
 bool Consensus::check_signatures(
     const messages::TaggedTransaction &tagged_transaction) const {
   bool result = crypto::verify(tagged_transaction.transaction());
@@ -614,7 +633,9 @@ bool Consensus::add_transaction(const messages::Transaction &transaction) {
   messages::TaggedTransaction tagged_transaction;
   tagged_transaction.set_is_coinbase(false);
   tagged_transaction.mutable_transaction()->CopyFrom(transaction);
-  return is_valid(tagged_transaction, _ledger->get_main_branch_tip()) &&
+  const auto &tip = _ledger->get_main_branch_tip();
+  return is_valid(tagged_transaction, tip) &&
+         check_inputs(tagged_transaction, tip) &&
          _ledger->add_to_transaction_pool(transaction);
 }
 
@@ -665,7 +686,7 @@ void Consensus::start_compute_pii_thread() {
           LOG_DEBUG << "Starting assembly computations " << assemblies[0].id();
           compute_assembly_pii(assemblies[0]);
           LOG_DEBUG << "Finished assembly computations " << assemblies[0].id();
-          cleanup_expired_transactions();
+          cleanup_transaction_pool();
         } else {
           std::unique_lock cv_lock(_is_stopped_mutex);
           _is_stopped_cv.wait_for(cv_lock, _config.compute_pii_sleep,
@@ -906,6 +927,8 @@ bool Consensus::cleanup_transactions(messages::Block *block) const {
       LOG_INFO << "Transaction " << transaction
                << " not included in the block because of insufficient funds";
 
+      _ledger->delete_transaction(transaction.id());
+
       // Reverse balance change
       for (const auto &input : transaction.inputs()) {
         balances[input.key_pub()] += input.value().value();
@@ -1104,10 +1127,11 @@ void Consensus::mine_blocks() {
   }
 }
 
-void Consensus::cleanup_expired_transactions() {
+void Consensus::cleanup_transaction_pool() {
   const auto &tip = _ledger->get_main_branch_tip();
   for (const auto &tagged_transaction : _ledger->get_transaction_pool()) {
-    if (!is_unexpired(tagged_transaction.transaction(), tip.block(), tip)) {
+    if (!is_unexpired(tagged_transaction.transaction(), tip.block(), tip) ||
+        !check_inputs(tagged_transaction, tip)) {
       _ledger->delete_transaction(tagged_transaction.transaction().id());
     }
   }
