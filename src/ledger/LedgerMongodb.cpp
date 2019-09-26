@@ -981,6 +981,7 @@ std::vector<messages::TaggedTransaction> LedgerMongodb::get_transaction_pool()
   auto options = remove_OID();
   options.sort(bss::document{} << TRANSACTION + "." + FEES << -1
                                << bss::finalize);
+  options.limit(100);
   auto cursor = _transactions.find(std::move(query), options);
 
   for (const auto &bson_transaction : cursor) {
