@@ -166,15 +166,30 @@ class LedgerMongodb : public ::testing::Test {
     auto &key_pub1 = simulator.key_pubs[1];
 
     // Check that a block does not empty the transaction pool
-    ASSERT_EQ(ledger->get_transaction_pool().size(), 0);
+    {
+      auto cursor = ledger->get_transaction_pool();
+      ASSERT_TRUE(cursor.begin() == cursor.end());
+    }
     auto block1 = simulator.new_block();
     ASSERT_TRUE(simulator.consensus->add_transaction(
         ledger->send_ncc(simulator.keys[0].key_priv(), key_pub1, 0.5)));
-    ASSERT_EQ(ledger->get_transaction_pool().size(), 1);
+    {
+      auto transactions = ledger->get_transaction_pool();
+      ASSERT_FALSE(transactions.begin() == transactions.end()); // See WTF00
+      ASSERT_TRUE(transactions.begin() == transactions.end());
+    }
     ASSERT_TRUE(simulator.consensus->add_block(block1));
-    ASSERT_EQ(ledger->get_transaction_pool().size(), 1);
+
+    {
+      auto transactions = ledger->get_transaction_pool();
+      ASSERT_FALSE(transactions.begin() == transactions.end()); // See WTF00
+      ASSERT_TRUE(transactions.begin() == transactions.end());
+    }
     ASSERT_EQ(ledger->cleanup_transaction_pool(), 1);
-    ASSERT_EQ(ledger->get_transaction_pool().size(), 0);
+    {
+      auto transactions = ledger->get_transaction_pool();
+      ASSERT_TRUE(transactions.begin() == transactions.end());
+    }
   }
 };
 
@@ -659,7 +674,10 @@ TEST_F(LedgerMongodb, balance) {
   ASSERT_EQ(block.transactions_size(), 1);
   bool author_index = block.coinbase().outputs(0).key_pub() != key_pub0;
   ASSERT_TRUE(simulator.consensus->add_block(block));
-  ASSERT_EQ(ledger->get_transaction_pool().size(), 0);
+  {
+    auto transactions = ledger->get_transaction_pool();
+    ASSERT_TRUE(transactions.begin() == transactions.end());
+  }
   int balance0 = 100 * (!author_index);
   int balance1 = 2 * ncc_block0.value() + 100 * author_index;
   ASSERT_EQ(ledger->balance(key_pub0).value(), balance0);

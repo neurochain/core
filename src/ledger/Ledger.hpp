@@ -12,6 +12,8 @@
 namespace neuro {
 namespace ledger {
 
+template <class M>class Cursor;
+
 class Ledger {
  public:
   using Functor = std::function<bool(const messages::TaggedTransaction &)>;
@@ -21,6 +23,7 @@ class Ledger {
     bool updated;
   };
 
+  
   class Filter {
    private:
     std::optional<messages::_KeyPub> _output_key_pub;
@@ -213,10 +216,9 @@ class Ledger {
   virtual bool add_to_transaction_pool(
       const messages::Transaction &transaction) = 0;
   virtual bool delete_transaction(const messages::TransactionID &id) = 0;
-  virtual std::size_t get_transaction_pool(
-      messages::Block *block, const std::size_t size_limit) const = 0;
-  virtual std::vector<messages::TaggedTransaction> get_transaction_pool()
-      const = 0;
+  virtual Cursor<messages::TaggedTransaction> get_transaction_pool() const = 0;
+  virtual std::size_t get_transaction_pool(messages::Block *block,
+				   const std::size_t size_limit) const = 0;
 
   // virtual bool get_blocks(int start, int size,
   // std::vector<messages::Block> &blocks) = 0;

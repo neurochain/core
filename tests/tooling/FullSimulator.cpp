@@ -44,8 +44,9 @@ class FullSimulator : public ::testing::Test {
       auto height = bot->_ledger->height();
       ASSERT_EQ(height, 0);
       auto transactions = bot->ledger()->get_transaction_pool();
-      ASSERT_EQ(transactions.size(), 0);
+      ASSERT_TRUE(transactions.begin() == transactions.end());
     }
+
     simulator.bots[0]->send_random_transaction();
     std::this_thread::sleep_for(1s);
     for (const auto &bot : simulator.bots) {
@@ -53,9 +54,14 @@ class FullSimulator : public ::testing::Test {
       auto height = bot->_ledger->height();
       ASSERT_EQ(height, 0);
       auto transactions = bot->ledger()->get_transaction_pool();
-      ASSERT_EQ(transactions.size(), 1);
+      // from mongodb's documentation WTF00
+      // If begin() is called more than once, the cursor::iterator
+      // returned points to the next remaining result, not the
+      // result of the original call to begin().
+      ASSERT_FALSE(transactions.begin() == transactions.end());
+      ASSERT_TRUE(transactions.begin() == transactions.end());
     }
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 17; i++) {
       simulator.bots[1]->send_random_transaction();
     }
     std::this_thread::sleep_for(1s);
@@ -64,7 +70,11 @@ class FullSimulator : public ::testing::Test {
       auto height = bot->_ledger->height();
       ASSERT_EQ(height, 0);
       auto transactions = bot->ledger()->get_transaction_pool();
-      ASSERT_EQ(transactions.size(), 11);
+      std::size_t c = 0;
+      while (transactions.begin() != transactions.end()) {
+	c++;
+      }
+      ASSERT_EQ(c, 17);
     }
   }
 };
