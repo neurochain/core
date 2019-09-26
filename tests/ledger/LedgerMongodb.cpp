@@ -175,15 +175,20 @@ class LedgerMongodb : public ::testing::Test {
         ledger->send_ncc(simulator.keys[0].key_priv(), key_pub1, 0.5)));
     {
       auto transactions = ledger->get_transaction_pool();
-      ASSERT_FALSE(transactions.begin() == transactions.end()); // See WTF00
-      ASSERT_TRUE(transactions.begin() == transactions.end());
+      auto it = transactions.begin();
+      
+      ASSERT_FALSE(it == transactions.end());
+      ++it;
+      ASSERT_TRUE(it == transactions.end());
     }
     ASSERT_TRUE(simulator.consensus->add_block(block1));
 
     {
       auto transactions = ledger->get_transaction_pool();
-      ASSERT_FALSE(transactions.begin() == transactions.end()); // See WTF00
-      ASSERT_TRUE(transactions.begin() == transactions.end());
+      auto it = transactions.begin();
+      ASSERT_FALSE(it == transactions.end());
+      ++it;
+      ASSERT_TRUE(it == transactions.end());
     }
     ASSERT_EQ(ledger->cleanup_transaction_pool(), 1);
     {

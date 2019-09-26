@@ -984,7 +984,7 @@ Cursor<messages::TaggedTransaction> LedgerMongodb::get_transaction_pool()
   options.limit(100);
   auto cursor = _transactions.find(std::move(query), options);
 
-  return Cursor<messages::TaggedTransaction>(cursor);
+  return Cursor<messages::TaggedTransaction>(std::move(cursor));
 }
 
 std::size_t LedgerMongodb::get_transaction_pool(

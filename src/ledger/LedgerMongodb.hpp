@@ -38,19 +38,19 @@ class LedgerMongodb;
 template <typename M>
 class Cursor {
  private:
-  mongocxx::cursor &_cursor;    
+  mongocxx::cursor _cursor;    
 
  public:
-  Cursor (mongocxx::cursor &cursor) :
-      _cursor(cursor) {}
+  Cursor (mongocxx::cursor &&cursor) :
+      _cursor(std::move(cursor)) {}
 
   class iterator {
    private:
     mongocxx::cursor::iterator _mongo_iterator;
 
    public:
-    iterator(mongocxx::cursor::iterator &&mongo_iterator) :
-	_mongo_iterator(mongo_iterator) {}
+    explicit iterator(mongocxx::cursor::iterator &mongo_iterator) :
+	_mongo_iterator(std::move(mongo_iterator)) {}
 
     void operator++() {_mongo_iterator++;}
     bool operator==(const iterator &it) { return _mongo_iterator == it._mongo_iterator; }
@@ -65,11 +65,13 @@ class Cursor {
   };
       
   iterator begin() {
-    return iterator(std::move(_cursor.begin()));
+    auto df = _cursor.begin();
+    return iterator(df);
   }
 
   iterator end() {
-    return iterator(std::move(_cursor.end()));
+    auto df = _cursor.end();
+    return iterator(df);
   }
 };
 
