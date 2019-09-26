@@ -973,8 +973,8 @@ TEST_F(LedgerMongodb, compute_new_balance) {
   auto &key_pub0 = simulator.key_pubs[0];
   auto &key_pub1 = simulator.key_pubs[1];
 
-  simulator.consensus->add_transaction(
-      ledger->send_ncc(simulator.keys[0].key_priv(), key_pub1, 1));
+  ASSERT_TRUE(simulator.consensus->add_transaction(
+      ledger->send_ncc(simulator.keys[0].key_priv(), key_pub1, 1)));
   auto block = simulator.new_block();
   ASSERT_TRUE(simulator.consensus->add_block(block));
   messages::TaggedBlock tagged_block1;
@@ -989,8 +989,8 @@ TEST_F(LedgerMongodb, compute_new_balance) {
   auto enthalpy_begin_block1_address1 = std::stoi(balance1.enthalpy_begin());
   auto enthalpy_end_block1_address1 = std::stoi(balance1.enthalpy_end());
 
-  simulator.consensus->add_transaction(
-      ledger->send_ncc(simulator.keys[1].key_priv(), key_pub0, 0.5));
+  ASSERT_TRUE(simulator.consensus->add_transaction(
+      ledger->send_ncc(simulator.keys[1].key_priv(), key_pub0, 0.5)));
   block = simulator.new_block();
   ASSERT_TRUE(simulator.consensus->add_block(block));
   messages::TaggedBlock tagged_block2;
@@ -1021,11 +1021,11 @@ TEST_F(LedgerMongodb, compute_new_balance) {
 
   // try to spend more than we have (can be done if we receive more ncc in
   // the same block
-  simulator.consensus->add_transaction(
-      ledger->send_ncc(simulator.keys[0].key_priv(), key_pub0, 1.2));
+  ASSERT_TRUE(ledger->add_to_transaction_pool(
+      ledger->send_ncc(simulator.keys[0].key_priv(), key_pub0, 1.2)));
   double fee = 100;
-  simulator.consensus->add_transaction(ledger->send_ncc(
-      simulator.keys[1].key_priv(), key_pub0, 0.3, messages::NCCAmount(fee)));
+  ASSERT_TRUE(simulator.consensus->add_transaction(ledger->send_ncc(
+      simulator.keys[1].key_priv(), key_pub0, 0.3, messages::NCCAmount(fee))));
   block = simulator.new_block();
   ASSERT_TRUE(simulator.consensus->add_block(block));
   messages::TaggedBlock tagged_block3;
