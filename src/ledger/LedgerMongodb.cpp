@@ -968,7 +968,7 @@ bool LedgerMongodb::delete_transaction(const messages::TransactionID &id) {
   return did_delete;
 }
 
-Cursor<messages::TaggedTransaction> LedgerMongodb::get_transaction_pool(const std::size_t max_transactions)
+Cursor<messages::TaggedTransaction> LedgerMongodb::get_transaction_pool(const std::optional<std::size_t> max_transactions)
     const {
   // This method put the whole transaction pool in a block but does not cleanup
   // the transaction pool.
@@ -981,8 +981,8 @@ Cursor<messages::TaggedTransaction> LedgerMongodb::get_transaction_pool(const st
   auto options = remove_OID();
   options.sort(bss::document{} << TRANSACTION + "." + FEES << -1
                                << bss::finalize);
-  if(max_transactions != 0) {
-    options.limit(max_transactions);
+  if(max_transactions) {
+    options.limit(*max_transactions);
   }
   auto cursor = _transactions.find(std::move(query), options);
 

@@ -252,7 +252,7 @@ class LedgerMongodb : public Ledger {
 
   bool delete_transaction(const messages::TransactionID &id);
 
-  Cursor<messages::TaggedTransaction> get_transaction_pool(const std::size_t max_transactions = 0) const;
+  Cursor<messages::TaggedTransaction> get_transaction_pool(const std::optional<std::size_t> max_transactions = {}) const;
 
   std::size_t get_transaction_pool(messages::Block *block,
 				   const std::size_t size_limit,

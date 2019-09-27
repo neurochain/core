@@ -216,7 +216,7 @@ class Ledger {
   virtual bool add_to_transaction_pool(
       const messages::Transaction &transaction) = 0;
   virtual bool delete_transaction(const messages::TransactionID &id) = 0;
-  virtual Cursor<messages::TaggedTransaction> get_transaction_pool(const std::size_t size_limit = 0) const = 0;
+  virtual Cursor<messages::TaggedTransaction> get_transaction_pool(const std::optional<std::size_t> size_limit = {}) const = 0;
   virtual std::size_t get_transaction_pool(messages::Block *block,
                                            const std::size_t size_limit,
                                            const std::size_t max_transactions) const = 0;
