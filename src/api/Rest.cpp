@@ -38,7 +38,7 @@ std::string Rest::raw_data_to_json(std::string raw_data) const {
 void Rest::send(Response &response, const messages::Packet &packet) {
   response.headers().add<Http::Header::AccessControlAllowOrigin>("*");
   response.headers().add<Http::Header::ContentType>(MIME(Application, Json));
-  response.send(Pistache::Http::Code::Ok, messages::to_json(packet));
+  response.send(Pistache::Http::Code::Ok, messages::to_json(packet, true));
 }
 
 void Rest::send(Response &response, const std::string &value) {
