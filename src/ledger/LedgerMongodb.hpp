@@ -35,6 +35,47 @@ namespace tests {
 class LedgerMongodb;
 }
 
+template <typename M>
+class Cursor {
+ private:
+  mongocxx::cursor _cursor;    
+
+ public:
+  Cursor (mongocxx::cursor &&cursor) :
+      _cursor(std::move(cursor)) {}
+
+  class iterator {
+   private:
+    mongocxx::cursor::iterator _mongo_iterator;
+
+   public:
+    explicit iterator(mongocxx::cursor::iterator &mongo_iterator) :
+	_mongo_iterator(std::move(mongo_iterator)) {}
+
+    void operator++() {_mongo_iterator++;}
+    bool operator==(const iterator &it) { return _mongo_iterator == it._mongo_iterator; }
+    bool operator!=(const iterator &it) { return _mongo_iterator != it._mongo_iterator; }
+    M dereference() {
+      M message;
+      messages::from_bson(*_mongo_iterator, &message);
+      return message;
+    }
+    M operator*() {return dereference();}
+    M operator->() { return dereference();}
+  };
+      
+  iterator begin() {
+    auto df = _cursor.begin();
+    return iterator(df);
+  }
+
+  iterator end() {
+    auto df = _cursor.end();
+    return iterator(df);
+  }
+};
+
+  
 class LedgerMongodb : public Ledger {
   struct BalanceChange {
     messages::NCCValue positive = 0;
@@ -211,10 +252,11 @@ class LedgerMongodb : public Ledger {
 
   bool delete_transaction(const messages::TransactionID &id);
 
-  std::vector<messages::TaggedTransaction> get_transaction_pool() const;
+  Cursor<messages::TaggedTransaction> get_transaction_pool(const std::optional<std::size_t> max_transactions = {}) const;
 
   std::size_t get_transaction_pool(messages::Block *block,
-				   const std::size_t size_limit) const;
+				   const std::size_t size_limit,
+                                   const std::size_t max_transactions) const;
 
   bool get_unverified_blocks(
       std::vector<messages::TaggedBlock> *tagged_blocks) const;
