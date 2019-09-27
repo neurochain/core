@@ -134,7 +134,7 @@ messages::Status::Bot Monitoring::bot() const {
   messages::Status::Bot bot;
   resource_usage(&bot);
   bot.mutable_me()->CopyFrom(_bot->me());
-
+  bot.set_proto_version(neuro::MessageVersion);
   return bot;
 }
 
