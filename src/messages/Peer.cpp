@@ -65,7 +65,7 @@ void Peer::update_timestamp(std::time_t tick) {
 void Peer::update_unreachable(const std::time_t t) {
   if (next_update().data() < t) {
     const auto peer_status = status();
-    if (peer_status & Peer::UNREACHABLE) {
+    if ((peer_status & Peer::UNREACHABLE) && !has_connection_id()) {
       this->set_status(Peer::DISCONNECTED);
     } else if (peer_status & Peer::CONNECTING) {
       LOG_WARNING << this << " : " << port() << " connection timed out";

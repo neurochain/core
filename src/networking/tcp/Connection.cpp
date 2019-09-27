@@ -89,7 +89,6 @@ void Connection::read_body(std::size_t body_size) {
                       "version ("
                    << header->version() << ") " << ip() << ":"
                    << remote_port().value_or(0);
-          LOG_DEBUG << "HEADER " << header->DebugString();
           _this->terminate();
           return;
         }
@@ -202,6 +201,7 @@ void Connection::terminate() const {
   auto body = message->add_bodies();
   body->mutable_connection_closed();
   _remote_peer->set_status(messages::Peer::UNREACHABLE);
+  _remote_peer->clear_connection_id();
   _queue->publish(message);
 }
 
