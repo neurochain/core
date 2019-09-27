@@ -332,10 +332,10 @@ void Tcp::stop() {
     }
     join();
   }
-  LOG_DEBUG << this << " TCP stopped";
 }
 
 void Tcp::join() {
+  _io_context.stop();
   if (_io_context_thread.joinable()) {
     _io_context_thread.join();
   }
@@ -360,8 +360,9 @@ std::string Tcp::pretty_connections() {
 }
 
 Tcp::~Tcp() {
+  LOG_DEBUG << this << " trax> stopping TCP";
   stop();
-  LOG_DEBUG << this << " TCP killed";
+  LOG_DEBUG << this << " trax> TCP killed";
 }
 
 }  // namespace networking
