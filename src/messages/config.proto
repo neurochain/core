@@ -92,4 +92,5 @@ message _Config {
 
   // Probability of doing a random transaction during regular_update
   optional float random_transaction = 8;
+  optional _NCCAmount random_transaction_amount = 9;
 }

@@ -62,6 +62,9 @@ class Consensus {
   bool check_outputs(
       const messages::TaggedTransaction &tagged_transaction) const;
 
+  bool check_inputs(const messages::TaggedTransaction &tagged_transaction,
+                    const messages::TaggedBlock &tip) const;
+
   bool check_signatures(
       const messages::TaggedTransaction &tagged_transaction) const;
 
@@ -191,7 +194,7 @@ class Consensus {
 
   void mine_blocks();
 
-  void cleanup_expired_transactions();
+  void cleanup_transaction_pool();
 
   friend class neuro::consensus::tests::Consensus;
   friend class neuro::consensus::tests::RealtimeConsensus;
