@@ -403,7 +403,7 @@ TEST(INTEGRATION, connection_opportunity_update) {
   auto bot3 =
       std::make_unique<BotTest>("integration_propagation40.json", port_offset);
   sleep_for_boot();
-  std::this_thread::sleep_for(bot0->unreachable_timeout());
+  std::this_thread::sleep_for(bot0->unreachable_timeout() + 2s);
 
   ASSERT_TRUE(bot0->check_peers_ports({1338, 1339, 13340})) << bot0->peers();
   ASSERT_TRUE(bot1->check_peers_ports({1337, 1339, 13340})) << bot1->peers();
@@ -443,7 +443,7 @@ TEST(INTEGRATION, connection_reconfig) {
   auto bot2 = std::make_unique<BotTest>("bot2.json", port_offset);
   auto bot3 =
       std::make_unique<BotTest>("integration_propagation40.json", port_offset);
-  std::this_thread::sleep_for(2s);
+  std::this_thread::sleep_for(6s);
 
   ASSERT_TRUE(bot0->check_peers_ports({1338, 1339, 13340})) << bot0->peers();
   ASSERT_TRUE(bot1->check_peers_ports({1337, 1339, 13340})) << bot1->peers();
@@ -569,7 +569,9 @@ TEST(INTEGRATION, handler_get_block) {
   fake_bot_subscriber.subscribe(
       messages::Type::kBlock,
       [&](const messages::Header &header, const messages::Body &body) {
-        if (header.request_id() == get_block_id) {
+        LOG_DEBUG << "header " << header;
+        if (header.has_request_id() && header.request_id() == get_block_id) {
+          LOG_DEBUG << "received block " << body.block();
           ASSERT_EQ(fake_bot->block0(), body.block());
           received_block = true;
         }

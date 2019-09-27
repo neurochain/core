@@ -637,6 +637,9 @@ ledger::Ledger *Bot::ledger() { return _ledger.get(); }
 void Bot::join() { _networking.join(); }
 
 Bot::~Bot() {
+  LOG_DEBUG << this << " : " << _me.port() << " entering bot destructor "
+            << &_subscriber;
+
   _update_timer.cancel();
   _io_context->stop();
 
@@ -648,7 +651,7 @@ Bot::~Bot() {
   if (_io_context_thread.joinable()) {
     _io_context_thread.join();
   }
-  LOG_DEBUG << this << " : " << _me.port() << " From Bot destructor "
+  LOG_DEBUG << this << " : " << _me.port() << " leaving bot destructor "
             << &_subscriber;
 }
 

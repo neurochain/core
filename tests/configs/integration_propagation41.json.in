@@ -35,7 +35,7 @@
   },
   "database": {
     "url": "mongodb://localhost:27017/neuro",
-    "db_name": "neuro_tests_propa1339",
+    "db_name": "neuro_tests_propa13341",
     "block0_file": {
       "block_format": "PROTO",
       "block_path": "@CMAKE_CURRENT_BINARY_DIR@/data.0.testnet"

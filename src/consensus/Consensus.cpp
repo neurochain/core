@@ -590,6 +590,7 @@ void Consensus::init(bool start_threads) {
 }
 
 Consensus::~Consensus() {
+  LOG_DEBUG << this << " Entered consensus destructor";
   _is_compute_pii_stopped = true;
   _is_update_heights_stopped = true;
   _is_miner_stopped = true;
@@ -603,6 +604,7 @@ Consensus::~Consensus() {
   if (_miner_thread.joinable()) {
     _miner_thread.join();
   }
+  LOG_DEBUG << this << " Leaving consensus destructor";
 }
 
 bool Consensus::is_valid(const messages::TaggedTransaction &tagged_transaction,
