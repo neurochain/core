@@ -139,7 +139,7 @@ $ curl http://52.47.129.155:8080/total_nb_transactions
 
 ## Misc.
 ### Get the balance of a wallet
-**URL**: `/balance
+**URL**: `/balance`
 
 **method**: `GET`
 **query parameter: `pubkey`
@@ -151,19 +151,38 @@ $ curl http://localhost:8080/balance?pubkey=A5mc7ff4DMn9DyLq2qcbAUMyHfmzlvKKbLWu
 ```
 
 ### Get the balance of a wallet
-**URL**: `/balance
+**URL**: `/balance`
 
 **method**: `POST`
 **data**:
 ```
 {
-    hexData: <public key>
+    rawData: <public key>
 }
 ```
 **exemple**:
 ```
 $ curl 'http://localhost:8080/balance' --data '{"hexData":"0402368ae94009f1e32ef39826c057d6e3ff3b8ea1c9364f34dfebad765daf7e96a9f6abf90c855ab883044a25eee6aa338c0f8210303cc02687d648182abe0da0"}'
 {"value":"0"}
+```
+
+### Check if a key is valid
+**URL**: `/validate`
+
+**method**: `POST`
+**data**:
+```
+{
+    rawData: <public key>
+}
+```
+
+return a `406 Not acceptable` error code when key_pub is invalid
+
+**exemple**:
+```
+$ curl 'http://0.0.0.0:8080/validate' --data '{"rawData":"AlhV0BmXEIlOksGUtRrJqXy4UBfFFGue49H5TagwpSUH"}'
+invalid key
 ```
 
 ### Check if a bot is alive
