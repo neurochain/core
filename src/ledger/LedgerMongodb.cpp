@@ -77,6 +77,7 @@ std::recursive_mutex LedgerMongodb::_ledger_mutex{};
 LedgerMongodb::LedgerMongodb(const std::string &url, const std::string &db_name)
     : _uri(url),
       _client(_uri),
+      _db_name(db_name),
       _db(_client[db_name]),
       _blocks(_db.collection(BLOCKS)),
       _transactions(_db.collection(TRANSACTIONS)),
@@ -990,9 +991,11 @@ Cursor<messages::TaggedTransaction> LedgerMongodb::get_transaction_pool(
   if (max_transactions) {
     options.limit(*max_transactions);
   }
-  auto cursor = _transactions.find(std::move(query), options);
 
-  return Cursor<messages::TaggedTransaction>(std::move(cursor));
+  Cursor<messages::TaggedTransaction> cursor(_uri, _db_name, TRANSACTIONS);
+  cursor.find(std::move(query), options);
+
+  return cursor;
 }
 
 std::size_t LedgerMongodb::get_transaction_pool(
