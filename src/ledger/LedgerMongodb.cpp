@@ -987,7 +987,7 @@ Cursor<messages::TaggedTransaction> LedgerMongodb::get_transaction_pool(
   }
 
   Cursor<messages::TaggedTransaction> cursor(_uri, _db_name, TRANSACTIONS);
-  cursor.collection()->find(std::move(query), options);
+  cursor.find(std::move(query), options);
 
   return cursor;
 }
