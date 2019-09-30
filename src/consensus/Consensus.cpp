@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <future>
 #include <random>
 #include <thread>
 
@@ -476,8 +477,22 @@ messages::BlockScore Consensus::get_block_score(
   return previous.score() + 1;
 }
 
+void Consensus::process_blocks() {
+  std::lock_guard<std::mutex> lock(_process_blocks_mutex);
+
+  // Use wait_for() with zero milliseconds to check thread status.
+  if (_process_blocks_future.valid() &&
+      _process_blocks_future.wait_for(0ms) != std::future_status::ready) {
+    return;
+  }
+
+  auto _process_blocks_future = std::async(std::launch::async, [this]() {
+    verify_blocks();
+    _ledger->update_main_branch();
+  });
+}
+
 bool Consensus::verify_blocks() {
-  std::lock_guard<std::recursive_mutex> lock(_verify_blocks_mutex);
   std::vector<messages::TaggedBlock> tagged_blocks;
   _ledger->get_unverified_blocks(&tagged_blocks);
   for (auto &tagged_block : tagged_blocks) {
@@ -604,6 +619,9 @@ Consensus::~Consensus() {
   if (_miner_thread.joinable()) {
     _miner_thread.join();
   }
+  if (_process_blocks_future.valid()) {
+    _process_blocks_future.wait();
+  }
   LOG_DEBUG << this << " Leaving consensus destructor";
 }
 
@@ -656,7 +674,7 @@ bool Consensus::add_double_mining(const messages::Block &block) {
   return true;
 }
 
-bool Consensus::add_block(const messages::Block &block) {
+bool Consensus::add_block(const messages::Block &block, bool async) {
   // Check the transactions order before inserting because the order is lost at
   // insertion
   if (!check_transactions_order(block)) {
@@ -667,19 +685,32 @@ bool Consensus::add_block(const messages::Block &block) {
     LOG_WARNING << "failed to add block due to insert_block : " << block;
     return false;
   }
-  if (!verify_blocks()) {
-    LOG_WARNING << "failed to add block due to verify_block : " << block;
-    return false;
-  }
-  if (!_ledger->update_main_branch()) {
-    LOG_WARNING << "failed to add block due to update_main_branch : " << block;
-    return false;
-  }
   if (!add_double_mining(block)) {
     LOG_WARNING << "failed to add block due to double mining : " << block;
     return false;
   }
+  if (async) {
+    process_blocks();
+  } else {
+    if (!verify_blocks()) {
+      LOG_WARNING << "failed to add block due to verify_block : " << block;
+      return false;
+    }
+    if (!_ledger->update_main_branch()) {
+      LOG_WARNING << "failed to add block due to update_main_branch : "
+                  << block;
+      return false;
+    }
+  }
   return true;
+}
+
+bool Consensus::add_block(const messages::Block &block) {
+  return add_block(block, false);
+}
+
+bool Consensus::add_block_async(const messages::Block &block) {
+  return add_block(block, true);
 }
 
 void Consensus::start_compute_pii_thread() {
@@ -975,7 +1006,8 @@ bool Consensus::build_block(const crypto::Ecc &keys,
   header->mutable_previous_block_hash()->CopyFrom(last_block_header.id());
   header->mutable_timestamp()->set_data(std::time(nullptr));
 
-  _ledger->get_transaction_pool(block, _config.max_block_size, _config.max_transaction_per_block);
+  _ledger->get_transaction_pool(block, _config.max_block_size,
+                                _config.max_transaction_per_block);
   if (!cleanup_transactions(block)) {
     LOG_WARNING
         << "Failed to cleanup_transactions while mining block with height "
@@ -1015,6 +1047,9 @@ void Consensus::start_update_heights_thread() {
   if (!_update_heights_thread.joinable()) {
     _update_heights_thread = std::thread([this]() {
       while (!_is_update_heights_stopped) {
+        // Makes sure process blocks is called regularly
+        process_blocks();
+
         update_heights_to_write();
         std::unique_lock cv_lock(_is_stopped_mutex);
         _is_stopped_cv.wait_for(cv_lock, _config.update_heights_sleep,
@@ -1111,7 +1146,7 @@ bool Consensus::mine_block(const messages::Block &block0) {
   LOG_DEBUG << "_publish_block took " << (Timer::now() - t0).count() / 1E6
             << " ms";
   const auto t1 = Timer::now();
-  add_block(new_block);
+  add_block_async(new_block);
   LOG_DEBUG << "add_block took " << (Timer::now() - t1).count() / 1E6 << " ms";
 
   LOG_INFO << "Mined block successfully with id " << new_block.header().id()
