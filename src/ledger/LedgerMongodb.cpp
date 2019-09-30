@@ -968,8 +968,8 @@ bool LedgerMongodb::delete_transaction(const messages::TransactionID &id) {
   return did_delete;
 }
 
-Cursor<messages::TaggedTransaction> LedgerMongodb::get_transaction_pool(const std::optional<std::size_t> max_transactions)
-    const {
+Cursor<messages::TaggedTransaction> LedgerMongodb::get_transaction_pool(
+    const std::optional<std::size_t> max_transactions) const {
   // This method put the whole transaction pool in a block but does not cleanup
   // the transaction pool.
   // TODO add a way to limit the number of transactions you want to include
@@ -981,7 +981,7 @@ Cursor<messages::TaggedTransaction> LedgerMongodb::get_transaction_pool(const st
   auto options = remove_OID();
   options.sort(bss::document{} << TRANSACTION + "." + FEES << -1
                                << bss::finalize);
-  if(max_transactions) {
+  if (max_transactions) {
     options.limit(*max_transactions);
   }
   auto cursor = _transactions.find(std::move(query), options);
@@ -994,7 +994,8 @@ std::size_t LedgerMongodb::get_transaction_pool(
     const std::size_t max_transactions) const {
   std::lock_guard lock(_ledger_mutex);
   std::size_t transaction_count = 0;
-  for (const auto &tagged_transaction : get_transaction_pool(max_transactions)) {
+  for (const auto &tagged_transaction :
+       get_transaction_pool(max_transactions)) {
     block->add_transactions()->CopyFrom(tagged_transaction.transaction());
     transaction_count++;
     if (block->ByteSizeLong() > size_limit) {
@@ -1528,11 +1529,13 @@ bool LedgerMongodb::denunciation_exists(
     const messages::BlockHeight &max_block_height,
     const messages::BranchPath &branch_path) const {
   std::lock_guard lock(_ledger_mutex);
-  auto query = bss::document{} << BLOCK + "." + DENUNCIATIONS + "." + BLOCK_ID
-                               << to_bson(denunciation.block_id())
-                               << BLOCK + "." + HEADER + "." + HEIGHT
-                               << bss::open_document << $LTE << max_block_height
-                               << bss::close_document << bss::finalize;
+  auto query = bss::document{}
+               << BLOCK + "." + DENUNCIATIONS + "." + BLOCK_ID
+               << to_bson(denunciation.block_id()) << BRANCH_PATH
+               << bss::open_document << $EXISTS << true << bss::close_document
+               << BLOCK + "." + HEADER + "." + HEIGHT << bss::open_document
+               << $LTE << max_block_height << bss::close_document
+               << bss::finalize;
 
   auto cursor = _blocks.find(std::move(query), projection(BRANCH_PATH));
   for (const auto &bson_branch_path : cursor) {
