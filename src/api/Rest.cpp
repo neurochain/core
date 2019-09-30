@@ -111,6 +111,7 @@ void Rest::post_validate_key(const Request &req, Response res) {
 
   crypto::KeyPub key_pub(key_pub_message);
   if (key_pub.validate()) {
+    res.headers().add<Http::Header::AccessControlAllowOrigin>("*");
     res.send(Pistache::Http::Code::Ok);
   } else {
     res.headers().add<Http::Header::AccessControlAllowOrigin>("*");
