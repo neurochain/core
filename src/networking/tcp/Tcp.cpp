@@ -330,12 +330,13 @@ void Tcp::stop() {
     for (auto &[_, connection] : _connections) {
       connection->terminate();
     }
+    _io_context.stop();
+    
     join();
   }
 }
 
 void Tcp::join() {
-  _io_context.stop();
   if (_io_context_thread.joinable()) {
     _io_context_thread.join();
   }
