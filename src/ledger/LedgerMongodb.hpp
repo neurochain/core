@@ -238,7 +238,8 @@ class LedgerMongodb : public Ledger {
   std::size_t total_nb_transactions() const;
 
   std::size_t total_nb_blocks() const;
-
+  std::size_t total_nb_transactions_legacy() const;
+  
   bool for_each(const Filter &filter, const messages::TaggedBlock &tip,
                 bool include_transaction_pool, Functor functor) const;
 
