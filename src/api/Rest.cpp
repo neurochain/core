@@ -63,6 +63,8 @@ void Rest::setupRoutes() {
   Get(_router, "/balance", bind(&Rest::get_balance, this));
   Post(_router, "/balance", bind(&Rest::post_balance, this));
   Options(_router, "/balance", bind(&Rest::allow_option, this));
+  Post(_router, "/validate", bind(&Rest::post_validate_key, this));
+  Options(_router, "/validate", bind(&Rest::allow_option, this));
   Get(_router, "/ready", bind(&Rest::get_ready, this));
   Post(_router, "/create_transaction",
        bind(&Rest::get_create_transaction, this));
@@ -100,6 +102,22 @@ void Rest::get_balance(const Request &req, Response res) {
   }
   const auto balance_amount = balance(public_key);
   send(res, balance_amount);
+}
+
+void Rest::post_validate_key(const Request &req, Response res) {
+  messages::_KeyPub key_pub_message;
+  if (!messages::from_json(req.body(), &key_pub_message)) {
+    bad_request(res, "could not parse body");
+  }
+
+  crypto::KeyPub key_pub(key_pub_message);
+  if (key_pub.validate()) {
+    res.headers().add<Http::Header::AccessControlAllowOrigin>("*");
+    res.send(Pistache::Http::Code::Ok);
+  } else {
+    res.headers().add<Http::Header::AccessControlAllowOrigin>("*");
+    res.send(Pistache::Http::Code::Not_Acceptable, "invalid key");
+  }
 }
 
 void Rest::post_balance(const Request &req, Response res) {
