@@ -57,8 +57,11 @@ class Cursor {
   
   bool find(bsoncxx::document::view_or_value filter,
 	    const mongocxx::options::find &options=mongocxx::options::find()) {
+    if(!_cursor) {
+      return false;
+    }
     _cursor = std::make_optional(_collection.find(filter, options));
-    return (_cursor.begin() == _cursor.end());
+    return true;
   }
 
   class iterator {
