@@ -173,6 +173,11 @@ bool KeyPub::verify(const Buffer &data, const Buffer &signature) const {
   return verify(data, signature.data(), signature.size());
 }
 
+bool KeyPub::validate() const {
+  CryptoPP::AutoSeededRandomPool prng;
+  return _key.Validate(prng, 3);
+}
+
 bool KeyPub::operator==(const KeyPub &key) const {
   CryptoPP::ByteQueue queue0, queue1;
   _key.Save(queue0);
