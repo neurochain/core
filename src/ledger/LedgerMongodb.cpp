@@ -804,6 +804,12 @@ bool LedgerMongodb::get_transaction(const messages::TransactionID &id,
 
 std::size_t LedgerMongodb::total_nb_transactions() const {
   std::lock_guard lock(_ledger_mutex);
+  auto query = bss::document{}  << bss::finalize;
+  return _transactions.count(std::move(query));
+}
+
+std::size_t LedgerMongodb::total_nb_transactions_legacy() const {
+  std::lock_guard lock(_ledger_mutex);
   auto lookup = bss::document{} << FROM << BLOCKS << FOREIGN_FIELD
                                 << BLOCK + "." + HEADER + "." + ID
                                 << LOCAL_FIELD << BLOCK_ID << AS << TAGGED_BLOCK
@@ -822,7 +828,7 @@ std::size_t LedgerMongodb::total_nb_transactions() const {
   pipeline.group(group.view());
   auto cursor = _transactions.aggregate(pipeline);
   return (*cursor.begin())[COUNT].get_int32();
-}
+}  
 
 std::size_t LedgerMongodb::total_nb_blocks() const {
   std::lock_guard lock(_ledger_mutex);
