@@ -38,25 +38,23 @@ class LedgerMongodb;
 template <typename M>
 class Cursor {
  private:
-  std::optional<mongocxx::cursor> _cursor;    
+  std::optional<mongocxx::cursor> _cursor;
   mutable mongocxx::client _client;
   mutable mongocxx::database _db;
   mutable mongocxx::collection _collection;
-  
- public:
-  Cursor (const mongocxx::uri &_uri,
-	  const std::string &db_name,
-	  const std::string &collection_name):
-          _client(_uri),
-	  _db(_client[db_name]),
-	  _collection(_db.collection(collection_name)) {}
 
-  mongocxx::collection *collection() {
-    return &_collection;
-  }
-  
-  bool find(bsoncxx::document::view_or_value filter,
-	    const mongocxx::options::find &options=mongocxx::options::find()) {
+ public:
+  Cursor(const mongocxx::uri &_uri, const std::string &db_name,
+         const std::string &collection_name)
+      : _client(_uri),
+        _db(_client[db_name]),
+        _collection(_db.collection(collection_name)) {}
+
+  mongocxx::collection *collection() { return &_collection; }
+
+  bool find(
+      bsoncxx::document::view_or_value filter,
+      const mongocxx::options::find &options = mongocxx::options::find()) {
     _cursor = std::make_optional(_collection.find(filter, options));
     return true;
   }
@@ -66,21 +64,25 @@ class Cursor {
     mongocxx::cursor::iterator _mongo_iterator;
 
    public:
-    explicit iterator(mongocxx::cursor::iterator &mongo_iterator) :
-	_mongo_iterator(std::move(mongo_iterator)) {}
+    explicit iterator(mongocxx::cursor::iterator &mongo_iterator)
+        : _mongo_iterator(std::move(mongo_iterator)) {}
 
-    void operator++() {_mongo_iterator++;}
-    bool operator==(const iterator &it) { return _mongo_iterator == it._mongo_iterator; }
-    bool operator!=(const iterator &it) { return _mongo_iterator != it._mongo_iterator; }
+    void operator++() { _mongo_iterator++; }
+    bool operator==(const iterator &it) {
+      return _mongo_iterator == it._mongo_iterator;
+    }
+    bool operator!=(const iterator &it) {
+      return _mongo_iterator != it._mongo_iterator;
+    }
     M dereference() {
       M message;
       messages::from_bson(*_mongo_iterator, &message);
       return message;
     }
-    M operator*() {return dereference();}
-    M operator->() { return dereference();}
+    M operator*() { return dereference(); }
+    M operator->() { return dereference(); }
   };
-  
+
   iterator begin() {
     auto df = _cursor->begin();
     return iterator(df);
@@ -92,7 +94,6 @@ class Cursor {
   }
 };
 
-  
 class LedgerMongodb : public Ledger {
   struct BalanceChange {
     messages::NCCValue positive = 0;
@@ -133,8 +134,6 @@ class LedgerMongodb : public Ledger {
   bool is_main_branch(
       const messages::TaggedTransaction &tagged_transaction) const;
 
-  int fill_block_transactions(messages::Block *block) const;
-
   bool get_block(const messages::BlockHeight height,
                  const messages::BranchPath &branch_path,
                  messages::TaggedBlock *tagged_block,
@@ -145,7 +144,9 @@ class LedgerMongodb : public Ledger {
 
   messages::BranchID new_branch_id() const;
 
-  bool set_branch_path(std::list <std::pair<messages::BlockHeader, messages::BranchPath>> *block_headers);
+  bool set_branch_path(
+      std::list<std::pair<messages::BlockHeader, messages::BranchPath>>
+          *block_headers);
 
   bool set_branch_path(const messages::BlockHeader &block_header);
 
@@ -257,7 +258,7 @@ class LedgerMongodb : public Ledger {
 
   std::size_t total_nb_blocks() const;
   std::size_t total_nb_transactions_legacy() const;
-  
+
   bool for_each(const Filter &filter, const messages::TaggedBlock &tip,
                 bool include_transaction_pool, Functor functor) const;
 
@@ -271,14 +272,14 @@ class LedgerMongodb : public Ledger {
 
   bool delete_transaction(const messages::TransactionID &id);
 
-  Cursor<messages::TaggedTransaction> get_transaction_pool(const std::optional<std::size_t> max_transactions = {}) const;
+  Cursor<messages::TaggedTransaction> get_transaction_pool(
+      const std::optional<std::size_t> max_transactions = {}) const;
 
   std::size_t get_transaction_pool(messages::Block *block,
-				   const std::size_t size_limit,
+                                   const std::size_t size_limit,
                                    const std::size_t max_transactions) const;
 
-  bool get_unverified_blocks(
-      std::vector<messages::TaggedBlock> *tagged_blocks) const;
+  Cursor<messages::TaggedBlock> get_unverified_blocks() const;
 
   bool set_block_verified(const messages::BlockID &id,
                           const messages::BlockScore &score,
@@ -371,6 +372,8 @@ class LedgerMongodb : public Ledger {
       const messages::TaggedBlock &tagged_block) const;
 
   bool add_balances(messages::TaggedBlock *tagged_block);
+
+  int fill_block_transactions(messages::Block *block) const;
 
   friend class neuro::ledger::tests::LedgerMongodb;
 };

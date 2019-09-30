@@ -805,7 +805,7 @@ bool LedgerMongodb::get_transaction(const messages::TransactionID &id,
 
 std::size_t LedgerMongodb::total_nb_transactions() const {
   std::lock_guard lock(_ledger_mutex);
-  auto query = bss::document{}  << bss::finalize;
+  auto query = bss::document{} << bss::finalize;
   return _transactions.count(std::move(query));
 }
 
@@ -829,7 +829,7 @@ std::size_t LedgerMongodb::total_nb_transactions_legacy() const {
   pipeline.group(group.view());
   auto cursor = _transactions.aggregate(pipeline);
   return (*cursor.begin())[COUNT].get_int32();
-}  
+}
 
 std::size_t LedgerMongodb::total_nb_blocks() const {
   std::lock_guard lock(_ledger_mutex);
@@ -1152,21 +1152,17 @@ bool LedgerMongodb::set_branch_path(const messages::BlockHeader &block_header) {
   return true;
 }
 
-bool LedgerMongodb::get_unverified_blocks(
-    std::vector<messages::TaggedBlock> *tagged_blocks) const {
+Cursor<messages::TaggedBlock> LedgerMongodb::get_unverified_blocks() const {
   std::lock_guard lock(_ledger_mutex);
   auto query = bss::document{} << BRANCH << UNVERIFIED_BRANCH_NAME
                                << bss::finalize;
   auto options = remove_balances();
   options.sort(bss::document{} << BLOCK + "." + HEADER + "." + HEIGHT << 1
                                << bss::finalize);
-  auto result = _blocks.find(std::move(query), options);
-  for (const auto &bson_block : result) {
-    auto &tagged_block = tagged_blocks->emplace_back();
-    from_bson(bson_block, &tagged_block);
-    fill_block_transactions(tagged_block.mutable_block());
-  }
-  return true;
+
+  Cursor<messages::TaggedBlock> cursor(_uri, _db_name, BLOCKS);
+  cursor.find(std::move(query), options);
+  return cursor;
 }
 
 bool LedgerMongodb::set_block_verified(

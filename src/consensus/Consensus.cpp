@@ -493,9 +493,9 @@ void Consensus::process_blocks() {
 }
 
 bool Consensus::verify_blocks() {
-  std::vector<messages::TaggedBlock> tagged_blocks;
-  _ledger->get_unverified_blocks(&tagged_blocks);
-  for (auto &tagged_block : tagged_blocks) {
+  auto tagged_blocks = _ledger->get_unverified_blocks();
+  for (auto tagged_block : tagged_blocks) {
+    _ledger->fill_block_transactions(tagged_block.mutable_block());
     messages::TaggedBlock previous;
     if (!_ledger->get_block(tagged_block.block().header().previous_block_hash(),
                             &previous, false)) {

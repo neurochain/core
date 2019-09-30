@@ -15,6 +15,17 @@ namespace neuro {
 namespace ledger {
 namespace tests {
 
+template <typename M>
+int cursor_size(Cursor<M> cursor) {
+  int size = 0;
+  auto it = cursor.begin();
+  while (it != cursor.end()) {
+    ++it;
+    size++;
+  }
+  return size;
+}
+
 class LedgerMongodb : public ::testing::Test {
  public:
   const std::string db_url = "mongodb://mongo:27017";
@@ -176,7 +187,7 @@ class LedgerMongodb : public ::testing::Test {
     {
       auto transactions = ledger->get_transaction_pool();
       auto it = transactions.begin();
-      
+
       ASSERT_FALSE(it == transactions.end());
       ++it;
       ASSERT_TRUE(it == transactions.end());
@@ -430,8 +441,7 @@ TEST_F(LedgerMongodb, get_unverified_blocks) {
   ASSERT_TRUE(ledger->get_block(block2.header().id(), &tagged_block));
   ASSERT_EQ(tagged_block.branch(), messages::Branch::DETACHED);
   std::vector<messages::TaggedBlock> unscored_forks;
-  ASSERT_TRUE(ledger->get_unverified_blocks(&unscored_forks));
-  ASSERT_EQ(unscored_forks.size(), 0);
+  ASSERT_EQ(cursor_size(ledger->get_unverified_blocks()), 0);
 
   // Insert the block1 which should attach the block2
   ASSERT_TRUE(ledger->insert_block(block1));
@@ -441,20 +451,17 @@ TEST_F(LedgerMongodb, get_unverified_blocks) {
   ASSERT_TRUE(ledger->get_block(block2.header().id(), &tagged_block));
   ASSERT_EQ(tagged_block.branch(), messages::Branch::UNVERIFIED);
   unscored_forks.clear();
-  ASSERT_TRUE(ledger->get_unverified_blocks(&unscored_forks));
-  ASSERT_EQ(unscored_forks.size(), 2);
+  ASSERT_EQ(cursor_size(ledger->get_unverified_blocks()), 2);
 
   ASSERT_TRUE(ledger->set_block_verified(block1.header().id(), 1,
                                          block0.header().id()));
   unscored_forks.clear();
-  ASSERT_TRUE(ledger->get_unverified_blocks(&unscored_forks));
-  ASSERT_EQ(unscored_forks.size(), 1);
+  ASSERT_EQ(cursor_size(ledger->get_unverified_blocks()), 1);
 
   ASSERT_TRUE(ledger->set_block_verified(block2.header().id(), 2,
                                          block0.header().id()));
   unscored_forks.clear();
-  ASSERT_TRUE(ledger->get_unverified_blocks(&unscored_forks));
-  ASSERT_EQ(unscored_forks.size(), 0);
+  ASSERT_EQ(cursor_size(ledger->get_unverified_blocks()), 0);
 }
 
 TEST_F(LedgerMongodb, update_main_branch) { test_update_main_branch(); }
