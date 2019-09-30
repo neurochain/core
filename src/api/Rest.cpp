@@ -37,12 +37,14 @@ std::string Rest::raw_data_to_json(std::string raw_data) const {
 
 void Rest::send(Response &response, const messages::Packet &packet) {
   response.headers().add<Http::Header::AccessControlAllowOrigin>("*");
+  response.headers().add<Http::Header::AccessControlAllowHeaders>("*");
   response.headers().add<Http::Header::ContentType>(MIME(Application, Json));
   response.send(Pistache::Http::Code::Ok, messages::to_json(packet, true));
 }
 
 void Rest::send(Response &response, const std::string &value) {
   response.headers().add<Http::Header::AccessControlAllowOrigin>("*");
+  response.headers().add<Http::Header::AccessControlAllowHeaders>("*");
   response.send(Pistache::Http::Code::Ok, value);
 }
 
@@ -53,8 +55,8 @@ void Rest::bad_request(Response &response, const std::string &message) {
 
 void Rest::allow_option(const Rest::Request &req, Rest::Response res) {
   res.headers().add<Http::Header::AccessControlAllowOrigin>("*");
-  res.headers().add<Http::Header::AccessControlAllowHeaders>("*");
-  res.headers().add<Http::Header::AccessControlAllowMethods>("GET, POST");
+  res.headers().add<Http::Header::AccessControlAllowHeaders>("*, content-type");
+  res.headers().add<Http::Header::AccessControlAllowMethods>("GET, POST, OPTIONS");
   res.send(Pistache::Http::Code::Ok);
 }
 
