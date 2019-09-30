@@ -486,7 +486,7 @@ void Consensus::process_blocks() {
     return;
   }
 
-  auto _process_blocks_future = std::async(std::launch::async, [this]() {
+  _process_blocks_future = std::async(std::launch::async, [this]() {
     verify_blocks();
     _ledger->update_main_branch();
   });
