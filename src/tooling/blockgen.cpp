@@ -87,7 +87,7 @@ std::vector<crypto::Ecc> create_key_pairs(uint32_t number_of_wallets,
 void testnet_blockg(uint32_t number_of_wallets, const Path &pathdir,
                     messages::NCCAmount &nccsdf) {
   const auto eccs = create_key_pairs(number_of_wallets, pathdir);
-  const messages::Block block0 = gen_block0(eccs, nccsdf).block();
+  const messages::Block block0 = gen_block0(eccs, nccsdf, 0).block();
 
   std::cout << "block0 " << block0 << std::endl;
   std::ofstream stream_block0;
