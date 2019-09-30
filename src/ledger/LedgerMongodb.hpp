@@ -38,11 +38,27 @@ class LedgerMongodb;
 template <typename M>
 class Cursor {
  private:
-  mongocxx::cursor _cursor;    
-
+  std::optional<mongocxx::cursor> _cursor;    
+  mutable mongocxx::client _client;
+  mutable mongocxx::database _db;
+  mutable mongocxx::collection _collection;
+  
  public:
-  Cursor (mongocxx::cursor &&cursor) :
-      _cursor(std::move(cursor)) {}
+  Cursor (const mongocxx::uri &_uri,
+	  const std::string &db_name,
+	  const std::string &collection_name):
+          _client(_uri),
+	  _db(_client[db_name]),
+	  _collection(_db.collection(collection_name)) {}
+
+  mongocxx::collection *collection() {
+    return &_collection;
+  }
+  
+  bool find(bsoncxx::document::view_or_value filter,
+	    const mongocxx::options::find &options=mongocxx::options::find()) {
+    _cursor = std::make_optional(_collection.find(filter, options));
+  }
 
   class iterator {
    private:
@@ -65,12 +81,12 @@ class Cursor {
   };
       
   iterator begin() {
-    auto df = _cursor.begin();
+    auto df = _cursor->begin();
     return iterator(df);
   }
 
   iterator end() {
-    auto df = _cursor.end();
+    auto df = _cursor->end();
     return iterator(df);
   }
 };
@@ -86,6 +102,7 @@ class LedgerMongodb : public Ledger {
   static mongocxx::instance _instance;
   mutable mongocxx::uri _uri;
   mutable mongocxx::client _client;
+  const std::string _db_name;
   mutable mongocxx::database _db;
   mutable mongocxx::collection _blocks;
   mutable mongocxx::collection _transactions;
