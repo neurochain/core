@@ -4,6 +4,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <cstdint>
+#include <future>
 #include <memory>
 #include <mutex>
 #include <thread>
@@ -48,11 +49,12 @@ class Consensus {
   std::thread _compute_pii_thread;
   std::vector<std::pair<messages::BlockHeight, KeyPubIndex>> _heights_to_write;
   std::mutex _heights_to_write_mutex;
-  std::recursive_mutex _verify_blocks_mutex;
+  std::mutex _process_blocks_mutex;
   std::optional<messages::AssemblyID> _previous_assembly_id;
   std::optional<messages::AssemblyHeight> _current_assembly_height;
   std::thread _update_heights_thread;
   std::thread _miner_thread;
+  std::future<void> _process_blocks_future;
   std::condition_variable _is_stopped_cv;
   std::mutex _is_stopped_mutex;
   bool _is_miner_stopped;
@@ -115,12 +117,16 @@ class Consensus {
   messages::BlockScore get_block_score(
       const messages::TaggedBlock &tagged_block) const;
 
+  void process_blocks();
+
   bool verify_blocks();
 
   bool is_new_assembly(const messages::TaggedBlock &tagged_block,
                        const messages::TaggedBlock &previous) const;
 
   bool mine_block(const messages::Block &block0);
+
+  bool add_block(const messages::Block &block, bool async);
 
  public:
   Consensus(std::shared_ptr<ledger::Ledger> ledger,
@@ -160,6 +166,8 @@ class Consensus {
    * \param [in] block block to add
    */
   bool add_block(const messages::Block &block);
+
+  bool add_block_async(const messages::Block &block);
 
   /**
    * \brief Check if there is any assembly to compute and if so starts the

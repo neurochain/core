@@ -82,7 +82,7 @@ void Bot::handler_block(const messages::Header &header,
     _networking.send_all(message);
   }
 
-  if (!_consensus->add_block(body.block())) {
+  if (!_consensus->add_block_async(body.block())) {
     LOG_WARNING << "Consensus rejected block" << body.block().header().id();
     return;
   }

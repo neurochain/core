@@ -12,7 +12,8 @@
 namespace neuro {
 namespace ledger {
 
-template <class M>class Cursor;
+template <class M>
+class Cursor;
 
 class Ledger {
  public:
@@ -23,7 +24,6 @@ class Ledger {
     bool updated;
   };
 
-  
   class Filter {
    private:
     std::optional<messages::_KeyPub> _output_key_pub;
@@ -217,10 +217,11 @@ class Ledger {
   virtual bool add_to_transaction_pool(
       const messages::Transaction &transaction) = 0;
   virtual bool delete_transaction(const messages::TransactionID &id) = 0;
-  virtual Cursor<messages::TaggedTransaction> get_transaction_pool(const std::optional<std::size_t> size_limit = {}) const = 0;
-  virtual std::size_t get_transaction_pool(messages::Block *block,
-                                           const std::size_t size_limit,
-                                           const std::size_t max_transactions) const = 0;
+  virtual Cursor<messages::TaggedTransaction> get_transaction_pool(
+      const std::optional<std::size_t> size_limit = {}) const = 0;
+  virtual std::size_t get_transaction_pool(
+      messages::Block *block, const std::size_t size_limit,
+      const std::size_t max_transactions) const = 0;
 
   // virtual bool get_blocks(int start, int size,
   // std::vector<messages::Block> &blocks) = 0;
@@ -238,8 +239,7 @@ class Ledger {
 
   virtual void init_database(const messages::Block &block0) = 0;
 
-  virtual bool get_unverified_blocks(
-      std::vector<messages::TaggedBlock> *tagged_blocks) const = 0;
+  virtual Cursor<messages::TaggedBlock> get_unverified_blocks() const = 0;
 
   virtual bool set_block_verified(
       const messages::BlockID &id, const messages::BlockScore &score,
@@ -328,6 +328,8 @@ class Ledger {
       const messages::TaggedBlock &tagged_block) const = 0;
 
   virtual bool add_balances(messages::TaggedBlock *tagged_block) = 0;
+
+  virtual int fill_block_transactions(messages::Block *block) const = 0;
 
   // helpers
 
