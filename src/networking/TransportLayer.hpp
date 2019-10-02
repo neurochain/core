@@ -12,9 +12,6 @@
 #include "networking/Connection.hpp"
 
 namespace neuro {
-namespace messages {
-class Queue;
-}  // namespace messages
 
 namespace crypto {
 class Ecc;

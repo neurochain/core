@@ -17,9 +17,6 @@
 #include "networking/tcp/Connection.hpp"
 
 namespace neuro {
-namespace messages {
-class Queue;
-}  // namespace messages
 
 namespace networking {
 

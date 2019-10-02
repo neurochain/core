@@ -16,9 +16,6 @@
 #include "networking/tcp/HeaderPattern.hpp"
 
 namespace neuro {
-namespace messages {
-class Queue;
-}  // namespace messages
 namespace networking {
 namespace tcp {
 

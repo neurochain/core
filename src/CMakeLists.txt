@@ -60,6 +60,7 @@ add_library(core
   ./tooling/Simulator.cpp
   ./tooling/FullSimulator.hpp
   ./tooling/FullSimulator.cpp
+  ./common/Queue.hpp
   ./messages/Queue.hpp
   ./messages/Queue.cpp
   ./messages/Message.hpp
