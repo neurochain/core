@@ -12,10 +12,12 @@ namespace neuro {
 namespace ledger {
 
 // The PII is a floating point number stored as an int64
-const std::string MAIN_BRANCH_NAME =
-    messages::Branch_Name(messages::Branch::MAIN);
+const std::string DETACHED_BRANCH_NAME =
+    messages::Branch_Name(messages::Branch::UNVERIFIED);
 const std::string FORK_BRANCH_NAME =
     messages::Branch_Name(messages::Branch::FORK);
+const std::string MAIN_BRANCH_NAME =
+    messages::Branch_Name(messages::Branch::MAIN);
 const std::string UNVERIFIED_BRANCH_NAME =
     messages::Branch_Name(messages::Branch::UNVERIFIED);
 const std::string _ID = "_id";
@@ -1086,7 +1088,8 @@ bool LedgerMongodb::set_branch_path(
 
   // Set the branch path of the given block
   auto filter = bss::document{} << BLOCK + "." + HEADER + "." + ID
-                                << to_bson(block_header.id()) << bss::finalize;
+                                << to_bson(block_header.id()) << BRANCH
+                                << DETACHED_BRANCH_NAME << bss::finalize;
   auto update = bss::document{} << $SET << bss::open_document << BRANCH_PATH
                                 << to_bson(branch_path) << BRANCH
                                 << UNVERIFIED_BRANCH_NAME << bss::close_document

@@ -148,8 +148,6 @@ class LedgerMongodb : public Ledger {
       std::list<std::pair<messages::BlockHeader, messages::BranchPath>>
           *block_headers);
 
-  bool set_branch_path(const messages::BlockHeader &block_header);
-
   bool update_branch_tag(const messages::BlockID &id,
                          const messages::Branch &branch);
 
@@ -374,6 +372,8 @@ class LedgerMongodb : public Ledger {
   bool add_balances(messages::TaggedBlock *tagged_block);
 
   int fill_block_transactions(messages::Block *block) const;
+
+  bool set_branch_path(const messages::BlockHeader &block_header);
 
   friend class neuro::ledger::tests::LedgerMongodb;
 };
