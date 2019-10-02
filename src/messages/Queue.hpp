@@ -25,14 +25,12 @@ class QueueTest;
 
 class Subscriber;
 
-class Queue :public ::neuro::Queue<Message, Subscriber> {
-
+class Queue : public ::neuro::Queue<Message, Subscriber> {
  public:
   Queue();
   friend class neuro::messages::test::QueueTest;
-  
 };
-  
+
 }  // namespace messages
 }  // namespace neuro
 

@@ -14,21 +14,20 @@
 namespace neuro {
 namespace tooling {
 
-  static consensus::Config default_consensus_config{
-						    .blocks_per_assembly = 5,
-						    .members_per_assembly = 10,
-						    .block_period = 1,
-						    .block_reward = messages::NCCAmount{uint64_t{100}},
-						    .max_block_size = 256000,
-						    .max_transaction_per_block = 300,
-						    .update_heights_sleep = 1s,
-						    .compute_pii_sleep = 1s,
-						    .miner_sleep = 100ms,
-						    .integrity_block_reward = 1,
-						    .integrity_double_mining = -40,
-						    .integrity_denunciation_reward = 1,
-						    .default_transaction_expires = 5760
-  };
+static consensus::Config default_consensus_config{
+    .blocks_per_assembly = 5,
+    .members_per_assembly = 10,
+    .block_period = 1,
+    .block_reward = messages::NCCAmount{uint64_t{100}},
+    .max_block_size = 256000,
+    .max_transaction_per_block = 300,
+    .update_heights_sleep = 1s,
+    .compute_pii_sleep = 1s,
+    .miner_sleep = 100ms,
+    .integrity_block_reward = 1,
+    .integrity_double_mining = -40,
+    .integrity_denunciation_reward = 1,
+    .default_transaction_expires = 5760};
 
 class FullSimulator {
  public:

@@ -56,7 +56,8 @@ void Rest::bad_request(Response &response, const std::string &message) {
 void Rest::allow_option(const Rest::Request &req, Rest::Response res) {
   res.headers().add<Http::Header::AccessControlAllowOrigin>("*");
   res.headers().add<Http::Header::AccessControlAllowHeaders>("*, content-type");
-  res.headers().add<Http::Header::AccessControlAllowMethods>("GET, POST, OPTIONS");
+  res.headers().add<Http::Header::AccessControlAllowMethods>(
+      "GET, POST, OPTIONS");
   res.send(Pistache::Http::Code::Ok);
 }
 
@@ -70,8 +71,7 @@ void Rest::setupRoutes() {
   Get(_router, "/ready", bind(&Rest::get_ready, this));
   Post(_router, "/create_transaction",
        bind(&Rest::get_create_transaction, this));
-  Options(_router, "/create_transaction",
-          bind(&Rest::allow_option, this));
+  Options(_router, "/create_transaction", bind(&Rest::allow_option, this));
   Post(_router, "/publish", bind(&Rest::publish, this));
   Options(_router, "/publish", bind(&Rest::allow_option, this));
   // Post(_router, "/list_transactions/:key_pub",

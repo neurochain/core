@@ -9,21 +9,20 @@
 namespace neuro {
 namespace tooling {
 
-  static consensus::Config config{
-				  .blocks_per_assembly = 5,
-				  .members_per_assembly = 10,
-				  .block_period = 1,
-				  .block_reward = messages::NCCAmount{uint64_t{100}},
-				  .max_block_size = 256000,
-				  .max_transaction_per_block = 300,
-				  .update_heights_sleep = 1s,
-				  .compute_pii_sleep = 1s,
-				  .miner_sleep = 100ms,
-				  .integrity_block_reward = 1,
-				  .integrity_double_mining = -40,
-				  .integrity_denunciation_reward = 1,
-				  .default_transaction_expires = 5760
-  };
+static consensus::Config config{
+    .blocks_per_assembly = 5,
+    .members_per_assembly = 10,
+    .block_period = 1,
+    .block_reward = messages::NCCAmount{uint64_t{100}},
+    .max_block_size = 256000,
+    .max_transaction_per_block = 300,
+    .update_heights_sleep = 1s,
+    .compute_pii_sleep = 1s,
+    .miner_sleep = 100ms,
+    .integrity_block_reward = 1,
+    .integrity_double_mining = -40,
+    .integrity_denunciation_reward = 1,
+    .default_transaction_expires = 5760};
 
 Simulator::Simulator(const std::string &db_url, const std::string &db_name,
                      const int32_t nb_keys,
@@ -110,7 +109,8 @@ messages::Block Simulator::new_block(
       last_block.block().header().id());
   header->set_height(height);
 
-  ledger->get_transaction_pool(&block, config.max_block_size, config.max_transaction_per_block);
+  ledger->get_transaction_pool(&block, config.max_block_size,
+                               config.max_transaction_per_block);
   consensus->cleanup_transactions(&block);
 
   messages::NCCValue total_fees = 0;

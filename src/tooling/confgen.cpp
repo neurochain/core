@@ -9,14 +9,10 @@ namespace po = boost::program_options;
 int main(int argc, char *argv[]) {
   po::options_description desc("Allowed options");
   desc.add_options()("help,h", "Produce help message.")(
-      "endpoints,e", po::value<std::vector<Path>>()->multitoken(),
-      "Endpoints")("conf,c",
-                   po::value<Path>()->required(),
-                   "Configuration file to update")
-      (
-          "port,p", po::value<uint16_t>()->default_value(1337),
-          "Listenning port")    (
-              "output,o", po::value<Path>()->required(), "Output filepath");
+      "endpoints,e", po::value<std::vector<Path>>()->multitoken(), "Endpoints")(
+      "conf,c", po::value<Path>()->required(), "Configuration file to update")(
+      "port,p", po::value<uint16_t>()->default_value(1337), "Listenning port")(
+      "output,o", po::value<Path>()->required(), "Output filepath");
 
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -36,7 +32,7 @@ int main(int argc, char *argv[]) {
   const auto endpoints = vm["endpoints"].as<std::vector<Path>>();
   const auto output = vm["output"].as<Path>();
   const auto port = vm["port"].as<uint16_t>();
-  
+
   messages::config::Config config;
   if (!messages::from_json_file(conf_path.string(), &config)) {
     std::cout << "Could not load_from_point configuration" << std::endl;
@@ -44,8 +40,8 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  for (const auto &endpoint: endpoints) {
-    if(!filesystem::exists(endpoint)) {
+  for (const auto &endpoint : endpoints) {
+    if (!filesystem::exists(endpoint)) {
       filesystem::create_directories(endpoint);
     }
     crypto::Ecc ecc;

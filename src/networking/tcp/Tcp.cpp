@@ -331,7 +331,7 @@ void Tcp::stop() {
       connection->terminate();
     }
     _io_context.stop();
-    
+
     join();
   }
 }

@@ -1,5 +1,5 @@
-#include <memory>
 #include <gtest/gtest.h>
+#include <memory>
 
 #include "messages/Message.hpp"
 #include "messages/Subscriber.hpp"
