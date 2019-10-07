@@ -73,7 +73,7 @@ It makes it easier to cover different platform by having the same version of the
 
 ```bash
 
-sudo apt install -y git cmake build-essential libssl-dev mongodb-server libmpfrc++-dev
+sudo apt install -y git cmake build-essential libssl-dev mongodb-server libmpfrc++-dev ninja-build
 
 # install pistache
 export NCC_WORKDIR=$(pwd)
