@@ -12,6 +12,7 @@ COPY build/src/* ./
 COPY testnet/bot.json conf/bot.json
 COPY testnet/data.0.testnet conf/data.0.testnet
 COPY utils/dockers/entrypoint.sh entrypoint.sh
+COPY utils/dockers/mongo_update.sh mongo_update.sh
 # cleanup 
 RUN ./main --version
 CMD ["./entrypoint.sh"]

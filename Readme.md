@@ -16,7 +16,6 @@ Neurochain is a blockchain project: understand a decentralized system that write
 The "log" is:
 * Public.
 * It is not possible to change history.
-* Yes, there is no cryptocurrency here yet.
 
 
 ## The Bot
@@ -31,49 +30,50 @@ sustainable network requires rewarding the actors. The second reason for the cry
 applications (e.g. filesharing, traceability).
 
 
-# Install and Run 
-
-# Docker (recommended)
+# Docker Install (recommended)
 
 ## Requirements
 
-* Install docker: https://docs.docker.com/install/ (x86 processor)
-* Run the docker
+### Hardware
 
-### Basic 
+* 4GB RAM
+* 2 CPU (x86_64)
+* 30GB disk space (if possible xfs)
+
+### Software
+
+* Ubuntu 18.04 lts
+* Docker installed: [https://docs.docker.com/install/linux/docker-ce/ubuntu/](https://docs.docker.com/install/linux/docker-ce/ubuntu/)
+
+
+## Install
 
 ```
-docker run -dit --name core --restart always  -p 1337:1337 registry.gitlab.com/neurochaintech/core/prod/release:latest
-```
-
-This will create and run a docker, running the bot and mongo db. Logs and ledger will be inside the docker, not giving the best performance.
-
-### Advanced
-
-```
-docker network create neuro
-mkdir {mongo,conf} # if possible make it an xfs filesystem
-docker run -dit --name mongo --network neuro --restart always --log-opt max-size=10m --log-opt max-file=5 -v $(pwd)/mongo:/data/db  mongo:3.6.11
-docker run -dit --name core  --network neuro --restart always --log-opt max-size=10m --log-opt max-file=5 -p 1337:1337 registry.gitlab.com/neurochaintech/core/prod/release:c1ed8a9a214f7164fa550eb489b571f4a1c9d5f8
+./install.sh
 ```
 
 
-# Source 
+# Source Install (at your own risk)
 
-## Requirements: 
+## Requirements
+
+### Hardware
+
+* 4GB RAM
+* 2 CPU (x86_64)
+* 30GB disk space (if possible xfs)
+
+### Software
+
+* Ubuntu 18.10
 * cmake >=3.0
-* g++7/clang++6
+* clang++7
 * libmpfrc++-dev >=3.6
-* pistache >= 
 
-Nothing else is needed (\o/). The rest of the dependencies will be downloaded and compiled by [hunter](http://www.hunter.sh/). 
-It makes it easier to cover different platform by having the same version of the dependencies.
-
-### Ubuntu/Debian 
 
 ```bash
 
-sudo apt install -y git cmake build-essential libssl-dev mongodb-server libmpfrc++-dev
+sudo apt install -y git cmake build-essential libssl-dev mongodb-server libmpfrc++-dev ninja-build
 
 # install pistache
 export NCC_WORKDIR=$(pwd)
@@ -82,7 +82,7 @@ cd pistache
 git checkout c5927e1a12b96492198ab85101912d5d84445f67
 mkdir build
 cd build
-cmake -G Ninja -DCMAKE_BUILD_TYPE=${DOCKER_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=~/root/lib/cmake/pistache ..
+cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=~/root/lib/cmake/pistache ..
 ninja 
 ninja install 
 
@@ -101,5 +101,7 @@ cmake --build .
 
 ```bash
 cd build/src
+mkdir conf
+cp ../../testnet/{data.0.testnet,bot.json} conf/
 ./main -c bot.json
 ```
