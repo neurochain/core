@@ -88,7 +88,7 @@ add_executable(ut
   ./crypto/Sign.cpp
   ./messages/Address.cpp
   ./messages/Config.cpp
-#  ./messages/Queue.cpp
+  ./messages/Queue.cpp
   ./messages/Subscriber.cpp
   ./messages/Peers.cpp
   ./networking/TransportLayer.cpp

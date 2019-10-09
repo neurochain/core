@@ -12,10 +12,12 @@ namespace neuro {
 namespace ledger {
 
 // The PII is a floating point number stored as an int64
-const std::string MAIN_BRANCH_NAME =
-    messages::Branch_Name(messages::Branch::MAIN);
+const std::string DETACHED_BRANCH_NAME =
+    messages::Branch_Name(messages::Branch::DETACHED);
 const std::string FORK_BRANCH_NAME =
     messages::Branch_Name(messages::Branch::FORK);
+const std::string MAIN_BRANCH_NAME =
+    messages::Branch_Name(messages::Branch::MAIN);
 const std::string UNVERIFIED_BRANCH_NAME =
     messages::Branch_Name(messages::Branch::UNVERIFIED);
 const std::string _ID = "_id";
@@ -645,6 +647,12 @@ bool LedgerMongodb::insert_block(const messages::TaggedBlock &tagged_block) {
     return false;
   }
 
+  // Delete transactions already attached to this block if there is any
+  auto query = bss::document{} << BLOCK_ID
+                               << to_bson(tagged_block.block().header().id())
+                               << bss::finalize;
+  _transactions.delete_many(std::move(query));
+
   const auto &header = tagged_block.block().header();
   auto bson_header = to_bson(header);
 
@@ -656,12 +664,6 @@ bool LedgerMongodb::insert_block(const messages::TaggedBlock &tagged_block) {
     tagged_transaction.mutable_transaction()->CopyFrom(transaction);
     tagged_transaction.mutable_block_id()->CopyFrom(header.id());
     bson_transactions.push_back(to_bson(tagged_transaction));
-    if (tagged_block.branch() == messages::Branch::MAIN) {
-      auto query = bss::document{} << TRANSACTION + "." + ID
-                                   << to_bson(transaction.id()) << BLOCK_ID
-                                   << bsoncxx::types::b_null{} << bss::finalize;
-      _transactions.delete_one(std::move(query));
-    }
   }
 
   if (tagged_block.block().has_coinbase()) {
@@ -1086,13 +1088,16 @@ bool LedgerMongodb::set_branch_path(
 
   // Set the branch path of the given block
   auto filter = bss::document{} << BLOCK + "." + HEADER + "." + ID
-                                << to_bson(block_header.id()) << bss::finalize;
+                                << to_bson(block_header.id()) << BRANCH
+                                << DETACHED_BRANCH_NAME << bss::finalize;
   auto update = bss::document{} << $SET << bss::open_document << BRANCH_PATH
                                 << to_bson(branch_path) << BRANCH
                                 << UNVERIFIED_BRANCH_NAME << bss::close_document
                                 << bss::finalize;
   auto update_result = _blocks.update_one(std::move(filter), std::move(update));
   if (!(update_result && update_result->modified_count() > 0)) {
+    LOG_DEBUG << "Update failed in set_branch_path for block "
+              << block_header.id();
     return false;
   }
   messages::TaggedBlock tagged_block;

@@ -12,12 +12,12 @@ class Bot;
 namespace api {
 
 class Monitoring {
-private:
+ private:
   Bot* _bot;
   using TimePoint = std::chrono::time_point<std::chrono::system_clock>;
   const TimePoint _starting_time = std::chrono::system_clock::now();
 
-  void resource_usage(messages::Status::Bot *bot) const;
+  void resource_usage(messages::Status::Bot* bot) const;
 
  public:
   explicit Monitoring(Bot* bot);

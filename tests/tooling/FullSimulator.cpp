@@ -70,8 +70,8 @@ class FullSimulator : public ::testing::Test {
       auto transactions = bot->ledger()->get_transaction_pool();
       std::size_t c = 0;
       for (const auto &osef : transactions) {
-	c++;
-	(void)osef;
+        c++;
+        (void)osef;
       }
       ASSERT_EQ(c, 17);
     }

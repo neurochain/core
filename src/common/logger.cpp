@@ -1,10 +1,9 @@
 #include "common/logger.hpp"
-#include "config.pb.h"
-#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/stream.hpp>
-#include <boost/iostreams/filter/gzip.hpp>
+#include "config.pb.h"
 
 BOOST_LOG_GLOBAL_LOGGER_INIT(logger, src::severity_logger_mt) {
   src::severity_logger_mt<boost::log::trivial::severity_level> logger;
@@ -27,20 +26,17 @@ logging::formatter neuro_formatter() {
 }
 
 void add_file_sink(const std::string &log_file, const size_t rotation_size_mb) {
-
-
   // auto out = boost::make_shared<boost::iostreams::filtering_ostream>
   //            (new boost::iostreams::filtering_ostream,
   //             [](std::ostream *os) { delete os; });
- 
+
   // out->push(boost::iostreams::gzip_compressor());
- 
 
   auto backend = boost::make_shared<sinks::text_file_backend>(
       keywords::file_name = log_file,
       // rotate the file upon reaching `rotation_size_mb` MiB size...
       keywords::rotation_size = rotation_size_mb * 1024 * 1024);
-  //backend->add_stream(out);
+  // backend->add_stream(out);
   auto sink = boost::make_shared<file_sink>(backend);
   sink->set_formatter(neuro_formatter());
   sink->locked_backend()->auto_flush(true);
@@ -66,7 +62,6 @@ void add_stdout_sink() {
 }
 
 void from_config(const messages::config::Logs &logs) {
-
   if (!logs.has_to_stdout() || logs.to_stdout() == false) {
     add_file_sink(logs.file_path(), logs.rotation_size());
   } else {

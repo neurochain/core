@@ -1,9 +1,9 @@
 #include "Monitoring.hpp"
-#include "rest.pb.h"
 #include <sys/resource.h>
 #include <sys/statfs.h>
 #include <ctime>
 #include "Bot.hpp"
+#include "rest.pb.h"
 #include "version.h"
 
 namespace neuro::api {
@@ -190,10 +190,8 @@ messages::Status_BlockChain Monitoring::blockchain_health() const {
   health.set_nb_blocks_1h(nb_blocks_1h());
   health.set_nb_transactions_5m(nb_transactions_5m());
   health.set_nb_transactions_1h(nb_transactions_1h());
-  health.set_average_block_propagation_5m(
-      average_block_propagation_5m());
-  health.set_average_block_propagation_1h(
-      average_block_propagation_1h());
+  health.set_average_block_propagation_5m(average_block_propagation_5m());
+  health.set_average_block_propagation_1h(average_block_propagation_1h());
   return health;
 }
 
@@ -208,8 +206,10 @@ messages::Status Monitoring::fast_status() const {
 
 messages::Status Monitoring::complete_status() const {
   messages::Status status = fast_status();
-  status.mutable_blockchain()->set_mined_block(_bot->ledger()->total_nb_blocks());
-  status.mutable_blockchain()->set_transaction_count(_bot->ledger()->total_nb_transactions());
+  status.mutable_blockchain()->set_mined_block(
+      _bot->ledger()->total_nb_blocks());
+  status.mutable_blockchain()->set_transaction_count(
+      _bot->ledger()->total_nb_transactions());
   return status;
 }
 

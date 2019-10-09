@@ -66,7 +66,7 @@ std::optional<Buffer> to_buffer(const Packet &packet) {
 void to_json(const Packet &packet, std::string *output, bool pretty) {
   try {
     google::protobuf::util::JsonPrintOptions options;
-    if(pretty) {
+    if (pretty) {
       options.add_whitespace = true;
     }
     google::protobuf::util::MessageToJsonString(packet, output, options);

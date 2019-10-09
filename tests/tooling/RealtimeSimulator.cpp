@@ -1,6 +1,6 @@
-#include <memory>
 #include <gtest/gtest.h>
 #include <cstdint>
+#include <memory>
 
 #include "common/logger.hpp"
 #include "consensus/Consensus.hpp"

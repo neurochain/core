@@ -114,13 +114,13 @@ void Tcp::new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
 
     connection_ready->set_from_remote(true);
 
-    _queue->publish(message);
+    _queue->push(message);
     connection->read();
   } else {
     LOG_WARNING << "Could not create new connection : " << error.message();
 
     msg_body->mutable_connection_closed();
-    _queue->publish(message);
+    _queue->push(message);
   }
 }
 
@@ -149,7 +149,7 @@ void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
 
     connection_ready->set_from_remote(false);
 
-    _queue->publish(message);
+    _queue->push(message);
     connection->read();
   } else {
     LOG_WARNING << "Could not create new connection to " << *peer << " : "
@@ -158,7 +158,7 @@ void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
     auto connection_closed = msg_body->mutable_connection_closed();
     peer->clear_connection_id();
     connection_closed->mutable_peer()->CopyFrom(*peer);
-    _queue->publish(message);
+    _queue->push(message);
   }
 }
 
@@ -331,7 +331,7 @@ void Tcp::stop() {
       connection->terminate();
     }
     _io_context.stop();
-    
+
     join();
   }
 }
