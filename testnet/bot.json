@@ -10,23 +10,23 @@
    "endpoint": "localhost",
    "peers": [
     {
-     "endpoint": "boot0.test.neurochaintech.io",
+     "endpoint": "boot0.testnet.neurochaintech.io",
      "keyPub": {
-      "rawData": "A2SY4btZmJFFz+VShMgTkt3CSlx/mcCcFYvxrETFhHGZ"
+      "rawData": "AsbGWe4lNmz4LC4MANnpAtnjB9pAyN06dw3dnuQ2wA2c"
      },
      "port": 1337
     },
     {
-     "endpoint": "boot1.test.neurochaintech.io",
+     "endpoint": "boot1.testnet.neurochaintech.io",
      "keyPub": {
-      "rawData": "A2PyZvh4Y2Twu7X+KpSzNPO5eeJM90aRuY3396667zy7"
+      "rawData": "A6dFBqvjvW3N0ceQ0YcOYx9w+YvgW67lTytYInV4yh0a"
      },
      "port": 1337
     },
     {
-     "endpoint": "boot2.test.neurochaintech.io",
+     "endpoint": "boot2.testnet.neurochaintech.io",
      "keyPub": {
-      "rawData": "AnRLEo1GzklizIyN3rp/NjPS7Rsb4whBECw2eBRoqfVp"
+      "rawData": "A5Q3wflikJwMqBXIIRDf/U7ZV32YEC13Z6AoOmdae1Lq"
      },
      "port": 1337
     }
@@ -49,5 +49,6 @@
  },
  "rest": {
   "port": 8080
- }
+ },
+  "random_transaction": 0.2
 }
