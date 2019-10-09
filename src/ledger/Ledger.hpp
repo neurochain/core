@@ -77,8 +77,7 @@ class Ledger {
   WorkerQueue<messages::TaggedBlock> _missing_blocks_queue;
 
   std::optional<messages::Hash> new_missing_block(
-      const messages::TaggedBlock &new_block) {
-    messages::TaggedBlock tagged_block = new_block;
+      const messages::TaggedBlock &tagged_block) {
     messages::TaggedBlock prev_tagged_block;
     if (tagged_block.branch() != messages::Branch::DETACHED) {
       std::lock_guard lock(_missing_block_mutex);
@@ -98,7 +97,8 @@ class Ledger {
       return tagged_block.block().header().previous_block_hash();
     }
 
-    _missing_blocks_queue.enqueue(tagged_block);
+    _missing_blocks_queue.push(
+        std::make_shared<messages::TaggedBlock>(tagged_block));
     return std::nullopt;
   }
 
@@ -117,12 +117,10 @@ class Ledger {
         }
         std::lock_guard lock(_missing_block_mutex);
         _missing_blocks.erase(tagged_block.block().header().id());
-        LOG_TRACE << "Leaving deep_missing_block";
         return;
       }
 
       if (_seen_blocks.count(tagged_block.block().header().id()) > 0) {
-        LOG_TRACE << "Leaving new_missing_block";
         return;
       }
 

@@ -101,7 +101,7 @@ class Queue {
 
   void add_filter_input(const Filter &filter) { _filters.push_back(filter); }
 
-  bool publish(std::shared_ptr<const Payload> message) {
+  bool push(std::shared_ptr<const Payload> message) {
     if (_quitting) {
       LOG_DEBUG << "Skip message because quitting";
       return false;

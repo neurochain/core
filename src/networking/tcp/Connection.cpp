@@ -156,7 +156,7 @@ void Connection::read_body(std::size_t body_size) {
         if (_remote_peer->status() == messages::Peer::CONNECTED || is_hello ||
             (_remote_peer->status() == messages::Peer::CONNECTING &&
              is_world)) {
-          _this->_queue->publish(message);
+          _this->_queue->push(message);
         } else {
           LOG_WARNING << "Message from " << _remote_peer
                       << " was not sent to the queue because the sender "
@@ -202,7 +202,7 @@ void Connection::terminate() const {
   body->mutable_connection_closed();
   _remote_peer->set_status(messages::Peer::UNREACHABLE);
   _remote_peer->clear_connection_id();
-  _queue->publish(message);
+  _queue->push(message);
 }
 
 const std::optional<IP> Connection::remote_ip() const {

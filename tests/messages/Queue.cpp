@@ -54,7 +54,7 @@ class QueueTest {
 
   void test_pushing_message() {
     auto tested_queue = messages::Queue{};
-    tested_queue.publish(std::make_shared<const messages::Message>());
+    tested_queue.push(std::make_shared<const messages::Message>());
     ASSERT_FALSE(tested_queue._queue.empty());
   };
 
@@ -90,8 +90,8 @@ class QueueTest {
     ASSERT_NE(world_kpub, nullptr);
     world_kpub->set_raw_data("CYxS/kJB4nHdBfBREEtqRL2xFGbi7Hg4rQkTxv9OwJs=");
     world->set_accepted(true);
-    ASSERT_TRUE(tested_queue.publish(std::move(message_hello)));
-    ASSERT_TRUE(tested_queue.publish(std::move(message_world)));
+    ASSERT_TRUE(tested_queue.push(std::move(message_hello)));
+    ASSERT_TRUE(tested_queue.push(std::move(message_world)));
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     ASSERT_EQ(count_hello, 1);
     ASSERT_EQ(count_world, 1);
@@ -127,8 +127,8 @@ class QueueTest {
     ASSERT_NE(world_kpub, nullptr);
     world_kpub->set_raw_data("CYxS/kJB4nHdBfBREEtqRL2xFGbi7Hg4rQkTxv9OwJs=");
     world->set_accepted(true);
-    ASSERT_TRUE(tested_queue.publish(std::move(message_hello)));
-    ASSERT_TRUE(tested_queue.publish(std::move(message_world)));
+    ASSERT_TRUE(tested_queue.push(std::move(message_hello)));
+    ASSERT_TRUE(tested_queue.push(std::move(message_world)));
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     ASSERT_EQ(count_hello, 1);
     tested_queue.unsubscribe(&sub_world);

@@ -17,22 +17,19 @@ class SimpleSubscriber {
 };
 
 template <typename Payload>
-class WorkerQueue {
+class WorkerQueue : public Queue<Payload, SimpleSubscriber<Payload>> {
   using Callback = std::function<void(const Payload &)>;
 
  private:
   SimpleSubscriber<Payload> _subscriber;
-  Queue<Payload, SimpleSubscriber<Payload>> _queue;
-  std::thread _thread;
 
  public:
   WorkerQueue(Callback callback) : _subscriber(callback) {
-    _queue.subscribe(&_subscriber);
-    _thread = std::thread([this]() { this->_queue.run(); });
+    this->subscribe(&_subscriber);
+    this->run();
   }
-  void enqueue(const Payload &payload) {
-    _queue.publish(std::make_shared<const Payload>(payload));
-  }
+
+  ~WorkerQueue() { this->unsubscribe(&_subscriber); }
 };
 
 }  // namespace neuro
