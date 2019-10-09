@@ -250,7 +250,7 @@ bool Bot::init() {
 void Bot::regular_update() {
   auto message = std::make_shared<messages::Message>();
   message->add_bodies()->mutable_heart_beat();
-  _queue.publish(message);
+  _queue.push(message);
   _update_timer.expires_at(_update_timer.expiry() +
                            boost::asio::chrono::seconds(_update_time));
   _update_timer.async_wait(boost::bind(&Bot::regular_update, this));

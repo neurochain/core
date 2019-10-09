@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <optional>
+#include "common/WorkerQueue.hpp"
 #include "crypto/Hash.hpp"
 #include "crypto/Sign.hpp"
 #include "ledger/Filter.hpp"
@@ -73,31 +74,67 @@ class Ledger {
 
  private:
   mutable std::mutex _send_ncc_mutex;
+  WorkerQueue<messages::TaggedBlock> _missing_blocks_queue;
 
   std::optional<messages::Hash> new_missing_block(
-      const messages::TaggedBlock &new_block) {
-    std::lock_guard lock(_missing_block_mutex);
+      const messages::TaggedBlock &tagged_block) {
+    messages::TaggedBlock prev_tagged_block;
+    if (tagged_block.branch() != messages::Branch::DETACHED) {
+      std::lock_guard lock(_missing_block_mutex);
+      _missing_blocks.erase(tagged_block.block().header().id());
+      return std::nullopt;
+    }
+
+    if (_seen_blocks.count(tagged_block.block().header().id()) > 0) {
+      return std::nullopt;
+    }
+
+    if (!get_block(tagged_block.block().header().previous_block_hash(),
+                   &prev_tagged_block, false)) {
+      std::lock_guard lock(_missing_block_mutex);
+      _missing_blocks.insert(
+          tagged_block.block().header().previous_block_hash());
+      return tagged_block.block().header().previous_block_hash();
+    }
+
+    _missing_blocks_queue.push(
+        std::make_shared<messages::TaggedBlock>(tagged_block));
+    return std::nullopt;
+  }
+
+  void deep_missing_block(const messages::TaggedBlock &new_block) {
     messages::TaggedBlock tagged_block = new_block;
     messages::TaggedBlock prev_tagged_block;
+    bool first_loop = true;
     while (true) {
+      LOG_DEBUG << "deep_missing_block loop "
+                << tagged_block.block().header().height();
       if (tagged_block.branch() != messages::Branch::DETACHED) {
+        if (!first_loop) {
+          // This is not normal the previous block should be attached
+          LOG_DEBUG << "Calling set_branch_path from deep_missing_block";
+          set_branch_path(prev_tagged_block.block().header());
+        }
+        std::lock_guard lock(_missing_block_mutex);
         _missing_blocks.erase(tagged_block.block().header().id());
-        return std::nullopt;
+        return;
       }
 
       if (_seen_blocks.count(tagged_block.block().header().id()) > 0) {
-        return std::nullopt;
+        return;
       }
 
       if (!get_block(tagged_block.block().header().previous_block_hash(),
                      &prev_tagged_block, false)) {
+        std::lock_guard lock(_missing_block_mutex);
         _missing_blocks.insert(
             tagged_block.block().header().previous_block_hash());
-        return tagged_block.block().header().previous_block_hash();
+        return;
       }
 
       _seen_blocks.insert(tagged_block.block().header().id());
-      tagged_block = prev_tagged_block;
+      tagged_block.Swap(&prev_tagged_block);
+      first_loop = false;
     }
   }
 
@@ -107,7 +144,11 @@ class Ledger {
   BlocksIds _seen_blocks;
 
  public:
-  Ledger() {}
+  Ledger()
+      : _missing_blocks_queue(
+            [this](const messages::TaggedBlock &tagged_block) {
+              this->deep_missing_block(tagged_block);
+            }) {}
 
   const BlocksIds missing_blocks() {
     std::lock_guard lock(_missing_block_mutex);
@@ -330,6 +371,8 @@ class Ledger {
   virtual bool add_balances(messages::TaggedBlock *tagged_block) = 0;
 
   virtual int fill_block_transactions(messages::Block *block) const = 0;
+
+  virtual bool set_branch_path(const messages::BlockHeader &block_header) = 0;
 
   // helpers
 
