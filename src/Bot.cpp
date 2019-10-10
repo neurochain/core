@@ -20,7 +20,9 @@ Bot::Bot(const messages::config::Config &config,
       _networking(&_queue, &_keys.at(0), &_peers, _config.mutable_networking()),
       _ledger(std::make_shared<ledger::LedgerMongodb>(_config.database())),
       _update_timer(std::ref(*_io_context)),
-      _consensus_config(consensus_config) {
+      _consensus_config(consensus_config),
+      _previous_assembly_id(
+          _ledger->get_main_branch_tip().previous_assembly_id()) {
   if (!init()) {
     throw std::runtime_error("Could not create bot from configuration file");
   }
@@ -270,6 +272,75 @@ void Bot::handler_heart_beat(const messages::Header &header,
       rand() < _config.random_transaction() * float(RAND_MAX)) {
     send_random_transaction();
   }
+
+  if (_config.has_optimize_pii() && _config.optimize_pii()) {
+    optimize_pii();
+  }
+}
+
+void Bot::optimize_pii() {
+  if (_keys.size() < 4) {
+    // You cannot optimize the PII with less than 4 addresses
+    return;
+  }
+  LOG_TRACE << std::endl;
+
+  const auto previous_assembly_id =
+      _ledger->get_main_branch_tip().previous_assembly_id();
+
+  LOG_TRACE << "optimize_pii address 1 balance "
+            << _ledger->balance(_keys[1].key_pub()).value() << std::endl;
+  // Send money from the second address to all the others
+  // except the first one which is the communication key
+  LOG_TRACE << std::endl;
+  if (_previous_assembly_id != previous_assembly_id &&
+      _ledger->balance(_keys[1].key_pub()).value() >= _keys.size() - 2) {
+    LOG_TRACE << std::endl;
+    std::vector<std::shared_ptr<messages::_KeyPub>> recipients;
+    for (int i = 2; i < _keys.size(); i++) {
+      recipients.push_back(
+          std::make_shared<messages::_KeyPub>(_keys[i].key_pub()));
+    }
+    LOG_TRACE << std::endl;
+
+    auto transaction = _ledger->send_ncc(_keys[1].key_priv(), recipients, 1);
+    if (_consensus->add_transaction(transaction)) {
+      LOG_DEBUG << this << " : " << _me.port()
+                << " Sending transaction to optimize_pii from the second "
+                   "address to all the rest "
+                << transaction;
+      publish_transaction(transaction);
+    } else {
+      LOG_WARNING << this << " : " << _me.port()
+                  << " optimize_pii transaction is not valid " << transaction;
+    }
+
+    _previous_assembly_id = previous_assembly_id;
+  }
+
+  LOG_TRACE << std::endl;
+  // Send money back from the others to the second address
+  for (int i = 2; i < _keys.size(); i++) {
+    LOG_TRACE << "optimize_pii address " << i << " balance "
+              << _ledger->balance(_keys[i].key_pub()).value() << std::endl;
+    if (_ledger->balance(_keys[i].key_pub()).value() > 0) {
+      LOG_TRACE << std::endl;
+      auto transaction =
+          _ledger->send_ncc(_keys[i].key_priv(), _keys[1].key_pub(), 1);
+
+      if (_consensus->add_transaction(transaction)) {
+        LOG_DEBUG << this << " : " << _me.port()
+                  << " Sending transaction to optimize_pii back to the second "
+                     "address "
+                  << transaction;
+        publish_transaction(transaction);
+      } else {
+        LOG_WARNING << this << " : " << _me.port()
+                    << " optimize_pii transaction is not valid " << transaction;
+      }
+    }
+  }
+  LOG_TRACE << std::endl;
 }
 
 void Bot::handler_ping(const messages::Header &header,

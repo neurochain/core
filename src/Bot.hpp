@@ -70,6 +70,8 @@ class Bot {
 
   uint32_t _update_time{1};  // In seconds
 
+  messages::AssemblyID _previous_assembly_id;  // for optimize_pii
+
  private:
   bool init();
 
@@ -100,6 +102,7 @@ class Bot {
   void subscribe();
   void regular_update();
   void send_random_transaction();
+  void optimize_pii();
   void send_pings();
   void update_ledger();
   bool update_ledger(const std::optional<messages::Hash> &missing_block);

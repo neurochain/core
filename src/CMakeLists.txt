@@ -159,11 +159,11 @@ target_link_libraries(confgen
   Boost::program_options
   )
 
-add_executable(showkey
+add_executable(show_key
   tooling/Showkey.cpp
   )
 
-target_link_libraries(showkey
+target_link_libraries(show_key
   core
   Boost::program_options
   )

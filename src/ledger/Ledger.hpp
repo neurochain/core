@@ -73,7 +73,6 @@ class Ledger {
   };
 
  private:
-  mutable std::mutex _send_ncc_mutex;
   WorkerQueue<messages::TaggedBlock> _missing_blocks_queue;
 
   std::optional<messages::Hash> new_missing_block(
@@ -503,14 +502,9 @@ class Ledger {
       const messages::_KeyPub &recipient_key_pub, const float ratio_to_send,
 
       const std::optional<messages::NCCAmount> &fees = {}) const {
-    if (ratio_to_send < 0) {
-      throw std::runtime_error("Cannot send_ncc with a ratio of " +
-                               std::to_string(ratio_to_send));
-    }
-    const auto sender_key_pub = sender_key_priv.make_key_pub();
-    auto amount_to_send =
-        messages::NCCAmount(balance(sender_key_pub).value() * ratio_to_send);
-    return send_ncc(sender_key_priv, recipient_key_pub, amount_to_send, fees);
+    std::vector<std::shared_ptr<messages::_KeyPub>> recipients_key_pubs{
+        std::make_shared<messages::_KeyPub>(recipient_key_pub)};
+    return send_ncc(sender_key_priv, recipients_key_pubs, ratio_to_send, fees);
   }
 
   messages::Transaction send_ncc(
@@ -518,15 +512,47 @@ class Ledger {
       const messages::_KeyPub &recipient_key_pub,
       const messages::NCCAmount &amount_to_send,
       const std::optional<messages::NCCAmount> &fees = {}) const {
-    std::lock_guard<std::mutex> lock(_send_ncc_mutex);
+    std::vector<std::shared_ptr<messages::_KeyPub>> recipients_key_pubs{
+        std::make_shared<messages::_KeyPub>(recipient_key_pub)};
+    return send_ncc(sender_key_priv, recipients_key_pubs, amount_to_send);
+  }
+
+  messages::Transaction send_ncc(
+      const crypto::KeyPriv &sender_key_priv,
+      const std::vector<std::shared_ptr<messages::_KeyPub>>
+          &recipients_key_pubs,
+      const float ratio_to_send,
+      const std::optional<messages::NCCAmount> &fees = {}) const {
+    if (ratio_to_send < 0) {
+      throw std::runtime_error("Cannot send_ncc with a ratio of " +
+                               std::to_string(ratio_to_send));
+    }
+    const auto sender_key_pub = sender_key_priv.make_key_pub();
+    auto amount_to_send =
+        messages::NCCAmount(balance(sender_key_pub).value() * ratio_to_send /
+                            recipients_key_pubs.size());
+    return send_ncc(sender_key_priv, recipients_key_pubs, amount_to_send, fees);
+  }
+
+  messages::Transaction send_ncc(
+      const crypto::KeyPriv &sender_key_priv,
+      const std::vector<std::shared_ptr<messages::_KeyPub>>
+          &recipients_key_pubs,
+      const messages::NCCAmount &amount_to_send_each,
+      const std::optional<messages::NCCAmount> &fees = {}) const {
     const auto sender_key_pub = sender_key_priv.make_key_pub();
 
-    auto transaction = build_transaction(sender_key_pub, recipient_key_pub,
-                                         amount_to_send, fees);
+    auto outputs = std::vector<messages::Output>{1};
+    auto output = &outputs[0];
+    for (const auto recipient_key_pub : recipients_key_pubs) {
+      output->mutable_key_pub()->CopyFrom(*recipient_key_pub);
+      output->mutable_value()->set_value(amount_to_send_each.value());
+    }
+
+    auto transaction = build_transaction(sender_key_pub, outputs, fees);
 
     const auto ecc = crypto::Ecc(sender_key_priv, sender_key_pub);
     std::vector<const crypto::Ecc *> keys = {&ecc};
-
     crypto::sign(keys, &transaction);
     messages::set_transaction_hash(&transaction);
     return transaction;
