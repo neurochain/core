@@ -218,15 +218,15 @@ bool Consensus::is_unexpired(const messages::Transaction &transaction,
     LOG_INFO << "Failed to get the last_seen_block with id "
              << transaction.last_seen_block_id()
              << " when checking if transaction " << transaction.id()
-             << " is expired in block " << block.header().id();
+             << " is expired in block at height " << block.header().height();
     return false;
   }
   if (!_ledger->is_ancestor(last_seen_block.branch_path(), tip.branch_path())) {
     LOG_INFO << "The transaction is invalid because the last_seen_block_id "
              << transaction.last_seen_block_id()
              << " is not in the correct branch when checking if transaction "
-             << transaction.id() << " is expired in block "
-             << block.header().id();
+             << transaction.id() << " is expired in block at height "
+             << block.header().height();
     return false;
   }
 
@@ -240,7 +240,7 @@ bool Consensus::is_unexpired(const messages::Transaction &transaction,
       return false;
     }
     LOG_INFO << "Transaction " << transaction.id() << " is expired "
-             << " in block " << block.header().id();
+             << " in block at height " << block.header().height();
     return false;
   }
   return true;
