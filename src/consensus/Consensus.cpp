@@ -930,6 +930,7 @@ bool Consensus::get_heights_to_write(
 }
 
 bool Consensus::cleanup_transactions(messages::Block *block) const {
+  std::lock_guard lock(mpfr_mutex);  // TODO trax, is it really needed?
   messages::TaggedBlock previous;
   if (!_ledger->get_block(block->header().previous_block_hash(), &previous)) {
     LOG_INFO << "Failed to get the previous block with id "

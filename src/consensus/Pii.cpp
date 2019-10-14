@@ -141,6 +141,7 @@ std::vector<messages::_KeyPub> KeyPubs::key_pubs() const {
 std::vector<messages::Pii> Pii::get_key_pubs_pii(
     const messages::AssemblyHeight &assembly_height,
     const messages::BranchPath &branch_path) {
+  std::lock_guard lock(mpfr_mutex);  // TODO trax, is it really needed?
   std::vector<messages::Pii> piis;
   for (const auto &key_pub : _key_pubs.key_pubs()) {
     auto &pii = piis.emplace_back();
