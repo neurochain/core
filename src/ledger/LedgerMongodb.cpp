@@ -1508,7 +1508,7 @@ bool LedgerMongodb::set_nb_key_pubs(const messages::AssemblyID &assembly_id,
                                 << bss::finalize;
   auto update_result =
       _assemblies.update_one(std::move(filter), std::move(update));
-  return update_result && update_result->modified_count() > 0;
+  return static_cast<bool>(update_result);
 }
 
 bool LedgerMongodb::set_seed(const messages::AssemblyID &assembly_id,
@@ -1519,7 +1519,7 @@ bool LedgerMongodb::set_seed(const messages::AssemblyID &assembly_id,
                                 << bss::close_document << bss::finalize;
   auto update_result =
       _assemblies.update_one(std::move(filter), std::move(update));
-  return update_result && update_result->modified_count() > 0;
+  return static_cast<bool>(update_result);
 }
 
 bool LedgerMongodb::set_finished_computation(
