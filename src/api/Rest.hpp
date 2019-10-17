@@ -45,6 +45,7 @@ class Rest : public Api {
   void post_validate_key(const Request &req, Response res);
   void post_balance(const Request &request, Response response);
   void get_ready(const Request &request, Response response);
+  void get_list_transactions(const Request &request, Response response);
   void get_transaction(const Request &request, Response response);
   void get_create_transaction(const Request &request, Response response);
   void publish(const Request &request, Response response);

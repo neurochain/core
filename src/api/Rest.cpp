@@ -74,8 +74,8 @@ void Rest::setupRoutes() {
   Options(_router, "/create_transaction", bind(&Rest::allow_option, this));
   Post(_router, "/publish", bind(&Rest::publish, this));
   Options(_router, "/publish", bind(&Rest::allow_option, this));
-  // Post(_router, "/list_transactions/:key_pub",
-  // bind(&Rest::get_unspent_transaction_list, this));
+  Post(_router, "/list_transactions/:key_pub", bind(&Rest::get_list_transactions, this));
+  Options(_router, "/list_transactions/:key_pub", bind(&Rest::allow_option, this));
   Post(_router, "/transaction/", bind(&Rest::get_transaction, this));
   Options(_router, "/transaction/", bind(&Rest::allow_option, this));
   Post(_router, "/block/id", bind(&Rest::get_block_by_id, this));
@@ -227,6 +227,15 @@ void Rest::get_last_blocks(const Rest::Request &req, Rest::Response res) {
 void Rest::get_total_nb_transactions(const Rest::Request &req,
                                      Rest::Response res) {
   send(res, std::to_string(Api::total_nb_transactions()));
+}
+
+void Rest::get_list_transactions(const Rest::Request &req, Rest::Response res) {
+	messages::_KeyPub key_pub_message;
+	if (!messages::from_json(req.body(), &key_pub_message)) {
+		bad_request(res, "could not parse body");
+	}
+
+	send(res, Api::list_transactions(key_pub_message));
 }
 
 void Rest::get_total_nb_blocks(const Rest::Request &req, Rest::Response res) {

@@ -112,6 +112,10 @@ const messages::_Peers Api::connections() const { return _bot->remote_peers(); }
 
 // }
 
+messages::Transactions Api::list_transactions(const messages::_KeyPub &key_pub) const {
+	return _bot->ledger()->list_transactions(key_pub);
+}
+
 bool Api::transaction_publish(const messages::Transaction &transaction) {
   return _bot->publish_transaction(transaction);
 }
