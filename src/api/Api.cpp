@@ -19,8 +19,8 @@ messages::NCCAmount Api::balance(const messages::_KeyPub &key_pub) {
   return _bot->ledger()->balance(key_pub);
 }
 
-std::vector<messages::_KeyPub> Api::previous_recipients(
-    const messages::_KeyPub &key_pub) {
+std::vector<messages::_KeyPub>
+Api::previous_recipients(const messages::_KeyPub &key_pub) {
   return {};
 }
 
@@ -75,8 +75,8 @@ messages::Transaction Api::build_transaction(
   return transaction;
 }
 
-std::optional<messages::Transaction> Api::transaction_from_json(
-    const std::string &json) {
+std::optional<messages::Transaction>
+Api::transaction_from_json(const std::string &json) {
   messages::Transaction transaction;
   return (messages::from_json(json, &transaction))
              ? std::make_optional(transaction)
@@ -112,10 +112,17 @@ const messages::_Peers Api::connections() const { return _bot->remote_peers(); }
 
 // }
 
+messages::Transactions
+Api::list_transactions(const messages::_KeyPub &key_pub,
+                       std::optional<int64_t> limit,
+                       std::optional<int64_t> skip) const {
+  return _bot->ledger()->list_transactions(key_pub, limit, skip);
+}
+
 bool Api::transaction_publish(const messages::Transaction &transaction) {
   return _bot->publish_transaction(transaction);
 }
 
-}  // namespace api
+} // namespace api
 
-}  // namespace neuro
+} // namespace neuro

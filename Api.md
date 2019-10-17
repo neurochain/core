@@ -84,13 +84,21 @@ $ curl localhost:8080/transaction/ -d '{"type":"SHA256", "data":"h75iSkWlN53Z78e
 ```
 
 ### Get a list of transaction
-**URL**: `/list_transactions/:address`
+**URL**: `/list_transactions/:page`
 
-**URL Parameter**: `address` address of wallet to list transaction
+**URL Parameter**: `page` access a particular page in this public key list of transaction (0 indexed)
 
-**method**: `GET`
+**method**: `POST`
 
-get unspent transaction (search by output)
+**data**:
+```
+{
+    rawData: <public key>
+}
+```
+
+get the list of transaction with a pagination, if page number is omited
+the total available page is sent instead
 
 **exemple**:
 ```

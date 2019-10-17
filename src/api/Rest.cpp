@@ -1,15 +1,14 @@
 #include "api/Rest.hpp"
-#include <messages/Hasher.hpp>
 #include "Bot.hpp"
 #include "common/logger.hpp"
 #include "ledger/Ledger.hpp"
+#include "messages/Hasher.hpp"
 
 namespace neuro::api {
 
 Rest::Rest(const messages::config::Rest &config, Bot *bot)
-    : Api::Api(bot),
-      _httpEndpoint(std::make_shared<Http::Endpoint>(
-          Address(Ipv4::any(), config.port()))),
+    : Api::Api(bot), _httpEndpoint(std::make_shared<Http::Endpoint>(
+                         Address(Ipv4::any(), config.port()))),
       _monitor(bot) {
   init();
   start();
@@ -18,7 +17,7 @@ Rest::Rest(const messages::config::Rest &config, Bot *bot)
 void Rest::init() {
   auto opts = Http::Endpoint::options()
                   .threads(1)
-                  .maxRequestSize(1024 * 1024)  // 1Mio
+                  .maxRequestSize(1024 * 1024) // 1Mio
                   .flags(Tcp::Options::ReuseAddr);
   _httpEndpoint->init(opts);
   setupRoutes();
@@ -74,8 +73,8 @@ void Rest::setupRoutes() {
   Options(_router, "/create_transaction", bind(&Rest::allow_option, this));
   Post(_router, "/publish", bind(&Rest::publish, this));
   Options(_router, "/publish", bind(&Rest::allow_option, this));
-  // Post(_router, "/list_transactions/:key_pub",
-  // bind(&Rest::get_unspent_transaction_list, this));
+  Post(_router, "/list_transactions", bind(&Rest::get_list_transactions, this));
+  Options(_router, "/list_transactions", bind(&Rest::allow_option, this));
   Post(_router, "/transaction/", bind(&Rest::get_transaction, this));
   Options(_router, "/transaction/", bind(&Rest::allow_option, this));
   Post(_router, "/block/id", bind(&Rest::get_block_by_id, this));
@@ -200,7 +199,7 @@ void Rest::publish(const Request &req, Response res) {
   }
 
   res.headers().add<Http::Header::AccessControlAllowOrigin>("*");
-  res.send(Pistache::Http::Code::Ok);
+  send(res, transaction);
 }
 
 void Rest::get_block_by_id(const Rest::Request &req, Rest::Response res) {
@@ -229,6 +228,23 @@ void Rest::get_total_nb_transactions(const Rest::Request &req,
   send(res, std::to_string(Api::total_nb_transactions()));
 }
 
+void Rest::get_list_transactions(const Rest::Request &req, Rest::Response res) {
+  if (!req.hasParam(":page")) {
+    const auto nb_transaction = Api::total_nb_transactions();
+    send(res, std::to_string(nb_transaction / _transaction_per_page));
+  } else {
+    const auto page = req.param(":page").as<std::size_t>();
+    messages::_KeyPub key_pub_message;
+    if (!messages::from_json(req.body(), &key_pub_message)) {
+      bad_request(res, "could not parse body");
+    }
+
+    send(res,
+         Api::list_transactions(key_pub_message, page * _transaction_per_page,
+                                (page + 1) * _transaction_per_page));
+  }
+}
+
 void Rest::get_total_nb_blocks(const Rest::Request &req, Rest::Response res) {
   send(res, std::to_string(Api::total_nb_blocks()));
 }
@@ -253,4 +269,4 @@ void Rest::get_all_status(const Rest::Request &req, Rest::Response res) {
 
 Rest::~Rest() { shutdown(); }
 
-}  // namespace neuro::api
+} // namespace neuro::api
