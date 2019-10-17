@@ -229,10 +229,9 @@ void Rest::get_total_nb_transactions(const Rest::Request &req,
 }
 
 void Rest::get_list_transactions(const Rest::Request &req, Rest::Response res) {
-  const auto transaction_per_page = 10;
   if (!req.hasParam(":page")) {
     const auto nb_transaction = Api::total_nb_transactions();
-    send(res, std::to_string(nb_transaction / transaction_per_page));
+    send(res, std::to_string(nb_transaction / _transaction_per_page));
   } else {
     const auto page = req.param(":page").as<std::size_t>();
     messages::_KeyPub key_pub_message;
@@ -240,7 +239,9 @@ void Rest::get_list_transactions(const Rest::Request &req, Rest::Response res) {
       bad_request(res, "could not parse body");
     }
 
-    send(res, Api::list_transactions(key_pub_message, page * transaction_per_page, (page + 1) * transaction_per_page));
+    send(res,
+         Api::list_transactions(key_pub_message, page * _transaction_per_page,
+                                (page + 1) * _transaction_per_page));
   }
 }
 

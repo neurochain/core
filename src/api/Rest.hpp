@@ -29,6 +29,7 @@ class Rest : public Api {
   std::shared_ptr<Http::Endpoint> _httpEndpoint;
   Pistache::Rest::Router _router;
   Monitoring _monitor;
+  constexpr _transaction_per_page = 10;
 
   void init();
   void start();
