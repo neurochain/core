@@ -539,6 +539,7 @@ TEST_F(LedgerMongodb, integrity) {
   ASSERT_EQ(block0.block().header().height(), 0);
   integrity.mutable_assembly_id()->CopyFrom(block0.block().header().id());
   integrity.set_assembly_height(0);
+  integrity.set_block_height(0);
   integrity.set_score("17");
   integrity.mutable_branch_path()->CopyFrom(block0.branch_path());
   ASSERT_TRUE(ledger->set_integrity(integrity));
@@ -560,6 +561,7 @@ TEST_F(LedgerMongodb, integrity) {
   ASSERT_EQ(integrity_score, 17);
 
   integrity.set_assembly_height(1);
+  integrity.set_block_height(block1.block().header().height());
   integrity.set_score("18");
   integrity.mutable_branch_path()->CopyFrom(block1.branch_path());
   ASSERT_TRUE(ledger->set_integrity(integrity));

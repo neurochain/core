@@ -1425,15 +1425,21 @@ bool LedgerMongodb::add_integrity(
   std::lock_guard lock(_ledger_mutex);
   // We want the integrity before the current assembly
   // The branch_path is not the right one but it should work because it is a
-  // descendant of the corrent branch_path
+  // descendant of the current branch_path
   auto previous_score =
       get_integrity(key_pub, assembly_height - 1, branch_path);
+
+  messages::BlockHeader block_header;
+  if (!get_block_header(assembly_id, &block_header)) {
+    return false;
+  }
 
   messages::Integrity integrity;
   integrity.mutable_key_pub()->CopyFrom(key_pub);
   integrity.mutable_assembly_id()->CopyFrom(assembly_id);
   integrity.set_score((previous_score + added_score).toString());
   integrity.set_assembly_height(assembly_height);
+  integrity.set_block_height(block_header.height());
   integrity.mutable_branch_path()->CopyFrom(branch_path);
   return set_integrity(integrity);
 }
@@ -1453,7 +1459,7 @@ messages::IntegrityScore LedgerMongodb::get_integrity(
                                << bss::open_document << $LTE << assembly_height
                                << bss::close_document << bss::finalize;
   auto options = remove_OID();
-  options.sort(bss::document{} << ASSEMBLY_HEIGHT << -1 << bss::finalize);
+  options.sort(bss::document{} << BLOCK_HEIGHT << -1 << bss::finalize);
   auto cursor = _integrity.find(std::move(query), options);
   for (const auto bson_integrity : cursor) {
     // Check that the integrity is in our branch
