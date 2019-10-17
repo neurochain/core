@@ -229,12 +229,19 @@ void Rest::get_total_nb_transactions(const Rest::Request &req,
 }
 
 void Rest::get_list_transactions(const Rest::Request &req, Rest::Response res) {
-  messages::_KeyPub key_pub_message;
-  if (!messages::from_json(req.body(), &key_pub_message)) {
-    bad_request(res, "could not parse body");
-  }
+  const auto transaction_per_page = 10;
+  if (not req.hasParam(":page")) {
+    auto nb_transaction = Api::total_nb_transactions();
+    send(res, std::to_string(nb_transaction / transaction_per_page));
+  } else {
+    auto page = req.param(":page").as<std::size_t>();
+    messages::_KeyPub key_pub_message;
+    if (!messages::from_json(req.body(), &key_pub_message)) {
+      bad_request(res, "could not parse body");
+    }
 
-  send(res, Api::list_transactions(key_pub_message));
+    send(res, Api::list_transactions(key_pub_message, page * transaction_per_page, (page + 1) * transaction_per_page));
+  }
 }
 
 void Rest::get_total_nb_blocks(const Rest::Request &req, Rest::Response res) {

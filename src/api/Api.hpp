@@ -41,7 +41,10 @@ class Api {
       const std::string &json) final;
   virtual messages::Transaction transaction(
       const messages::TransactionID &id) final;
-  virtual messages::Transactions list_transactions(const messages::_KeyPub &key_pub) const;
+  virtual messages::Transactions
+  list_transactions(const messages::_KeyPub &key_pub,
+                    std::optional<int64_t> limit = {},
+                    std::optional<int64_t> skip = {}) const;
   virtual bool transaction_publish(
       const messages::Transaction &transaction) final;
 

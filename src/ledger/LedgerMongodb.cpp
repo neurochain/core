@@ -842,7 +842,9 @@ std::size_t LedgerMongodb::total_nb_blocks() const {
 bool LedgerMongodb::for_each(const Filter &filter,
                              const messages::TaggedBlock &tip,
                              bool include_transaction_pool,
-                             Functor functor) const {
+                             Functor functor,
+                             std::optional<int64_t> limit,
+                             std::optional<int64_t> skip) const {
   std::lock_guard lock(_ledger_mutex);
   if (!filter.output_key_pub() && !filter.input_transaction_id() &&
       !filter.transaction_id() && !filter.output_id()) {
@@ -875,8 +877,16 @@ bool LedgerMongodb::for_each(const Filter &filter,
   }
 
   // auto t = Timer::now();
+  auto options = remove_OID();
+  if (limit) {
+    options.limit(limit.value());
+  }
+  if (skip) {
+    options.skip(skip.value());
+  }
+
   auto bson_transactions =
-      _transactions.find((query << bss::finalize).view(), remove_OID());
+      _transactions.find((query << bss::finalize).view(), options);
 
   bool applied_functor = false;
   for (const auto &bson_transaction : bson_transactions) {
@@ -911,10 +921,12 @@ bool LedgerMongodb::for_each(const Filter &filter,
   return applied_functor;
 }
 
-bool LedgerMongodb::for_each(const Filter &filter, Functor functor) const {
+bool LedgerMongodb::for_each(const Filter &filter, Functor functor,
+                             std::optional<int64_t> limit,
+                             std::optional<int64_t> skip) const {
   std::lock_guard lock(_ledger_mutex);
   assert(get_main_branch_tip().branch() == messages::MAIN);
-  return for_each(filter, _main_branch_tip, true, functor);
+  return for_each(filter, _main_branch_tip, true, functor, limit, skip);
 }
 
 messages::BranchID LedgerMongodb::new_branch_id() const {
