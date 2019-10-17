@@ -200,7 +200,7 @@ void Rest::publish(const Request &req, Response res) {
   }
 
   res.headers().add<Http::Header::AccessControlAllowOrigin>("*");
-  res.send(Pistache::Http::Code::Ok);
+  send(res, transaction);
 }
 
 void Rest::get_block_by_id(const Rest::Request &req, Rest::Response res) {
