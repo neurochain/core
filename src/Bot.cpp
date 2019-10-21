@@ -43,7 +43,7 @@ void Bot::handler_get_block(const messages::Header &header,
 
   auto message = std::make_shared<messages::Message>();
   auto header_reply = message->mutable_header();
-  auto id = messages::fill_header_reply(header, header_reply);
+  messages::fill_header_reply(header, header_reply);
 
   if (get_block.has_hash()) {
     const auto &id = get_block.hash();
@@ -68,7 +68,6 @@ void Bot::handler_get_block(const messages::Header &header,
     return;
   }
 
-  _request_ids.insert(id);
   _networking.reply(message);
 }
 
@@ -90,7 +89,7 @@ void Bot::handler_block(const messages::Header &header,
 
   if (header.has_request_id()) {
     auto got = _request_ids.find(header.request_id());
-    if (got != _request_ids.end()) {
+    if (got == _request_ids.end()) {
       LOG_WARNING << "The request_id is wrong " << body.block().header().id();
     }
   }
