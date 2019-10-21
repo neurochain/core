@@ -209,7 +209,7 @@ message Body {
 }
 
 message Header {
-  required int32 version = 1;
+  required string version = 1;
   required Timestamp ts = 2;
   optional Hash signature = 3;
 

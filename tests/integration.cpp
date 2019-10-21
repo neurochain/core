@@ -532,7 +532,7 @@ TEST(INTEGRATION, ignore_bad_message) {
   auto *header = msg.mutable_header();
   messages::fill_header(header);
   msg.add_bodies()->mutable_get_peers();
-  header->set_version(neuro::MessageVersion + 100);
+  header->set_version(neuro::MessageVersion + "100");
   bot0->send_all(msg);
 }
 
