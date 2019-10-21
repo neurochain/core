@@ -1122,7 +1122,7 @@ bool Consensus::mine_block(const messages::Block &block0) {
     return false;
   }
 
-  if (_last_mined_block_height.first == height) {
+  if (_last_mined_block_height == height) {
     LOG_INFO << "attempt to mine a block that we have already mined at height"
              << height;
     return false;
@@ -1155,7 +1155,7 @@ bool Consensus::mine_block(const messages::Block &block0) {
   add_block_async(new_block);
   LOG_DEBUG << "add_block took " << (Timer::now() - t1).count() / 1E6 << " ms";
 
-  _last_mined_block_height = {height, key_pub_index};
+  _last_mined_block_height = height;
 
   LOG_INFO << "Mined block successfully with id " << new_block.header().id()
            << " with height " << new_block.header().height();
