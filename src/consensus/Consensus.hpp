@@ -47,6 +47,7 @@ class Consensus {
   const PublishBlock _publish_block;
   std::thread _compute_pii_thread;
   std::vector<std::pair<messages::BlockHeight, KeyPubIndex>> _heights_to_write;
+  std::pair<messages::BlockHeight, KeyPubIndex> _last_mined_block_height;  //!< cache for the last mined block height
   std::mutex _heights_to_write_mutex;
   std::recursive_mutex _verify_blocks_mutex;
   std::optional<messages::AssemblyID> _previous_assembly_id;

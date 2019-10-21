@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <optional>
+
 #include "crypto/Hash.hpp"
 #include "crypto/Sign.hpp"
 #include "ledger/Filter.hpp"
