@@ -15,9 +15,7 @@ Connection::Connection(const ID id, messages::Queue *queue,
                        const std::shared_ptr<tcp::socket> &socket,
                        std::shared_ptr<messages::Peer> remote_peer)
     : ::neuro::networking::Connection::Connection(id, queue),
-      _header(sizeof(HeaderPattern), 0),
-      _buffer(128, 0),
-      _socket(socket),
+      _header(sizeof(HeaderPattern), 0), _buffer(128, 0), _socket(socket),
       _remote_peer(remote_peer) {
   assert(_socket != nullptr);
   remote_peer->set_connection_id(id);
@@ -194,7 +192,7 @@ void Connection::terminate(bool from_inside) const {
     LOG_DEBUG << "can't shutdown connection socket to: id " << _id << " "
               << remote_port().value_or(0) << " : " << ec.message();
   }
-  if(!from_inside) {
+  if (!from_inside) {
     // if terminate comes from outside, we don't need to
     // send a message to the bot.
     return;
@@ -247,6 +245,6 @@ Connection::~Connection() {
             << remote_port().value_or(0) << ":" << _id;
   close();
 }
-}  // namespace tcp
-}  // namespace networking
-}  // namespace neuro
+} // namespace tcp
+} // namespace networking
+} // namespace neuro

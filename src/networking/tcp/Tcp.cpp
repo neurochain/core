@@ -19,10 +19,8 @@ using namespace std::chrono_literals;
 
 Tcp::Tcp(messages::Queue *queue, messages::Peers *peers, crypto::Ecc *keys,
          const messages::config::Networking &config)
-    : TransportLayer(queue, peers, keys),
-      _stopped(false),
-      _listening_port(config.tcp().port()),
-      _io_context(),
+    : TransportLayer(queue, peers, keys), _stopped(false),
+      _listening_port(config.tcp().port()), _io_context(),
       _resolver(_io_context),
       _acceptor(_io_context,
                 bai::tcp::endpoint(bai::tcp::v4(), _listening_port)),
@@ -59,7 +57,7 @@ void Tcp::accept(const boost::system::error_code &error) {
   } else {
     LOG_WARNING << "Rejected connection " << error.message();
   }
-  _new_socket.reset();  // TODO why?
+  _new_socket.reset(); // TODO why?
   start_accept();
 }
 
@@ -170,7 +168,7 @@ bool Tcp::terminate(const Connection::ID id) {
     return false;
   }
   got->second->remote_peer()->set_status(messages::Peer::UNREACHABLE);
-  got->second->terminate(true);
+  got->second->terminate(false);
   _connections.erase(got);
   return true;
 }
@@ -237,8 +235,8 @@ TransportLayer::SendResult Tcp::send(const messages::Message &message,
   }
 }
 
-TransportLayer::SendResult Tcp::send_one(
-    const messages::Message &message) const {
+TransportLayer::SendResult
+Tcp::send_one(const messages::Message &message) const {
   auto peer_it = _peers->begin(messages::Peer::CONNECTED);
   if (peer_it != _peers->end()) {
     return send(message, peer_it->connection_id());
@@ -246,8 +244,8 @@ TransportLayer::SendResult Tcp::send_one(
   return SendResult::FAILED;
 }
 
-TransportLayer::SendResult Tcp::send_all(
-    const messages::Message &message) const {
+TransportLayer::SendResult
+Tcp::send_all(const messages::Message &message) const {
   const auto connected_peers = _peers->connected_peers();
   bool one_good = false;
   bool one_failed = false;
@@ -328,7 +326,7 @@ void Tcp::stop() {
     _stopped = true;
     _io_context.post([this]() { _acceptor.close(); });
     for (auto &[_, connection] : _connections) {
-      connection->terminate();
+      connection->terminate(false);
     }
     _io_context.stop();
 
@@ -366,5 +364,5 @@ Tcp::~Tcp() {
   LOG_DEBUG << this << " trax> TCP killed";
 }
 
-}  // namespace networking
-}  // namespace neuro
+} // namespace networking
+} // namespace neuro
