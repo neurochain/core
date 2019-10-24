@@ -185,7 +185,7 @@ bool Connection::send(std::shared_ptr<Buffer> &message) {
 
 void Connection::close() { _socket->close(); }
 
-void Connection::terminate() const {
+void Connection::terminate(bool from_inside) const {
   LOG_INFO << this << " " << _id << " Killing connection " << ip() << ":"
            << remote_port().value_or(0);
   boost::system::error_code ec;
@@ -193,6 +193,10 @@ void Connection::terminate() const {
   if (ec) {
     LOG_DEBUG << "can't shutdown connection socket to: id " << _id << " "
               << remote_port().value_or(0) << " : " << ec.message();
+  }
+  if(!from_inside) {
+    // if terminate comes from outside, we are already aware of the issue.
+    return;
   }
   auto message = std::make_shared<messages::Message>();
   auto header = message->mutable_header();

@@ -166,11 +166,11 @@ bool Tcp::terminate(const Connection::ID id) {
   std::unique_lock<std::mutex> lock_connection(_connections_mutex);
   auto got = _connections.find(id);
   if (got == _connections.end()) {
-    LOG_INFO << "terminate on connection not found " << id;
+    LOG_ERROR << "Terminate on connection not found " << id;
     return false;
   }
   got->second->remote_peer()->set_status(messages::Peer::UNREACHABLE);
-  got->second->terminate();
+  got->second->terminate(true);
   _connections.erase(got);
   return true;
 }
