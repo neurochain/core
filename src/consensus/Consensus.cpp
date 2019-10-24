@@ -1107,8 +1107,7 @@ bool Consensus::mine_block(const messages::Block &block0) {
   if (_heights_to_write.empty()) {
     return false;
   }
-  const auto height = _heights_to_write[0].first;
-  const auto key_pub_index = _heights_to_write[0].second;
+  const auto [height, key_pub_index] = _heights_to_write.front();
   const auto block_start =
       block0.header().timestamp().data() + height * _config.block_period;
   const std::time_t block_end = block_start + _config.block_period;
@@ -1120,6 +1119,12 @@ bool Consensus::mine_block(const messages::Block &block0) {
   _heights_to_write.erase(_heights_to_write.begin());
 
   if (current_time >= block_end) {
+    return false;
+  }
+
+  if (_last_mined_block_height == height) {
+    LOG_INFO << "attempt to mine a block that we have already mined at height"
+             << height;
     return false;
   }
 
@@ -1149,6 +1154,8 @@ bool Consensus::mine_block(const messages::Block &block0) {
   const auto t1 = Timer::now();
   add_block_async(new_block);
   LOG_DEBUG << "add_block took " << (Timer::now() - t1).count() / 1E6 << " ms";
+
+  _last_mined_block_height = height;
 
   LOG_INFO << "Mined block successfully with id " << new_block.header().id()
            << " with height " << new_block.header().height();
