@@ -40,7 +40,7 @@ class Connection : public networking::Connection,
              std::shared_ptr<messages::Peer> remote_peer);
 
   std::shared_ptr<const tcp::socket> socket() const;
-  void terminate() const;
+  void terminate(bool from_inside = true) const;
 
   void read();
 

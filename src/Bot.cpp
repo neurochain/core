@@ -49,7 +49,7 @@ void Bot::handler_get_block(const messages::Header &header,
     const auto &id = get_block.hash();
     auto block = message->add_bodies()->mutable_block();
     if (!_ledger->get_block(id, block)) {
-      LOG_ERROR << _me.port() << " get_block not found for id " << id;
+      LOG_INFO << _me.port() << " get_block not found for id " << id;
       return;
     }
 
