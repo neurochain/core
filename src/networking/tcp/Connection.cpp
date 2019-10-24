@@ -195,7 +195,8 @@ void Connection::terminate(bool from_inside) const {
               << remote_port().value_or(0) << " : " << ec.message();
   }
   if(!from_inside) {
-    // if terminate comes from outside, we are already aware of the issue.
+    // if terminate comes from outside, we don't need to
+    // send a message to the bot.
     return;
   }
   auto message = std::make_shared<messages::Message>();
