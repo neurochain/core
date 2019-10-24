@@ -34,7 +34,6 @@ const std::string Connection::ip() const {
   if (ip) {
     return ip->to_string();
   } else {
-    LOG_ERROR << "got a connection with no ip associated";
     return "(no ip)";
   }
 }
