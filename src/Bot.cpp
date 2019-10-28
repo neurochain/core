@@ -82,7 +82,6 @@ void Bot::handler_block(const messages::Header &header,
   }
 
   if (!_consensus->add_block_async(body.block())) {
-    LOG_WARNING << "Consensus rejected block" << body.block().header().id();
     return;
   }
   update_ledger(_ledger->new_missing_block(body.block()));
