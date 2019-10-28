@@ -77,9 +77,13 @@ mongocxx::instance LedgerMongodb::_instance{};
 std::recursive_mutex LedgerMongodb::_ledger_mutex{};
 
 LedgerMongodb::LedgerMongodb(const std::string &url, const std::string &db_name)
-    : _uri(url), _client(_uri), _db_name(db_name), _db(_client[db_name]),
+    : _uri(url),
+      _client(_uri),
+      _db_name(db_name),
+      _db(_client[db_name]),
       _blocks(_db.collection(BLOCKS)),
-      _transactions(_db.collection(TRANSACTIONS)), _pii(_db.collection(PII)),
+      _transactions(_db.collection(TRANSACTIONS)),
+      _pii(_db.collection(PII)),
       _integrity(_db.collection(INTEGRITY)),
       _assemblies(_db.collection(ASSEMBLIES)),
       _double_mining(_db.collection(DOUBLE_MINING)) {}
@@ -109,7 +113,7 @@ mongocxx::options::find LedgerMongodb::remove_OID() {
   std::lock_guard lock(_ledger_mutex);
   mongocxx::options::find find_options;
   auto projection_doc = bss::document{} << _ID << 0
-                                        << bss::finalize; // remove _id
+                                        << bss::finalize;  // remove _id
   find_options.projection(std::move(projection_doc));
   return find_options;
 }
@@ -123,8 +127,8 @@ mongocxx::options::find LedgerMongodb::remove_balances() {
   return find_options;
 }
 
-mongocxx::options::find
-LedgerMongodb::projection(const std::string &field) const {
+mongocxx::options::find LedgerMongodb::projection(
+    const std::string &field) const {
   std::lock_guard lock(_ledger_mutex);
   mongocxx::options::find find_options;
   auto projection_doc = bss::document{} << _ID << 0 << field << 1
@@ -133,9 +137,8 @@ LedgerMongodb::projection(const std::string &field) const {
   return find_options;
 }
 
-mongocxx::options::find
-LedgerMongodb::projection(const std::string &field0,
-                          const std::string &field1) const {
+mongocxx::options::find LedgerMongodb::projection(
+    const std::string &field0, const std::string &field1) const {
   std::lock_guard lock(_ledger_mutex);
   mongocxx::options::find find_options;
   auto projection_transaction = bss::document{} << _ID << 0 << field0 << 1
@@ -150,7 +153,7 @@ void LedgerMongodb::create_first_assemblies(
   messages::Assembly assembly_minus_1, assembly_minus_2;
   crypto::Ecc key0, key1;
   assembly_minus_1.mutable_id()->CopyFrom(
-      messages::Hasher(key0.key_pub())); // Just a random hash
+      messages::Hasher(key0.key_pub()));  // Just a random hash
   assembly_minus_1.mutable_previous_assembly_id()->CopyFrom(
       messages::Hasher(key1.key_pub()));
   assembly_minus_1.set_finished_computation(true);
@@ -210,16 +213,17 @@ bool LedgerMongodb::load_block0(const messages::config::Database &config,
 
     auto d = bss::document{};
     switch (block0_file.block_format()) {
-    case messages::config::BlockFile::BlockFormat::BlockFile_BlockFormat_PROTO:
-      block0->ParseFromString(str);
-      break;
-    case messages::config::BlockFile::BlockFormat::BlockFile_BlockFormat_BSON:
-      d << str;
-      from_bson(d.view(), block0);
-      break;
-    case messages::config::BlockFile::BlockFormat::BlockFile_BlockFormat_JSON:
-      messages::from_json(str, block0);
-      break;
+      case messages::config::BlockFile::BlockFormat::
+          BlockFile_BlockFormat_PROTO:
+        block0->ParseFromString(str);
+        break;
+      case messages::config::BlockFile::BlockFormat::BlockFile_BlockFormat_BSON:
+        d << str;
+        from_bson(d.view(), block0);
+        break;
+      case messages::config::BlockFile::BlockFormat::BlockFile_BlockFormat_JSON:
+        messages::from_json(str, block0);
+        break;
     }
   } else if (config.has_block0()) {
     block0->CopyFrom(config.block0());
@@ -754,10 +758,9 @@ bool LedgerMongodb::get_transaction(
   return found_transaction;
 }
 
-std::vector<messages::TaggedTransaction>
-LedgerMongodb::get_transactions(const messages::TransactionID &id,
-                                const messages::TaggedBlock &tip,
-                                bool include_transaction_pool) const {
+std::vector<messages::TaggedTransaction> LedgerMongodb::get_transactions(
+    const messages::TransactionID &id, const messages::TaggedBlock &tip,
+    bool include_transaction_pool) const {
   std::lock_guard lock(_ledger_mutex);
   std::vector<messages::TaggedTransaction> transactions;
   Filter filter;
@@ -1009,10 +1012,9 @@ Cursor<messages::TaggedTransaction> LedgerMongodb::get_transaction_pool(
   return cursor;
 }
 
-std::size_t
-LedgerMongodb::get_transaction_pool(messages::Block *block,
-                                    const std::size_t size_limit,
-                                    const std::size_t max_transactions) const {
+std::size_t LedgerMongodb::get_transaction_pool(
+    messages::Block *block, const std::size_t size_limit,
+    const std::size_t max_transactions) const {
   std::lock_guard lock(_ledger_mutex);
   std::size_t transaction_count = 0;
   for (const auto &tagged_transaction :
@@ -1056,8 +1058,8 @@ bool LedgerMongodb::insert_block(const messages::Block &block) {
   return result;
 }
 
-messages::BranchPath
-LedgerMongodb::fork_from(const messages::BranchPath &branch_path) const {
+messages::BranchPath LedgerMongodb::fork_from(
+    const messages::BranchPath &branch_path) const {
   // We must add the new branch_id at the beginning of the repeated field
   // And sadly protobuf does not support that
   std::lock_guard lock(_ledger_mutex);
@@ -1075,8 +1077,8 @@ LedgerMongodb::fork_from(const messages::BranchPath &branch_path) const {
   return new_branch_path;
 }
 
-messages::BranchPath
-LedgerMongodb::first_child(const messages::BranchPath &branch_path) const {
+messages::BranchPath LedgerMongodb::first_child(
+    const messages::BranchPath &branch_path) const {
   std::lock_guard lock(_ledger_mutex);
   auto new_branch_path = messages::BranchPath(branch_path);
   *new_branch_path.mutable_block_numbers()->Mutable(0) =
@@ -1460,10 +1462,10 @@ bool LedgerMongodb::add_integrity(
  * only stored when it changes. And we only want to see the integrities for
  * our branch which we cannot specify in a mongo query.
  */
-messages::IntegrityScore
-LedgerMongodb::get_integrity(const messages::_KeyPub &key_pub,
-                             const messages::AssemblyHeight &assembly_height,
-                             const messages::BranchPath &branch_path) const {
+messages::IntegrityScore LedgerMongodb::get_integrity(
+    const messages::_KeyPub &key_pub,
+    const messages::AssemblyHeight &assembly_height,
+    const messages::BranchPath &branch_path) const {
   std::lock_guard lock(_ledger_mutex);
   auto query = bss::document{} << KEY_PUB << to_bson(key_pub) << ASSEMBLY_HEIGHT
                                << bss::open_document << $LTE << assembly_height
@@ -1575,17 +1577,15 @@ bool LedgerMongodb::denunciation_exists(
   return false;
 }
 
-mongocxx::cursor
-LedgerMongodb::find(mongocxx::collection &collection,
-                    bsoncxx::document::view_or_value query,
-                    const mongocxx::options::find &options) const {
+mongocxx::cursor LedgerMongodb::find(
+    mongocxx::collection &collection, bsoncxx::document::view_or_value query,
+    const mongocxx::options::find &options) const {
   std::lock_guard lock(_ledger_mutex);
   return collection.find(std::move(query), options);
 }
 
-messages::TaggedBlocks
-LedgerMongodb::get_blocks(mongocxx::cursor &cursor,
-                          bool include_transactions) const {
+messages::TaggedBlocks LedgerMongodb::get_blocks(
+    mongocxx::cursor &cursor, bool include_transactions) const {
   messages::TaggedBlocks tagged_blocks;
   for (const auto &bson_tagged_block : cursor) {
     auto &tagged_block = tagged_blocks.emplace_back();
@@ -1598,17 +1598,16 @@ LedgerMongodb::get_blocks(mongocxx::cursor &cursor,
   return tagged_blocks;
 }
 
-messages::TaggedBlocks
-LedgerMongodb::get_blocks(const messages::Branch name) const {
+messages::TaggedBlocks LedgerMongodb::get_blocks(
+    const messages::Branch name) const {
   auto query = bss::document{} << BRANCH << name << bss::finalize;
   mongocxx::cursor cursor = find(_blocks, std::move(query), remove_balances());
   return get_blocks(cursor, false);
 }
 
-std::vector<messages::TaggedBlock>
-LedgerMongodb::get_blocks(const messages::BlockHeight height,
-                          const messages::_KeyPub &author,
-                          bool include_transactions) const {
+std::vector<messages::TaggedBlock> LedgerMongodb::get_blocks(
+    const messages::BlockHeight height, const messages::_KeyPub &author,
+    bool include_transactions) const {
   std::lock_guard lock(_ledger_mutex);
   std::vector<messages::TaggedBlock> tagged_blocks;
   auto query = bss::document{}
@@ -1687,9 +1686,9 @@ void LedgerMongodb::add_denunciations(
   }
 }
 
-messages::Balance
-LedgerMongodb::get_balance(const messages::_KeyPub &key_pub,
-                           const messages::TaggedBlock &tagged_block) const {
+messages::Balance LedgerMongodb::get_balance(
+    const messages::_KeyPub &key_pub,
+    const messages::TaggedBlock &tagged_block) const {
   std::lock_guard lock(_ledger_mutex);
   std::lock_guard lock_mpfr(mpfr_mutex);
   const auto &branch_path = tagged_block.branch_path();
@@ -1757,7 +1756,7 @@ Double LedgerMongodb::compute_new_balance(messages::Balance *balance,
                                           const BalanceChange &change,
                                           messages::BlockHeight height) {
   const auto balance_value = balance->value().value();
-  Double enthalpy = balance->enthalpy_end(); // enthalpy from previous balance
+  Double enthalpy = balance->enthalpy_end();  // enthalpy from previous balance
 
   // Enthalpy has increased since the last balance change
   enthalpy += balance_value * (height - balance->block_height());
@@ -1862,5 +1861,5 @@ bool LedgerMongodb::add_balances(messages::TaggedBlock *tagged_block) {
   return true;
 }
 
-} // namespace ledger
-} // namespace neuro
+}  // namespace ledger
+}  // namespace neuro

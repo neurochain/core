@@ -1,22 +1,23 @@
 #ifndef NEURO_SRC_LEDGER_LEDGER_HPP
 #define NEURO_SRC_LEDGER_LEDGER_HPP
 
+#include <functional>
+#include <optional>
 #include "common/WorkerQueue.hpp"
 #include "crypto/Hash.hpp"
 #include "crypto/Sign.hpp"
 #include "ledger/Filter.hpp"
 #include "messages.pb.h"
 #include "messages/Message.hpp"
-#include <functional>
-#include <optional>
 
 namespace neuro {
 namespace ledger {
 
-template <class M> class Cursor;
+template <class M>
+class Cursor;
 
 class Ledger {
-public:
+ public:
   using Functor = std::function<bool(const messages::TaggedTransaction &)>;
   using BlocksIds = std::unordered_set<messages::BlockID>;
   struct MainBranchTip {
@@ -25,14 +26,14 @@ public:
   };
 
   class Filter {
-  private:
+   private:
     std::optional<messages::_KeyPub> _output_key_pub;
     std::optional<messages::BlockID> _block_id;
     std::optional<messages::TransactionID> _input_transaction_id;
     std::optional<messages::TransactionID> _transaction_id;
     std::optional<int32_t> _output_id;
 
-  public:
+   public:
     void input_transaction_id(const messages::TransactionID &transaction_id) {
       _input_transaction_id =
           std::make_optional<messages::TransactionID>(transaction_id);
@@ -71,12 +72,12 @@ public:
     }
   };
 
-private:
+ private:
   mutable std::mutex _send_ncc_mutex;
   WorkerQueue<messages::TaggedBlock> _missing_blocks_queue;
 
-  std::optional<messages::Hash>
-  new_missing_block(const messages::TaggedBlock &tagged_block) {
+  std::optional<messages::Hash> new_missing_block(
+      const messages::TaggedBlock &tagged_block) {
     messages::TaggedBlock prev_tagged_block;
     if (tagged_block.branch() != messages::Branch::DETACHED) {
       std::lock_guard lock(_missing_block_mutex);
@@ -142,12 +143,12 @@ private:
     }
   }
 
-protected:
+ protected:
   mutable std::recursive_mutex _missing_block_mutex;
   BlocksIds _missing_blocks;
   BlocksIds _seen_blocks;
 
-public:
+ public:
   Ledger()
       : _missing_blocks_queue(
             [this](const messages::TaggedBlock &tagged_block) {
@@ -160,8 +161,8 @@ public:
     return copy;
   }
 
-  std::optional<messages::Hash>
-  new_missing_block(const messages::BlockID &block_id) {
+  std::optional<messages::Hash> new_missing_block(
+      const messages::BlockID &block_id) {
     messages::TaggedBlock tagged_block;
     const bool block_found = get_block(block_id, &tagged_block, false);
     if (!block_found) {
@@ -176,8 +177,8 @@ public:
     }
   }
 
-  std::optional<messages::Hash>
-  new_missing_block(const messages::World &world) {
+  std::optional<messages::Hash> new_missing_block(
+      const messages::World &world) {
     if (!world.has_missing_block()) {
       return std::nullopt;
     }
@@ -200,8 +201,8 @@ public:
   virtual messages::BlockHeight height() const = 0;
   virtual bool get_block_header(const messages::BlockID &id,
                                 messages::BlockHeader *header) const = 0;
-  virtual bool
-  get_last_block_header(messages::BlockHeader *block_header) const = 0;
+  virtual bool get_last_block_header(
+      messages::BlockHeader *block_header) const = 0;
   virtual bool get_last_block(messages::TaggedBlock *tagged_block,
                               bool include_transactions = true) const = 0;
   virtual bool get_block(const messages::BlockID &id, messages::Block *block,
@@ -209,16 +210,16 @@ public:
   virtual bool get_block(const messages::BlockID &id,
                          messages::TaggedBlock *tagged_block,
                          bool include_transactions = true) const = 0;
-  virtual bool
-  get_tagged_block_balances(const messages::BlockID &id,
-                            messages::TaggedBlock *tagged_block) const = 0;
+  virtual bool get_tagged_block_balances(
+      const messages::BlockID &id,
+      messages::TaggedBlock *tagged_block) const = 0;
   virtual bool get_block_by_previd(const messages::BlockID &previd,
                                    messages::Block *block,
                                    bool include_transactions = true) const = 0;
-  virtual bool
-  get_blocks_by_previd(const messages::BlockID &previd,
-                       std::vector<messages::TaggedBlock> *tagged_blocks,
-                       bool include_transactions = true) const = 0;
+  virtual bool get_blocks_by_previd(
+      const messages::BlockID &previd,
+      std::vector<messages::TaggedBlock> *tagged_blocks,
+      bool include_transactions = true) const = 0;
   virtual bool get_block(const messages::BlockHeight height,
                          messages::Block *block,
                          bool include_transactions = true) const = 0;
@@ -229,12 +230,11 @@ public:
                          const messages::BranchPath &branch_path,
                          messages::TaggedBlock *tagged_block,
                          bool include_transactions = true) const = 0;
-  virtual messages::TaggedBlocks
-  get_blocks(const messages::BlockHeight height,
-             const messages::_KeyPub &author,
-             bool include_transactions = true) const = 0;
-  virtual messages::TaggedBlocks
-  get_blocks(const messages::Branch name) const = 0;
+  virtual messages::TaggedBlocks get_blocks(
+      const messages::BlockHeight height, const messages::_KeyPub &author,
+      bool include_transactions = true) const = 0;
+  virtual messages::TaggedBlocks get_blocks(
+      const messages::Branch name) const = 0;
   virtual bool insert_block(const messages::TaggedBlock &tagged_block) = 0;
   virtual bool insert_block(const messages::Block &block) = 0;
   virtual bool delete_block(const messages::BlockID &id) = 0;
@@ -256,21 +256,20 @@ public:
                                messages::TaggedTransaction *tagged_transaction,
                                const messages::TaggedBlock &tip,
                                bool include_transaction_pool) const = 0;
-  virtual std::vector<messages::TaggedTransaction>
-  get_transactions(const messages::TransactionID &id,
-                   const messages::TaggedBlock &tip,
-                   bool include_transaction_pool) const = 0;
+  virtual std::vector<messages::TaggedTransaction> get_transactions(
+      const messages::TransactionID &id, const messages::TaggedBlock &tip,
+      bool include_transaction_pool) const = 0;
 
-  virtual bool
-  add_transaction(const messages::TaggedTransaction &tagged_transaction) = 0;
-  virtual bool
-  add_to_transaction_pool(const messages::Transaction &transaction) = 0;
+  virtual bool add_transaction(
+      const messages::TaggedTransaction &tagged_transaction) = 0;
+  virtual bool add_to_transaction_pool(
+      const messages::Transaction &transaction) = 0;
   virtual bool delete_transaction(const messages::TransactionID &id) = 0;
   virtual Cursor<messages::TaggedTransaction> get_transaction_pool(
       const std::optional<std::size_t> size_limit = {}) const = 0;
-  virtual std::size_t
-  get_transaction_pool(messages::Block *block, const std::size_t size_limit,
-                       const std::size_t max_transactions) const = 0;
+  virtual std::size_t get_transaction_pool(
+      messages::Block *block, const std::size_t size_limit,
+      const std::size_t max_transactions) const = 0;
 
   // virtual bool get_blocks(int start, int size,
   // std::vector<messages::Block> &blocks) = 0;
@@ -278,11 +277,11 @@ public:
 
   virtual std::size_t total_nb_blocks() const = 0;
 
-  virtual messages::BranchPath
-  fork_from(const messages::BranchPath &branch_path) const = 0;
+  virtual messages::BranchPath fork_from(
+      const messages::BranchPath &branch_path) const = 0;
 
-  virtual messages::BranchPath
-  first_child(const messages::BranchPath &branch_path) const = 0;
+  virtual messages::BranchPath first_child(
+      const messages::BranchPath &branch_path) const = 0;
 
   virtual void empty_database() = 0;
 
@@ -290,10 +289,9 @@ public:
 
   virtual Cursor<messages::TaggedBlock> get_unverified_blocks() const = 0;
 
-  virtual bool
-  set_block_verified(const messages::BlockID &id,
-                     const messages::BlockScore &score,
-                     const messages::AssemblyID previous_assembly_id) = 0;
+  virtual bool set_block_verified(
+      const messages::BlockID &id, const messages::BlockScore &score,
+      const messages::AssemblyID previous_assembly_id) = 0;
 
   virtual bool update_main_branch() = 0;
 
@@ -323,10 +321,10 @@ public:
                              const messages::BranchPath &branch_path,
                              const messages::IntegrityScore &added_score) = 0;
 
-  virtual messages::IntegrityScore
-  get_integrity(const messages::_KeyPub &key_pub,
-                const messages::AssemblyHeight &assembly_height,
-                const messages::BranchPath &branch_path) const = 0;
+  virtual messages::IntegrityScore get_integrity(
+      const messages::_KeyPub &key_pub,
+      const messages::AssemblyHeight &assembly_height,
+      const messages::BranchPath &branch_path) const = 0;
 
   virtual bool set_previous_assembly_id(
       const messages::BlockID &block_id,
@@ -348,17 +346,17 @@ public:
   virtual bool set_seed(const messages::AssemblyID &assembly_id,
                         int32_t seed) = 0;
 
-  virtual bool
-  set_finished_computation(const messages::AssemblyID &assembly_id) = 0;
+  virtual bool set_finished_computation(
+      const messages::AssemblyID &assembly_id) = 0;
 
   /*
    * Check if a denunciation exists in a certain branch within a block with a
    * block height at most max_block_height
    */
-  virtual bool
-  denunciation_exists(const messages::Denunciation &denunciation,
-                      const messages::BlockHeight &max_block_height,
-                      const messages::BranchPath &branch_path) const = 0;
+  virtual bool denunciation_exists(
+      const messages::Denunciation &denunciation,
+      const messages::BlockHeight &max_block_height,
+      const messages::BranchPath &branch_path) const = 0;
 
   virtual void add_double_mining(
       const std::vector<messages::TaggedBlock> &tagged_blocks) = 0;
@@ -369,13 +367,13 @@ public:
       messages::Block *block, const messages::BranchPath &branch_path,
       const std::vector<messages::Denunciation> &denunciations) const = 0;
 
-  virtual void
-  add_denunciations(messages::Block *block,
-                    const messages::BranchPath &branch_path) const = 0;
+  virtual void add_denunciations(
+      messages::Block *block,
+      const messages::BranchPath &branch_path) const = 0;
 
-  virtual messages::Balance
-  get_balance(const messages::_KeyPub &key_pub,
-              const messages::TaggedBlock &tagged_block) const = 0;
+  virtual messages::Balance get_balance(
+      const messages::_KeyPub &key_pub,
+      const messages::TaggedBlock &tagged_block) const = 0;
 
   virtual bool add_balances(messages::TaggedBlock *tagged_block) = 0;
 
@@ -394,10 +392,9 @@ public:
     return get_block(id, &block);
   }
 
-  messages::Transactions
-  list_transactions(const messages::_KeyPub &key_pub,
-                    std::optional<int64_t> limit = {},
-                    std::optional<int64_t> skip = {}) const {
+  messages::Transactions list_transactions(
+      const messages::_KeyPub &key_pub, std::optional<int64_t> limit = {},
+      std::optional<int64_t> skip = {}) const {
     Filter filter;
     filter.output_key_pub(key_pub);
     messages::Transactions transactions;
@@ -415,9 +412,9 @@ public:
     return transactions;
   }
 
-  std::vector<messages::Output>
-  get_outputs_for_key_pub(const messages::TransactionID &transaction_id,
-                          const messages::_KeyPub &key_pub) const {
+  std::vector<messages::Output> get_outputs_for_key_pub(
+      const messages::TransactionID &transaction_id,
+      const messages::_KeyPub &key_pub) const {
     messages::Transaction transaction;
     get_transaction(transaction_id, &transaction);
     std::vector<messages::Output> result;
@@ -443,8 +440,8 @@ public:
     return match;
   }
 
-  std::vector<messages::Block>
-  get_last_blocks(const std::size_t nb_blocks) const {
+  std::vector<messages::Block> get_last_blocks(
+      const std::size_t nb_blocks) const {
     auto last_height = height();
     messages::Block block;
     get_block(last_height, &block);
@@ -469,9 +466,9 @@ public:
   }
 
   template <class Outputs>
-  messages::Transaction
-  build_transaction(const messages::_KeyPub &sender, const Outputs &outputs,
-                    const std::optional<messages::NCCAmount> &fees = {}) const {
+  messages::Transaction build_transaction(
+      const messages::_KeyPub &sender, const Outputs &outputs,
+      const std::optional<messages::NCCAmount> &fees = {}) const {
     messages::Transaction transaction;
 
     messages::NCCValue total_spent = 0;
@@ -496,11 +493,11 @@ public:
     return transaction;
   }
 
-  messages::Transaction
-  build_transaction(const messages::_KeyPub &sender_key_pub,
-                    const messages::_KeyPub &recipient_key_pub,
-                    const messages::NCCAmount &amount,
-                    const std::optional<messages::NCCAmount> &fees = {}) const {
+  messages::Transaction build_transaction(
+      const messages::_KeyPub &sender_key_pub,
+      const messages::_KeyPub &recipient_key_pub,
+      const messages::NCCAmount &amount,
+      const std::optional<messages::NCCAmount> &fees = {}) const {
     auto outputs = std::vector<messages::Output>{1};
     auto output = &outputs[0];
     output->mutable_key_pub()->CopyFrom(recipient_key_pub);
@@ -509,12 +506,11 @@ public:
     return build_transaction(sender_key_pub, outputs, fees);
   }
 
-  messages::Transaction
-  send_ncc(const crypto::KeyPriv &sender_key_priv,
-           const messages::_KeyPub &recipient_key_pub,
-           const float ratio_to_send,
+  messages::Transaction send_ncc(
+      const crypto::KeyPriv &sender_key_priv,
+      const messages::_KeyPub &recipient_key_pub, const float ratio_to_send,
 
-           const std::optional<messages::NCCAmount> &fees = {}) const {
+      const std::optional<messages::NCCAmount> &fees = {}) const {
     if (ratio_to_send < 0) {
       throw std::runtime_error("Cannot send_ncc with a ratio of " +
                                std::to_string(ratio_to_send));
@@ -525,11 +521,11 @@ public:
     return send_ncc(sender_key_priv, recipient_key_pub, amount_to_send, fees);
   }
 
-  messages::Transaction
-  send_ncc(const crypto::KeyPriv &sender_key_priv,
-           const messages::_KeyPub &recipient_key_pub,
-           const messages::NCCAmount &amount_to_send,
-           const std::optional<messages::NCCAmount> &fees = {}) const {
+  messages::Transaction send_ncc(
+      const crypto::KeyPriv &sender_key_priv,
+      const messages::_KeyPub &recipient_key_pub,
+      const messages::NCCAmount &amount_to_send,
+      const std::optional<messages::NCCAmount> &fees = {}) const {
     std::lock_guard<std::mutex> lock(_send_ncc_mutex);
     const auto sender_key_pub = sender_key_priv.make_key_pub();
 
@@ -547,7 +543,7 @@ public:
   virtual ~Ledger() {}
 };
 
-} // namespace ledger
-} // namespace neuro
+}  // namespace ledger
+}  // namespace neuro
 
 #endif /* NEURO_SRC_LEDGER_LEDGER_HPP */
