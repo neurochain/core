@@ -320,7 +320,8 @@ void LedgerMongodb::remove_all() {
 
 messages::TaggedBlock LedgerMongodb::get_main_branch_tip() const {
   std::lock_guard lock(_ledger_mutex);
-  return _main_branch_tip;
+  auto copy = _main_branch_tip;
+  return copy;
 }
 
 bool LedgerMongodb::set_main_branch_tip() {
@@ -841,8 +842,7 @@ std::size_t LedgerMongodb::total_nb_blocks() const {
 
 bool LedgerMongodb::for_each(const Filter &filter,
                              const messages::TaggedBlock &tip,
-                             bool include_transaction_pool,
-                             Functor functor,
+                             bool include_transaction_pool, Functor functor,
                              std::optional<int64_t> limit,
                              std::optional<int64_t> skip) const {
   std::lock_guard lock(_ledger_mutex);

@@ -162,18 +162,17 @@ class Ledger {
   }
 
   std::optional<messages::Hash> new_missing_block(
-      const messages::Block &block) {
+      const messages::BlockID &block_id) {
     messages::TaggedBlock tagged_block;
-    const bool block_found =
-        get_block(block.header().id(), &tagged_block, false);
+    const bool block_found = get_block(block_id, &tagged_block, false);
     if (!block_found) {
       // this is weird, we should receive a block if it not inserted
       std::lock_guard lock(_missing_block_mutex);
-      _missing_blocks.insert(block.header().id());
-      return block.header().id();
+      _missing_blocks.insert(block_id);
+      return block_id;
     } else {
       std::lock_guard lock(_missing_block_mutex);
-      _missing_blocks.erase(block.header().id());
+      _missing_blocks.erase(block_id);
       return new_missing_block(tagged_block);
     }
   }

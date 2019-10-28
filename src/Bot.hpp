@@ -37,11 +37,11 @@ class FullSimulator;
 namespace tests {
 class FullSimulator;
 }
-}  // namespace tooling
+} // namespace tooling
 
 class Bot {
- public:
- private:
+public:
+private:
   messages::config::Config _config;
   std::shared_ptr<boost::asio::io_context> _io_context;
   messages::Queue _queue;
@@ -62,15 +62,15 @@ class Bot {
   messages::config::Tcp *_tcp_config;
   std::size_t _max_connections;
   std::size_t
-      _max_incoming_connections;  //!< number of connexion this bot can accept
+      _max_incoming_connections; //!< number of connexion this bot can accept
 
   mutable std::mutex _mutex_connections;
   mutable std::mutex _mutex_quitting;
   bool _quitting{false};
 
-  uint32_t _update_time{1};  // In seconds
+  uint32_t _update_time{1}; // In seconds
 
- private:
+private:
   bool init();
 
   void handler_heart_beat(const messages::Header &header,
@@ -91,6 +91,7 @@ class Bot {
                      const messages::Body &body);
   void handler_get_block(const messages::Header &header,
                          const messages::Body &body);
+  void handler_tip(const messages::Header &header, const messages::Body &body);
   void handler_get_peers(const messages::Header &header,
                          const messages::Body &body);
   void handler_peers(const messages::Header &header,
@@ -105,7 +106,7 @@ class Bot {
   bool update_ledger(const std::optional<messages::Hash> &missing_block);
   void update_peerlist();
 
- public:
+public:
   explicit Bot(const messages::config::Config &config,
                const consensus::Config &consensus_config = consensus::Config());
   explicit Bot(const std::string &config_path);
@@ -113,7 +114,7 @@ class Bot {
 
   void join();
 
-  virtual ~Bot();  // save_config(_config);
+  virtual ~Bot(); // save_config(_config);
 
   const messages::Peer me() const;
   const messages::Peers &peers() const;
@@ -137,6 +138,6 @@ std::ostream &operator<<(
     std::ostream &os,
     const google::protobuf::RepeatedPtrField<neuro::messages::Peer> &peers);
 
-}  // namespace neuro
+} // namespace neuro
 
 #endif /* NEURO_SRC_BOT_HPP */
