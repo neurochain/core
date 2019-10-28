@@ -15,7 +15,9 @@ Connection::Connection(const ID id, messages::Queue *queue,
                        const std::shared_ptr<tcp::socket> &socket,
                        std::shared_ptr<messages::Peer> remote_peer)
     : ::neuro::networking::Connection::Connection(id, queue),
-      _header(sizeof(HeaderPattern), 0), _buffer(128, 0), _socket(socket),
+      _header(sizeof(HeaderPattern), 0),
+      _buffer(128, 0),
+      _socket(socket),
       _remote_peer(remote_peer) {
   assert(_socket != nullptr);
   remote_peer->set_connection_id(id);
@@ -245,6 +247,6 @@ Connection::~Connection() {
             << remote_port().value_or(0) << ":" << _id;
   close();
 }
-} // namespace tcp
-} // namespace networking
-} // namespace neuro
+}  // namespace tcp
+}  // namespace networking
+}  // namespace neuro

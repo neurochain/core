@@ -1,17 +1,20 @@
 #include "Bot.hpp"
+#include <boost/asio.hpp>
+#include <boost/asio/io_context.hpp>
 #include "api/Rest.hpp"
 #include "common/logger.hpp"
 #include "messages/Subscriber.hpp"
-#include <boost/asio.hpp>
-#include <boost/asio/io_context.hpp>
 
 namespace neuro {
 using namespace std::chrono_literals;
 
 Bot::Bot(const messages::config::Config &config,
          const consensus::Config &consensus_config)
-    : _config(config), _io_context(std::make_shared<boost::asio::io_context>()),
-      _queue(), _subscriber(&_queue), _keys(_config.networking()),
+    : _config(config),
+      _io_context(std::make_shared<boost::asio::io_context>()),
+      _queue(),
+      _subscriber(&_queue),
+      _keys(_config.networking()),
       _me(_config.networking(), _keys.at(0).key_pub()),
       _peers(_me.key_pub(), _config.networking()),
       _networking(&_queue, &_keys.at(0), &_peers, _config.mutable_networking()),
@@ -74,7 +77,6 @@ void Bot::handler_get_block(const messages::Header &header,
 
 void Bot::handler_tip(const messages::Header &header,
                       const messages::Body &body) {
-
   const auto &tip = body.tip();
   if (tip.has_id()) {
     update_ledger(_ledger->new_missing_block(tip.id()));
@@ -672,4 +674,4 @@ Bot::~Bot() {
             << &_subscriber;
 }
 
-} // namespace neuro
+}  // namespace neuro

@@ -7,8 +7,9 @@
 namespace neuro::api {
 
 Rest::Rest(const messages::config::Rest &config, Bot *bot)
-    : Api::Api(bot), _httpEndpoint(std::make_shared<Http::Endpoint>(
-                         Address(Ipv4::any(), config.port()))),
+    : Api::Api(bot),
+      _httpEndpoint(std::make_shared<Http::Endpoint>(
+          Address(Ipv4::any(), config.port()))),
       _monitor(bot) {
   init();
   start();
@@ -17,7 +18,7 @@ Rest::Rest(const messages::config::Rest &config, Bot *bot)
 void Rest::init() {
   auto opts = Http::Endpoint::options()
                   .threads(1)
-                  .maxRequestSize(1024 * 1024) // 1Mio
+                  .maxRequestSize(1024 * 1024)  // 1Mio
                   .flags(Tcp::Options::ReuseAddr);
   _httpEndpoint->init(opts);
   setupRoutes();
@@ -269,4 +270,4 @@ void Rest::get_all_status(const Rest::Request &req, Rest::Response res) {
 
 Rest::~Rest() { shutdown(); }
 
-} // namespace neuro::api
+}  // namespace neuro::api
