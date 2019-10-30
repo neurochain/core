@@ -268,9 +268,17 @@ void Bot::regular_update() {
   auto message = std::make_shared<messages::Message>();
   message->add_bodies()->mutable_heart_beat();
   _queue.push(message);
+  send_deferred();
   _update_timer.expires_at(_update_timer.expiry() +
                            boost::asio::chrono::seconds(_update_time));
   _update_timer.async_wait(boost::bind(&Bot::regular_update, this));
+}
+
+void Bot::send_deferred() {
+  for (auto &f : _deferred_world) {
+    f();
+  }
+  _deferred_world.clear();
 }
 
 void Bot::handler_heart_beat(const messages::Header &header,
@@ -535,27 +543,29 @@ void Bot::handler_hello(const messages::Header &header,
   const auto tip = _ledger->get_main_branch_tip();
   world->mutable_missing_block()->CopyFrom(tip.block().header().id());
 
-  // update peer status
-  if (accepted) {
-    remote_peer_connection->set_status(messages::Peer::CONNECTED);
-    LOG_DEBUG << this << " : " << _me.port() << " Accept status "
-              << std::boolalpha << accepted << " " << *remote_peer_connection
-              << std::endl
-              << _peers;
-  } else {
-    remote_peer_connection->set_status(messages::Peer::UNREACHABLE);
-  }
-
   auto header_reply = message->mutable_header();
   messages::fill_header_reply(header, header_reply);
   world->set_accepted(accepted);
 
   _peers.fill(peers);
 
-  if (!_networking.reply(message)) {
-    LOG_ERROR << this << " : " << _me.port() << " Failed to send world message";
-    remote_peer_connection->set_status(messages::Peer::UNREACHABLE);
-  }
+  _deferred_world.push_back([=]() {
+    // update peer status
+    if (accepted) {
+      remote_peer_connection->set_status(messages::Peer::CONNECTED);
+      LOG_DEBUG << this << " : " << _me.port() << " Accept status "
+                << std::boolalpha << accepted << " " << *remote_peer_connection
+                << std::endl
+                << _peers;
+    } else {
+      remote_peer_connection->set_status(messages::Peer::UNREACHABLE);
+    }
+
+    if (!_networking.reply(message)) {
+      LOG_ERROR << this << " : " << _me.port() << " Failed to send world message";
+      remote_peer_connection->set_status(messages::Peer::UNREACHABLE);
+    }
+  });
 }
 
 std::ostream &operator<<(

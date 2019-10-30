@@ -57,6 +57,7 @@ private:
   std::unique_ptr<api::Api> _api;
   std::unordered_set<int32_t> _request_ids;
   std::thread _io_context_thread;
+  std::vector<std::function<void(void)>> _deferred_world;
 
   // for the peers
   messages::config::Tcp *_tcp_config;
@@ -96,6 +97,7 @@ private:
                          const messages::Body &body);
   void handler_peers(const messages::Header &header,
                      const messages::Body &body);
+  void send_deferred();
   bool next_to_connect(messages::Peer **out_peer);
   bool configure_networking(messages::config::Config *config);
   void subscribe();
