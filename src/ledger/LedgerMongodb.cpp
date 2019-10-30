@@ -1201,6 +1201,8 @@ bool LedgerMongodb::set_block_verified(
 bool LedgerMongodb::update_branch_tag(const messages::BlockID &id,
                                       const messages::Branch &branch) {
   std::lock_guard lock(_ledger_mutex);
+  LOG_DEBUG << "Updating branch tag of block " << id << " to "
+            << Branch_Name(branch);
   auto filter = bss::document{} << BLOCK + "." + HEADER + "." + ID
                                 << to_bson(id) << bss::finalize;
   auto update = bss::document{} << $SET << bss::open_document << BRANCH
