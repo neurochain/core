@@ -1123,7 +1123,7 @@ bool Consensus::mine_block(const messages::Block &block0) {
   }
 
   if (_last_mined_block_height == height) {
-    LOG_INFO << "attempt to mine a block that we have already mined at height"
+    LOG_INFO << "Attempt to mine a block that we have already mined at height "
              << height;
     return false;
   }
