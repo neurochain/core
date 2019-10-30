@@ -1297,7 +1297,6 @@ bool LedgerMongodb::update_main_branch() {
   main_branch_tip.set_branch(messages::Branch::MAIN);
   _main_branch_tip.CopyFrom(main_branch_tip);
 
-  LOG_DEBUG << "Leaving update_main_branch: OK";
   return true;
 }
 
