@@ -1252,6 +1252,8 @@ bool LedgerMongodb::update_main_branch() {
   }
   from_bson(bson_block->view(), &main_branch_tip);
 
+  LOG_DEBUG << "The block with the highest score is " << main_branch_tip;
+
   //  assert(main_branch_tip.branch() != messages::Branch::DETACHED);
   if (main_branch_tip.branch() == messages::Branch::MAIN) {
     LOG_DEBUG << "Leaving update_main_branch: nothing to do";

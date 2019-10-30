@@ -580,6 +580,11 @@ bool Consensus::verify_blocks() {
     LOG_DEBUG << "Finished verifying block "
               << tagged_block.block().header().id() << " at height "
               << tagged_block.block().header().height();
+    _ledger->get_block(tagged_block.block().header().id(), &tagged_block);
+    LOG_DEBUG << "Block " << tagged_block;
+    _ledger->get_block(tagged_block.block().header().previous_block_hash(),
+                       &tagged_block);
+    LOG_DEBUG << "Previous block " << tagged_block;
   }
 
   return true;
