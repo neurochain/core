@@ -1240,18 +1240,21 @@ bool LedgerMongodb::cleanup_transaction_pool(
 
 bool LedgerMongodb::update_main_branch() {
   std::lock_guard lock(_ledger_mutex);
+  LOG_DEBUG << "Entered update_main_branch";
   messages::TaggedBlock main_branch_tip;
   auto query = bss::document{} << bss::finalize;
   auto options = remove_balances();
   options.sort(bss::document{} << SCORE << -1 << bss::finalize);
   auto bson_block = _blocks.find_one(std::move(query), options);
   if (!bson_block) {
+    LOG_DEBUG << "Leaving update_main_branch: no block found";
     return false;
   }
   from_bson(bson_block->view(), &main_branch_tip);
 
   //  assert(main_branch_tip.branch() != messages::Branch::DETACHED);
   if (main_branch_tip.branch() == messages::Branch::MAIN) {
+    LOG_DEBUG << "Leaving update_main_branch: nothing to do";
     return true;
   }
 
@@ -1275,6 +1278,7 @@ bool LedgerMongodb::update_main_branch() {
   std::reverse(previous_main_branch.begin(), previous_main_branch.end());
   for (const auto &id : previous_main_branch) {
     if (!update_branch_tag(id, messages::Branch::FORK)) {
+      LOG_DEBUG << "Leaving update_main_branch: failed to set a block as FORK";
       return false;
     }
   }
@@ -1289,6 +1293,7 @@ bool LedgerMongodb::update_main_branch() {
     cleanup_transaction_pool(id);
 
     if (!update_branch_tag(id, messages::Branch::MAIN)) {
+      LOG_DEBUG << "Leaving update_main_branch: failed to set a block as MAIN";
       return false;
     }
   }
@@ -1297,6 +1302,7 @@ bool LedgerMongodb::update_main_branch() {
   main_branch_tip.set_branch(messages::Branch::MAIN);
   _main_branch_tip.CopyFrom(main_branch_tip);
 
+  LOG_DEBUG << "Leaving update_main_branch: OK";
   return true;
 }
 
