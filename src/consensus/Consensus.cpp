@@ -495,6 +495,8 @@ void Consensus::process_blocks() {
 bool Consensus::verify_blocks() {
   auto tagged_blocks = _ledger->get_unverified_blocks();
   for (auto tagged_block : tagged_blocks) {
+    LOG_DEBUG << "Verifying block " << tagged_block.block().header().id()
+              << " at height " << tagged_block.block().header().height();
     _ledger->fill_block_transactions(tagged_block.mutable_block());
     messages::TaggedBlock previous;
     if (!_ledger->get_block(tagged_block.block().header().previous_block_hash(),
@@ -574,7 +576,12 @@ bool Consensus::verify_blocks() {
       verify_blocks();
       return false;
     }
+
+    LOG_DEBUG << "Finished verifying block "
+              << tagged_block.block().header().id() << " at height "
+              << tagged_block.block().header().height();
   }
+
   return true;
 }
 
