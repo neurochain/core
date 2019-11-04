@@ -470,15 +470,8 @@ TEST(INTEGRATION, connection_reconfig) {
   ASSERT_TRUE(bot2->check_peers_ports({1337, 1338, 13340})) << bot2->peers();
   ASSERT_TRUE(bot3->check_peers_ports({1337, 1338, 1339})) << bot3->peers();
 
-
-//  for (int i = 0; i < 10; i ++) {
-//    std::cerr << bot4->peers() << std::endl;
-//    std::cerr << bot5->peers() << std::endl;
-//    std::cerr << bot6->peers() << std::endl;
-//    std::cerr << std::endl;
-//    std::this_thread::sleep_for(1s);
-//  }
-
+  sleep_for_boot();
+  sleep_for_boot();
   ASSERT_TRUE(bot4->check_peers_ports({13351, 13352})) << bot4->peers();
   ASSERT_TRUE(bot5->check_peers_ports({13350, 13352})) << bot5->peers();
   ASSERT_TRUE(bot6->check_peers_ports({13350, 13351})) << bot6->peers();
@@ -497,7 +490,7 @@ TEST(INTEGRATION, connection_reconfig) {
   bot2.reset();
   bot3.reset();
   // worst case scenario, wait 10 sec after reset()
-  std::this_thread::sleep_for(10s);
+  std::this_thread::sleep_for(14s);
 
   ASSERT_TRUE(bot0->check_peers_ports({13350, 13351, 13352}));
   ASSERT_TRUE(bot4->check_peers_ports({1337, 13351, 13352}));
