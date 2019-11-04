@@ -519,6 +519,7 @@ void Bot::handler_hello(const messages::Header &header,
         _networking.terminate(remote_peer_connection->connection_id());
         return;
       } else {
+        LOG_DEBUG << _me.port() << " terminating " << remote_peer_bot->connection_id() << " for " << remote_peer_connection->connection_id() << " to take over";
         _networking.terminate(remote_peer_bot->connection_id());
       }
     }
@@ -529,11 +530,10 @@ void Bot::handler_hello(const messages::Header &header,
     throw std::runtime_error(m.str());
   }
 
-  const auto inserted_peer = _peers.insert(remote_peer_connection);
-  if (!inserted_peer) {
-    LOG_WARNING << "Could not insert peer";
-    _networking.terminate(remote_peer_connection->connection_id());
-    return;
+  const auto previous_peer = _peers.insert(remote_peer_connection);
+  if (previous_peer) {
+    LOG_WARNING << "erased a peer";
+//    _networking.terminate((*previous_peer)->connection_id());
   }
 
   // == Create world message for replying ==
