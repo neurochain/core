@@ -320,7 +320,8 @@ void LedgerMongodb::remove_all() {
 
 messages::TaggedBlock LedgerMongodb::get_main_branch_tip() const {
   std::lock_guard lock(_ledger_mutex);
-  return _main_branch_tip;
+  auto copy = _main_branch_tip;
+  return copy;
 }
 
 bool LedgerMongodb::set_main_branch_tip() {
@@ -841,8 +842,7 @@ std::size_t LedgerMongodb::total_nb_blocks() const {
 
 bool LedgerMongodb::for_each(const Filter &filter,
                              const messages::TaggedBlock &tip,
-                             bool include_transaction_pool,
-                             Functor functor,
+                             bool include_transaction_pool, Functor functor,
                              std::optional<int64_t> limit,
                              std::optional<int64_t> skip) const {
   std::lock_guard lock(_ledger_mutex);
@@ -1201,6 +1201,8 @@ bool LedgerMongodb::set_block_verified(
 bool LedgerMongodb::update_branch_tag(const messages::BlockID &id,
                                       const messages::Branch &branch) {
   std::lock_guard lock(_ledger_mutex);
+  LOG_DEBUG << "Updating branch tag of block " << id << " to "
+            << Branch_Name(branch);
   auto filter = bss::document{} << BLOCK + "." + HEADER + "." + ID
                                 << to_bson(id) << bss::finalize;
   auto update = bss::document{} << $SET << bss::open_document << BRANCH
