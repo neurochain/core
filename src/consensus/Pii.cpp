@@ -6,6 +6,8 @@
 namespace neuro {
 namespace consensus {
 
+const double NCC_SUBDIVISIONS = 1E9;
+
 Double Pii::enthalpy_n() const { return 1; }
 
 Double Pii::enthalpy_c() const { return 1; }
@@ -41,7 +43,10 @@ bool Pii::add_transaction(const messages::Transaction &transaction,
       if (output.key_pub() != input.key_pub()) {
         const Double output_ratio =
             Double{output.value().value()} / total_outputs;
-        const Double raw_enthalpy = output_ratio * enthalpy_spent_transaction;
+
+        // We want the enthalpy in NCC and not in the smallest unit
+        const Double raw_enthalpy =
+            output_ratio * enthalpy_spent_transaction / NCC_SUBDIVISIONS;
 
         // TODO reference to a pdf in english that contains the formula
         const Double enthalpy =

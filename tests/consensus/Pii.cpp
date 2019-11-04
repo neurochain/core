@@ -13,7 +13,7 @@ class Pii : public testing::Test {
  public:
   const std::string db_url = "mongodb://mongo:27017";
   const std::string db_name = "test_pii";
-  const messages::NCCAmount ncc_block0 = messages::NCCAmount(1000000);
+  const messages::NCCAmount ncc_block0 = messages::NCCAmount(1E12);
   const int nb_keys = 20;
   tooling::Simulator simulator;
   std::shared_ptr<neuro::ledger::LedgerMongodb> ledger;

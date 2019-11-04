@@ -508,7 +508,7 @@ class Ledger {
 
   messages::Transaction send_ncc(
       const crypto::KeyPriv &sender_key_priv,
-      const messages::_KeyPub &recipient_key_pub, const float ratio_to_send,
+      const messages::_KeyPub &recipient_key_pub, const double ratio_to_send,
 
       const std::optional<messages::NCCAmount> &fees = {}) const {
     if (ratio_to_send < 0) {

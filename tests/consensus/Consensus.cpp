@@ -12,7 +12,7 @@ class Consensus : public testing::Test {
  public:
   const std::string db_url = "mongodb://mongo:27017";
   const std::string db_name = "test_consensus";
-  const messages::NCCAmount ncc_block0 = messages::NCCAmount(100000);
+  const messages::NCCAmount ncc_block0 = messages::NCCAmount(1E12);
   const int nb_keys = 4;
 
  protected:
@@ -248,7 +248,7 @@ class Consensus : public testing::Test {
     ASSERT_TRUE(consensus->add_transaction(transaction));
 
     transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
-                                   simulator.key_pubs[1], 1, fees);
+                                   simulator.key_pubs[1], 1.0f, fees);
     ASSERT_FALSE(consensus->add_transaction(transaction));
   }
 
