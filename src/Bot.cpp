@@ -532,6 +532,7 @@ void Bot::handler_hello(const messages::Header &header,
   const auto inserted_peer = _peers.insert(remote_peer_connection);
   if (!inserted_peer) {
     LOG_WARNING << "Could not insert peer";
+    _networking.terminate(remote_peer_connection->connection_id());
     return;
   }
 
