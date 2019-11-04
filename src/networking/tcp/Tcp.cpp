@@ -352,6 +352,7 @@ std::string Tcp::pretty_connections() {
       std::stringstream m;
       m << "Connection id " << id
         << " does not match the connection_id in the peer " << *peer;
+      LOG_DEBUG << result.str();
       throw std::runtime_error(m.str());
     }
   }
