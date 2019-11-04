@@ -27,7 +27,10 @@ std::optional<Peer *> Peers::insert(std::shared_ptr<Peer> peer) {
   }
 
   std::unique_lock<std::mutex> lock(_mutex);
-  _peers[peer->key_pub()] = peer;
+  auto [_, is_inserted] = _peers.try_emplace(peer->key_pub(), peer);
+  if (!is_inserted) {
+    return {};
+  }
 
   peer->set_status(Peer::DISCONNECTED);
   return peer.get();
