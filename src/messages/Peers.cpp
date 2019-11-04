@@ -185,10 +185,9 @@ Peers::operator _Peers() const {
 
 std::ostream &operator<<(std::ostream &os, const Peers &peers) {
   for (const auto &peer : peers.peers_copy()) {
-    os << peer.endpoint() << ":" << peer.port() << ":"
-       << _Peer_Status_Name(peer.status()) << ":"
-       << (peer.has_connection_id() ? peer.connection_id() : 0) << " ";
-    // os << "peers> " << peer << std::endl;
+    os << peer.port() << ":"
+       << _Peer_Status_Name(peer.status()) << " ";
+//     os << "peers> " << peer << std::endl;
   }
 
   return os;

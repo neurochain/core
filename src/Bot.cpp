@@ -265,10 +265,10 @@ bool Bot::init() {
 }
 
 void Bot::regular_update() {
+  // don't add stuff here, use handler_heart_beat
   auto message = std::make_shared<messages::Message>();
   message->add_bodies()->mutable_heart_beat();
   _queue.push(message);
-  send_deferred();
   _update_timer.expires_at(_update_timer.expiry() +
                            boost::asio::chrono::seconds(_update_time));
   _update_timer.async_wait(boost::bind(&Bot::regular_update, this));
@@ -295,6 +295,7 @@ void Bot::handler_heart_beat(const messages::Header &header,
       rand() < _config.random_transaction() * float(RAND_MAX)) {
     send_random_transaction();
   }
+  send_deferred();
 }
 
 void Bot::handler_ping(const messages::Header &header,
@@ -539,7 +540,9 @@ void Bot::handler_hello(const messages::Header &header,
   auto world = message->add_bodies()->mutable_world();
   auto peers = message->add_bodies()->mutable_peers();
   bool accepted = _peers.used_peers_count() < _max_incoming_connections;
-
+  if (accepted) {
+    remote_peer_connection->set_status(messages::Peer::CONNECTING);
+  }
   const auto tip = _ledger->get_main_branch_tip();
   world->mutable_missing_block()->CopyFrom(tip.block().header().id());
 
@@ -549,7 +552,7 @@ void Bot::handler_hello(const messages::Header &header,
 
   _peers.fill(peers);
 
-  _deferred_world.push_back([=]() {
+  _deferred_world.emplace_back([=]() {
     // update peer status
     if (accepted) {
       remote_peer_connection->set_status(messages::Peer::CONNECTED);
