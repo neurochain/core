@@ -6,8 +6,6 @@
 namespace neuro {
 namespace consensus {
 
-const double NCC_SUBDIVISIONS = 1E9;
-
 Double Pii::enthalpy_n() const { return 1; }
 
 Double Pii::enthalpy_c() const { return 1; }
