@@ -28,6 +28,7 @@ Bot::Bot(const messages::config::Config &config,
             << "net  " << &_networking << std::endl
             << "peers " << &_peers << std::endl
             << _peers << std::endl;
+  keep_max_connections();
 }
 
 Bot::Bot(const std::string &config_path)
@@ -519,7 +520,6 @@ void Bot::handler_hello(const messages::Header &header,
         _networking.terminate(remote_peer_connection->connection_id());
         return;
       } else {
-        LOG_DEBUG << _me.port() << " terminating " << remote_peer_bot->connection_id() << " for " << remote_peer_connection->connection_id() << " to take over";
         _networking.terminate(remote_peer_bot->connection_id());
       }
     }
@@ -530,10 +530,10 @@ void Bot::handler_hello(const messages::Header &header,
     throw std::runtime_error(m.str());
   }
 
-  const auto previous_peer = _peers.insert(remote_peer_connection);
-  if (previous_peer) {
+  _peers.insert(remote_peer_connection);
+  if (remote_peer_bot && remote_peer_bot->connection_id() != remote_peer_connection->connection_id()) {
     LOG_WARNING << "erased a peer";
-//    _networking.terminate((*previous_peer)->connection_id());
+    _networking.terminate(remote_peer_bot->connection_id());
   }
 
   // == Create world message for replying ==
