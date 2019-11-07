@@ -684,11 +684,14 @@ bool LedgerMongodb::insert_block(const messages::TaggedBlock &tagged_block) {
   auto bson_block = to_bson(mutable_tagged_block);
   auto result = _blocks.insert_one(std::move(bson_block));
   if (!result) {
+    LOG_INFO << "Block insert failed";
     return false;
   }
   if (!bson_transactions.empty()) {
-    return static_cast<bool>(
-        _transactions.insert_many(std::move(bson_transactions)));
+    if(!_transactions.insert_many(std::move(bson_transactions))) {
+      LOG_INFO << "Could not insert transaction for block " << tagged_block;
+      return false; 
+    }
   }
   return true;
 }
@@ -1055,6 +1058,9 @@ bool LedgerMongodb::insert_block(const messages::Block &block) {
                 set_branch_path(tagged_block.block().header());
   LOG_DEBUG << "Insert block took " << (Timer::now() - t1).count() / 1E6
             << " ms";
+  if(!result) {
+    LOG_INFO << "Could not insert block " << block.header();
+  }
   return result;
 }
 

@@ -1156,7 +1156,12 @@ bool Consensus::mine_block(const messages::Block &block0) {
 
   // We don't add the block in an async way because we don't want to mine the
   // next block as a fork
-  add_block(new_block);
+
+  if(!add_block(new_block)) {
+    LOG_ERROR << "Could not add mined block ";
+    return false;
+  }
+  
   LOG_DEBUG << "add_block took " << (Timer::now() - t1).count() / 1E6 << " ms";
 
   _last_mined_block_height = height;
