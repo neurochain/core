@@ -73,7 +73,10 @@ applications (e.g. filesharing, traceability).
 
 ```bash
 
-sudo apt install -y git cmake build-essential libssl-dev mongodb-server libmpfrc++-dev ninja-build
+sudo apt install -y git cmake build-essential libssl-dev mongodb-server libmpfrc++-dev ninja-build clang-8
+
+export CC=clang-8
+export CXX=clang++-8
 
 # install pistache
 export NCC_WORKDIR=$(pwd)
