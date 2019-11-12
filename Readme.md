@@ -67,7 +67,7 @@ applications (e.g. filesharing, traceability).
 
 * Ubuntu 18.10
 * cmake >=3.0
-* clang++7
+* clang++8
 * libmpfrc++-dev >=3.6
 
 
