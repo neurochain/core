@@ -92,7 +92,7 @@ ninja install
 
 # install bot
 cd $NCC_WORKDIR
-git clone --branch feature/ledger https://gitlab.com/neurochaintech/core.git
+git clone --branch 179-deploy-testnet-v3 https://gitlab.com/neurochaintech/core.git
 cd core
 mkdir build
 cd build
