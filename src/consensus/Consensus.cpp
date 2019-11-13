@@ -563,7 +563,8 @@ bool Consensus::verify_blocks() {
       continue;
     }
 
-    if (_ledger->add_balances(&tagged_block) && is_valid(tagged_block)) {
+    if (_ledger->add_balances(&tagged_block, _config.blocks_per_assembly) &&
+        is_valid(tagged_block)) {
       _ledger->set_block_verified(tagged_block.block().header().id(),
                                   get_block_score(tagged_block), assembly_id);
     } else if (!_ledger->set_branch_invalid(
