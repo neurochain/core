@@ -169,7 +169,8 @@ class LedgerMongodb : public Ledger {
 
   Double compute_new_balance(messages::Balance *balance,
                              const BalanceChange &change,
-                             messages::BlockHeight height);
+                             messages::BlockHeight height,
+                             int blocks_per_assembly);
 
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);
@@ -373,7 +374,8 @@ class LedgerMongodb : public Ledger {
       const messages::_KeyPub &key_pub,
       const messages::TaggedBlock &tagged_block) const;
 
-  bool add_balances(messages::TaggedBlock *tagged_block);
+  bool add_balances(messages::TaggedBlock *tagged_block,
+                    int blocks_per_assembly);
 
   int fill_block_transactions(messages::Block *block) const;
 

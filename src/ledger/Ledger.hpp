@@ -375,7 +375,8 @@ class Ledger {
       const messages::_KeyPub &key_pub,
       const messages::TaggedBlock &tagged_block) const = 0;
 
-  virtual bool add_balances(messages::TaggedBlock *tagged_block) = 0;
+  virtual bool add_balances(messages::TaggedBlock *tagged_block,
+                            int blocks_per_assembly) = 0;
 
   virtual int fill_block_transactions(messages::Block *block) const = 0;
 
@@ -508,7 +509,7 @@ class Ledger {
 
   messages::Transaction send_ncc(
       const crypto::KeyPriv &sender_key_priv,
-      const messages::_KeyPub &recipient_key_pub, const float ratio_to_send,
+      const messages::_KeyPub &recipient_key_pub, const double ratio_to_send,
 
       const std::optional<messages::NCCAmount> &fees = {}) const {
     if (ratio_to_send < 0) {

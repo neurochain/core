@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
   std::string s;
   messages::to_json(config, &s, true);
 
-  std::ofstream out(output);
+  std::ofstream out(output.string());
   out << s;
   out.close();
 

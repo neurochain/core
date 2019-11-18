@@ -299,7 +299,9 @@ void LedgerMongodb::init_database(const messages::Block &block0) {
   tagged_block0.mutable_branch_path()->set_block_number(0);
   tagged_block0.mutable_block()->CopyFrom(block0);
   insert_block(tagged_block0);
-  if (!add_balances(&tagged_block0)) {
+
+  // We don't care about the number of blocks per assembly in this case
+  if (!add_balances(&tagged_block0, 1)) {
     throw std::runtime_error("Add balance failed for block0");
   }
 
@@ -1201,6 +1203,8 @@ bool LedgerMongodb::set_block_verified(
 bool LedgerMongodb::update_branch_tag(const messages::BlockID &id,
                                       const messages::Branch &branch) {
   std::lock_guard lock(_ledger_mutex);
+  LOG_DEBUG << "Updating branch tag of block " << id << " to "
+            << Branch_Name(branch);
   auto filter = bss::document{} << BLOCK + "." + HEADER + "." + ID
                                 << to_bson(id) << bss::finalize;
   auto update = bss::document{} << $SET << bss::open_document << BRANCH
@@ -1754,12 +1758,16 @@ void LedgerMongodb::add_transaction_to_balances(
 
 Double LedgerMongodb::compute_new_balance(messages::Balance *balance,
                                           const BalanceChange &change,
-                                          messages::BlockHeight height) {
+                                          messages::BlockHeight height,
+                                          int blocks_per_assembly) {
   const auto balance_value = balance->value().value();
   Double enthalpy = balance->enthalpy_end();  // enthalpy from previous balance
 
   // Enthalpy has increased since the last balance change
   enthalpy += balance_value * (height - balance->block_height());
+
+  // At most the enthalpy can be accumulated for 2 assemblies
+  enthalpy = mpfr::min(enthalpy, balance_value * 2 * blocks_per_assembly);
 
   balance->set_enthalpy_begin(enthalpy.toString());
 
@@ -1783,7 +1791,8 @@ Double LedgerMongodb::compute_new_balance(messages::Balance *balance,
   return new_balance;
 }
 
-bool LedgerMongodb::add_balances(messages::TaggedBlock *tagged_block) {
+bool LedgerMongodb::add_balances(messages::TaggedBlock *tagged_block,
+                                 int blocks_per_assembly) {
   std::lock_guard lock(_ledger_mutex);
   std::lock_guard lock_mpfr(mpfr_mutex);
   messages::TaggedBlock previous;
@@ -1821,7 +1830,8 @@ bool LedgerMongodb::add_balances(messages::TaggedBlock *tagged_block) {
     }
 
     Double new_balance = compute_new_balance(
-        balance, change, tagged_block->block().header().height());
+        balance, change, tagged_block->block().header().height(),
+        blocks_per_assembly);
     if (new_balance < 0) {
       LOG_WARNING << "Block " << tagged_block->block().header().id()
                   << " key pub " << key_pub << " would have a negative balance";

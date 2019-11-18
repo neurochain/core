@@ -64,7 +64,7 @@ using Duration = std::chrono::seconds;
 using Endpoint = std::string;
 using Port = uint16_t;
 using Ports = std::vector<Port>;
-const std::string MessageVersion = "private_testnet_0";
+const std::string MessageVersion = "private_testnet_2";
 const int32_t MESSAGE_TTL = 60;
 const int32_t MAX_MESSAGE_SIZE = 256 * 1024;
 

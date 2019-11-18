@@ -16,6 +16,8 @@ namespace tests {
 class Pii;
 }
 
+const double NCC_SUBDIVISIONS = 1E9;
+
 using TotalSpent = std::unordered_map<messages::_KeyPub, messages::NCCValue>;
 using Balances = std::unordered_map<messages::_KeyPub, messages::Balance>;
 

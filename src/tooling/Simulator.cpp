@@ -18,7 +18,7 @@ static consensus::Config config{
     .max_transaction_per_block = 300,
     .update_heights_sleep = 1s,
     .compute_pii_sleep = 1s,
-    .miner_sleep = 100ms,
+    .miner_sleep = 10ms,
     .integrity_block_reward = 1,
     .integrity_double_mining = -40,
     .integrity_denunciation_reward = 1,
