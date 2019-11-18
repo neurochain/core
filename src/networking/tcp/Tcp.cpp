@@ -173,6 +173,7 @@ bool Tcp::terminate(const Connection::ID id) {
   }
   got->second->remote_peer()->set_status(messages::Peer::UNREACHABLE);
   got->second->terminate(false);
+  got->second->remote_peer()->clear_connection_id();
   _connections.erase(got);
   return true;
 }
