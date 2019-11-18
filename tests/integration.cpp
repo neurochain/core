@@ -152,7 +152,7 @@ TEST(INTEGRATION, full_node) {
   auto bot0 = std::make_unique<BotTest>("bot0.json", port_offset);
   bot0->set_max_incoming_connections(0);
   auto bot1 = std::make_unique<BotTest>("bot1.json", port_offset);
-  sleep_for_boot();
+  std::this_thread::sleep_for(bot0->unreachable_timeout());
 
   ASSERT_EQ(bot0->peers().size(), 2) << bot0->peers();
   ASSERT_EQ(bot0->connected_peers().size(), 0);

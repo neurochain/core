@@ -541,7 +541,7 @@ void Bot::handler_hello(const messages::Header &header,
   auto message = std::make_shared<messages::Message>();
   auto world = message->add_bodies()->mutable_world();
   auto peers = message->add_bodies()->mutable_peers();
-  bool accepted = _peers.used_peers_count() < _max_incoming_connections;
+  const bool accepted = _peers.used_peers_count() < _max_incoming_connections;
   if (accepted) {
     remote_peer_connection->set_status(messages::Peer::CONNECTING);
   }
