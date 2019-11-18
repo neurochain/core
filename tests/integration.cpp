@@ -142,7 +142,7 @@ Port random_port() {
   return port_offset;
 }
 
-void sleep_for_boot() { std::this_thread::sleep_for(6s); }
+void sleep_for_boot() { std::this_thread::sleep_for(8s); }
 
 TEST(INTEGRATION, full_node) {
   // Try to connect to a bot that is full. The full node should me marked as
@@ -152,7 +152,7 @@ TEST(INTEGRATION, full_node) {
   auto bot0 = std::make_unique<BotTest>("bot0.json", port_offset);
   bot0->set_max_incoming_connections(0);
   auto bot1 = std::make_unique<BotTest>("bot1.json", port_offset);
-  std::this_thread::sleep_for(1s);
+  sleep_for_boot();
 
   ASSERT_EQ(bot0->peers().size(), 2) << bot0->peers();
   ASSERT_EQ(bot0->connected_peers().size(), 0);
@@ -425,7 +425,7 @@ TEST(INTEGRATION, connection_opportunity_update) {
 
   // Make bot3 accept one more connection
   bot3->set_max_incoming_connections(4);
-  std::this_thread::sleep_for(bot3->unreachable_timeout() + 8s);
+  std::this_thread::sleep_for(bot3->unreachable_timeout() + 10s);
 
   ASSERT_TRUE(bot0->check_peers_ports({1338, 1339, 13340})) << bot0->peers();
   ASSERT_TRUE(bot1->check_peers_ports({1337, 1339, 13340})) << bot1->peers();
