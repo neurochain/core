@@ -287,7 +287,7 @@ bool Consensus::check_block_transactions(
     return true;
   } else {
     std::vector<bool> check_signatures_results(_nb_check_signatures_threads);
-    for (auto i = 0; i < _nb_check_signatures_threads; i++) {
+    for (uint32_t i = 0; i < _nb_check_signatures_threads; i++) {
       boost::asio::thread_pool pool(4);
       boost::asio::post(*_check_signatures_pool,
                         [this, &tagged_block, &check_signatures_results, &i]() {
