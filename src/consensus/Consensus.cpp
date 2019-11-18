@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <boost/asio/thread_pool.hpp>
 #include <future>
 #include <random>
 #include <thread>
@@ -13,29 +14,26 @@ namespace consensus {
 
 Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
                      const std::vector<crypto::Ecc> &keys,
-                     const PublishBlock &publish_block, bool start_threads)
-    : _ledger(ledger), _keys(keys), _publish_block(publish_block) {
-  init(start_threads);
-}
-
-Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
-                     const std::vector<crypto::Ecc> &keys,
                      const std::optional<Config> &config,
-                     const PublishBlock &publish_block, bool start_threads)
+                     const PublishBlock &publish_block, bool start_threads,
+                     uint32_t nb_check_signatures_threads)
     : _config(config.value_or(Config())),
       _ledger(ledger),
       _keys(keys),
-      _publish_block(publish_block) {
+      _publish_block(publish_block),
+      _nb_check_signatures_threads(nb_check_signatures_threads) {
   init(start_threads);
 }
 
 Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
                      const std::vector<crypto::Ecc> &keys, const Config &config,
-                     const PublishBlock &publish_block, bool start_threads)
+                     const PublishBlock &publish_block, bool start_threads,
+                     uint32_t nb_check_signatures_threads)
     : _config(config),
       _ledger(ledger),
       _keys(keys),
-      _publish_block(publish_block) {
+      _publish_block(publish_block),
+      _nb_check_signatures_threads(nb_check_signatures_threads) {
   init(start_threads);
 }
 
@@ -255,6 +253,7 @@ bool Consensus::is_block_transaction_valid(
 
 bool Consensus::check_block_transactions(
     const messages::TaggedBlock &tagged_block) const {
+  std::lock_guard<std::mutex> lock(_check_block_transactions_mutex);
   const auto &block = tagged_block.block();
   if (!block.has_coinbase()) {
     LOG_INFO << "Failed check_block_transactions for block "
@@ -272,7 +271,46 @@ bool Consensus::check_block_transactions(
     return false;
   }
 
-  for (const auto transaction : block.transactions()) {
+  if (!_check_signatures_pool) {
+    for (const auto transaction : block.transactions()) {
+      messages::TaggedTransaction tagged_transaction;
+      tagged_transaction.set_is_coinbase(false);
+      tagged_transaction.mutable_block_id()->CopyFrom(block.header().id());
+      tagged_transaction.mutable_transaction()->CopyFrom(transaction);
+      if (!is_block_transaction_valid(tagged_transaction, block,
+                                      tagged_block)) {
+        LOG_INFO << "Failed check_block_transactions for block "
+                 << block.header().id();
+        return false;
+      }
+    }
+    return true;
+  } else {
+    std::vector<bool> check_signatures_results(_nb_check_signatures_threads);
+    for (int i = 0; i < _nb_check_signatures_threads; i++) {
+      boost::asio::thread_pool pool(4);
+      boost::asio::post(*_check_signatures_pool,
+                        [this, &tagged_block, &check_signatures_results, &i]() {
+                          check_signatures_results[i] =
+                              this->check_transactions_modulo(tagged_block, i);
+                        });
+    }
+    _check_signatures_pool->join();
+    for (bool check : check_signatures_results) {
+      if (!check) {
+        return false;
+      }
+    }
+    return true;
+  }
+}
+
+bool Consensus::check_transactions_modulo(
+    const messages::TaggedBlock &tagged_block, uint32_t modulo) const {
+  const auto &block = tagged_block.block();
+  for (int i = modulo; i < block.transactions_size();
+       i += _nb_check_signatures_threads) {
+    const auto &transaction = block.transactions(i);
     messages::TaggedTransaction tagged_transaction;
     tagged_transaction.set_is_coinbase(false);
     tagged_transaction.mutable_block_id()->CopyFrom(block.header().id());
@@ -283,7 +321,6 @@ bool Consensus::check_block_transactions(
       return false;
     }
   }
-
   return true;
 }
 
@@ -592,6 +629,10 @@ bool Consensus::is_new_assembly(const messages::TaggedBlock &tagged_block,
 Config Consensus::config() const { return _config; }
 
 void Consensus::init(bool start_threads) {
+  if (_nb_check_signatures_threads > 1) {
+    _check_signatures_pool.emplace(_nb_check_signatures_threads);
+  }
+
   for (const auto &key : _keys) {
     _key_pubs.emplace_back(key.key_pub());
   }

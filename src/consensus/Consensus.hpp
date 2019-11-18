@@ -51,6 +51,7 @@ class Consensus {
   messages::BlockHeight _last_mined_block_height = 0;  //!< cache for the last
   std::mutex _heights_to_write_mutex;
   std::mutex _process_blocks_mutex;
+  mutable std::mutex _check_block_transactions_mutex;
   std::optional<messages::AssemblyID> _previous_assembly_id;
   std::optional<messages::AssemblyHeight> _current_assembly_height;
   std::thread _update_heights_thread;
@@ -58,6 +59,8 @@ class Consensus {
   std::future<void> _process_blocks_future;
   std::condition_variable _is_stopped_cv;
   std::mutex _is_stopped_mutex;
+  uint32_t _nb_check_signatures_threads;
+  mutable std::optional<boost::asio::thread_pool> _check_signatures_pool;
   bool _is_miner_stopped;
   bool _is_update_heights_stopped;
   bool _is_compute_pii_stopped;
@@ -129,19 +132,20 @@ class Consensus {
 
   bool add_block(const messages::Block &block, bool async);
 
+  bool check_transactions_modulo(const messages::TaggedBlock &tagged_block,
+                                 uint32_t modulo) const;
+
  public:
   Consensus(std::shared_ptr<ledger::Ledger> ledger,
             const std::vector<crypto::Ecc> &keys,
-            const PublishBlock &publish_block, bool start_threads = true);
-
-  Consensus(std::shared_ptr<ledger::Ledger> ledger,
-            const std::vector<crypto::Ecc> &keys,
             const std::optional<Config> &config,
-            const PublishBlock &publish_block, bool start_threads = true);
+            const PublishBlock &publish_block, bool start_threads = true,
+            uint32_t check_signatures_threads = 0);
 
   Consensus(std::shared_ptr<ledger::Ledger> ledger,
             const std::vector<crypto::Ecc> &keys, const Config &config,
-            const PublishBlock &publish_block, bool start_threads = true);
+            const PublishBlock &publish_block, bool start_threads = true,
+            uint32_t check_signatures_threads = 0);
 
   Config config() const;
 
