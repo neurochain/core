@@ -90,7 +90,7 @@ Port Tcp::listening_port() const { return _listening_port; }
 
 void Tcp::new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
                                      const boost::system::error_code &error) {
-  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
+  std::lock_guard lock_connection(_connections_mutex);
   auto message = std::make_shared<messages::Message>();
   auto msg_header = message->mutable_header();
   auto msg_body = message->add_bodies();
@@ -125,12 +125,16 @@ void Tcp::new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
 void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
                                const boost::system::error_code &error,
                                std::shared_ptr<messages::Peer> peer) {
-  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
+  std::lock_guard lock_connection(_connections_mutex);
   auto message = std::make_shared<messages::Message>();
   auto msg_header = message->mutable_header();
   auto msg_body = message->add_bodies();
-
   if (!error) {
+    const auto previous_connection = _connections.find(peer->connection_id());
+    if (previous_connection != _connections.end()) {
+      LOG_WARNING << "connecting to a peer with previous connection " << *peer;
+      terminate(peer->connection_id());
+    }
     ++_current_id;
 
     msg_header->set_connection_id(_current_id);
@@ -161,7 +165,7 @@ void Tcp::new_connection_local(std::shared_ptr<bai::tcp::socket> socket,
 }
 
 bool Tcp::terminate(const Connection::ID id) {
-  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
+  std::unique_lock lock_connection(_connections_mutex);
   auto got = _connections.find(id);
   if (got == _connections.end()) {
     LOG_ERROR << "Terminate on connection not found " << id;
@@ -169,6 +173,7 @@ bool Tcp::terminate(const Connection::ID id) {
   }
   got->second->remote_peer()->set_status(messages::Peer::UNREACHABLE);
   got->second->terminate(false);
+  got->second->remote_peer()->clear_connection_id();
   _connections.erase(got);
   return true;
 }
@@ -266,7 +271,7 @@ Tcp::send_all(const messages::Message &message) const {
 }
 
 std::shared_ptr<tcp::Connection> Tcp::find(const Connection::ID id) const {
-  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
+  std::unique_lock lock_connection(_connections_mutex);
   auto got = _connections.find(id);
   if (got == _connections.end()) {
     return nullptr;
@@ -285,7 +290,7 @@ bool Tcp::reply(std::shared_ptr<messages::Message> message) const {
 }
 
 void Tcp::clean_old_connections(int delta) {
-  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
+  std::unique_lock lock_connection(_connections_mutex);
   const auto current_time = ::neuro::time() - delta;
   for (auto &[_, connection] : _connections) {
     auto remote_peer = connection->remote_peer();
@@ -312,7 +317,7 @@ void Tcp::clean_old_connections(int delta) {
 std::size_t Tcp::peer_count() const { return _connections.size(); }
 
 std::vector<std::shared_ptr<messages::Peer>> Tcp::remote_peers() const {
-  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
+  std::unique_lock lock_connection(_connections_mutex);
   std::vector<std::shared_ptr<messages::Peer>> remote_peers;
   for (const auto &[_, connection] : _connections) {
     remote_peers.push_back(connection->remote_peer());
@@ -321,7 +326,7 @@ std::vector<std::shared_ptr<messages::Peer>> Tcp::remote_peers() const {
 }
 
 void Tcp::stop() {
-  std::unique_lock<std::mutex> lock_connection(_connections_mutex);
+  std::unique_lock lock_connection(_connections_mutex);
   if (!_stopped) {
     _stopped = true;
     _io_context.post([this]() { _acceptor.close(); });
@@ -351,7 +356,8 @@ std::string Tcp::pretty_connections() {
     if (peer->has_connection_id() && id != peer->connection_id()) {
       std::stringstream m;
       m << "Connection id " << id
-        << " does not match the connection_id in the peer " << *peer;
+        << " does not match the connection_id in the peer " << result.str()
+        << "; " << *peer;
       throw std::runtime_error(m.str());
     }
   }

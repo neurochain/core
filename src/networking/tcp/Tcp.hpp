@@ -41,7 +41,7 @@ class Tcp : public TransportLayer {
   std::shared_ptr<bai::tcp::socket> _new_socket;
   std::thread _io_context_thread;
   ConnectionById _connections;
-  mutable std::mutex _connections_mutex;
+  mutable std::recursive_mutex _connections_mutex;
   const messages::config::Networking &_config;
 
   void new_connection_from_remote(std::shared_ptr<bai::tcp::socket> socket,
