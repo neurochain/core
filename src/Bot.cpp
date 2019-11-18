@@ -28,7 +28,6 @@ Bot::Bot(const messages::config::Config &config,
             << "net  " << &_networking << std::endl
             << "peers " << &_peers << std::endl
             << _peers << std::endl;
-  keep_max_connections();
 }
 
 Bot::Bot(const std::string &config_path)
@@ -531,8 +530,10 @@ void Bot::handler_hello(const messages::Header &header,
   }
 
   _peers.insert(remote_peer_connection);
-  if (remote_peer_bot && remote_peer_bot->connection_id() != remote_peer_connection->connection_id()) {
-    LOG_WARNING << "erased a peer";
+  if (remote_peer_bot && remote_peer_bot->connection_id() !=
+                             remote_peer_connection->connection_id()) {
+    LOG_WARNING
+        << "new connection for the same bot accepted, closing the old one";
     _networking.terminate(remote_peer_bot->connection_id());
   }
 
@@ -553,11 +554,12 @@ void Bot::handler_hello(const messages::Header &header,
 
   _peers.fill(peers);
 
-  _deferred_world.emplace_back([=]() {
+  _deferred_world.emplace_back([accepted, remote_peer_connection, this,
+                                message]() {
     // update peer status
     if (accepted) {
       remote_peer_connection->set_status(messages::Peer::CONNECTED);
-      LOG_DEBUG << this << " : " << _me.port() << " Accept status "
+      LOG_DEBUG << _me.port() << " Accept status "
                 << std::boolalpha << accepted << " " << *remote_peer_connection
                 << std::endl
                 << _peers;
