@@ -253,7 +253,7 @@ bool Consensus::is_block_transaction_valid(
 
 bool Consensus::check_block_transactions(
     const messages::TaggedBlock &tagged_block) const {
-  std::lock_guard<std::mutex> lock(_check_block_transactions_mutex);
+  std::lock_guard lock(_check_block_transactions_mutex);
   const auto &block = tagged_block.block();
   if (!block.has_coinbase()) {
     LOG_INFO << "Failed check_block_transactions for block "
@@ -286,16 +286,24 @@ bool Consensus::check_block_transactions(
     }
     return true;
   } else {
+    std::condition_variable check_signatures_cv;
+    std::mutex check_signatures_mutex;
     std::vector<bool> check_signatures_results(_nb_check_signatures_threads);
+    std::atomic<uint32_t> total_done = 0;
     for (uint32_t i = 0; i < _nb_check_signatures_threads; i++) {
-      boost::asio::thread_pool pool(4);
       boost::asio::post(*_check_signatures_pool,
-                        [this, &tagged_block, &check_signatures_results, &i]() {
+                        [this, &tagged_block, &check_signatures_results, i,
+                         &total_done, &check_signatures_cv]() {
                           check_signatures_results[i] =
                               this->check_transactions_modulo(tagged_block, i);
+                          total_done += 1;
+                          check_signatures_cv.notify_all();
                         });
     }
-    _check_signatures_pool->join();
+    while (total_done < _nb_check_signatures_threads) {
+      std::unique_lock<std::mutex> lock(check_signatures_mutex);
+      check_signatures_cv.wait(lock);
+    }
     for (bool check : check_signatures_results) {
       if (!check) {
         return false;
@@ -515,7 +523,7 @@ messages::BlockScore Consensus::get_block_score(
 }
 
 void Consensus::process_blocks() {
-  std::lock_guard<std::mutex> lock(_process_blocks_mutex);
+  std::lock_guard lock(_process_blocks_mutex);
 
   // Use wait_for() with zero milliseconds to check thread status.
   if (_process_blocks_future.valid() &&
@@ -1146,7 +1154,7 @@ void Consensus::start_miner_thread() {
 }
 
 bool Consensus::mine_block(const messages::Block &block0) {
-  std::lock_guard<std::mutex> lock(_heights_to_write_mutex);
+  std::lock_guard lock(_heights_to_write_mutex);
   if (_heights_to_write.empty()) {
     return false;
   }
