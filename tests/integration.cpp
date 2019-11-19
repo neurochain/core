@@ -111,6 +111,25 @@ class BotTest : public Bot {
     return true;
   }
 
+  bool poll_connected_ports(std::vector<Port> ports,
+                            std::chrono::seconds timeout = 10s) {
+    bool has_ports = false;
+    auto begin_polling = std::chrono::steady_clock::now();
+    auto now = std::chrono::steady_clock::now();
+    do {
+      std::this_thread::sleep_for(200ms);
+      std::sort(ports.begin(), ports.end());
+      std::vector<Port> peers_ports;
+      for (const auto &peer : connected_peers()) {
+        peers_ports.push_back(peer->port() - _port_offset);
+      }
+      std::sort(peers_ports.begin(), peers_ports.end());
+      has_ports = peers_ports == ports;
+      now = std::chrono::steady_clock::now();
+    } while (has_ports == false && (now - begin_polling < timeout));
+    return has_ports;
+  }
+
   int nb_blocks() { return _ledger->total_nb_blocks(); }
 
   void add_block() {
@@ -257,7 +276,21 @@ TEST(INTEGRATION, random_deconnection) {
   auto bot0 = std::make_unique<BotTest>("bot0.json", port_offset);
   auto bot1 = std::make_unique<BotTest>("bot1.json", port_offset);
   auto bot2 = std::make_unique<BotTest>("bot2.json", port_offset);
-  sleep_for_boot();
+  auto bot40 =
+      std::make_unique<BotTest>("integration_propagation40.json", port_offset);
+
+  ASSERT_TRUE(bot0->poll_connected_ports({1338, 1339, 13340})) << bot0->peers();
+  ASSERT_TRUE(bot1->poll_connected_ports({1337, 1339, 13340})) << bot1->peers();
+  ASSERT_TRUE(bot2->poll_connected_ports({1337, 1338, 13340})) << bot2->peers();
+  ASSERT_TRUE(bot40->poll_connected_ports({1337, 1338, 1339})) << bot40->peers();
+
+  auto random_peer = bot0->peers().begin();
+  bot0->networking().terminate(random_peer->connection_id());
+
+  ASSERT_TRUE(bot0->poll_connected_ports({1338, 1339, 13340})) << bot0->peers();
+  ASSERT_TRUE(bot1->poll_connected_ports({1337, 1339, 13340})) << bot1->peers();
+  ASSERT_TRUE(bot2->poll_connected_ports({1337, 1338, 13340})) << bot2->peers();
+  ASSERT_TRUE(bot40->poll_connected_ports({1337, 1338, 1339})) << bot40->peers();
 }
 
 TEST(INTEGRATION, neighbors_propagation) {
