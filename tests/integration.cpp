@@ -34,9 +34,16 @@ class BotTest : public Bot {
     }
   }
 
+  const consensus::Config consensus_config() {
+    auto conf = consensus::Config();
+    conf.blocks_per_assembly = 10;
+    return conf;
+  }
+
  public:
   explicit BotTest(const std::string config_path, const Port port_offset)
-      : Bot(as_message(config_path)), _port_offset(port_offset) {
+      : Bot(as_message(config_path), consensus_config()),
+        _port_offset(port_offset) {
     apply_port_offset();
     _max_incoming_connections = 3;
     _max_connections = 3;
