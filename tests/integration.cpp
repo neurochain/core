@@ -252,6 +252,14 @@ TEST(INTEGRATION, disconnect_message) {
   ASSERT_EQ(bot2->connected_peers().size(), 1) << bot2->peers();
 }
 
+TEST(INTEGRATION, random_deconnection) {
+  Port port_offset = random_port();
+  auto bot0 = std::make_unique<BotTest>("bot0.json", port_offset);
+  auto bot1 = std::make_unique<BotTest>("bot1.json", port_offset);
+  auto bot2 = std::make_unique<BotTest>("bot2.json", port_offset);
+  sleep_for_boot();
+}
+
 TEST(INTEGRATION, neighbors_propagation) {
   Port port_offset = random_port();
   auto bot0 =
