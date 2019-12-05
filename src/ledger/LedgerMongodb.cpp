@@ -849,7 +849,7 @@ bool LedgerMongodb::for_each(const Filter &filter,
                              std::optional<int64_t> skip) const {
   std::lock_guard lock(_ledger_mutex);
   if (!filter.output_key_pub() && !filter.input_transaction_id() &&
-      !filter.transaction_id() && !filter.output_id()) {
+      !filter.transaction_id()) {
     LOG_WARNING << "missing filters for for_each query";
     return false;
   }
@@ -865,17 +865,14 @@ bool LedgerMongodb::for_each(const Filter &filter,
     query << TRANSACTION + "." + ID << to_bson(*filter.transaction_id());
   }
 
-  if (filter.input_transaction_id() && filter.output_id()) {
+  if (filter.input_transaction_id()) {
     query << TRANSACTION + "." + INPUTS << bss::open_document << "$elemMatch"
           << bss::open_document << ID << to_bson(*filter.input_transaction_id())
-          << OUTPUT_ID << *filter.output_id() << bss::close_document
+	  << bss::close_document
           << bss::close_document;
   } else if (filter.input_transaction_id()) {
     query << TRANSACTIONS + "." + INPUTS + "." + ID
           << to_bson(*filter.input_transaction_id());
-  } else if (filter.output_id()) {
-    query << TRANSACTIONS + "." + INPUTS + "." + OUTPUT_ID
-          << *filter.output_id();
   }
 
   // auto t = Timer::now();

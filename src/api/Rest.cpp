@@ -1,7 +1,6 @@
 #include "api/Rest.hpp"
 #include "Bot.hpp"
 #include "common/logger.hpp"
-#include "ledger/Ledger.hpp"
 #include "messages/Hasher.hpp"
 
 namespace neuro::api {

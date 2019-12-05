@@ -31,8 +31,7 @@ class Ledger {
     std::optional<messages::BlockID> _block_id;
     std::optional<messages::TransactionID> _input_transaction_id;
     std::optional<messages::TransactionID> _transaction_id;
-    std::optional<int32_t> _output_id;
-
+    
    public:
     void input_transaction_id(const messages::TransactionID &transaction_id) {
       _input_transaction_id =
@@ -51,11 +50,6 @@ class Ledger {
     std::optional<const messages::TransactionID> transaction_id() const {
       return _transaction_id;
     }
-
-    void output_id(const uint32_t outputid) {
-      _output_id = std::make_optional<uint32_t>(outputid);
-    }
-    std::optional<const int32_t> output_id() const { return _output_id; }
 
     void output_key_pub(const messages::_KeyPub &key_pub) {
       _output_key_pub = std::make_optional<messages::_KeyPub>(key_pub);
@@ -422,7 +416,6 @@ class Ledger {
     auto outputs = transaction.mutable_outputs();
     for (auto it(outputs->begin()); it != outputs->end(); it++) {
       if (it->key_pub() == key_pub) {
-        it->set_output_id(std::distance(outputs->begin(), it));
         result.push_back(*it);
       }
     }
