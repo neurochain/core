@@ -92,6 +92,7 @@ void Rest::setupRoutes() {
 void Rest::get_balance(const Request &req, Response res) {
   if (!req.query().has("pubkey")) {
     bad_request(res, "public key not found");
+    return;
   }
 
   messages::_KeyPub public_key;
