@@ -258,14 +258,12 @@ class LedgerMongodb : public Ledger {
   std::size_t total_nb_blocks() const;
   std::size_t total_nb_transactions_legacy() const;
 
-  bool for_each(const Filter &filter, const messages::TaggedBlock &tip,
-                bool include_transaction_pool, Functor functor,
-                std::optional<int64_t> limit = {},
-                std::optional<int64_t> skip = {}) const;
+  bool for_each(const Filter &filter,
+		bool include_transaction_pool,
+		const messages::TaggedBlock &tip,
+		Functor functor) const;
 
-  bool for_each(const Filter &filter, Functor functor,
-                std::optional<int64_t> limit = {},
-                std::optional<int64_t> skip = {}) const;
+  bool for_each(const Filter &filter, Functor functor) const;
 
   int new_branch_id();
 

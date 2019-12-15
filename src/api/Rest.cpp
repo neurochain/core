@@ -229,20 +229,36 @@ void Rest::get_total_nb_transactions(const Rest::Request &req,
 }
 
 void Rest::get_list_transactions(const Rest::Request &req, Rest::Response res) {
-  if (!req.hasParam(":page")) {
-    const auto nb_transaction = Api::total_nb_transactions();
-    send(res, std::to_string(nb_transaction / _transaction_per_page));
-  } else {
-    const auto page = req.param(":page").as<std::size_t>();
-    messages::_KeyPub key_pub_message;
-    if (!messages::from_json(req.body(), &key_pub_message)) {
-      bad_request(res, "could not parse body");
-    }
+  // TODO merge both filters
+  messages::TransactionsFilter filter_rest;
+  ledger::Ledger::Filter filter_ledger;
 
-    send(res,
-         Api::list_transactions(key_pub_message, page * _transaction_per_page,
-                                (page + 1) * _transaction_per_page));
+  if (!messages::from_json(req.body(), &filter_rest)) {
+    bad_request(res, "Could not parse request");
+    return;
   }
+
+  uint32_t page_size = _transaction_per_page;
+  if (filter_rest.has_page_size()) {
+    page_size = filter_rest.page_size();
+  }
+
+  filter_ledger.limit(page_size);
+          
+  if (filter_rest.has_page()) {
+    filter_ledger.skip(filter_rest.page() * page_size);
+  }
+
+  if (filter_rest.has_output_key_pub()) {
+    filter_ledger.output_key_pub(filter_rest.output_key_pub());
+  }
+
+  if (filter_rest.has_input_key_pub()) {
+    filter_ledger.input_key_pub(filter_rest.input_key_pub());
+  }
+  
+  send(res,
+       Api::list_transactions(filter_ledger));
 }
 
 void Rest::get_total_nb_blocks(const Rest::Request &req, Rest::Response res) {
@@ -269,4 +285,4 @@ void Rest::get_all_status(const Rest::Request &req, Rest::Response res) {
 
 Rest::~Rest() { shutdown(); }
 
-} // namespace neuro::api
+}  // namespace neuro::api

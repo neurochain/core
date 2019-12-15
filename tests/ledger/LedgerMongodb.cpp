@@ -612,30 +612,41 @@ TEST_F(LedgerMongodb, set_previous_assembly_id) {
 
 TEST_F(LedgerMongodb, list_transactions) {
   auto &key_pub = simulator.key_pubs[0];
-  auto transactions = ledger->list_transactions(key_pub).transactions();
-  ASSERT_EQ(transactions.size(), 1);
-  ASSERT_EQ(transactions[0].outputs(0).key_pub(), key_pub);
-
+  {
+    ledger::Ledger::Filter filter;
+    filter.output_key_pub(key_pub);
+    auto transactions = ledger->list_transactions(filter).transactions();
+    ASSERT_EQ(transactions.size(), 1);
+    ASSERT_EQ(transactions[0].outputs(0).key_pub(), key_pub);
+  }
   // Check that we only get incoming transactions
   // Send everything so that there is no change output going back to the key_pub
   auto transaction =
       ledger->send_ncc(simulator.keys[0].key_priv(), simulator.key_pubs[1], 1);
   simulator.consensus->add_transaction(transaction);
-  transactions = ledger->list_transactions(key_pub).transactions();
-  ASSERT_EQ(transactions.size(), 1);
-
+  {
+    ledger::Ledger::Filter filter;
+    filter.output_key_pub(key_pub);
+    auto transactions = ledger->list_transactions(filter).transactions();
+    ASSERT_EQ(transactions.size(), 1);
+  }
   // Check that we do get transactions from the transaction pool
   transaction = ledger->send_ncc(simulator.keys[1].key_priv(),
                                  simulator.key_pubs[0], 0.5);
   simulator.consensus->add_transaction(transaction);
-  transactions = ledger->list_transactions(key_pub).transactions();
-  ASSERT_EQ(transactions.size(), 2);
-
+  {
+    ledger::Ledger::Filter filter;
+    filter.output_key_pub(key_pub);
+    auto transactions = ledger->list_transactions(filter).transactions();
+    ASSERT_EQ(transactions.size(), 2);
+  }
   // Putting the transactions in a block should not change anything
   auto block = simulator.new_block();
   bool has_coinbase = block.coinbase().outputs(0).key_pub() == key_pub;
   simulator.consensus->add_block(block);
-  transactions = ledger->list_transactions(key_pub).transactions();
+  ledger::Ledger::Filter filter;
+  filter.output_key_pub(key_pub);
+  auto transactions = ledger->list_transactions(filter).transactions();
   ASSERT_EQ(transactions.size(), has_coinbase ? 3 : 2);
 }
 

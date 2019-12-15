@@ -80,6 +80,7 @@ std::vector<crypto::Ecc> create_key_pairs(uint32_t number_of_wallets,
     const auto key_priv_name = "key" + std::to_string(i) + ".priv";
     const auto key_pub_name = "key" + std::to_string(i) + ".pub";
     eccs.emplace_back(pathdir / key_priv_name, pathdir / key_pub_name);
+    std::cout << eccs.back() << std::endl;
   }
   return eccs;
 }

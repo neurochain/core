@@ -113,10 +113,8 @@ const messages::_Peers Api::connections() const { return _bot->remote_peers(); }
 // }
 
 messages::Transactions
-Api::list_transactions(const messages::_KeyPub &key_pub,
-                       std::optional<int64_t> limit,
-                       std::optional<int64_t> skip) const {
-  return _bot->ledger()->list_transactions(key_pub, limit, skip);
+Api::list_transactions(const ledger::Ledger::Filter &filter) const {
+  return _bot->ledger()->list_transactions(filter);
 }
 
 bool Api::transaction_publish(const messages::Transaction &transaction) {
