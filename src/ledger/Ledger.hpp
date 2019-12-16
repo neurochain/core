@@ -25,22 +25,29 @@ class Ledger {
     bool updated;
   };
 
+  // TODO use TransactionFilter from proto
   class Filter {
    private:
     std::optional<messages::_KeyPub> _output_key_pub;
     std::optional<messages::BlockID> _block_id;
-    std::optional<messages::TransactionID> _input_transaction_id;
+    std::optional<messages::_KeyPub> _input_key_pub;
     std::optional<messages::TransactionID> _transaction_id;
-    std::optional<int32_t> _output_id;
-
+    std::optional<std::size_t> _limit;
+    std::optional<std::size_t> _skip;
+    
    public:
-    void input_transaction_id(const messages::TransactionID &transaction_id) {
-      _input_transaction_id =
-          std::make_optional<messages::TransactionID>(transaction_id);
+    std::optional<std::size_t> limit() const { return _limit; }
+    void limit(const std::size_t limit) { _limit = std::make_optional(limit); }
+    
+    std::optional<std::size_t> skip() const { return _skip; }
+    void skip(const std::size_t skip) { _skip = std::make_optional(skip); }
+    
+    std::optional<const messages::_KeyPub> input_key_pub() const {
+      return _input_key_pub;
     }
 
-    std::optional<const messages::TransactionID> input_transaction_id() const {
-      return _input_transaction_id;
+    void input_key_pub(const messages::_KeyPub &key_pub) {
+      _input_key_pub = std::make_optional(key_pub);
     }
 
     void transaction_id(const messages::TransactionID &transaction_id) {
@@ -51,11 +58,6 @@ class Ledger {
     std::optional<const messages::TransactionID> transaction_id() const {
       return _transaction_id;
     }
-
-    void output_id(const uint32_t outputid) {
-      _output_id = std::make_optional<uint32_t>(outputid);
-    }
-    std::optional<const int32_t> output_id() const { return _output_id; }
 
     void output_key_pub(const messages::_KeyPub &key_pub) {
       _output_key_pub = std::make_optional<messages::_KeyPub>(key_pub);
@@ -240,13 +242,11 @@ class Ledger {
   virtual bool delete_block(const messages::BlockID &id) = 0;
   virtual bool delete_block_and_children(const messages::BlockID &id) = 0;
   virtual bool set_branch_invalid(const messages::BlockID &id) = 0;
-  virtual bool for_each(const Filter &filter, const messages::TaggedBlock &tip,
-                        bool include_transaction_pool, Functor functor,
-                        std::optional<int64_t> limit = {},
-                        std::optional<int64_t> skip = {}) const = 0;
-  virtual bool for_each(const Filter &filter, Functor functor,
-                        std::optional<int64_t> limit = {},
-                        std::optional<int64_t> skip = {}) const = 0;
+  virtual bool for_each(const Filter &filter, Functor functor) const = 0;
+  virtual bool for_each(const Filter &filter,
+                        bool include_transaction_pool,
+			const messages::TaggedBlock &tip,
+			Functor functor) const = 0;
   virtual bool get_transaction(const messages::TransactionID &id,
                                messages::Transaction *transaction) const = 0;
   virtual bool get_transaction(const messages::TransactionID &id,
@@ -393,11 +393,7 @@ class Ledger {
     return get_block(id, &block);
   }
 
-  messages::Transactions list_transactions(
-      const messages::_KeyPub &key_pub, std::optional<int64_t> limit = {},
-      std::optional<int64_t> skip = {}) const {
-    Filter filter;
-    filter.output_key_pub(key_pub);
+  messages::Transactions list_transactions(const Filter filter) const {
     messages::Transactions transactions;
     assert(get_main_branch_tip().branch() == messages::MAIN);
 
@@ -411,6 +407,7 @@ class Ledger {
         });
 
     return transactions;
+
   }
 
   std::vector<messages::Output> get_outputs_for_key_pub(
@@ -422,7 +419,6 @@ class Ledger {
     auto outputs = transaction.mutable_outputs();
     for (auto it(outputs->begin()); it != outputs->end(); it++) {
       if (it->key_pub() == key_pub) {
-        it->set_output_id(std::distance(outputs->begin(), it));
         result.push_back(*it);
       }
     }

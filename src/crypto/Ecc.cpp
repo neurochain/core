@@ -102,5 +102,12 @@ bool Ecc::operator==(const Ecc &ecc) const {
 
 bool Ecc::operator!=(const Ecc &ecc) const { return !(ecc == *this); }
 
+std::ostream &operator<<(std::ostream &os, const Ecc &ecc) {
+  os << "priv> " << ecc.key_priv() 
+     << "\tpub>  " << ecc.key_pub();
+
+  return os;
+}
+  
 }  // namespace crypto
 }  // namespace neuro

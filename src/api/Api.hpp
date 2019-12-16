@@ -3,6 +3,7 @@
 
 #include "messages/Message.hpp"
 #include "messages/Peers.hpp"
+#include "ledger/Ledger.hpp"
 
 namespace neuro {
 class Bot;
@@ -42,9 +43,7 @@ class Api {
   virtual messages::Transaction transaction(
       const messages::TransactionID &id) final;
   virtual messages::Transactions
-  list_transactions(const messages::_KeyPub &key_pub,
-                    std::optional<int64_t> limit = {},
-                    std::optional<int64_t> skip = {}) const;
+  list_transactions(const ledger::Ledger::Filter &filter) const;
   virtual bool transaction_publish(
       const messages::Transaction &transaction) final;
 
