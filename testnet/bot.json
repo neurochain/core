@@ -1,54 +1,53 @@
 {
- "logs": {
-  "severity": "trace",
-  "toStdout": true
- },
- "networking": {
-  "maxConnections": 3,
-  "tcp": {
-   "port": 1337,
-   "endpoint": "localhost",
-   "peers": [
-    {
-     "endpoint": "boot0.testnet.neurochaintech.io",
-     "keyPub": {
-      "rawData": "AsbGWe4lNmz4LC4MANnpAtnjB9pAyN06dw3dnuQ2wA2c"
-     },
-     "port": 1337
+    "database": {
+        "block0File": {
+            "blockFormat": "PROTO",
+            "blockPath": "conf/data.0.testnet"
+        },
+        "dbName": "testnet",
+        "url": "mongodb://mongo:27017/testnet"
     },
-    {
-     "endpoint": "boot1.testnet.neurochaintech.io",
-     "keyPub": {
-      "rawData": "A6dFBqvjvW3N0ceQ0YcOYx9w+YvgW67lTytYInV4yh0a"
-     },
-     "port": 1337
+    "logs": {
+        "severity": "info",
+        "toStdout": true
     },
-    {
-     "endpoint": "boot2.testnet.neurochaintech.io",
-     "keyPub": {
-      "rawData": "A5Q3wflikJwMqBXIIRDf/U7ZV32YEC13Z6AoOmdae1Lq"
-     },
-     "port": 1337
+    "networking": {
+        "keysPaths": [
+            {
+                "keyPrivPath": "conf/key.priv",
+                "keyPubPath": "conf/key.pub"
+            }
+        ],
+        "maxConnections": 3,
+        "tcp": {
+            "endpoint": "localhost",
+            "peers": [
+                {
+                    "endpoint": "boot0.testnet.neurochaintech.io",
+                    "keyPub": {
+                        "rawData": "A4KmZsRJRczkGiYGYqJ7pmA36PZ8ct6bJjU3BIUtjVy+"
+                    },
+                    "port": "1337"
+                },
+                {
+                    "endpoint": "boot1.testnet.neurochaintech.io",
+                    "keyPub": {
+                        "rawData": "A6dFBqvjvW3N0ceQ0YcOYx9w+YvgW67lTytYInV4yh0a"
+                    },
+                    "port": "1337"
+                },
+                {
+                    "endpoint": "boot2.testnet.neurochaintech.io",
+                    "keyPub": {
+                        "rawData": "A5Q3wflikJwMqBXIIRDf/U7ZV32YEC13Z6AoOmdae1Lq"
+                    },
+                    "port": "1337"
+                }
+            ],
+            "port": 1337
+        }
+    },
+    "rest": {
+        "port": 8080
     }
-   ]
-  },
-  "keysPaths": [
-   {
-    "keyPubPath": "conf/key.pub",
-    "keyPrivPath": "conf/key.priv"
-   }
-  ]
- },
- "database": {
-  "url": "mongodb://mongo:27017/testnet",
-  "dbName": "testnet",
-  "block0File": {
-   "blockFormat": "PROTO",
-   "blockPath": "conf/data.0.testnet"
-  }
- },
- "rest": {
-  "port": 8080
- },
-  "random_transaction": 0.2
 }
