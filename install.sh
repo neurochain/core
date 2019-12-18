@@ -1,4 +1,4 @@
-version=${1:-6d8b0bc8637565e18b53f7042c53858c8c8a698e}
+version=${1:-stable}
 
 docker network create neuro || echo "network already" 
 if [ ! -d mongo ]; then mkdir mongo ; fi
