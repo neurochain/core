@@ -1,6 +1,6 @@
 {
  "logs": {
-  "severity": "info",
+  "severity": "trace",
   "toStdout": true
  },
  "networking": {
@@ -49,5 +49,6 @@
  },
  "rest": {
   "port": 8080
- }
+ },
+  "random_transaction": 0.2
 }
