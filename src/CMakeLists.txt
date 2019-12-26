@@ -147,6 +147,15 @@ target_link_libraries(confgen
   Boost::program_options
   )
 
+add_executable(showhole
+  tooling/showhole.cpp
+  )
+
+target_link_libraries(showhole
+  core
+  Boost::program_options
+  )
+
 add_executable(showkey
   tooling/Showkey.cpp
   )

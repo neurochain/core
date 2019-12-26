@@ -675,7 +675,6 @@ bool LedgerMongodb::insert_block(const messages::TaggedBlock &tagged_block) {
     tagged_transaction.mutable_transaction()->CopyFrom(
         tagged_block.block().coinbase());
     tagged_transaction.mutable_block_id()->CopyFrom(header.id());
-    tagged_transaction.mutable_block_id()->CopyFrom(header.id());
     bson_transactions.push_back(to_bson(tagged_transaction));
   }
 
