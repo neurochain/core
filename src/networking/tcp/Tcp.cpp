@@ -310,9 +310,9 @@ void Tcp::clean_old_connections(int delta) {
 }
 
 /**
- * count the number of active TCP connexion
+ * count the number of active TCP connection
  * (either accepted one or attempting one)
- * \return the number of active connexion
+ * \return the number of active connection
  */
 std::size_t Tcp::peer_count() const { return _connections.size(); }
 

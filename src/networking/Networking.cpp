@@ -41,8 +41,8 @@ TransportLayer::SendResult Networking::send_all(
 }
 
 /**
- * count the number of active connexion (either accepted one or attempting one)
- * \return the number of active connexion
+ * count the number of active connection (either accepted one or attempting one)
+ * \return the number of active connection
  */
 std::size_t Networking::peer_count() const {
   return _transport_layer->peer_count();
