@@ -1591,7 +1591,10 @@ messages::TaggedBlocks LedgerMongodb::get_blocks(
 
 messages::TaggedBlocks LedgerMongodb::get_blocks(
     const messages::Branch name) const {
-  auto query = bss::document{} << BRANCH << name << bss::finalize;
+  auto query = bss::document{} << BRANCH << messages::Branch_Name(name) << bss::finalize;
+  std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": "
+            << bsoncxx::to_json(query)
+            << std::endl;
   mongocxx::cursor cursor = find(_blocks, std::move(query), remove_balances());
   return get_blocks(cursor, false);
 }

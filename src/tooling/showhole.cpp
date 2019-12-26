@@ -10,12 +10,20 @@ namespace po = boost::program_options;
 namespace neuro::tooling {
 
 void check_blocks(const ledger::LedgerMongodb &ledger) {
-  auto tagged_blocks = ledger.get_unverified_blocks();
+  auto tagged_blocks = ledger.get_blocks(messages::MAIN);
+  std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": "
+            << "checking block"
+            << std::endl;
+  int i = 0;
   for (auto tagged_block : tagged_blocks) {
     std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": "
               << tagged_block.block().header().author().key_pub()
               << std::endl;
+    i++;
   }
+  std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": "
+            << "found " << i << " block"
+            << std::endl;
 }
 
 int main(int argc, char *argv[]) {
@@ -46,6 +54,7 @@ int main(int argc, char *argv[]) {
   ledger::LedgerMongodb ledger(configuration.database());
   std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": "
             << ledger.height() << std::endl;
+  check_blocks(ledger);
   return 0;
 }
 
