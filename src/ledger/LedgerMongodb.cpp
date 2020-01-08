@@ -861,17 +861,13 @@ bool LedgerMongodb::for_each(const Filter &filter,
   }
 
   if (filter.transaction_id()) {
-    query << TRANSACTION + "." + ID << to_bson(*filter.transaction_id());
+    const auto bson = to_bson(*filter.transaction_id());
+    query << TRANSACTION + "." + ID << bson;
   }
 
   if (filter.input_key_pub()) {
-    query << TRANSACTION + "." + INPUTS << bss::open_document << "$elemMatch"
-          << bss::open_document << ID << to_bson(*filter.input_key_pub())
-	  << bss::close_document
-          << bss::close_document;
-  } else if (filter.input_key_pub()) {
-    query << TRANSACTIONS + "." + INPUTS + "." + ID
-          << to_bson(*filter.input_key_pub());
+    const auto bson = to_bson(*filter.input_key_pub());
+    query << TRANSACTION + "." + INPUTS + "." + KEY_PUB << bson;
   }
 
   // auto t = Timer::now();
