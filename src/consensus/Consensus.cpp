@@ -40,7 +40,7 @@ Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
 }
 
 bool Consensus::check_outputs(
-    const messages::TaggedTransaction &tagged_transaction) const {
+    const messages::TaggedTransaction &tagged_transaction) {
   messages::NCCValue total_received = 0;
   for (const auto &input : tagged_transaction.transaction().inputs()) {
     total_received += input.value().value();
@@ -49,6 +49,9 @@ bool Consensus::check_outputs(
   messages::NCCValue total_spent = 0;
   for (const auto &output : tagged_transaction.transaction().outputs()) {
     total_spent += output.value().value();
+    if(!output.has_key_pub() || !(output.key_pub().has_raw_data() || output.key_pub().has_hex_data())) {
+      return false;
+    }
   }
 
   if (tagged_transaction.transaction().has_fees()) {

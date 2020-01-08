@@ -62,9 +62,6 @@ class Consensus {
   bool _is_update_heights_stopped;
   bool _is_compute_pii_stopped;
 
-  bool check_outputs(
-      const messages::TaggedTransaction &tagged_transaction) const;
-
   bool check_inputs(const messages::TaggedTransaction &tagged_transaction,
                     const messages::TaggedBlock &tip) const;
 
@@ -148,6 +145,8 @@ class Consensus {
   void init(bool start_threads);
 
   ~Consensus();
+
+  static bool check_outputs(const messages::TaggedTransaction &tagged_transaction);
 
   bool is_valid(const messages::TaggedTransaction &tagged_transaction,
                 const messages::TaggedBlock &tip) const;
