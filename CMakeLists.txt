@@ -3,10 +3,10 @@ set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake")
 include(HunterGate)
 
 HunterGate(
-  URL "https://gitlab.com/neurochaintech/hunter/-/archive/f4397f73231e9e476ea971418834e4537141e161/hunter-f4397f73231e9e476ea971418834e4537141e161.tar.bz2"
-  SHA1 "a96d2e54ee8218f0248da804f2b4f4234f66d612"
-  LOCAL
-  )
+    URL "https://github.com/ruslo/hunter/archive/v0.23.176.tar.gz"
+    SHA1 "2e9ae973d028660b735ac4c6142725ca36a0048a"
+    LOCAL
+)
 
 option(CPPCHECK "use cppcheck" OFF)
 
