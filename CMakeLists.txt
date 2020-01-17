@@ -76,8 +76,9 @@ find_package(Protobuf CONFIG REQUIRED)
 hunter_add_package(cryptopp)
 find_package(cryptopp CONFIG REQUIRED)
 
-#hunter_add_package(Pistache)
-find_package(Pistache REQUIRED pistache_shared)
+
+hunter_add_package(Pistache)
+find_package(Pistache REQUIRED pistache)
 
 hunter_add_package(mongo-cxx-driver)
 find_package(libbsoncxx-static CONFIG REQUIRED)
