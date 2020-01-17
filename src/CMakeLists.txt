@@ -6,16 +6,18 @@ set(ProtoFiles
   "${CMAKE_CURRENT_SOURCE_DIR}/messages/rest.proto"
   )
 
-PROTOBUF_GENERATE_CPP(ProtoSources ProtoHeaders ${ProtoFiles})
+PROTOBUF_GENERATE_CPP(_ProtoSources _ProtoHeaders ${ProtoFiles})
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../testnet/data.0.testnet
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
+FILE(GLOB ProtoSources "${CMAKE_CURRENT_BINARY_DIR}/*pb.cc")
+
 configure_file("../testnet/bot.json" "${CMAKE_CURRENT_BINARY_DIR}/bot.json" @ONLY)
 
 add_library(protos
-  ${CMAKE_CURRENT_BINARY_DIR}/${ProtoSources}
-  ${CMAKE_CURRENT_BINARY_DIR}/${ProtoHeaders}
+  ${ProtoSources}
+  ${ProtoHeaders}
   )
 
 
