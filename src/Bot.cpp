@@ -16,7 +16,7 @@ Bot::Bot(const messages::config::Config &config,
       _peers(_me.key_pub(), _config.networking()),
       _networking(&_queue, &_keys.at(0), &_peers, _config.mutable_networking()),
       _ledger(std::make_shared<ledger::LedgerMongodb>(_config.database())),
-      _update_timer(std::ref(*_io_context)),
+      _update_timer(*_io_context),
       _consensus_config(consensus_config) {
   if (!init()) {
     throw std::runtime_error("Could not create bot from configuration file");
