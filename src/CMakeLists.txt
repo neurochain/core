@@ -14,8 +14,8 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../testnet/data.0.testnet
 configure_file("../testnet/bot.json" "${CMAKE_CURRENT_BINARY_DIR}/bot.json" @ONLY)
 
 add_library(protos
-  ${ProtoSources}
-  ${ProtoHeaders}
+  ${CMAKE_CURRENT_BINARY_DIR}/${ProtoSources}
+  ${CMAKE_CURRENT_BINARY_DIR}/${ProtoHeaders}
   )
 
 
