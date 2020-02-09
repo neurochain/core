@@ -16,10 +16,12 @@ FILE(GLOB ProtoSources "${CMAKE_CURRENT_BINARY_DIR}/*pb.cc")
 configure_file("../testnet/bot.json" "${CMAKE_CURRENT_BINARY_DIR}/bot.json" @ONLY)
 
 add_library(protos
-  ${ProtoSources}
-  ${ProtoHeaders}
+  ${_ProtoSources}
+  ${_ProtoHeaders}
   )
 
+
+message(STATUS "trax>proto> ${ProtoFiles} >${ProtoSources} --   ${ProtoHeaders} <> ${_ProtoSources} --   ${_ProtoHeaders}")
 
 target_link_libraries(protos
   protobuf::libprotobuf
