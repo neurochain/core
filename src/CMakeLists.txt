@@ -63,10 +63,12 @@ add_library(core
   ./ledger/LedgerMongodb.cpp
   ./ledger/Transaction.hpp
   ./Bot.hpp
-  ./api/Rest.cpp
   ./api/Rest.hpp
+  ./api/Rest.cpp
   ./api/Api.hpp
   ./api/Api.cpp
+  ./api/GRPC.hpp
+  ./api/GRPC.cpp
   ./api/Monitoring.cpp
   ./api/Monitoring.hpp
   ./consensus/Consensus.hpp
@@ -74,8 +76,7 @@ add_library(core
   ./consensus/Pii.hpp
   ./consensus/Pii.cpp
   ./consensus/Integrities.hpp
-  ./consensus/Integrities.cpp
-  )
+  ./consensus/Integrities.cpp)
 
 target_link_libraries(core
   protos
