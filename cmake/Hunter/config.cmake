@@ -38,3 +38,31 @@ hunter_config(
   SHA1
   346cb785fc90bf062b42246e87cfe35a26192275
   )
+
+hunter_config(
+  gRPC
+  VERSION
+        b2bb1af0512a979ed43e8d5a160f7665e4e81dd4
+  URL
+  "https://github.com/Nepta/grpc/archive/b2bb1af0512a979ed43e8d5a160f7665e4e81dd4.zip"
+  SHA1
+        65e6456e9ea833ba3c3d531c6929761406e964c4
+)
+
+hunter_config(
+  c-ares
+  VERSION
+  1.14.0-p0
+  CMAKE_ARGS
+  CARES_SHARED=ON CARES_STATIC=OFF CARES_STATIC_PIC=ON CARES_STATICLIB=OFF
+)
+
+hunter_config(
+  ZLIB
+  VERSION
+  8ce5d756dc79882b8dcc418c57815fdd586d319c
+  URL
+  "https://github.com/Nepta/zlib/archive/8ce5d756dc79882b8dcc418c57815fdd586d319c.zip"
+  SHA1
+  2a803da5f62f35d0828e37ef6eb506ec4f309bf7
+)

@@ -93,6 +93,9 @@ find_package(libmongocxx-static CONFIG REQUIRED)
 hunter_add_package(cpr)
 find_package(cpr CONFIG REQUIRED)
 
+hunter_add_package(gRPC)
+find_package(gRPC CONFIG REQUIRED)
+
 add_subdirectory(src)
 add_subdirectory(tests)
 
