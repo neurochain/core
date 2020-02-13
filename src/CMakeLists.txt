@@ -1,29 +1,9 @@
-set(ProtoFiles
-  "${CMAKE_CURRENT_SOURCE_DIR}/messages/common.proto"
-  "${CMAKE_CURRENT_SOURCE_DIR}/messages/config.proto"
-  "${CMAKE_CURRENT_SOURCE_DIR}/messages/messages.proto"
-  "${CMAKE_CURRENT_SOURCE_DIR}/messages/consensus.proto"
-  "${CMAKE_CURRENT_SOURCE_DIR}/messages/rest.proto"
-  )
-
-PROTOBUF_GENERATE_CPP(_ProtoSources _ProtoHeaders ${ProtoFiles})
+add_subdirectory(messages)
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../testnet/data.0.testnet
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-FILE(GLOB ProtoSources "${CMAKE_CURRENT_BINARY_DIR}/*pb.cc")
-
 configure_file("../testnet/bot.json" "${CMAKE_CURRENT_BINARY_DIR}/bot.json" @ONLY)
-
-add_library(protos
-  ${ProtoSources}
-  ${_ProtoHeaders}
-  )
-
-target_link_libraries(protos
-  protobuf::libprotobuf
-  ${LIBMONGOCXX_STATIC_LIBRARIES}
-  )
 
 add_library(core
   ./crypto/KeyPriv.cpp
@@ -210,5 +190,5 @@ target_link_libraries(transaction
   Boost::program_options
   )
 
-include_directories(${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/src ${LIBMONGOCXX_STATIC_INCLUDE_DIRS})
+include_directories(${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/src ${CMAKE_BINARY_DIR}/src/messages ${LIBMONGOCXX_STATIC_INCLUDE_DIRS})
 

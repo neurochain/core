@@ -3,6 +3,7 @@ syntax = "proto2";
 package neuro.messages;
 import "common.proto";
 import "messages.proto";
+import "google/protobuf/empty.proto";
 
 message Status {
   message BlockChain {
@@ -57,10 +58,13 @@ message CreateTransactionBody {
   optional uint64 fee = 3;
 }
 
-
 message TransactionsFilter {
   optional uint32 page = 1;
   optional uint32 page_size = 2;
   optional _KeyPub output_key_pub = 3;
   optional _KeyPub input_key_pub = 4;
+}
+
+service Monitoring {
+  rpc get_status(google.protobuf.Empty) returns (Status) {}
 }
