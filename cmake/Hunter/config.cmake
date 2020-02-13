@@ -42,11 +42,11 @@ hunter_config(
 hunter_config(
   gRPC
   VERSION
-        b2bb1af0512a979ed43e8d5a160f7665e4e81dd4
+  a7a6e3aa02a420d2b40713d3c0cda5734d70842b
   URL
-  "https://github.com/Nepta/grpc/archive/b2bb1af0512a979ed43e8d5a160f7665e4e81dd4.zip"
+  "https://github.com/Nepta/grpc/archive/a7a6e3aa02a420d2b40713d3c0cda5734d70842b.zip"
   SHA1
-        65e6456e9ea833ba3c3d531c6929761406e964c4
+  7787edb4b72dc719fdf599fcfb57565fdf178532
 )
 
 hunter_config(
