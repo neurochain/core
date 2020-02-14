@@ -231,7 +231,7 @@ target_link_libraries(block0
     core
 )
 
-#add_executable(piitest
+#add_executable(piitestxs
 #    piitest.cpp
 #)
 #
@@ -247,4 +247,7 @@ add_test(block0 block0)
 #add_test(blocks19 blocks19)
 #add_test(piitest  piitest)
 
-include_directories(${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/src ${LIBMONGOCXX_STATIC_INCLUDE_DIRS})
+add_executable(gRPCClient api/GRPC.cpp)
+target_link_libraries(gRPCClient protos protobuf::libprotobuf core)
+
+include_directories(${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/src ${CMAKE_BINARY_DIR}/src/messages ${LIBMONGOCXX_STATIC_INCLUDE_DIRS})
