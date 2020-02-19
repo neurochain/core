@@ -1,20 +1,8 @@
 #include "Status.hpp"
-#include <grpcpp/security/server_credentials.h>
-#include <grpcpp/server.h>
-#include <grpcpp/server_builder.h>
-static auto a = logging::core::get()->set_logging_enabled(false);
+
 namespace neuro::api::grpc {
 
-Status::Status(Bot *bot) : Api::Api(bot), _monitor(bot) {
-//  std::string server_address("0.0.0.0:50051");
-//
-//  grpc::ServerBuilder builder;
-//  builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-//  builder.RegisterService(this);
-//  std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
-//  std::cout << "Server listening on " << server_address << std::endl;
-//  server->Wait();
-}
+Status::Status(Bot *bot) : Api::Api(bot), _monitor(bot) {}
 
 Status::gStatus Status::balance(gServerContext *context,
                            const messages::_KeyPub *request,
