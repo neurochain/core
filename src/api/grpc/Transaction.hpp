@@ -11,6 +11,8 @@ class Transaction : public Api, public grpcservice::Transaction::Service {
   using gStatus = ::grpc::Status;
   using gEmpty = google::protobuf::Empty;
   using gBool = google::protobuf::BoolValue;
+  using gUInt64 = google::protobuf::UInt64Value;
+  using gString = google::protobuf::StringValue;
 
  public:
   explicit Transaction(Bot* bot);
@@ -21,10 +23,10 @@ class Transaction : public Api, public grpcservice::Transaction::Service {
                const messages::TransactionsFilter* request,
                messages::Transactions* response);
   gStatus total(gServerContext* context, const gEmpty* request,
-                messages::_NCCAmount* response);
+                gUInt64* response);
   gStatus create(gServerContext* context,
                  const messages::CreateTransactionBody* request,
-                 messages::Transaction* response);
+                 gString* response);
   gStatus publish(gServerContext* context, const messages::Publish* request,
                   gEmpty* response);
   gStatus subscribe(gServerContext* context, const gEmpty* request,
