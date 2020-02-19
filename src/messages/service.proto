@@ -13,7 +13,7 @@ service Block {
     rpc by_id(messages.Hash) returns (messages.Block);
     rpc by_height(google.protobuf.UInt64Value) returns (messages.Block);
     rpc last(google.protobuf.UInt64Value) returns (messages.Block);
-    rpc total(google.protobuf.Empty) returns (google.protobuf.UInt64Value);
+    rpc total(google.protobuf.Empty) returns (messages._NCCAmount);
     rpc subscribe(google.protobuf.Empty) returns (stream messages.Blocks);
 }
 
@@ -28,8 +28,8 @@ service Transaction {
 }
 
 service Status {
-    rpc balance(messages.Hash) returns (google.protobuf.UInt64Value);
-    rpc validate_key(messages.Hash) returns (google.protobuf.BoolValue);
+    rpc balance(messages._KeyPub) returns (messages._NCCAmount);
+    rpc validate_key(messages._KeyPub) returns (google.protobuf.BoolValue);
     rpc ready(google.protobuf.Empty) returns (google.protobuf.BoolValue);
     rpc list(google.protobuf.Empty) returns (messages._Peers);
     rpc status(google.protobuf.Empty) returns (messages.Status);

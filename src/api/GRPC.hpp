@@ -9,16 +9,18 @@
 namespace neuro::api {
 
 class GRPC : public Api, public grpcservice::Status::Service {
+  using Api::balance;
+
  private:
   Monitoring _monitor;
 
  public:
   GRPC(Bot *bot);
   grpc::Status balance(grpc::ServerContext *context,
-                       const messages::Hash *request,
-                       google::protobuf::UInt64Value *response);
+                       const messages::_KeyPub *request,
+                       messages::_NCCAmount *response);
   grpc::Status validate_key(grpc::ServerContext *context,
-                            const messages::Hash *request,
+                            const messages::_KeyPub *request,
                             google::protobuf::BoolValue *response);
   grpc::Status ready(grpc::ServerContext *context,
                      const ::google::protobuf::Empty *request,
