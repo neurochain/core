@@ -2,7 +2,7 @@
 #include <boost/asio.hpp>
 #include <boost/asio/io_context.hpp>
 #include "api/Rest.hpp"
-#include "api/GRPC.hpp"
+#include "api/grpc/Status.hpp"
 #include "common/logger.hpp"
 #include "messages/Subscriber.hpp"
 
@@ -260,7 +260,7 @@ bool Bot::init() {
   if (_config.has_rest()) {
 //    _api = std::make_unique<api::Rest>(_config.rest(), this);
 //    LOG_INFO << "api launched on : " << _config.rest().port();
-    _api = std::make_unique<api::GRPC>(this);
+    _api = std::make_unique<api::grpc::Status>(this);
   }
 
   return true;

@@ -67,8 +67,8 @@ add_library(core
   ./api/Rest.cpp
   ./api/Api.hpp
   ./api/Api.cpp
-  ./api/GRPC.hpp
-  ./api/GRPC.cpp
+  ./api/grpc/Status.hpp
+  ./api/grpc/Status.cpp
   ./api/Monitoring.cpp
   ./api/Monitoring.hpp
   ./consensus/Consensus.hpp
