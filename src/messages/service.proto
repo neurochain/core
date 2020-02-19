@@ -20,7 +20,7 @@ service Block {
 service Transaction {
     rpc by_id(messages.Hash) returns (messages.Transaction);
     rpc list(messages.TransactionsFilter) returns (messages.Transactions);
-    rpc total(google.protobuf.Empty) returns (google.protobuf.UInt64Value);
+    rpc total(google.protobuf.Empty) returns (messages._NCCAmount);
     rpc create(messages.CreateTransactionBody) returns (messages.Transaction);
     // TODO does it make sense to use string payload anymore ?
     rpc publish(messages.Publish) returns (google.protobuf.Empty);

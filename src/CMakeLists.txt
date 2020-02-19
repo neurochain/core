@@ -69,6 +69,8 @@ add_library(core
   ./api/Api.cpp
   ./api/grpc/Status.hpp
   ./api/grpc/Status.cpp
+  ./api/grpc/Transaction.hpp
+  ./api/grpc/Transaction.cpp
   ./api/Monitoring.cpp
   ./api/Monitoring.hpp
   ./consensus/Consensus.hpp
