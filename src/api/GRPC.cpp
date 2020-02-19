@@ -2,7 +2,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/security/server_credentials.h>
-
+static auto a = logging::core::get()->set_logging_enabled(false);
 namespace neuro::api {
 
 GRPC::GRPC(Bot *bot) : Api::Api(bot), _monitor(bot) {
@@ -16,7 +16,7 @@ GRPC::GRPC(Bot *bot) : Api::Api(bot), _monitor(bot) {
   server->Wait();
 }
 
-grpc::Status GRPC::get_status(grpc::ServerContext *context,
+grpc::Status GRPC::status(grpc::ServerContext *context,
                               const google::protobuf::Empty *request,
                               messages::Status *response) {
   auto status = _monitor.fast_status();

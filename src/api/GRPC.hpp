@@ -4,19 +4,31 @@
 #include "Monitoring.hpp"
 #include "api/Api.hpp"
 #include "api/Monitoring.hpp"
-#include "rest.grpc.pb.h"
+#include "service.grpc.pb.h"
 
 namespace neuro::api {
 
-class GRPC : public Api, public messages::Monitoring::Service {
+class GRPC : public Api, public grpcservice::Status::Service {
  private:
   Monitoring _monitor;
 
  public:
   GRPC(Bot *bot);
-  grpc::Status get_status(grpc::ServerContext *context,
-                          const google::protobuf::Empty *request,
-                          messages::Status *response);
+  grpc::Status balance(grpc::ServerContext *context,
+                       const messages::Hash *request,
+                       google::protobuf::UInt64Value *response);
+  grpc::Status validate_key(grpc::ServerContext *context,
+                            const messages::Hash *request,
+                            google::protobuf::BoolValue *response);
+  grpc::Status ready(grpc::ServerContext *context,
+                     const ::google::protobuf::Empty *request,
+                     google::protobuf::BoolValue *response);
+  grpc::Status list(grpc::ServerContext *context,
+                    const ::google::protobuf::Empty *request,
+                    messages::_Peers *response);
+  grpc::Status status(grpc::ServerContext *context,
+                      const google::protobuf::Empty *request,
+                      messages::Status *response);
 };
 
 }  // namespace neuro::api
