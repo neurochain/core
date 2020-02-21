@@ -13,6 +13,7 @@ class Transaction : public Api, public grpcservice::Transaction::Service {
   using gBool = google::protobuf::BoolValue;
   using gUInt64 = google::protobuf::UInt64Value;
   using gString = google::protobuf::StringValue;
+  using Api::subscribe;
 
  public:
   explicit Transaction(Bot* bot);
@@ -30,7 +31,7 @@ class Transaction : public Api, public grpcservice::Transaction::Service {
   gStatus publish(gServerContext* context, const messages::Publish* request,
                   gEmpty* response);
   gStatus subscribe(gServerContext* context, const gEmpty* request,
-                    ::grpc::ServerWriter<messages::Transactions>* writer);
+                    ::grpc::ServerWriter<messages::Transaction>* writer);
 };
 
 }  // namespace neuro::api::grpc

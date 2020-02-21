@@ -1,5 +1,3 @@
-#include <grpc/grpc.h>
-#include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
@@ -12,13 +10,19 @@ namespace neuro::api::test {
 using namespace neuro;
 
 int main() {
-  auto channel = CreateChannel("localhost:50051", grpc::InsecureChannelCredentials());
-  auto stub = grpcservice::Status::NewStub(channel);
+  auto channel = CreateChannel("localhost:8081", grpc::InsecureChannelCredentials());
+  auto stub = grpcservice::Block::NewStub(channel);
   grpc::ClientContext ctx;
-  messages::Status response;
-  stub->status(&ctx, google::protobuf::Empty(), &response);
+  messages::Block response;
+  auto reader = stub->subscribe(&ctx, google::protobuf::Empty());
+  while(reader->Read(&response)) {
+    std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": "
+              << response.header().height()
+              << std::endl;
+  }
+  auto status = reader->Finish();
   std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": "
-            << to_json(response, true)
+            << status.ok() << " : " << status.error_code() << " : " << status.error_message() << " : " << status.error_details()
             << std::endl;
   return 0;
 }

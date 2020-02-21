@@ -121,6 +121,11 @@ bool Api::transaction_publish(const messages::Transaction &transaction) {
   return _bot->publish_transaction(transaction);
 }
 
+void Api::subscribe(messages::Type type,
+                    const messages::Subscriber::Callback &callback) {
+  _bot->subscribe(type, callback);
+}
+
 } // namespace api
 
 } // namespace neuro

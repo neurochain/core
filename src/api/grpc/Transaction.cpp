@@ -50,7 +50,7 @@ Transaction::gStatus Transaction::publish(gServerContext *context,
 
 Transaction::gStatus Transaction::subscribe(
     gServerContext *context, const Transaction::gEmpty *request,
-    ::grpc::ServerWriter<messages::Transactions> *writer) {
+    ::grpc::ServerWriter<messages::Transaction> *writer) {
   return gStatus::OK;
 }
 

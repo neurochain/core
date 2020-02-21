@@ -1,7 +1,4 @@
 #include "GRPC.hpp"
-#include "grpc/Block.hpp"
-#include "grpc/Status.hpp"
-#include "grpc/Transaction.hpp"
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>

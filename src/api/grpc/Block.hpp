@@ -11,6 +11,15 @@ class Block : public Api, public grpcservice::Block::Service {
   using gEmpty = google::protobuf::Empty;
   using gBool = google::protobuf::BoolValue;
   using gUInt64 = google::protobuf::UInt64Value;
+  using Api::subscribe;
+
+ private:
+  std::queue<messages::Block> _new_block_queue;
+  std::condition_variable _is_queue_empty;
+  std::mutex _cv_mutex;
+  bool _has_subscriber = false;
+
+  void handle_new_block(const messages::Header &header, const messages::Body &body);
 
  public:
   explicit Block(Bot* bot);
@@ -19,7 +28,7 @@ class Block : public Api, public grpcservice::Block::Service {
   gStatus by_height(gServerContext* context, const gUInt64* request, messages::Block* response);
   gStatus last(gServerContext* context, const gUInt64* request, messages::Block* response);
   gStatus total(gServerContext* context, const gEmpty* request, messages::_NCCAmount* response);
-  gStatus subscribe(gServerContext* context, const gEmpty* request, ::grpc::ServerWriter<messages::Blocks>* writer);
+  gStatus subscribe(gServerContext* context, const gEmpty* request, ::grpc::ServerWriter<messages::Block>* writer);
 };
 }  //namespace neuro::api::grpc
 
