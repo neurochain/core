@@ -40,16 +40,13 @@ Block::gStatus Block::total(gServerContext *context, const gEmpty *request,
 void Block::handle_new_block(const messages::Header &header,
                              const messages::Body &body) {
   if (_has_subscriber) {
-    messages::Block new_block;
-    new_block.CopyFrom(body.block());
-    _new_block_queue.push(new_block);
+    _new_block_queue.push(body.block());
     _is_queue_empty.notify_all();
   }
 }
 
 Block::gStatus Block::subscribe(gServerContext *context, const gEmpty *request,
                                 ::grpc::ServerWriter<messages::Block> *writer) {
-  writer->SendInitialMetadata();
   _has_subscriber = true;
   while (_has_subscriber) {
     {
@@ -61,8 +58,8 @@ Block::gStatus Block::subscribe(gServerContext *context, const gEmpty *request,
     _new_block_queue.pop();
     _has_subscriber = writer->Write(new_block);
   }
-  while(!_new_block_queue.empty()) {
-    _new_block_queue.pop()
+  while (!_new_block_queue.empty()) {
+    _new_block_queue.pop();
   }
   return gStatus::OK;
 }

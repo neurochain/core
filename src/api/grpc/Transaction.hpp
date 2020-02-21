@@ -15,6 +15,16 @@ class Transaction : public Api, public grpcservice::Transaction::Service {
   using gString = google::protobuf::StringValue;
   using Api::subscribe;
 
+ private:
+  // TODO use boost::circular_buffer or limit queue size
+  std::queue<messages::Transaction> _new_transaction_queue;
+  std::condition_variable _is_queue_empty;
+  std::mutex _cv_mutex;
+  bool _has_subscriber = false;
+
+  void handle_new_transaction(const messages::Header& header,
+                              const messages::Body& body);
+
  public:
   explicit Transaction(Bot* bot);
 

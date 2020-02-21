@@ -2,7 +2,13 @@
 
 namespace neuro::api::grpc {
 
-Transaction::Transaction(Bot *bot) : Api::Api(bot) {}
+Transaction::Transaction(Bot *bot) : Api::Api(bot) {
+  Api::subscribe(
+      messages::Type::kTransaction,
+      [this](const messages::Header &header, const messages::Body &body) {
+        this->handle_new_transaction(header, body);
+      });
+}
 
 Transaction::gStatus Transaction::by_id(gServerContext *context,
                                         const messages::Hash *request,
@@ -30,8 +36,9 @@ Transaction::gStatus Transaction::total(gServerContext *context,
 Transaction::gStatus Transaction::create(
     gServerContext *context, const messages::CreateTransactionBody *request,
     gString *response) {
-  const auto transaction = build_transaction(request->key_pub(), request->outputs(),
-                                             messages::NCCAmount(request->fee()));
+  const auto transaction =
+      build_transaction(request->key_pub(), request->outputs(),
+                        messages::NCCAmount(request->fee()));
   const auto transaction_opt = messages::to_buffer(transaction);
   if (!transaction_opt) {
     // TODO how grpc handle non OK status ?
@@ -48,9 +55,31 @@ Transaction::gStatus Transaction::publish(gServerContext *context,
   return gStatus::CANCELLED;
 }
 
+void Transaction::handle_new_transaction(const messages::Header &header,
+                                         const messages::Body &body) {
+  if (_has_subscriber) {
+    _new_transaction_queue.push(body.transaction());
+    _is_queue_empty.notify_all();
+  }
+}
+
 Transaction::gStatus Transaction::subscribe(
     gServerContext *context, const Transaction::gEmpty *request,
     ::grpc::ServerWriter<messages::Transaction> *writer) {
+  _has_subscriber = true;
+  while (_has_subscriber) {
+    {
+      std::unique_lock cv_lock(_cv_mutex);
+      _is_queue_empty.wait(cv_lock,
+                           [this]() { return !_new_transaction_queue.empty(); });
+    }
+    auto new_transaction = _new_transaction_queue.front();
+    _new_transaction_queue.pop();
+    _has_subscriber = writer->Write(new_transaction);
+  }
+  while (!_new_transaction_queue.empty()) {
+    _new_transaction_queue.pop();
+  }
   return gStatus::OK;
 }
 

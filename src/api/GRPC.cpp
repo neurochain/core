@@ -3,8 +3,6 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
-static auto a = logging::core::get()->set_logging_enabled(false);
-
 namespace neuro::api {
 
 GRPC::GRPC(const messages::config::GRPC &config, Bot *bot)

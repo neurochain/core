@@ -14,12 +14,14 @@ class Block : public Api, public grpcservice::Block::Service {
   using Api::subscribe;
 
  private:
+  // TODO use boost::circular_buffer or limit queue size
   std::queue<messages::Block> _new_block_queue;
   std::condition_variable _is_queue_empty;
   std::mutex _cv_mutex;
   bool _has_subscriber = false;
 
-  void handle_new_block(const messages::Header &header, const messages::Body &body);
+  void handle_new_block(const messages::Header& header,
+                        const messages::Body& body);
 
  public:
   explicit Block(Bot* bot);
