@@ -650,6 +650,36 @@ TEST_F(LedgerMongodb, list_transactions) {
   ASSERT_EQ(transactions.size(), has_coinbase ? 3 : 2);
 }
 
+TEST_F(LedgerMongodb, filter_transactions) {
+  auto &output_key_pub = simulator.key_pubs[0];
+  auto &input_key_pub = simulator.keys[1].key_pub();
+  auto &input_key_priv = simulator.keys[1].key_priv();
+  {
+    ledger::Ledger::Filter filter;
+    filter.output_key_pub(output_key_pub);
+    auto transactions = ledger->list_transactions(filter).transactions();
+    ASSERT_EQ(transactions.size(), 1);
+    ASSERT_EQ(transactions[0].outputs(0).key_pub(), output_key_pub);
+  }
+
+  auto transaction = ledger->send_ncc(input_key_priv, output_key_pub, 0.5);
+  simulator.consensus->add_transaction(transaction);
+  {
+    ledger::Ledger::Filter filter_input;
+    filter_input.input_key_pub(input_key_pub);
+    auto transactions_by_input = ledger->list_transactions(filter_input).transactions();
+    ASSERT_EQ(transactions_by_input.size(), 1);
+    ASSERT_EQ(transactions_by_input[0].inputs(0).key_pub(), input_key_pub);
+
+    ledger::Ledger::Filter filter_id;
+    auto transaction_id = transactions_by_input[0].id();
+    filter_id.transaction_id(transaction_id);
+    auto transactions_by_id = ledger->list_transactions(filter_id).transactions();
+    ASSERT_EQ(transactions_by_id.size(), 1);
+    ASSERT_EQ(transactions_by_id[0].id(), transaction_id);
+  }
+}
+
 TEST_F(LedgerMongodb, get_outputs_for_key_pub) {
   auto transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
                                       simulator.key_pubs[1], 0.5);
