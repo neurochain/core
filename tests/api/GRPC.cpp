@@ -6,9 +6,6 @@
 #include "messages/rest.grpc.pb.h"
 #include "messages/Message.hpp"
 
-namespace neuro::api::test {
-}  // namespace neuro::api::test
-
 using namespace neuro;
 
 int main() {
@@ -17,7 +14,7 @@ int main() {
   grpc::ClientContext ctx;
   messages::Status response;
   stub->get_status(&ctx, google::protobuf::Empty(), &response);
-  std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": "
+  std::cout << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": "
             << to_json(response, true)
             << std::endl;
   return 0;

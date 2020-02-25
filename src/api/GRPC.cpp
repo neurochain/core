@@ -20,9 +20,6 @@ grpc::Status GRPC::get_status(grpc::ServerContext *context,
                               const google::protobuf::Empty *request,
                               messages::Status *response) {
   auto status = _monitor.fast_status();
-  std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": "
-            << "miaou : " << status
-            << std::endl;
   response->CopyFrom(status);
   return grpc::Status::OK;
 }
