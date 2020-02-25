@@ -6,7 +6,7 @@ Transaction::Transaction(Bot *bot) : Api::Api(bot) {
   Api::subscribe(
       messages::Type::kTransaction,
       [this](const messages::Header &header, const messages::Body &body) {
-        this->handle_new_transaction(header, body);
+        _transaction_watcher.handle_new_element(body.transaction());
       });
 }
 
@@ -54,28 +54,12 @@ Transaction::Status Transaction::publish(ServerContext *context,
   return Status::CANCELLED;
 }
 
-void Transaction::handle_new_transaction(const messages::Header &header,
-                                         const messages::Body &body) {
-  if (_has_subscriber) {
-    _last_transaction = body.transaction();
-    _has_new_transaction.notify_all();
-  }
-}
-
 Transaction::Status Transaction::watch(
     ServerContext *context, const Transaction::Empty *request,
     TransactionWriter *writer) {
-  if (_has_subscriber) {
-    return Status::CANCELLED;
-  }
-  _has_subscriber = true;
-  while (_has_subscriber) {
-    std::unique_lock cv_lock(_cv_mutex);
-    _has_new_transaction.wait(cv_lock,
-                         [this]() { return _last_transaction; });
-    _has_subscriber = writer->Write(_last_transaction.value());
-    _last_transaction = std::nullopt;
-  }
+  _transaction_watcher.watch([&writer](const std::optional<messages::Transaction>& last_transaction) {
+    return writer->Write(last_transaction.value());
+  });
   return Status::OK;
 }
 

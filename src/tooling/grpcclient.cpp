@@ -12,11 +12,9 @@ int main() {
   grpc::ClientContext ctx;
   messages::Block response;
   auto reader = stub->watch(&ctx, google::protobuf::Empty());
-  int new_block_handled = 0;
   while(reader->Read(&response)) {
-    new_block_handled++;
     std::cout << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": "
-              << new_block_handled
+              << response.header().height()
               << std::endl;
   }
   auto status = reader->Finish();

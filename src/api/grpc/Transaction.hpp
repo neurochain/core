@@ -3,6 +3,7 @@
 
 #include "api/Api.hpp"
 #include "service.grpc.pb.h"
+#include "common/Watcher.hpp"
 #include <optional>
 
 namespace neuro::api::grpc {
@@ -18,13 +19,7 @@ class Transaction : public Api, public grpcservice::Transaction::Service {
       ::grpc::ServerWriter<messages::Transaction>;
 
  private:
-  std::optional<messages::Transaction> _last_transaction = std::nullopt;
-  std::condition_variable _has_new_transaction;
-  mutable std::mutex _cv_mutex;
-  std::atomic_bool _has_subscriber = false;
-
-  void handle_new_transaction(const messages::Header& header,
-                              const messages::Body& body);
+  Watcher<messages::Transaction> _transaction_watcher;
 
  public:
   explicit Transaction(Bot* bot);

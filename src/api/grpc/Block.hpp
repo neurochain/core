@@ -3,6 +3,7 @@
 
 #include "api/Api.hpp"
 #include "service.grpc.pb.h"
+#include "common/Watcher.hpp"
 #include <optional>
 
 namespace neuro::api::grpc {
@@ -15,13 +16,7 @@ class Block : public Api, public grpcservice::Block::Service {
   using BlockWriter = ::grpc::ServerWriter<messages::Block>;
 
  private:
-  std::optional<messages::Block> _last_block = std::nullopt;
-  std::condition_variable _has_new_block;
-  mutable std::mutex _cv_mutex;
-  std::atomic_bool _has_subscriber = false;
-
-  void handle_new_block(const messages::Header& header,
-                        const messages::Body& body);
+  Watcher<messages::Block> _block_watcher;
 
  public:
   explicit Block(Bot* bot);

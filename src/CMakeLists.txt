@@ -22,6 +22,8 @@ add_library(core
   ./common/logger.cpp
   ./common/types.hpp
   ./common/types.cpp
+  ./common/Queue.hpp
+  ./common/Watcher.hpp
   ./networking/tcp/HeaderPattern.hpp
   ./networking/tcp/Tcp.hpp
   ./networking/tcp/Connection.cpp
@@ -40,7 +42,6 @@ add_library(core
   ./tooling/Simulator.cpp
   ./tooling/FullSimulator.hpp
   ./tooling/FullSimulator.cpp
-  ./common/Queue.hpp
   ./messages/Queue.hpp
   ./messages/Queue.cpp
   ./messages/Message.hpp
