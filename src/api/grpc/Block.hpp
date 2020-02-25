@@ -3,6 +3,7 @@
 
 #include "api/Api.hpp"
 #include "service.grpc.pb.h"
+#include <optional>
 
 namespace neuro::api::grpc {
 class Block : public Api, public grpcservice::Block::Service {
@@ -12,14 +13,13 @@ class Block : public Api, public grpcservice::Block::Service {
   using Bool = google::protobuf::BoolValue;
   using UInt64 = google::protobuf::UInt64Value;
   using BlockWriter = ::grpc::ServerWriter<messages::Block>;
-  using Api::subscribe;
 
  private:
-  // TODO use boost::circular_buffer or limit queue size
-  std::queue<messages::Block> _new_block_queue;
-  std::condition_variable _is_queue_empty;
+  std::optional<messages::Block> _last_block = std::nullopt;
+  std::condition_variable _has_new_block;
   mutable std::mutex _cv_mutex;
   std::atomic_bool _has_subscriber = false;
+  int new_block_handled = 0;
 
   void handle_new_block(const messages::Header& header,
                         const messages::Body& body);
@@ -35,7 +35,7 @@ class Block : public Api, public grpcservice::Block::Service {
                messages::Blocks* response);
   Status total(ServerContext* context, const Empty* request,
                 messages::_NCCAmount* response);
-  Status subscribe(ServerContext* context, const Empty* request,
+  Status watch(ServerContext* context, const Empty* request,
                     BlockWriter* writer);
 };
 }  // namespace neuro::api::grpc

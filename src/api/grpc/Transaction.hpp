@@ -3,6 +3,7 @@
 
 #include "api/Api.hpp"
 #include "service.grpc.pb.h"
+#include <optional>
 
 namespace neuro::api::grpc {
 
@@ -15,12 +16,10 @@ class Transaction : public Api, public grpcservice::Transaction::Service {
   using String = google::protobuf::StringValue;
   using TransactionWriter =
       ::grpc::ServerWriter<messages::Transaction>;
-  using Api::subscribe;
 
  private:
-  // TODO use boost::circular_buffer or limit queue size
-  std::queue<messages::Transaction> _new_transaction_queue;
-  std::condition_variable _is_queue_empty;
+  std::optional<messages::Transaction> _last_transaction = std::nullopt;
+  std::condition_variable _has_new_transaction;
   mutable std::mutex _cv_mutex;
   std::atomic_bool _has_subscriber = false;
 
@@ -41,7 +40,7 @@ class Transaction : public Api, public grpcservice::Transaction::Service {
                 String* response);
   Status publish(ServerContext* context, const messages::Publish* request,
                  Empty* response);
-  Status subscribe(ServerContext* context, const Empty* request,
+  Status watch(ServerContext* context, const Empty* request,
                     TransactionWriter* writer);
 };
 

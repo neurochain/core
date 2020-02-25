@@ -14,7 +14,7 @@ Transaction::Status Transaction::by_id(ServerContext *context,
                                         const messages::Hash *request,
                                         messages::Transaction *response) {
   auto transaction = Api::transaction(*request);
-  response->CopyFrom(transaction);
+  response->Swap(&transaction);
   return Status::OK;
 }
 
@@ -57,25 +57,24 @@ Transaction::Status Transaction::publish(ServerContext *context,
 void Transaction::handle_new_transaction(const messages::Header &header,
                                          const messages::Body &body) {
   if (_has_subscriber) {
-    _new_transaction_queue.push(body.transaction());
-    _is_queue_empty.notify_all();
+    _last_transaction = body.transaction();
+    _has_new_transaction.notify_all();
   }
 }
 
-Transaction::Status Transaction::subscribe(
+Transaction::Status Transaction::watch(
     ServerContext *context, const Transaction::Empty *request,
-    ::grpc::ServerWriter<messages::Transaction> *writer) {
+    TransactionWriter *writer) {
+  if (_has_subscriber) {
+    return Status::CANCELLED;
+  }
   _has_subscriber = true;
   while (_has_subscriber) {
     std::unique_lock cv_lock(_cv_mutex);
-    _is_queue_empty.wait(cv_lock,
-                         [this]() { return !_new_transaction_queue.empty(); });
-    auto new_transaction = _new_transaction_queue.front();
-    _new_transaction_queue.pop();
-    _has_subscriber = writer->Write(new_transaction);
-  }
-  while (!_new_transaction_queue.empty()) {
-    _new_transaction_queue.pop();
+    _has_new_transaction.wait(cv_lock,
+                         [this]() { return _last_transaction; });
+    _has_subscriber = writer->Write(_last_transaction.value());
+    _last_transaction = std::nullopt;
   }
   return Status::OK;
 }

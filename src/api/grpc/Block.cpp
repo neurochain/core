@@ -40,24 +40,20 @@ Block::Status Block::total(ServerContext *context, const Empty *request,
 void Block::handle_new_block(const messages::Header &header,
                              const messages::Body &body) {
   if (_has_subscriber) {
-    _new_block_queue.push(body.block());
-    _is_queue_empty.notify_all();
+    _last_block = body.block();
+    _has_new_block.notify_all();
   }
 }
 
-Block::Status Block::subscribe(ServerContext *context, const Empty *request,
-                                ::grpc::ServerWriter<messages::Block> *writer) {
+Block::Status Block::watch(ServerContext *context, const Empty *request,
+                                BlockWriter *writer) {
   _has_subscriber = true;
   while (_has_subscriber) {
     std::unique_lock cv_lock(_cv_mutex);
-    _is_queue_empty.wait(cv_lock,
-                         [this]() { return !_new_block_queue.empty(); });
-    auto new_block = _new_block_queue.front();
-    _new_block_queue.pop();
-    _has_subscriber = writer->Write(new_block);
-  }
-  while (!_new_block_queue.empty()) {
-    _new_block_queue.pop();
+    _has_new_block.wait(cv_lock,
+                         [this]() { return _last_block; });
+    _has_subscriber = writer->Write(_last_block.value());
+    _last_block = std::nullopt;
   }
   return Status::OK;
 }

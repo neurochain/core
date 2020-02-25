@@ -14,10 +14,12 @@ int main() {
   auto stub = grpcservice::Block::NewStub(channel);
   grpc::ClientContext ctx;
   messages::Block response;
-  auto reader = stub->subscribe(&ctx, google::protobuf::Empty());
+  auto reader = stub->watch(&ctx, google::protobuf::Empty());
+  int new_block_handled = 0;
   while(reader->Read(&response)) {
+    new_block_handled++;
     std::cout << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": "
-              << response.header().height()
+              << new_block_handled
               << std::endl;
   }
   auto status = reader->Finish();
