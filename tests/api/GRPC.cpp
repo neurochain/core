@@ -16,12 +16,12 @@ int main() {
   messages::Block response;
   auto reader = stub->subscribe(&ctx, google::protobuf::Empty());
   while(reader->Read(&response)) {
-    std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": "
+    std::cout << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": "
               << response.header().height()
               << std::endl;
   }
   auto status = reader->Finish();
-  std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": "
+  std::cout << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": "
             << status.ok() << " : " << status.error_code() << " : " << status.error_message() << " : " << status.error_details()
             << std::endl;
   return 0;

@@ -12,7 +12,7 @@ import "google/protobuf/wrappers.proto";
 service Block {
     rpc by_id(messages.Hash) returns (messages.Block);
     rpc by_height(google.protobuf.UInt64Value) returns (messages.Block);
-    rpc last(google.protobuf.UInt64Value) returns (messages.Block);
+    rpc lasts(google.protobuf.UInt64Value) returns (messages.Blocks);
     rpc total(google.protobuf.Empty) returns (messages._NCCAmount);
     rpc subscribe(google.protobuf.Empty) returns (stream messages.Block);
 }
