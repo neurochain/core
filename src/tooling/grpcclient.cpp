@@ -4,9 +4,6 @@
 #include "messages/service.grpc.pb.h"
 #include "messages/Message.hpp"
 
-namespace neuro::api::test {
-}  // namespace neuro::api::test
-
 using namespace neuro;
 
 int main() {

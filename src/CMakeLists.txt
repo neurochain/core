@@ -197,5 +197,14 @@ target_link_libraries(transaction
   Boost::program_options
   )
 
+add_executable(grpcclient
+  tooling/grpcclient.cpp
+  )
+target_link_libraries(grpcclient
+  protos
+  protobuf::libprotobuf
+  core
+  )
+
 include_directories(${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/src ${CMAKE_BINARY_DIR}/src/messages ${LIBMONGOCXX_STATIC_INCLUDE_DIRS})
 

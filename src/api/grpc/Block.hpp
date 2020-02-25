@@ -19,7 +19,6 @@ class Block : public Api, public grpcservice::Block::Service {
   std::condition_variable _has_new_block;
   mutable std::mutex _cv_mutex;
   std::atomic_bool _has_subscriber = false;
-  int new_block_handled = 0;
 
   void handle_new_block(const messages::Header& header,
                         const messages::Body& body);
