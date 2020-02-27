@@ -684,15 +684,13 @@ bool LedgerMongodb::insert_block(const messages::TaggedBlock &tagged_block) {
   mutable_tagged_block.mutable_block()->clear_coinbase();
   mutable_tagged_block.mutable_reception_time()->set_data(std::time(nullptr));
   auto bson_block = to_bson(mutable_tagged_block);
-  auto result = _blocks.insert_one(std::move(bson_block));
-  if (!result) {
-    return false;
-  }
   if (!bson_transactions.empty()) {
-    return static_cast<bool>(
-        _transactions.insert_many(std::move(bson_transactions)));
+    if(!static_cast<bool>
+       (_transactions.insert_many(std::move(bson_transactions)))) {
+      return false;
+    }
   }
-  return true;
+  return static_cast<bool>(_blocks.insert_one(std::move(bson_block)));  
 }
 
 bool LedgerMongodb::delete_block(const messages::BlockID &id) {
