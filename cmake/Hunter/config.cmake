@@ -67,8 +67,7 @@ hunter_config(
   dd869cdce074872d0a02dfc8497e43c73dd8bbb6
 )
 
-hunter_add_version(
-  PACKAGE_NAME
+hunter_config(
   GTest
   VERSION
   "1.8.1"
