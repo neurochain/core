@@ -66,3 +66,14 @@ hunter_config(
   SHA1
   dd869cdce074872d0a02dfc8497e43c73dd8bbb6
 )
+
+hunter_add_version(
+  PACKAGE_NAME
+  GTest
+  VERSION
+  "1.8.1"
+  URL
+  "https://github.com/google/googletest/archive/release-1.8.1.tar.gz"
+  SHA1
+  152b849610d91a9dfa1401293f43230c2e0c33f8
+)
