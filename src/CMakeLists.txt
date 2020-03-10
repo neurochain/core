@@ -210,5 +210,13 @@ target_link_libraries(transaction
   Boost::program_options
   )
 
+add_executable(holes
+  tooling/holes.cpp
+  )
+target_link_libraries(holes
+  core
+  protos
+  )
+
 include_directories(${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/src ${LIBMONGOCXX_STATIC_INCLUDE_DIRS})
 
