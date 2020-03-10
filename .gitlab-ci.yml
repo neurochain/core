@@ -90,7 +90,6 @@ build_image_prod:release:
   tags:
     - dind
   dependencies:
-    - build_image_dev:release
     - build_job:release
   script:
     - build_docker "Dockerfile.core" "Release"
