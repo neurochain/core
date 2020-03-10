@@ -258,9 +258,10 @@ bool Bot::init() {
   }
 
   if (_config.has_rest()) {
-    _api = std::make_unique<api::Rest>(_config.rest(), this);
-    LOG_INFO << "api launched on : " << _config.rest().port();
-    _api = std::make_unique<api::GRPC>(this);
+    _rest_api = std::make_unique<api::Rest>(_config.rest(), this);
+    LOG_INFO << "rest api launched on : " << _config.rest().port();
+    _grpc_api = std::make_unique<api::GRPC>(_config.grpc(), this);
+    LOG_INFO << "grpc api launched on : " << _config.grpc().port();
   }
 
   return true;

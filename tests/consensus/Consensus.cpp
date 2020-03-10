@@ -520,6 +520,36 @@ class Consensus : public testing::Test {
     crypto::sign(non_author_keys, tagged_block.mutable_block());
     ASSERT_FALSE(consensus->check_block_author(tagged_block));
   }
+
+  void test_check_integrity() {
+    messages::TaggedBlock last_block;
+    ledger->get_last_block(&last_block);
+    ASSERT_EQ(last_block.block().header().height(), 0);
+    std::unordered_map<messages::_KeyPub, int> counts;
+
+    for (int i = 1; i < 6; i++) {
+      ledger->get_last_block(&last_block);
+      ASSERT_EQ(last_block.block().header().height(), i - 1);
+      auto block = simulator.new_block(last_block);
+      simulator.consensus->add_block(block);
+      ASSERT_EQ(block.header().height(), i);
+      counts[block.header().author().key_pub()] += 1;
+    }
+
+    // Compute the assembly piis
+    messages::Assembly assembly;
+    ASSERT_TRUE(ledger->get_assembly(0, &assembly));
+    ASSERT_TRUE(simulator.consensus->compute_assembly_pii(assembly));
+    messages::TaggedBlock tagged_block;
+    ASSERT_TRUE(ledger->get_block(assembly.id(), &tagged_block));
+
+    for (int i = 0; i < nb_keys; ++i) {
+      ASSERT_EQ(
+          ledger->get_integrity(simulator.keys.at(i).key_pub(),
+                                assembly.height(), tagged_block.branch_path()),
+          counts[simulator.keys.at(i).key_pub()]);
+    }
+  }
 };
 
 TEST_F(Consensus, is_valid_transaction) { test_is_valid_transaction(); }
@@ -687,6 +717,8 @@ TEST_F(Consensus, check_block_transactions) { test_check_block_transactions(); }
 TEST_F(Consensus, check_block_height) { test_check_block_height(); }
 
 TEST_F(Consensus, check_block_author) { test_check_block_author(); }
+
+TEST_F(Consensus, check_integrity) { test_check_integrity(); }
 
 }  // namespace tests
 }  // namespace consensus

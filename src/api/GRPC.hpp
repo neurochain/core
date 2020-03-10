@@ -1,24 +1,26 @@
-#ifndef NEURO_SRC_API_GRPC_H_
-#define NEURO_SRC_API_GRPC_H_
+#ifndef NEURO_SRC_API_GRPC_HPP_
+#define NEURO_SRC_API_GRPC_HPP_
 
-#include "Monitoring.hpp"
-#include "api/Api.hpp"
-#include "api/Monitoring.hpp"
-#include "rest.grpc.pb.h"
+#include "Api.hpp"
+#include "grpc/Block.hpp"
+#include "grpc/Status.hpp"
+#include "grpc/Transaction.hpp"
 
 namespace neuro::api {
 
-class GRPC : public Api, public messages::Monitoring::Service {
+class GRPC : public Api {
  private:
-  Monitoring _monitor;
+  grpc::Block _block_service;
+  grpc::Transaction _transaction_service;
+  grpc::Status _status_service;
+  std::thread _server_thread;
+  std::unique_ptr<::grpc::Server> _server;
 
  public:
-  GRPC(Bot *bot);
-  grpc::Status get_status(grpc::ServerContext *context,
-                          const google::protobuf::Empty *request,
-                          messages::Status *response);
+  GRPC(const messages::config::GRPC &config, Bot *bot);
+  ~GRPC();
 };
 
 }  // namespace neuro::api
 
-#endif  // NEURO_SRC_API_GRPC_H_
+#endif  // NEURO_SRC_API_GRPC_HPP_

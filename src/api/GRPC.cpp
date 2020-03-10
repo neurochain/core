@@ -1,27 +1,30 @@
-#include "api/GRPC.hpp"
+#include "GRPC.hpp"
+#include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
-#include <grpcpp/security/server_credentials.h>
 
 namespace neuro::api {
 
-GRPC::GRPC(Bot *bot) : Api::Api(bot), _monitor(bot) {
-  std::string server_address("0.0.0.0:50051");
-
-  grpc::ServerBuilder builder;
-  builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-  builder.RegisterService(this);
-  std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
-  std::cout << "Server listening on " << server_address << std::endl;
-  server->Wait();
+GRPC::GRPC(const messages::config::GRPC &config, Bot *bot)
+    : Api::Api(bot),
+      _block_service(bot),
+      _transaction_service(bot),
+      _status_service(bot) {
+  _server_thread = std::thread([this, &config](){
+    std::string server_address("localhost:" + std::to_string(config.port()));
+    ::grpc::ServerBuilder builder;
+    builder.AddListeningPort(server_address, ::grpc::InsecureServerCredentials());
+    builder.RegisterService(&_block_service);
+    builder.RegisterService(&_transaction_service);
+    builder.RegisterService(&_status_service);
+    _server = builder.BuildAndStart();
+    _server->Wait();
+  });
 }
 
-grpc::Status GRPC::get_status(grpc::ServerContext *context,
-                              const google::protobuf::Empty *request,
-                              messages::Status *response) {
-  auto status = _monitor.fast_status();
-  response->CopyFrom(status);
-  return grpc::Status::OK;
+GRPC::~GRPC() {
+  _server->Shutdown();
+  _server_thread.join();
 }
 
 }  // namespace neuro::api

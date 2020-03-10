@@ -54,7 +54,8 @@ private:
   boost::asio::steady_timer _update_timer;
   std::optional<consensus::Config> _consensus_config;
   std::shared_ptr<consensus::Consensus> _consensus;
-  std::unique_ptr<api::Api> _api;
+  std::unique_ptr<api::Api> _rest_api;
+  std::unique_ptr<api::Api> _grpc_api;
   std::unordered_set<int32_t> _request_ids;
   std::thread _io_context_thread;
   std::vector<std::function<void(void)>> _deferred_world;
@@ -63,7 +64,7 @@ private:
   messages::config::Tcp *_tcp_config;
   std::size_t _max_connections;
   std::size_t
-      _max_incoming_connections; //!< number of connexion this bot can accept
+      _max_incoming_connections;  //!< number of connection this bot can accept
 
   mutable std::mutex _mutex_connections;
   mutable std::mutex _mutex_quitting;

@@ -3,6 +3,7 @@
 
 #include "messages/Message.hpp"
 #include "messages/Peers.hpp"
+#include "messages/Subscriber.hpp"
 #include "ledger/Ledger.hpp"
 
 namespace neuro {
@@ -49,6 +50,9 @@ class Api {
 
   virtual const messages::Peers &peers() const final;
   virtual const messages::_Peers connections() const final;
+
+  virtual void subscribe(const messages::Type type,
+                         const messages::Subscriber::Callback &callback) final;
 };
 
 }  // namespace api

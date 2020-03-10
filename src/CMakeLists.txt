@@ -22,6 +22,8 @@ add_library(core
   ./common/logger.cpp
   ./common/types.hpp
   ./common/types.cpp
+  ./common/Queue.hpp
+  ./common/Watcher.hpp
   ./networking/tcp/HeaderPattern.hpp
   ./networking/tcp/Tcp.hpp
   ./networking/tcp/Connection.cpp
@@ -40,7 +42,6 @@ add_library(core
   ./tooling/Simulator.cpp
   ./tooling/FullSimulator.hpp
   ./tooling/FullSimulator.cpp
-  ./common/Queue.hpp
   ./messages/Queue.hpp
   ./messages/Queue.cpp
   ./messages/Message.hpp
@@ -67,6 +68,12 @@ add_library(core
   ./api/Rest.cpp
   ./api/Api.hpp
   ./api/Api.cpp
+  ./api/grpc/Status.hpp
+  ./api/grpc/Status.cpp
+  ./api/grpc/Transaction.hpp
+  ./api/grpc/Transaction.cpp
+  ./api/grpc/Block.hpp
+  ./api/grpc/Block.cpp
   ./api/GRPC.hpp
   ./api/GRPC.cpp
   ./api/Monitoring.cpp
@@ -189,6 +196,15 @@ add_executable(transaction
 target_link_libraries(transaction
   core
   Boost::program_options
+  )
+
+add_executable(grpcclient
+  tooling/grpcclient.cpp
+  )
+target_link_libraries(grpcclient
+  protos
+  protobuf::libprotobuf
+  core
   )
 
 include_directories(${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/src ${CMAKE_BINARY_DIR}/src/messages ${LIBMONGOCXX_STATIC_INCLUDE_DIRS})
