@@ -44,9 +44,9 @@ hunter_config(
   VERSION
   a7a6e3aa02a420d2b40713d3c0cda5734d70842b
   URL
-  "https://github.com/Nepta/grpc/archive/a7a6e3aa02a420d2b40713d3c0cda5734d70842b.zip"
+  "https://gitlab.com/neurochaintech/grpc/-/archive/hunter-1.17.2/grpc-hunter-1.17.2.zip"
   SHA1
-  7787edb4b72dc719fdf599fcfb57565fdf178532
+  1bd175ab0edab1f65e5a96418796e73203c53be0
 )
 
 hunter_config(
@@ -62,7 +62,7 @@ hunter_config(
   VERSION
   8ce5d756dc79882b8dcc418c57815fdd586d319c
   URL
-  "https://github.com/Nepta/zlib/archive/8ce5d756dc79882b8dcc418c57815fdd586d319c.zip"
+  "https://gitlab.com/neurochaintech/zlib/-/archive/hunter-1.2.11/zlib-hunter-1.2.11.zip"
   SHA1
-  2a803da5f62f35d0828e37ef6eb506ec4f309bf7
+  dd869cdce074872d0a02dfc8497e43c73dd8bbb6
 )

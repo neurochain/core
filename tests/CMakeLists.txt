@@ -231,7 +231,7 @@ target_link_libraries(block0
     core
 )
 
-#add_executable(piitestxs
+#add_executable(piitest
 #    piitest.cpp
 #)
 #
