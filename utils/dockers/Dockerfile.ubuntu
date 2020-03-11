@@ -1,6 +1,6 @@
 FROM ubuntu:19.10
 
-# change to recompile: 011
+# change to recompile: 012
 
 MAINTAINER trax Omar Givernaud
 LABEL Description "Dev env image"
