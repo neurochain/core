@@ -69,9 +69,6 @@ endif (ENABLE_PROFILING)
 include(GNUInstallDirs)
 include(FindPkgConfig)
 
-hunter_add_package(GTest)
-find_package(GTest CONFIG REQUIRED)
-
 hunter_add_package(Boost COMPONENTS program_options system filesystem log thread)
 find_package(Boost  CONFIG REQUIRED program_options system filesystem log thread)
 
