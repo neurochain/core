@@ -1,14 +1,4 @@
 hunter_config(
-  GTest
-  VERSION
-  2fe3bd994b3189899d93f1d5a881e725e046fdc2
-  URL
-  "https://github.com/google/googletest/archive/release-1.8.1.tar.gz"
-  SHA1
-  152b849610d91a9dfa1401293f43230c2e0c33f8
-)
-
-hunter_config(
     cryptopp
     VERSION
     "8.2.0-neuro"
@@ -75,4 +65,21 @@ hunter_config(
   "https://gitlab.com/neurochaintech/zlib/-/archive/hunter-1.2.11/zlib-hunter-1.2.11.zip"
   SHA1
   dd869cdce074872d0a02dfc8497e43c73dd8bbb6
+)
+
+hunter_add_version(
+  PACKAGE_NAME
+  GTest
+  VERSION
+  "1.8.1"
+  URL
+  "https://github.com/google/googletest/archive/release-1.8.1.tar.gz"
+  SHA1
+  152b849610d91a9dfa1401293f43230c2e0c33f8
+)
+
+hunter_config(
+  GTest
+  VERSION
+  1.8.1
 )
