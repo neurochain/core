@@ -83,3 +83,9 @@ hunter_config(
   VERSION
   1.8.1
 )
+
+hunter_default_version(
+  GTest
+  Version
+  1.8.1
+)
