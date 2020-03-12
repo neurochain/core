@@ -3,7 +3,7 @@ FROM registry.gitlab.com/neurochaintech/core/env_dev/release:latest
 MAINTAINER trax Omar Givernaud
 LABEL Description "Generic Bot Image"
 
-# update this line to regen image: 012
+# update this line to regen image: 013
 
 USER neuro
 WORKDIR /home/neuro
@@ -14,6 +14,6 @@ COPY testnet/data.0.testnet conf/data.0.testnet
 COPY utils/dockers/entrypoint.sh entrypoint.sh
 COPY utils/dockers/mongo_update.sh mongo_update.sh
 # cleanup
-RUN ls -lah
-./main --version
+RUN ls -lah && ldd main
+RUN ./main --version
 CMD ["./entrypoint.sh"]
