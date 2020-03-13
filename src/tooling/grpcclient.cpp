@@ -6,8 +6,11 @@
 
 using namespace neuro;
 
-int main() {
-  auto channel = CreateChannel("localhost:8081", grpc::InsecureChannelCredentials());
+int main(int argc, char* argv[]) {
+  if (argc != 2) {
+    return 1;
+  }
+  auto channel = CreateChannel(argv[1], grpc::InsecureChannelCredentials());
   auto stub = grpcservice::Block::NewStub(channel);
   grpc::ClientContext ctx;
   messages::Block response;
