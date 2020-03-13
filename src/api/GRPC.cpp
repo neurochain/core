@@ -11,7 +11,8 @@ GRPC::GRPC(const messages::config::GRPC &config, Bot *bot)
       _transaction_service(bot),
       _status_service(bot) {
   _server_thread = std::thread([this, &config](){
-    std::string server_address("localhost:" + std::to_string(config.port()));
+    std::string server_address("api.testnet.neurochaintech.io:" + std::to_string(config.port()));
+    std::cout << "connect to " << server_address << std::endl;
     ::grpc::ServerBuilder builder;
     builder.AddListeningPort(server_address, ::grpc::InsecureServerCredentials());
     builder.RegisterService(&_block_service);

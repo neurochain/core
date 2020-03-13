@@ -28,7 +28,7 @@ message Rest {
 }
 
 message GRPC {
-  optional int32 port = 1 [default = 8081];
+  optional int32 port = 1;
 }
 
 message BlockFile {
