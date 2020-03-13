@@ -242,3 +242,14 @@ $ curl http://52.47.129.155:8080/peers
 $ curl localhost:8080/status
 {"bot":{"uptime":8,"utime":0,"stime":0,"cpuUsage":0,"memory":94456,"netIn":0,"netOut":0},"blockchain":{"lastBlockTs":1562759946,"currentHeight":161620},"fs":{"totalSpace":1473970176,"usedSpace":1033154560,"totalInode":15073280,"usedInode":1246545},"peer":{"connected":0,"connecting":0,"disconnected":0,"unreachable":1}}
 ```
+
+# Cookbook
+## Make a transaction
+To effectively emit a transaction on the network, several endpoint must be used,
+
+- /validate to ensure your generated key is valid
+- /transaction with the transaction information (outputs, ncc to send, data, fees) to create your transaction payload  
+- sign your payload using secp256k1 elliptic curve
+- /publish with your signature, the untouched payload and your public key
+
+when correctly done the bot should response with the transaction id used on the network
