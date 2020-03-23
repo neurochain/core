@@ -52,8 +52,11 @@ class Ecc {
   void sign(const uint8_t *data, const std::size_t size, uint8_t *dest);
   static constexpr std::size_t sign_length();
   friend class test::Ecc;
+  friend std::ostream &operator<<(std::ostream &os, const Ecc &ecc);
 };
 
+std::ostream &operator<<(std::ostream &os, const Ecc &ecc);
+  
 class Eccs : public std::vector<Ecc> {
  public:
   Eccs(const messages::config::Networking &networking) {

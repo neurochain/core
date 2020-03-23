@@ -48,8 +48,10 @@ applications (e.g. filesharing, traceability).
 
 ## Install
 
+After you have a working docker install:
+
 ```
-./install.sh
+curl -o- -L https://gitlab.com/neurochaintech/core/raw/242-testnet-v4/install.sh |bash 
 ```
 
 
@@ -67,13 +69,16 @@ applications (e.g. filesharing, traceability).
 
 * Ubuntu 18.10
 * cmake >=3.0
-* clang++7
+* clang++8
 * libmpfrc++-dev >=3.6
 
 
 ```bash
 
-sudo apt install -y git cmake build-essential libssl-dev mongodb-server libmpfrc++-dev ninja-build
+sudo apt install -y git cmake build-essential libssl-dev mongodb-server libmpfrc++-dev ninja-build clang-8
+
+export CC=clang-8
+export CXX=clang++-8
 
 # install pistache
 export NCC_WORKDIR=$(pwd)
@@ -89,7 +94,7 @@ ninja install
 
 # install bot
 cd $NCC_WORKDIR
-git clone --branch feature/ledger https://gitlab.com/neurochaintech/core.git
+git clone --branch 179-deploy-testnet-v3 https://gitlab.com/neurochaintech/core.git
 cd core
 mkdir build
 cd build

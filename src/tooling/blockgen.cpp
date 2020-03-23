@@ -80,6 +80,7 @@ std::vector<crypto::Ecc> create_key_pairs(uint32_t number_of_wallets,
     const auto key_priv_name = "key" + std::to_string(i) + ".priv";
     const auto key_pub_name = "key" + std::to_string(i) + ".pub";
     eccs.emplace_back(pathdir / key_priv_name, pathdir / key_pub_name);
+    std::cout << eccs.back() << std::endl;
   }
   return eccs;
 }
@@ -91,7 +92,7 @@ void testnet_blockg(uint32_t number_of_wallets, const Path &pathdir,
 
   std::cout << "block0 " << block0 << std::endl;
   std::ofstream stream_block0;
-  stream_block0.open("data.0.testnet");
+  stream_block0.open(pathdir / "data.0.testnet");
   stream_block0 << block0.SerializeAsString();
   stream_block0.close();
 }

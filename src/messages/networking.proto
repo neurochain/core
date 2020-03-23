@@ -1,6 +1,6 @@
 syntax = "proto2";
 
 package neuro.messages;
-import "common.proto"
+import "common.proto";
 
 

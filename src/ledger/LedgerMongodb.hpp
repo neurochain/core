@@ -169,7 +169,8 @@ class LedgerMongodb : public Ledger {
 
   Double compute_new_balance(messages::Balance *balance,
                              const BalanceChange &change,
-                             messages::BlockHeight height);
+                             messages::BlockHeight height,
+                             int blocks_per_assembly);
 
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);
@@ -257,14 +258,12 @@ class LedgerMongodb : public Ledger {
   std::size_t total_nb_blocks() const;
   std::size_t total_nb_transactions_legacy() const;
 
-  bool for_each(const Filter &filter, const messages::TaggedBlock &tip,
-                bool include_transaction_pool, Functor functor,
-                std::optional<int64_t> limit = {},
-                std::optional<int64_t> skip = {}) const;
+  bool for_each(const Filter &filter,
+		bool include_transaction_pool,
+		const messages::TaggedBlock &tip,
+		Functor functor) const;
 
-  bool for_each(const Filter &filter, Functor functor,
-                std::optional<int64_t> limit = {},
-                std::optional<int64_t> skip = {}) const;
+  bool for_each(const Filter &filter, Functor functor) const;
 
   int new_branch_id();
 
@@ -373,7 +372,8 @@ class LedgerMongodb : public Ledger {
       const messages::_KeyPub &key_pub,
       const messages::TaggedBlock &tagged_block) const;
 
-  bool add_balances(messages::TaggedBlock *tagged_block);
+  bool add_balances(messages::TaggedBlock *tagged_block,
+                    int blocks_per_assembly);
 
   int fill_block_transactions(messages::Block *block) const;
 
