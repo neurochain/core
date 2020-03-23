@@ -19,8 +19,36 @@ messages::_KeyPub get_block_author(const ledger::LedgerMongodb &l,
   return key_pub;
 }
 
+std::map<std::string, unsigned> find_hole(const ledger::LedgerMongodb &l,
+                                                int assembly_height,
+                                                int blocks_per_assembly,
+                                                const messages::Assembly &previous_previous_assembly) {
+  std::map<std::string, unsigned> found_hole;
+  for (auto h = assembly_height * blocks_per_assembly;
+       h > (assembly_height - 1) * blocks_per_assembly; --h) {
+    messages::TaggedBlock b;
+    auto has_block = l.get_block(h, &b, false);
+    if (!has_block || !b.has_block()) {
+      auto key_pub = get_block_author(l, previous_previous_assembly, b);
+      auto string_key_pub = messages::to_json(key_pub);
+      found_hole[string_key_pub]++;
+    }
+  }
+  return found_hole;
+}
+
+void print_hole(int assembly_height, const std::map<std::string, unsigned> &found_hole) {
+  if (found_hole.empty()) {
+    return;
+  }
+  std::cout << "-------------------------" << std::endl;
+  std::cout << "hole for assembly " << assembly_height << std::endl;
+  for (auto [key, hole] : found_hole) {
+    std::cout << '\t' << key << " : " << hole << std::endl;
+  }
+}
+
 int main() {
-  auto found_hole = 0;
   consensus::Config config;
   ledger::LedgerMongodb l("mongodb://mongo:27017/testnet", "testnet");
   messages::TaggedBlock last_block;
@@ -30,20 +58,12 @@ int main() {
     l.get_assembly(last_block.previous_assembly_id(), &previous_assembly);
     for (auto assembly_height = previous_assembly.height();
          assembly_height >= 0; assembly_height--) {
-      std::cerr << "looking in assembly " << assembly_height << std::endl;
       messages::Assembly previous_previous_assembly;
       auto has_previous_previous_assembly =
           l.get_assembly(assembly_height - 2, &previous_previous_assembly);
       if (has_previous_previous_assembly) {
-        for (auto h = assembly_height * config.blocks_per_assembly;
-             h > (assembly_height - 1) * config.blocks_per_assembly; --h) {
-          messages::TaggedBlock b;
-          auto has_block = l.get_block(h, &b, false);
-          if (!has_block || !b.has_block()) {
-            auto key_pub = get_block_author(l, previous_previous_assembly, b);
-            found_hole++;
-          }
-        }
+        auto found_hole = find_hole(l, assembly_height, config.blocks_per_assembly, previous_previous_assembly);
+        print_hole(assembly_height, found_hole);
       } else {
         std::cerr << "missing assembly " << assembly_height - 2;
       }
@@ -51,6 +71,5 @@ int main() {
   } else {
     std::cerr << "can't get last block header" << std::endl;
   }
-  std::cout << "holes : " << found_hole << std::endl;
   return 0;
 }
