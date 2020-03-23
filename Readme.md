@@ -48,8 +48,10 @@ applications (e.g. filesharing, traceability).
 
 ## Install
 
+After you have a working docker install:
+
 ```
-./install.sh
+curl -o- -L https://gitlab.com/neurochaintech/core/raw/242-testnet-v4/install.sh |bash 
 ```
 
 

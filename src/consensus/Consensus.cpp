@@ -39,26 +39,29 @@ Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
   init(start_threads);
 }
 
-bool Consensus::check_outputs(
-    const messages::TaggedTransaction &tagged_transaction) const {
+  bool Consensus::check_outputs(
+    const messages::Transaction &transaction) {
   messages::NCCValue total_received = 0;
-  for (const auto &input : tagged_transaction.transaction().inputs()) {
+  for (const auto &input : transaction.inputs()) {
     total_received += input.value().value();
   }
 
   messages::NCCValue total_spent = 0;
-  for (const auto &output : tagged_transaction.transaction().outputs()) {
+  for (const auto &output : transaction.outputs()) {
     total_spent += output.value().value();
+    if(!output.has_key_pub() || !(output.key_pub().has_raw_data() || output.key_pub().has_hex_data())) {
+      return false;
+    }
   }
 
-  if (tagged_transaction.transaction().has_fees()) {
-    total_spent += tagged_transaction.transaction().fees().value();
+  if (transaction.has_fees()) {
+    total_spent += transaction.fees().value();
   }
 
   bool result = total_spent == total_received;
   if (!result) {
     LOG_INFO << "Failed check_output for transaction "
-             << tagged_transaction.transaction().id()
+             << transaction.id()
              << " the total amount available in the inputs " << total_received
              << " does not match the total amount spent " << total_spent;
   }
@@ -66,15 +69,15 @@ bool Consensus::check_outputs(
 }
 
 bool Consensus::check_inputs(
-    const messages::TaggedTransaction &tagged_transaction,
+    const messages::Transaction &transaction,
     const messages::TaggedBlock &tip) const {
   // Check that the sender have sufficient funds. There is no need to check it
   // when inserting a block because then the balances are checked in bulks. This
   // is used for cleaning up the transaction pool.
-  for (const auto &input : tagged_transaction.transaction().inputs()) {
+  for (const auto &input : transaction.inputs()) {
     if (_ledger->get_balance(input.key_pub(), tip).value().value() <
         input.value().value()) {
-      LOG_DEBUG << "In transaction " << tagged_transaction.transaction().id()
+      LOG_DEBUG << "In transaction " << transaction.id()
                 << " input " << input.key_pub()
                 << " has insufficient funds at block "
                 << tip.block().header().id();
@@ -85,11 +88,11 @@ bool Consensus::check_inputs(
 }
 
 bool Consensus::check_signatures(
-    const messages::TaggedTransaction &tagged_transaction) const {
-  bool result = crypto::verify(tagged_transaction.transaction());
+    const messages::Transaction &transaction) const {
+  bool result = crypto::verify(transaction);
   if (!result) {
     LOG_INFO << "Failed check_signatures for transaction "
-             << tagged_transaction.transaction().id();
+             << transaction.id();
   }
   return result;
 }
@@ -634,9 +637,9 @@ bool Consensus::is_valid(const messages::TaggedTransaction &tagged_transaction,
            check_coinbase(tagged_transaction, tip);
   }
   return check_id(tagged_transaction, tip) &&
-         check_signatures(tagged_transaction) &&
+         check_signatures(tagged_transaction.transaction()) &&
          check_double_inputs(tagged_transaction) &&
-         check_outputs(tagged_transaction);
+         check_outputs(tagged_transaction.transaction());
 }
 
 bool Consensus::is_valid(const messages::TaggedBlock &tagged_block) const {
@@ -661,7 +664,7 @@ bool Consensus::add_transaction(const messages::Transaction &transaction) {
   tagged_transaction.mutable_transaction()->CopyFrom(transaction);
   const auto &tip = _ledger->get_main_branch_tip();
   return is_valid(tagged_transaction, tip) &&
-         check_inputs(tagged_transaction, tip) &&
+         check_inputs(tagged_transaction.transaction(), tip) &&
          _ledger->add_to_transaction_pool(transaction);
 }
 
@@ -1185,7 +1188,7 @@ void Consensus::cleanup_transaction_pool() {
   const auto &tip = _ledger->get_main_branch_tip();
   for (const auto &tagged_transaction : _ledger->get_transaction_pool()) {
     if (!is_unexpired(tagged_transaction.transaction(), tip.block(), tip) ||
-        !check_inputs(tagged_transaction, tip)) {
+        !check_inputs(tagged_transaction.transaction(), tip)) {
       _ledger->delete_transaction(tagged_transaction.transaction().id());
     }
   }
