@@ -1,9 +1,10 @@
 #include "Bot.hpp"
-#include "api/Rest.hpp"
-#include "common/logger.hpp"
-#include "messages/Subscriber.hpp"
 #include <boost/asio.hpp>
 #include <boost/asio/io_context.hpp>
+#include "api/Rest.hpp"
+#include "api/GRPC.hpp"
+#include "common/logger.hpp"
+#include "messages/Subscriber.hpp"
 
 namespace neuro {
 using namespace std::chrono_literals;
@@ -16,7 +17,7 @@ Bot::Bot(const messages::config::Config &config,
       _peers(_me.key_pub(), _config.networking()),
       _networking(&_queue, &_keys.at(0), &_peers, _config.mutable_networking()),
       _ledger(std::make_shared<ledger::LedgerMongodb>(_config.database())),
-      _update_timer(std::ref(*_io_context)),
+      _update_timer(*_io_context),
       _consensus_config(consensus_config) {
   if (!init()) {
     throw std::runtime_error("Could not create bot from configuration file");
@@ -257,8 +258,13 @@ bool Bot::init() {
   }
 
   if (_config.has_rest()) {
-    _api = std::make_unique<api::Rest>(_config.rest(), this);
-    LOG_INFO << "api launched on : " << _config.rest().port();
+    _rest_api = std::make_unique<api::Rest>(_config.rest(), this);
+    LOG_INFO << "rest api launched on : " << _config.rest().port();
+  }
+
+  if (_config.has_grpc()) {
+    _grpc_api = std::make_unique<api::GRPC>(_config.grpc(), this);
+    LOG_INFO << "grpc api launched on : " << _config.grpc().port();
   }
 
   return true;

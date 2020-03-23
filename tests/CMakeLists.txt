@@ -247,4 +247,4 @@ add_test(block0 block0)
 #add_test(blocks19 blocks19)
 #add_test(piitest  piitest)
 
-include_directories(${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/src ${LIBMONGOCXX_STATIC_INCLUDE_DIRS})
+include_directories(${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/src ${CMAKE_BINARY_DIR}/src/messages ${LIBMONGOCXX_STATIC_INCLUDE_DIRS})
