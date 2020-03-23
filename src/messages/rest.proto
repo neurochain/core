@@ -58,8 +58,8 @@ message CreateTransactionBody {
 }
 
 message TransactionsFilter {
-  optional uint32 page = 1;
-  optional uint32 page_size = 2;
+  optional uint32 page = 1 [default = 0];
+  optional uint32 page_size = 2 [default = 10];
   optional _KeyPub output_key_pub = 3;
   optional _KeyPub input_key_pub = 4;
 }

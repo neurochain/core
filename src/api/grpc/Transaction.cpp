@@ -21,7 +21,22 @@ Transaction::Status Transaction::by_id(ServerContext *context,
 Transaction::Status Transaction::list(
     ServerContext *context, const messages::TransactionsFilter *request,
     messages::Transactions *response) {
-  // TODO wait issue #247 (merge request !153)
+  ledger::Ledger::Filter filter_ledger;
+  uint32_t page_size = request->page_size();
+  filter_ledger.limit(page_size);
+
+  filter_ledger.skip(request->page() * page_size);
+
+  if (request->has_output_key_pub()) {
+    filter_ledger.output_key_pub(request->output_key_pub());
+  }
+
+  if (request->has_input_key_pub()) {
+    filter_ledger.input_key_pub(request->input_key_pub());
+  }
+
+  auto transactions = Api::list_transactions(filter_ledger);
+  response->Swap(&transactions);
   return Status::OK;
 }
 
