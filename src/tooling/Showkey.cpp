@@ -1,6 +1,9 @@
 #include <boost/program_options.hpp>
+
+#include "common/Buffer.hpp"
 #include "crypto/Ecc.hpp"
-#include "messages.pb.h"
+#include "crypto/KeyPriv.hpp"
+#include "crypto/KeyPub.hpp"
 #include "messages/Address.hpp"
 #include "messages/Message.hpp"
 
@@ -50,11 +53,8 @@ int main(int argc, char *argv[]) {
               << std::hex << ecc.key_priv().exponent() << std::endl;
   }
 
-  Buffer buf;
-  ecc.key_pub().save(&buf);
-  messages::Address addr(buf);
-  std::cout << "address : " << std::endl
-            << messages::to_json(addr) << std::endl;
+  messages::Address addr(ecc.key_pub());
+  std::cout << "address : " << std::endl << addr << std::endl;
 
   return 0;
 }

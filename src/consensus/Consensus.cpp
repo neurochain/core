@@ -1,25 +1,15 @@
-#include "consensus/Consensus.hpp"
-#include <algorithm>
-#include <chrono>
-#include <functional>
+#include <assert.h>
+#include <future>
 #include <random>
 #include <thread>
-#include <unordered_set>
-#include "tooling/blockgen.hpp"
+
+#include "common/Buffer.hpp"
+#include "common/logger.hpp"
+#include "consensus/Consensus.hpp"
 
 namespace neuro {
-namespace tooling {
-namespace tests {
-class RealtimeSimulator;
-}
-}  // namespace tooling
 
 namespace consensus {
-
-namespace tests {
-class Consensus;
-class RealtimeConsensus;
-}  // namespace tests
 
 Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
                      const std::vector<crypto::Ecc> &keys,
@@ -49,55 +39,66 @@ Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
   init(start_threads);
 }
 
-bool Consensus::check_outputs(
-    const messages::TaggedTransaction tagged_transaction) const {
-  messages::TaggedBlock tip;
-  if (tagged_transaction.has_block_id()) {
-    if (!_ledger->get_block(tagged_transaction.block_id(), &tip, false)) {
-      LOG_INFO << "Failed check_output for transaction "
-               << tagged_transaction.transaction().id();
-      return false;
-    };
-  } else {
-    tip = _ledger->get_main_branch_tip();
-  }
-
+  bool Consensus::check_outputs(
+    const messages::Transaction &transaction) {
   messages::NCCValue total_received = 0;
-  for (const auto &input : tagged_transaction.transaction().inputs()) {
+  for (const auto &input : transaction.inputs()) {
     total_received += input.value().value();
   }
 
   messages::NCCValue total_spent = 0;
-  for (const auto &output : tagged_transaction.transaction().outputs()) {
+  for (const auto &output : transaction.outputs()) {
     total_spent += output.value().value();
+    if(!output.has_key_pub() || !(output.key_pub().has_raw_data() || output.key_pub().has_hex_data())) {
+      return false;
+    }
   }
 
-  if (tagged_transaction.transaction().has_fees()) {
-    total_spent += tagged_transaction.transaction().fees().value();
+  if (transaction.has_fees()) {
+    total_spent += transaction.fees().value();
   }
 
   bool result = total_spent == total_received;
   if (!result) {
     LOG_INFO << "Failed check_output for transaction "
-             << tagged_transaction.transaction().id()
+             << transaction.id()
              << " the total amount available in the inputs " << total_received
              << " does not match the total amount spent " << total_spent;
   }
   return result;
 }
 
+bool Consensus::check_inputs(
+    const messages::Transaction &transaction,
+    const messages::TaggedBlock &tip) const {
+  // Check that the sender have sufficient funds. There is no need to check it
+  // when inserting a block because then the balances are checked in bulks. This
+  // is used for cleaning up the transaction pool.
+  for (const auto &input : transaction.inputs()) {
+    if (_ledger->get_balance(input.key_pub(), tip).value().value() <
+        input.value().value()) {
+      LOG_DEBUG << "In transaction " << transaction.id()
+                << " input " << input.key_pub()
+                << " has insufficient funds at block "
+                << tip.block().header().id();
+      return false;
+    }
+  }
+  return true;
+}
+
 bool Consensus::check_signatures(
-    const messages::TaggedTransaction &tagged_transaction) const {
-  bool result = crypto::verify(tagged_transaction.transaction());
+    const messages::Transaction &transaction) const {
+  bool result = crypto::verify(transaction);
   if (!result) {
     LOG_INFO << "Failed check_signatures for transaction "
-             << tagged_transaction.transaction().id();
+             << transaction.id();
   }
   return result;
 }
 
-bool Consensus::check_id(
-    const messages::TaggedTransaction &tagged_transaction) const {
+bool Consensus::check_id(const messages::TaggedTransaction &tagged_transaction,
+                         const messages::TaggedBlock &tip) const {
   auto transaction = messages::Transaction(tagged_transaction.transaction());
   messages::set_transaction_hash(&transaction);
   if (!tagged_transaction.transaction().has_id()) {
@@ -110,18 +111,6 @@ bool Consensus::check_id(
     return false;
   }
 
-  // Check that there is no other transaction with the same id in the same
-  // branch
-  messages::TaggedBlock tip;
-  if (tagged_transaction.has_block_id()) {
-    if (!_ledger->get_block(tagged_transaction.block_id(), &tip, false)) {
-      LOG_INFO << "Could not find transaction block for transaction "
-               << tagged_transaction.transaction().id();
-      return false;
-    }
-  } else {
-    tip = _ledger->get_main_branch_tip();
-  }
   bool include_transaction_pool = !tagged_transaction.has_block_id();
   auto transactions = _ledger->get_transactions(transaction.id(), tip,
                                                 include_transaction_pool);
@@ -150,10 +139,11 @@ bool Consensus::check_double_inputs(
 }
 
 bool Consensus::check_coinbase(
-    const messages::TaggedTransaction &tagged_transaction) const {
+    const messages::TaggedTransaction &tagged_transaction,
+    const messages::TaggedBlock &tip) const {
   messages::TaggedBlock tagged_block;
   if (!tagged_transaction.has_block_id() ||
-      !_ledger->get_block(tagged_transaction.block_id(), &tagged_block)) {
+      tagged_transaction.block_id() != tip.block().header().id()) {
     LOG_INFO << "Invalid coinbase for transaction "
              << tagged_transaction.transaction().id();
     return false;
@@ -206,7 +196,6 @@ bool Consensus::check_block_id(
   auto mutable_tagged_block = tagged_block;
   auto block = mutable_tagged_block.mutable_block();
   const auto block_id = block->header().id();
-  const auto author = block->header().author();
   messages::set_block_hash(block);
 
   if (!block->header().has_id()) {
@@ -214,31 +203,47 @@ bool Consensus::check_block_id(
     return false;
   }
 
-  return block->header().id() == block_id;
+  if (block->header().id() != block_id) {
+    LOG_INFO << "Failed check_block_id the block id is " << block_id
+             << " but rehashing gave " << block->header().id();
+    return false;
+  }
+  return true;
 }
 
 bool Consensus::is_unexpired(const messages::Transaction &transaction,
-                             const messages::Block &block) const {
-  messages::Block last_seen_block;
+                             const messages::Block &block,
+                             const messages::TaggedBlock &tip) const {
+  messages::TaggedBlock last_seen_block;
   bool include_transactions = false;
   if (!_ledger->get_block(transaction.last_seen_block_id(), &last_seen_block,
                           include_transactions)) {
     LOG_INFO << "Failed to get the last_seen_block with id "
              << transaction.last_seen_block_id()
              << " when checking if transaction " << transaction.id()
-             << " is expired in block " << block.header().id();
+             << " is expired in block at height " << block.header().height();
     return false;
   }
+  if (!_ledger->is_ancestor(last_seen_block.branch_path(), tip.branch_path())) {
+    LOG_INFO << "The transaction is invalid because the last_seen_block_id "
+             << transaction.last_seen_block_id()
+             << " is not in the correct branch when checking if transaction "
+             << transaction.id() << " is expired in block at height "
+             << block.header().height();
+    return false;
+  }
+
   int32_t expires = transaction.has_expires()
                         ? transaction.expires()
                         : _config.default_transaction_expires;
-  if (block.header().height() - last_seen_block.header().height() > expires) {
+  if (block.header().height() - last_seen_block.block().header().height() >
+      expires) {
     if (!block.header().has_id()) {
       LOG_INFO << "Transaction " << transaction.id() << " is expired";
       return false;
     }
     LOG_INFO << "Transaction " << transaction.id() << " is expired "
-             << " in block " << block.header().id();
+             << " in block at height " << block.header().height();
     return false;
   }
   return true;
@@ -246,9 +251,9 @@ bool Consensus::is_unexpired(const messages::Transaction &transaction,
 
 bool Consensus::is_block_transaction_valid(
     const messages::TaggedTransaction &tagged_transaction,
-    const messages::Block &block) const {
-  return is_valid(tagged_transaction) &&
-         is_unexpired(tagged_transaction.transaction(), block);
+    const messages::Block &block, const messages::TaggedBlock &tip) const {
+  return is_valid(tagged_transaction, tip) &&
+         is_unexpired(tagged_transaction.transaction(), block, tip);
 }
 
 bool Consensus::check_block_transactions(
@@ -264,7 +269,7 @@ bool Consensus::check_block_transactions(
   tagged_coinbase.set_is_coinbase(true);
   tagged_coinbase.mutable_block_id()->CopyFrom(block.header().id());
   tagged_coinbase.mutable_transaction()->CopyFrom(block.coinbase());
-  if (!is_block_transaction_valid(tagged_coinbase, block)) {
+  if (!is_block_transaction_valid(tagged_coinbase, block, tagged_block)) {
     LOG_INFO << "Failed check_block_transactions for block "
              << block.header().id();
     return false;
@@ -275,7 +280,7 @@ bool Consensus::check_block_transactions(
     tagged_transaction.set_is_coinbase(false);
     tagged_transaction.mutable_block_id()->CopyFrom(block.header().id());
     tagged_transaction.mutable_transaction()->CopyFrom(transaction);
-    if (!is_block_transaction_valid(tagged_transaction, block)) {
+    if (!is_block_transaction_valid(tagged_transaction, block, tagged_block)) {
       LOG_INFO << "Failed check_block_transactions for block "
                << block.header().id();
       return false;
@@ -297,9 +302,7 @@ bool Consensus::check_block_size(
   return result;
 }
 
-bool Consensus::check_transactions_order(
-    const messages::TaggedBlock &tagged_block) const {
-  const auto &block = tagged_block.block();
+bool Consensus::check_transactions_order(const messages::Block &block) const {
   std::vector<std::string> transaction_ids;
   for (const auto &transaction : block.transactions()) {
     transaction_ids.push_back(messages::to_json(transaction.id()));
@@ -314,6 +317,12 @@ bool Consensus::check_transactions_order(
              << block.header().id();
   }
   return result;
+}
+
+bool Consensus::check_transactions_order(
+    const messages::TaggedBlock &tagged_block) const {
+  const auto &block = tagged_block.block();
+  return check_transactions_order(block);
 }
 
 bool Consensus::check_block_height(
@@ -369,15 +378,23 @@ bool Consensus::check_block_timestamp(
 
 bool Consensus::check_block_author(
     const messages::TaggedBlock &tagged_block) const {
+  messages::TaggedBlock previous;
   messages::Assembly previous_assembly, previous_previous_assembly;
   const auto &block = tagged_block.block();
 
-  if (!tagged_block.has_previous_assembly_id()) {
-    LOG_INFO << "Failed check_block_author for block " << block.header().id()
-             << " tagged block is missing field previous_assembly_id";
+  if (!_ledger->get_block(tagged_block.block().header().previous_block_hash(),
+                          &previous, false)) {
+    LOG_INFO << "Failed check_block_author because it failed to get the "
+                "previous block "
+             << tagged_block.block().header().previous_block_hash();
     return false;
   }
-  if (!_ledger->get_assembly(tagged_block.previous_assembly_id(),
+  if (!previous.has_previous_assembly_id()) {
+    LOG_INFO << "Failed check_block_author for block " << block.header().id()
+             << " the previous block is missing field previous_assembly_id";
+    return false;
+  }
+  if (!_ledger->get_assembly(previous.previous_assembly_id(),
                              &previous_assembly)) {
     LOG_INFO << "Failed check_block_author for block " << block.header().id()
              << " failed to get previous assembly "
@@ -390,6 +407,9 @@ bool Consensus::check_block_author(
              << " failed to get previous previous assembly "
              << previous_assembly.previous_assembly_id();
     return false;
+  }
+  if (is_new_assembly(tagged_block, previous)) {
+    previous_previous_assembly = previous_assembly;
   }
 
   messages::_KeyPub key_pub;
@@ -446,12 +466,6 @@ bool Consensus::check_block_denunciations(
   return true;
 }
 
-bool Consensus::check_balances(
-    const messages::TaggedBlock &tagged_block) const {
-  // The balance was checked when it was added
-  return tagged_block.balances_size() > 0;
-}
-
 messages::BlockScore Consensus::get_block_score(
     const messages::TaggedBlock &tagged_block) const {
   messages::TaggedBlock previous;
@@ -466,11 +480,25 @@ messages::BlockScore Consensus::get_block_score(
   return previous.score() + 1;
 }
 
+void Consensus::process_blocks() {
+  std::lock_guard<std::mutex> lock(_process_blocks_mutex);
+
+  // Use wait_for() with zero milliseconds to check thread status.
+  if (_process_blocks_future.valid() &&
+      _process_blocks_future.wait_for(0ms) != std::future_status::ready) {
+    return;
+  }
+
+  _process_blocks_future = std::async(std::launch::async, [this]() {
+    verify_blocks();
+    _ledger->update_main_branch();
+  });
+}
+
 bool Consensus::verify_blocks() {
-  std::lock_guard<std::recursive_mutex> lock(_verify_blocks_mutex);
-  std::vector<messages::TaggedBlock> tagged_blocks;
-  _ledger->get_unverified_blocks(&tagged_blocks);
-  for (auto &tagged_block : tagged_blocks) {
+  auto tagged_blocks = _ledger->get_unverified_blocks();
+  for (auto tagged_block : tagged_blocks) {
+    _ledger->fill_block_transactions(tagged_block.mutable_block());
     messages::TaggedBlock previous;
     if (!_ledger->get_block(tagged_block.block().header().previous_block_hash(),
                             &previous, false)) {
@@ -479,51 +507,84 @@ bool Consensus::verify_blocks() {
           "Could not find the previous block of an unverified block " +
           messages::to_json(tagged_block.block().header().id()));
     }
-    assert(previous.branch() == messages::Branch::MAIN ||
-           previous.branch() == messages::Branch::FORK);
-    bool added_new_assembly = false;
+    if (previous.branch() == messages::INVALID) {
+      if (!_ledger->set_branch_invalid(tagged_block.block().header().id())) {
+        throw std::runtime_error("Failed to mark a block as invalid");
+      } else {
+        LOG_WARNING << "Invalid block in verify_blocks "
+                    << tagged_block.block().header().id() << " at height "
+                    << tagged_block.block().header().height();
+
+        // The list of unverified blocks should have changed
+        verify_blocks();
+        return false;
+      }
+    }
+    if (previous.branch() == messages::UNVERIFIED) {
+      // Probably because the assembly computations are not finished
+      continue;
+    }
+
+    messages::AssemblyID assembly_id;
+    messages::Assembly previous_assembly, previous_previous_assembly;
     if (is_new_assembly(tagged_block, previous)) {
-      const auto height =
+      const messages::AssemblyHeight height =
           previous.block().header().height() / _config.blocks_per_assembly;
       _ledger->add_assembly(previous, height);
-      added_new_assembly = true;
-      tagged_block.mutable_previous_assembly_id()->CopyFrom(
-          previous.block().header().id());
-
-    } else if (!previous.has_previous_assembly_id()) {
-      throw std::runtime_error(
-          "A verified tagged_block is missing a previous_assembly_id " +
-          messages::to_json(previous.block().header().id()));
+      assembly_id = previous.block().header().id();
+      if (!_ledger->get_assembly(previous.previous_assembly_id(),
+                                 &previous_previous_assembly)) {
+        LOG_ERROR << "Failed to get assembly "
+                  << previous_assembly.previous_assembly_id();
+        return false;
+      }
+    } else {
+      if (!previous.has_previous_assembly_id()) {
+        throw std::runtime_error(
+            "A verified tagged_block is missing a previous_assembly_id " +
+            messages::to_json(previous.block().header().id()));
+      }
+      assembly_id = previous.previous_assembly_id();
+      if (!_ledger->get_assembly(previous.previous_assembly_id(),
+                                 &previous_assembly)) {
+        LOG_ERROR << "Failed to get assembly "
+                  << previous.previous_assembly_id();
+        return false;
+      }
+      if (!_ledger->get_assembly(previous_assembly.previous_assembly_id(),
+                                 &previous_previous_assembly)) {
+        LOG_ERROR << "Failed to get assembly "
+                  << previous_assembly.previous_assembly_id();
+        return false;
+      }
     }
-    auto assembly_id = added_new_assembly ? previous.block().header().id()
-                                          : previous.previous_assembly_id();
 
-    // Temporarily setup the previous_assembly_id so that check_block_author
-    // can work
-    tagged_block.mutable_previous_assembly_id()->CopyFrom(assembly_id);
+    if (!previous_previous_assembly.finished_computation()) {
+      LOG_DEBUG << "Cannot validate block "
+                << tagged_block.block().header().id()
+                << " because the assembly computation is not finished.";
+      continue;
+    }
 
-    if (_ledger->add_balances(&tagged_block) && is_valid(tagged_block)) {
+    if (_ledger->add_balances(&tagged_block, _config.blocks_per_assembly) &&
+        is_valid(tagged_block)) {
       _ledger->set_block_verified(tagged_block.block().header().id(),
                                   get_block_score(tagged_block), assembly_id);
-    } else if (!_ledger->delete_block_and_children(
+    } else if (!_ledger->set_branch_invalid(
                    tagged_block.block().header().id())) {
-      throw std::runtime_error("Failed to delete an invalid block");
+      throw std::runtime_error("Failed to mark a block as invalid");
     } else {
       // The list of unverified blocks should have changed
       verify_blocks();
       return false;
     }
   }
+
   return true;
 }
 
 bool Consensus::is_new_assembly(const messages::TaggedBlock &tagged_block,
                                 const messages::TaggedBlock &previous) const {
-  if (!previous.has_previous_assembly_id()) {
-    throw std::runtime_error("Something is wrong here block " +
-                             messages::to_json(previous.block().header().id()) +
-                             " is missing the previous_assembly_id");
-  }
   auto block_assembly_height =
       tagged_block.block().header().height() / _config.blocks_per_assembly;
   auto previous_assembly_height =
@@ -537,6 +598,10 @@ void Consensus::init(bool start_threads) {
   for (const auto &key : _keys) {
     _key_pubs.emplace_back(key.key_pub());
   }
+
+  _is_compute_pii_stopped = false;
+  _is_update_heights_stopped = false;
+  _is_miner_stopped = false;
   if (start_threads) {
     start_compute_pii_thread();
     start_update_heights_thread();
@@ -545,9 +610,11 @@ void Consensus::init(bool start_threads) {
 }
 
 Consensus::~Consensus() {
-  _stop_compute_pii = true;
-  _stop_update_heights = true;
-  _stop_miner = true;
+  LOG_DEBUG << this << " Entered consensus destructor";
+  _is_compute_pii_stopped = true;
+  _is_update_heights_stopped = true;
+  _is_miner_stopped = true;
+  _is_stopped_cv.notify_all();
   if (_compute_pii_thread.joinable()) {
     _compute_pii_thread.join();
   }
@@ -557,38 +624,47 @@ Consensus::~Consensus() {
   if (_miner_thread.joinable()) {
     _miner_thread.join();
   }
+  if (_process_blocks_future.valid()) {
+    _process_blocks_future.wait();
+  }
+  LOG_DEBUG << this << " Leaving consensus destructor";
 }
 
-bool Consensus::is_valid(
-    const messages::TaggedTransaction &tagged_transaction) const {
+bool Consensus::is_valid(const messages::TaggedTransaction &tagged_transaction,
+                         const messages::TaggedBlock &tip) const {
   if (tagged_transaction.is_coinbase()) {
-    return check_id(tagged_transaction) && check_coinbase(tagged_transaction);
-  } else {
-    return check_id(tagged_transaction) &&
-           check_signatures(tagged_transaction) &&
-           check_double_inputs(tagged_transaction) &&
-           check_outputs(tagged_transaction);
+    return check_id(tagged_transaction, tip) &&
+           check_coinbase(tagged_transaction, tip);
   }
+  return check_id(tagged_transaction, tip) &&
+         check_signatures(tagged_transaction.transaction()) &&
+         check_double_inputs(tagged_transaction) &&
+         check_outputs(tagged_transaction.transaction());
 }
 
 bool Consensus::is_valid(const messages::TaggedBlock &tagged_block) const {
   // This method should be only be called after the block has been inserted
-  return check_block_id(tagged_block) &&
-         check_block_transactions(tagged_block) &&
-         check_block_size(tagged_block) &&
-         check_transactions_order(tagged_block) &&
-         check_block_height(tagged_block) &&
-         check_block_timestamp(tagged_block) &&
-         check_block_author(tagged_block) &&
-         check_block_denunciations(tagged_block) &&
-         check_balances(tagged_block);
+  bool result =
+      check_block_id(tagged_block) && check_block_transactions(tagged_block) &&
+      check_block_size(tagged_block) &&
+      check_transactions_order(tagged_block) &&
+      check_block_height(tagged_block) && check_block_timestamp(tagged_block) &&
+      check_block_author(tagged_block) &&
+      check_block_denunciations(tagged_block);
+  if (!result) {
+    LOG_WARNING << "Invalid block " << tagged_block.block().header().id()
+                << " at height " << tagged_block.block().header().height();
+  }
+  return result;
 }
 
 bool Consensus::add_transaction(const messages::Transaction &transaction) {
   messages::TaggedTransaction tagged_transaction;
   tagged_transaction.set_is_coinbase(false);
   tagged_transaction.mutable_transaction()->CopyFrom(transaction);
-  return is_valid(tagged_transaction) &&
+  const auto &tip = _ledger->get_main_branch_tip();
+  return is_valid(tagged_transaction, tip) &&
+         check_inputs(tagged_transaction.transaction(), tip) &&
          _ledger->add_to_transaction_pool(transaction);
 }
 
@@ -603,23 +679,60 @@ bool Consensus::add_double_mining(const messages::Block &block) {
   return true;
 }
 
+bool Consensus::add_block(const messages::Block &block, bool async) {
+  // Check the transactions order before inserting because the order is lost at
+  // insertion
+  if (!check_transactions_order(block)) {
+    LOG_WARNING << "failed to add block due to transaction order : " << block;
+    return false;
+  }
+  if (!_ledger->insert_block(block)) {
+    LOG_WARNING << "failed to add block due to insert_block : " << block;
+    return false;
+  }
+  if (!add_double_mining(block)) {
+    LOG_WARNING << "failed to add block due to double mining : " << block;
+    return false;
+  }
+  if (async) {
+    process_blocks();
+  } else {
+    if (!verify_blocks()) {
+      LOG_WARNING << "failed to add block due to verify_block : " << block;
+      return false;
+    }
+    if (!_ledger->update_main_branch()) {
+      LOG_WARNING << "failed to add block due to update_main_branch : "
+                  << block;
+      return false;
+    }
+  }
+  return true;
+}
+
 bool Consensus::add_block(const messages::Block &block) {
-  return _ledger->insert_block(block) && verify_blocks() &&
-         _ledger->update_main_branch() && add_double_mining(block);
+  return add_block(block, false);
+}
+
+bool Consensus::add_block_async(const messages::Block &block) {
+  return add_block(block, true);
 }
 
 void Consensus::start_compute_pii_thread() {
-  _stop_compute_pii = false;
   if (!_compute_pii_thread.joinable()) {
     _compute_pii_thread = std::thread([this]() {
-      while (!_stop_compute_pii) {
+      while (!_is_compute_pii_stopped) {
         std::vector<messages::Assembly> assemblies;
         _ledger->get_assemblies_to_compute(&assemblies);
-        if (assemblies.size() > 0) {
+        if (!assemblies.empty()) {
+          LOG_DEBUG << "Starting assembly computations " << assemblies[0].id();
           compute_assembly_pii(assemblies[0]);
-          cleanup_expired_transactions();
+          LOG_DEBUG << "Finished assembly computations " << assemblies[0].id();
+          cleanup_transaction_pool();
         } else {
-          std::this_thread::sleep_for(_config.compute_pii_sleep);
+          std::unique_lock cv_lock(_is_stopped_mutex);
+          _is_stopped_cv.wait_for(cv_lock, _config.compute_pii_sleep,
+                                  [&]() { return _is_compute_pii_stopped; });
         }
       }
     });
@@ -664,7 +777,7 @@ bool Consensus::compute_assembly_pii(const messages::Assembly &assembly) {
     LOG_WARNING << "During Pii computation failed to set seed for assembly "
                 << assembly.id();
     return false;
-  };
+  }
 
   // Add the integrity before the pii because it is used in the pii computations
   for (const auto &[key_pub, score] : integrities.scores()) {
@@ -673,7 +786,7 @@ bool Consensus::compute_assembly_pii(const messages::Assembly &assembly) {
   }
 
   auto piis = pii.get_key_pubs_pii(assembly.height(), branch_path);
-  if (piis.size() == 0) {
+  if (piis.empty()) {
     LOG_INFO << "There were no transactions during the assembly "
              << assembly.id()
              << " we will therefore use the piis of the previous assembly";
@@ -689,20 +802,20 @@ bool Consensus::compute_assembly_pii(const messages::Assembly &assembly) {
     pii.mutable_assembly_id()->CopyFrom(assembly.id());
     pii.set_rank(i);
     _ledger->set_pii(pii);
-  };
+  }
 
   if (!_ledger->set_nb_key_pubs(assembly.id(), piis.size())) {
     LOG_WARNING
         << "During Pii computation failed to set nb_key_pubs for assembly "
         << assembly.id();
     return false;
-  };
+  }
   if (!_ledger->set_finished_computation(assembly.id())) {
     LOG_WARNING << "During Pii computation failed to set "
                    "finished_computation for assembly "
                 << assembly.id();
     return false;
-  };
+  }
   return true;
 }
 
@@ -750,9 +863,8 @@ messages::BlockHeight Consensus::get_current_assembly_height() const {
 bool Consensus::get_heights_to_write(
     const std::vector<messages::_KeyPub> &key_pubs,
     std::vector<std::pair<messages::BlockHeight, KeyPubIndex>> *heights) const {
-  const auto last_block_height = _ledger->height();
-  messages::TaggedBlock last_block;
-  _ledger->get_block(last_block_height, &last_block);
+  const messages::TaggedBlock last_block = _ledger->get_main_branch_tip();
+  const auto last_block_height = last_block.block().header().height();
   messages::Assembly previous_assembly, previous_previous_assembly;
 
   if (!_ledger->get_assembly(last_block.previous_assembly_id(),
@@ -791,8 +903,7 @@ bool Consensus::get_heights_to_write(
     if (!get_block_writer(previous_previous_assembly, i, &writer)) {
       LOG_WARNING << "Did not manage to get the block writer for assembly "
                   << previous_previous_assembly.id() << " at height " << i;
-    }
-    if (key_pubs_map.count(writer) > 0) {
+    } else if (key_pubs_map.count(writer) > 0) {
       heights->push_back({i, key_pubs_map[writer]});
     }
   }
@@ -814,8 +925,7 @@ bool Consensus::get_heights_to_write(
       if (!get_block_writer(previous_assembly, i, &writer)) {
         LOG_WARNING << "Did not manage to get the block writer for assembly "
                     << previous_assembly.id() << " at height " << i;
-      }
-      if (key_pubs_map.count(writer) > 0) {
+      } else if (key_pubs_map.count(writer) > 0) {
         heights->push_back({i, key_pubs_map[writer]});
       }
     }
@@ -825,6 +935,7 @@ bool Consensus::get_heights_to_write(
 }
 
 bool Consensus::cleanup_transactions(messages::Block *block) const {
+  std::lock_guard lock(mpfr_mutex);  // TODO trax, is it really needed?
   messages::TaggedBlock previous;
   if (!_ledger->get_block(block->header().previous_block_hash(), &previous)) {
     LOG_INFO << "Failed to get the previous block with id "
@@ -832,30 +943,36 @@ bool Consensus::cleanup_transactions(messages::Block *block) const {
              << " in cleanup transactions";
     return false;
   }
-  std::vector<messages::Transaction> transactions;
+
   std::unordered_map<messages::_KeyPub, Double> balances;
-  for (const auto &transaction : block->transactions()) {
-    if (!is_unexpired(transaction, *block)) {
+  messages::Block accepted_transactions;
+
+  for (const messages::Transaction &transaction : block->transactions()) {
+    if (!is_unexpired(transaction, *block, previous)) {
       _ledger->delete_transaction(transaction.id());
       continue;
     }
 
     bool is_transaction_valid = true;
     for (const auto &input : transaction.inputs()) {
-      if (balances.count(input.key_pub()) == 0) {
-        balances[input.key_pub()] =
-            _ledger->get_balance(input.key_pub(), previous).value().value();
+      auto &key_pub = input.key_pub();
+      if (balances.count(key_pub) == 0) {
+        balances[key_pub] =
+            _ledger->get_balance(key_pub, previous).value().value();
       }
-      balances[input.key_pub()] -= input.value().value();
-      if (balances[input.key_pub()] < 0) {
+      balances[key_pub] -= input.value().value();
+      if (balances[key_pub] < 0) {
         is_transaction_valid = false;
-        LOG_DEBUG << "Transaction " << transaction.id()
-                  << " not included in the block because of insufficient funds";
       }
     }
 
-    // Reverse balance changes
     if (!is_transaction_valid) {
+      LOG_INFO << "Transaction " << transaction
+               << " not included in the block because of insufficient funds";
+
+      _ledger->delete_transaction(transaction.id());
+
+      // Reverse balance change
       for (const auto &input : transaction.inputs()) {
         balances[input.key_pub()] += input.value().value();
       }
@@ -863,29 +980,26 @@ bool Consensus::cleanup_transactions(messages::Block *block) const {
     }
 
     for (const auto &output : transaction.outputs()) {
-      if (balances.count(output.key_pub()) == 0) {
-        balances[output.key_pub()] =
-            _ledger->get_balance(output.key_pub(), previous).value().value();
+      auto &key_pub = output.key_pub();
+      if (balances.count(key_pub) == 0) {
+        balances[key_pub] =
+            _ledger->get_balance(key_pub, previous).value().value();
       }
-      balances[output.key_pub()] += output.value().value();
+      balances[key_pub] += output.value().value();
     }
-    transactions.push_back(transaction);
+    accepted_transactions.add_transactions()->CopyFrom(transaction);
   }
-  block->clear_transactions();
-  for (const auto &transaction : transactions) {
-    block->add_transactions()->CopyFrom(transaction);
-  }
+
+  block->mutable_transactions()->Swap(
+      accepted_transactions.mutable_transactions());
+
   return true;
 }
 
 bool Consensus::build_block(const crypto::Ecc &keys,
                             const messages::BlockHeight &height,
                             messages::Block *block) const {
-  messages::TaggedBlock last_block;
-  bool include_transactions = false;
-  if (!_ledger->get_last_block(&last_block, include_transactions)) {
-    return false;
-  }
+  messages::TaggedBlock last_block = _ledger->get_main_branch_tip();
   auto &last_block_header = last_block.block().header();
   if (last_block_header.height() >= height) {
     LOG_WARNING << "Trying to mine block with height " << height
@@ -898,7 +1012,8 @@ bool Consensus::build_block(const crypto::Ecc &keys,
   header->mutable_previous_block_hash()->CopyFrom(last_block_header.id());
   header->mutable_timestamp()->set_data(std::time(nullptr));
 
-  _ledger->get_transaction_pool(block);
+  _ledger->get_transaction_pool(block, _config.max_block_size,
+                                _config.max_transaction_per_block);
   if (!cleanup_transactions(block)) {
     LOG_WARNING
         << "Failed to cleanup_transactions while mining block with height "
@@ -919,7 +1034,7 @@ bool Consensus::build_block(const crypto::Ecc &keys,
       block->mutable_coinbase(), last_block.block().header().id());
 
   // Check if the coinbase needs a longer expires
-  if (!is_unexpired(block->coinbase(), *block)) {
+  if (!is_unexpired(block->coinbase(), *block, last_block)) {
     block->mutable_coinbase()->set_expires(
         block->header().height() - last_block.block().header().height());
     messages::set_transaction_hash(block->mutable_coinbase());
@@ -935,12 +1050,16 @@ bool Consensus::build_block(const crypto::Ecc &keys,
 }
 
 void Consensus::start_update_heights_thread() {
-  _stop_update_heights = false;
   if (!_update_heights_thread.joinable()) {
     _update_heights_thread = std::thread([this]() {
-      while (!_stop_update_heights) {
+      while (!_is_update_heights_stopped) {
+        // Makes sure process blocks is called regularly
+        process_blocks();
+
         update_heights_to_write();
-        std::this_thread::sleep_for(_config.update_heights_sleep);
+        std::unique_lock cv_lock(_is_stopped_mutex);
+        _is_stopped_cv.wait_for(cv_lock, _config.update_heights_sleep,
+                                [&]() { return _is_update_heights_stopped; });
       }
     });
   }
@@ -983,7 +1102,6 @@ void Consensus::update_heights_to_write() {
 }
 
 void Consensus::start_miner_thread() {
-  _stop_miner = false;
   if (!_miner_thread.joinable()) {
     _miner_thread = std::thread([this]() { mine_blocks(); });
   }
@@ -991,11 +1109,10 @@ void Consensus::start_miner_thread() {
 
 bool Consensus::mine_block(const messages::Block &block0) {
   std::lock_guard<std::mutex> lock(_heights_to_write_mutex);
-  if (_heights_to_write.size() == 0) {
+  if (_heights_to_write.empty()) {
     return false;
   }
-  const auto height = _heights_to_write[0].first;
-  const auto key_pub_index = _heights_to_write[0].second;
+  const auto [height, key_pub_index] = _heights_to_write.front();
   const auto block_start =
       block0.header().timestamp().data() + height * _config.block_period;
   const std::time_t block_end = block_start + _config.block_period;
@@ -1010,8 +1127,22 @@ bool Consensus::mine_block(const messages::Block &block0) {
     return false;
   }
 
+  if (_last_mined_block_height == height) {
+    LOG_INFO << "Attempt to mine a block that we have already mined at height "
+             << height;
+    return false;
+  }
+
   messages::Block new_block;
   if (!build_block(_keys[key_pub_index], height, &new_block)) {
+    return false;
+  }
+
+  // Check that the block author is correct
+  messages::TaggedBlock tagged_block;
+  tagged_block.mutable_block()->CopyFrom(new_block);
+  if (!check_block_author(tagged_block)) {
+    LOG_WARNING << "Failed to mine block because the block author is wrong";
     return false;
   }
 
@@ -1020,8 +1151,20 @@ bool Consensus::mine_block(const messages::Block &block0) {
     return false;
   }
 
+  const auto t0 = Timer::now();
+  LOG_DEBUG << "running _publish_block";
   _publish_block(new_block);
+  LOG_DEBUG << "_publish_block took " << (Timer::now() - t0).count() / 1E6
+            << " ms";
+  const auto t1 = Timer::now();
+
+  // We don't add the block in an async way because we don't want to mine the
+  // next block as a fork
   add_block(new_block);
+  LOG_DEBUG << "add_block took " << (Timer::now() - t1).count() / 1E6 << " ms";
+
+  _last_mined_block_height = height;
+
   LOG_INFO << "Mined block successfully with id " << new_block.header().id()
            << " with height " << new_block.header().height();
   return true;
@@ -1032,17 +1175,20 @@ void Consensus::mine_blocks() {
   if (!_ledger->get_block(0, &block0)) {
     throw std::runtime_error("Failed to get block0 in start_miner_thread");
   }
-  while (!_stop_miner) {
+  while (!_is_miner_stopped) {
     if (!mine_block(block0)) {
-      std::this_thread::sleep_for(_config.miner_sleep);
+      std::unique_lock cv_lock(_is_stopped_mutex);
+      _is_stopped_cv.wait_for(cv_lock, _config.miner_sleep,
+                              [&]() { return _is_miner_stopped; });
     }
   }
 }
 
-void Consensus::cleanup_expired_transactions() {
+void Consensus::cleanup_transaction_pool() {
   const auto &tip = _ledger->get_main_branch_tip();
   for (const auto &tagged_transaction : _ledger->get_transaction_pool()) {
-    if (!is_unexpired(tagged_transaction.transaction(), tip.block())) {
+    if (!is_unexpired(tagged_transaction.transaction(), tip.block(), tip) ||
+        !check_inputs(tagged_transaction.transaction(), tip)) {
       _ledger->delete_transaction(tagged_transaction.transaction().id());
     }
   }

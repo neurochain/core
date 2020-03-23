@@ -1,8 +1,6 @@
-#include "networking/tcp/Connection.hpp"
 #include <gtest/gtest.h>
-#include <src/messages/config/Config.hpp>
 
-#include "src/messages/Queue.hpp"
+#include "networking/tcp/Connection.hpp"
 
 namespace neuro {
 namespace networking {
@@ -14,7 +12,7 @@ TEST(Connection, constructor) {
   auto socket = std::make_shared<bai::tcp::socket>(*io_context_ptr);
   auto queue = messages::Queue{};
   auto conf = messages::config::Config{Path("./bot2.json")};
-  messages::Peer peer{conf.networking()};
+  auto peer = std::make_shared<messages::Peer>(conf.networking());
   tcp::Connection connection_0(0, &queue, socket, peer);
   tcp::Connection connection_1(345, &queue, socket, peer);
 }

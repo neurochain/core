@@ -1,11 +1,15 @@
 #ifndef NEURO_SRC_MESSAGES_ADDRESS_HPP
 #define NEURO_SRC_MESSAGES_ADDRESS_HPP
 
+#include <cryptopp/algebra.h>
 #include <cryptopp/integer.h>
 #include <vector>
+
 #include "common.pb.h"
+#include "common/Buffer.hpp"
 #include "common/logger.hpp"
 #include "crypto/Ecc.hpp"
+#include "crypto/KeyPub.hpp"
 
 namespace neuro {
 namespace messages {
@@ -38,15 +42,11 @@ class Address : public _Address {
   static Address random();
 
   bool verify() const;
-
-  operator bool() const;
 };
 
 using Addresses = std::vector<Address>;
-  
+
 }  // namespace messages
 }  // namespace neuro
-
-
 
 #endif /* NEURO_SRC_MESSAGES_ADDRESS_HPP */

@@ -15,6 +15,17 @@ namespace neuro {
 namespace ledger {
 namespace tests {
 
+template <typename M>
+int cursor_size(Cursor<M> cursor) {
+  int size = 0;
+  auto it = cursor.begin();
+  while (it != cursor.end()) {
+    ++it;
+    size++;
+  }
+  return size;
+}
+
 class LedgerMongodb : public ::testing::Test {
  public:
   const std::string db_url = "mongodb://mongo:27017";
@@ -166,15 +177,35 @@ class LedgerMongodb : public ::testing::Test {
     auto &key_pub1 = simulator.key_pubs[1];
 
     // Check that a block does not empty the transaction pool
-    ASSERT_EQ(ledger->get_transaction_pool().size(), 0);
+    {
+      auto cursor = ledger->get_transaction_pool();
+      ASSERT_TRUE(cursor.begin() == cursor.end());
+    }
     auto block1 = simulator.new_block();
     ASSERT_TRUE(simulator.consensus->add_transaction(
         ledger->send_ncc(simulator.keys[0].key_priv(), key_pub1, 0.5)));
-    ASSERT_EQ(ledger->get_transaction_pool().size(), 1);
+    {
+      auto transactions = ledger->get_transaction_pool();
+      auto it = transactions.begin();
+
+      ASSERT_FALSE(it == transactions.end());
+      ++it;
+      ASSERT_TRUE(it == transactions.end());
+    }
     ASSERT_TRUE(simulator.consensus->add_block(block1));
-    ASSERT_EQ(ledger->get_transaction_pool().size(), 1);
+
+    {
+      auto transactions = ledger->get_transaction_pool();
+      auto it = transactions.begin();
+      ASSERT_FALSE(it == transactions.end());
+      ++it;
+      ASSERT_TRUE(it == transactions.end());
+    }
     ASSERT_EQ(ledger->cleanup_transaction_pool(), 1);
-    ASSERT_EQ(ledger->get_transaction_pool().size(), 0);
+    {
+      auto transactions = ledger->get_transaction_pool();
+      ASSERT_TRUE(transactions.begin() == transactions.end());
+    }
   }
 };
 
@@ -256,11 +287,11 @@ TEST_F(LedgerMongodb, transactions) {
   tagged_transaction.set_is_coinbase(true);
   ledger->add_transaction(tagged_transaction);
   messages::Block block;
-  ledger->get_transaction_pool(&block);
+  ledger->get_transaction_pool(&block, 256000, 300);
   ASSERT_EQ(block.transactions_size(), 1);
   ASSERT_TRUE(ledger->delete_transaction(transaction0.id()));
   block.Clear();
-  ledger->get_transaction_pool(&block);
+  ledger->get_transaction_pool(&block, 256000, 300);
   ASSERT_EQ(block.transactions_size(), 0);
 }
 
@@ -410,8 +441,7 @@ TEST_F(LedgerMongodb, get_unverified_blocks) {
   ASSERT_TRUE(ledger->get_block(block2.header().id(), &tagged_block));
   ASSERT_EQ(tagged_block.branch(), messages::Branch::DETACHED);
   std::vector<messages::TaggedBlock> unscored_forks;
-  ASSERT_TRUE(ledger->get_unverified_blocks(&unscored_forks));
-  ASSERT_EQ(unscored_forks.size(), 0);
+  ASSERT_EQ(cursor_size(ledger->get_unverified_blocks()), 0);
 
   // Insert the block1 which should attach the block2
   ASSERT_TRUE(ledger->insert_block(block1));
@@ -421,20 +451,17 @@ TEST_F(LedgerMongodb, get_unverified_blocks) {
   ASSERT_TRUE(ledger->get_block(block2.header().id(), &tagged_block));
   ASSERT_EQ(tagged_block.branch(), messages::Branch::UNVERIFIED);
   unscored_forks.clear();
-  ASSERT_TRUE(ledger->get_unverified_blocks(&unscored_forks));
-  ASSERT_EQ(unscored_forks.size(), 2);
+  ASSERT_EQ(cursor_size(ledger->get_unverified_blocks()), 2);
 
   ASSERT_TRUE(ledger->set_block_verified(block1.header().id(), 1,
                                          block0.header().id()));
   unscored_forks.clear();
-  ASSERT_TRUE(ledger->get_unverified_blocks(&unscored_forks));
-  ASSERT_EQ(unscored_forks.size(), 1);
+  ASSERT_EQ(cursor_size(ledger->get_unverified_blocks()), 1);
 
   ASSERT_TRUE(ledger->set_block_verified(block2.header().id(), 2,
                                          block0.header().id()));
   unscored_forks.clear();
-  ASSERT_TRUE(ledger->get_unverified_blocks(&unscored_forks));
-  ASSERT_EQ(unscored_forks.size(), 0);
+  ASSERT_EQ(cursor_size(ledger->get_unverified_blocks()), 0);
 }
 
 TEST_F(LedgerMongodb, update_main_branch) { test_update_main_branch(); }
@@ -512,6 +539,7 @@ TEST_F(LedgerMongodb, integrity) {
   ASSERT_EQ(block0.block().header().height(), 0);
   integrity.mutable_assembly_id()->CopyFrom(block0.block().header().id());
   integrity.set_assembly_height(0);
+  integrity.set_block_height(0);
   integrity.set_score("17");
   integrity.mutable_branch_path()->CopyFrom(block0.branch_path());
   ASSERT_TRUE(ledger->set_integrity(integrity));
@@ -533,6 +561,7 @@ TEST_F(LedgerMongodb, integrity) {
   ASSERT_EQ(integrity_score, 17);
 
   integrity.set_assembly_height(1);
+  integrity.set_block_height(block1.block().header().height());
   integrity.set_score("18");
   integrity.mutable_branch_path()->CopyFrom(block1.branch_path());
   ASSERT_TRUE(ledger->set_integrity(integrity));
@@ -583,31 +612,72 @@ TEST_F(LedgerMongodb, set_previous_assembly_id) {
 
 TEST_F(LedgerMongodb, list_transactions) {
   auto &key_pub = simulator.key_pubs[0];
-  auto transactions = ledger->list_transactions(key_pub).transactions();
-  ASSERT_EQ(transactions.size(), 1);
-  ASSERT_EQ(transactions[0].outputs(0).key_pub(), key_pub);
-
+  {
+    ledger::Ledger::Filter filter;
+    filter.output_key_pub(key_pub);
+    auto transactions = ledger->list_transactions(filter).transactions();
+    ASSERT_EQ(transactions.size(), 1);
+    ASSERT_EQ(transactions[0].outputs(0).key_pub(), key_pub);
+  }
   // Check that we only get incoming transactions
   // Send everything so that there is no change output going back to the key_pub
   auto transaction =
       ledger->send_ncc(simulator.keys[0].key_priv(), simulator.key_pubs[1], 1);
   simulator.consensus->add_transaction(transaction);
-  transactions = ledger->list_transactions(key_pub).transactions();
-  ASSERT_EQ(transactions.size(), 1);
-
+  {
+    ledger::Ledger::Filter filter;
+    filter.output_key_pub(key_pub);
+    auto transactions = ledger->list_transactions(filter).transactions();
+    ASSERT_EQ(transactions.size(), 1);
+  }
   // Check that we do get transactions from the transaction pool
   transaction = ledger->send_ncc(simulator.keys[1].key_priv(),
                                  simulator.key_pubs[0], 0.5);
   simulator.consensus->add_transaction(transaction);
-  transactions = ledger->list_transactions(key_pub).transactions();
-  ASSERT_EQ(transactions.size(), 2);
-
+  {
+    ledger::Ledger::Filter filter;
+    filter.output_key_pub(key_pub);
+    auto transactions = ledger->list_transactions(filter).transactions();
+    ASSERT_EQ(transactions.size(), 2);
+  }
   // Putting the transactions in a block should not change anything
   auto block = simulator.new_block();
   bool has_coinbase = block.coinbase().outputs(0).key_pub() == key_pub;
   simulator.consensus->add_block(block);
-  transactions = ledger->list_transactions(key_pub).transactions();
+  ledger::Ledger::Filter filter;
+  filter.output_key_pub(key_pub);
+  auto transactions = ledger->list_transactions(filter).transactions();
   ASSERT_EQ(transactions.size(), has_coinbase ? 3 : 2);
+}
+
+TEST_F(LedgerMongodb, filter_transactions) {
+  auto &output_key_pub = simulator.key_pubs[0];
+  auto &input_key_pub = simulator.keys[1].key_pub();
+  auto &input_key_priv = simulator.keys[1].key_priv();
+  {
+    ledger::Ledger::Filter filter;
+    filter.output_key_pub(output_key_pub);
+    auto transactions = ledger->list_transactions(filter).transactions();
+    ASSERT_EQ(transactions.size(), 1);
+    ASSERT_EQ(transactions[0].outputs(0).key_pub(), output_key_pub);
+  }
+
+  auto transaction = ledger->send_ncc(input_key_priv, output_key_pub, 0.5);
+  simulator.consensus->add_transaction(transaction);
+  {
+    ledger::Ledger::Filter filter_input;
+    filter_input.input_key_pub(input_key_pub);
+    auto transactions_by_input = ledger->list_transactions(filter_input).transactions();
+    ASSERT_EQ(transactions_by_input.size(), 1);
+    ASSERT_EQ(transactions_by_input[0].inputs(0).key_pub(), input_key_pub);
+
+    ledger::Ledger::Filter filter_id;
+    auto transaction_id = transactions_by_input[0].id();
+    filter_id.transaction_id(transaction_id);
+    auto transactions_by_id = ledger->list_transactions(filter_id).transactions();
+    ASSERT_EQ(transactions_by_id.size(), 1);
+    ASSERT_EQ(transactions_by_id[0].id(), transaction_id);
+  }
 }
 
 TEST_F(LedgerMongodb, get_outputs_for_key_pub) {
@@ -659,7 +729,10 @@ TEST_F(LedgerMongodb, balance) {
   ASSERT_EQ(block.transactions_size(), 1);
   bool author_index = block.coinbase().outputs(0).key_pub() != key_pub0;
   ASSERT_TRUE(simulator.consensus->add_block(block));
-  ASSERT_EQ(ledger->get_transaction_pool().size(), 0);
+  {
+    auto transactions = ledger->get_transaction_pool();
+    ASSERT_TRUE(transactions.begin() == transactions.end());
+  }
   int balance0 = 100 * (!author_index);
   int balance1 = 2 * ncc_block0.value() + 100 * author_index;
   ASSERT_EQ(ledger->balance(key_pub0).value(), balance0);
@@ -965,6 +1038,89 @@ TEST_F(LedgerMongodb, get_balance) {
       }
     }
   }
+}
+
+TEST_F(LedgerMongodb, compute_new_balance) {
+  // simple transaction, 2 block, 2 transaction, address0 send all it's ncc,
+  // then in next block address 2 send half of it's one
+  auto &key_pub0 = simulator.key_pubs[0];
+  auto &key_pub1 = simulator.key_pubs[1];
+
+  ASSERT_TRUE(simulator.consensus->add_transaction(
+      ledger->send_ncc(simulator.keys[0].key_priv(), key_pub1, 1)));
+  auto block = simulator.new_block();
+  ASSERT_TRUE(simulator.consensus->add_block(block));
+  messages::TaggedBlock tagged_block1;
+  ledger->get_block(block.header().id(), &tagged_block1);
+
+  auto balance0 = ledger->get_balance(key_pub0, tagged_block1);
+  auto balance1 = ledger->get_balance(key_pub1, tagged_block1);
+  auto balance_block1_address0 = balance0.value().value();
+  auto balance_block1_address1 = balance1.value().value();
+  auto enthalpy_begin_block1_address0 = std::stoi(balance0.enthalpy_begin());
+  auto enthalpy_end_block1_address0 = std::stoi(balance0.enthalpy_end());
+  auto enthalpy_begin_block1_address1 = std::stoi(balance1.enthalpy_begin());
+  auto enthalpy_end_block1_address1 = std::stoi(balance1.enthalpy_end());
+
+  ASSERT_TRUE(simulator.consensus->add_transaction(
+      ledger->send_ncc(simulator.keys[1].key_priv(), key_pub0, 0.5)));
+  block = simulator.new_block();
+  ASSERT_TRUE(simulator.consensus->add_block(block));
+  messages::TaggedBlock tagged_block2;
+  ledger->get_block(block.header().id(), &tagged_block2);
+
+  balance0 = ledger->get_balance(key_pub0, tagged_block2);
+  balance1 = ledger->get_balance(key_pub1, tagged_block2);
+  auto balance_block2_address0 = balance0.value().value();
+  auto balance_block2_address1 = balance1.value().value();
+  auto enthalpy_begin_block2_address0 = std::stoi(balance0.enthalpy_begin());
+  auto enthalpy_end_block2_address0 = std::stoi(balance0.enthalpy_end());
+  auto enthalpy_begin_block2_address1 = std::stoi(balance1.enthalpy_begin());
+  auto enthalpy_end_block2_address1 = std::stoi(balance1.enthalpy_end());
+
+  ASSERT_EQ(enthalpy_begin_block1_address0, ncc_block0.value());
+  ASSERT_EQ(enthalpy_begin_block1_address1, ncc_block0.value());
+  ASSERT_EQ(enthalpy_end_block1_address0, 0);  // we sent all our ncc
+  ASSERT_EQ(enthalpy_end_block1_address1, enthalpy_begin_block1_address1);
+
+  ASSERT_EQ(enthalpy_begin_block2_address0,
+            enthalpy_end_block1_address0 + balance_block1_address0);
+  ASSERT_EQ(enthalpy_begin_block2_address1,
+            enthalpy_end_block1_address1 + balance_block1_address1);
+  ASSERT_EQ(enthalpy_end_block2_address0, enthalpy_begin_block2_address0);
+  ASSERT_EQ(enthalpy_end_block2_address1,
+            (enthalpy_begin_block1_address1 + balance_block1_address1) *
+                0.5);  // we sent 50% of all our ncc
+
+  // try to spend more than we have (can be done if we receive more ncc in
+  // the same block
+  ASSERT_TRUE(ledger->add_to_transaction_pool(
+      ledger->send_ncc(simulator.keys[0].key_priv(), key_pub0, 1.2)));
+  double fee = 100;
+  ASSERT_TRUE(simulator.consensus->add_transaction(ledger->send_ncc(
+      simulator.keys[1].key_priv(), key_pub0, 0.3, messages::NCCAmount(fee))));
+  block = simulator.new_block();
+  ASSERT_TRUE(simulator.consensus->add_block(block));
+  messages::TaggedBlock tagged_block3;
+  ledger->get_block(block.header().id(), &tagged_block3);
+
+  balance0 = ledger->get_balance(key_pub0, tagged_block3);
+  balance1 = ledger->get_balance(key_pub1, tagged_block3);
+  auto enthalpy_begin_block3_address0 = std::stoi(balance0.enthalpy_begin());
+  auto enthalpy_end_block3_address0 = std::stoi(balance0.enthalpy_end());
+  auto enthalpy_begin_block3_address1 = std::stoi(balance1.enthalpy_begin());
+  auto enthalpy_end_block3_address1 = std::stoi(balance1.enthalpy_end());
+
+  ASSERT_EQ(enthalpy_begin_block3_address0,
+            enthalpy_end_block2_address0 + balance_block2_address0);
+  ASSERT_EQ(enthalpy_begin_block3_address1,
+            enthalpy_end_block2_address1 + balance_block2_address1);
+  ASSERT_EQ(enthalpy_end_block3_address0,
+            0);  // we sent more than 50% of all our ncc
+  ASSERT_EQ(enthalpy_end_block3_address1,
+            enthalpy_begin_block3_address1 *
+                (0.7 - fee / balance_block2_address1));  // we sent 30% of all
+                                                         // our ncc (+ fees)
 }
 
 }  // namespace tests

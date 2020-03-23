@@ -10,9 +10,9 @@
 #include "messages.pb.h"
 #include "messages/Queue.hpp"
 #include "messages/Subscriber.hpp"
+#include "networking/TransportLayer.hpp"
 #include "networking/tcp/Connection.hpp"
 #include "networking/tcp/Tcp.hpp"
-#include "networking/TransportLayer.hpp"
 
 namespace neuro {
 namespace networking {
@@ -29,17 +29,23 @@ class Networking {
   Networking(messages::Queue *_queue, crypto::Ecc *keys, messages::Peers *peers,
              messages::config::Networking *config);
 
-  TransportLayer::SendResult send(
-      std::shared_ptr<messages::Message> message) const;
-  bool send_unicast(std::shared_ptr<messages::Message> message) const;
-  messages::Peers connected_peers() const;
+  TransportLayer::SendResult send(const messages::Message &message,
+                                  Connection::ID id) const;
+  TransportLayer::SendResult send_one(const messages::Message &message) const;
+  TransportLayer::SendResult send_all(const messages::Message &message) const;
+  bool reply(std::shared_ptr<messages::Message> message) const;
+  messages::Peers *connected_peers() const;
+  std::vector<messages::Peer *> peers() const;
+  std::string pretty_peers() const;
   std::size_t peer_count() const;
+  std::vector<std::shared_ptr<messages::Peer>> remote_peers() const;
   void join();
 
   bool terminate(const Connection::ID id);
   Port listening_port() const;
-  bool connect(messages::Peer *peer);
-  std::optional<messages::Peer*> find_peer(Connection::ID id);
+  bool connect(std::shared_ptr<messages::Peer> peer);
+  std::shared_ptr<messages::Peer> find_peer(Connection::ID id);
+  void clean_old_connections(int delta);
 };
 
 }  // namespace networking

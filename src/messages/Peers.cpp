@@ -1,10 +1,13 @@
 #include "messages/Peers.hpp"
-#include <tuple>
 
 namespace neuro {
 namespace messages {
 
 Peers::iterator Peers::begin(const Peer::Status status) {
+  return iterator{_peers, status};
+}
+
+const Peers::iterator Peers::begin(const Peer::Status status) const {
   return iterator{_peers, status};
 }
 
@@ -14,28 +17,55 @@ const Peers::iterator Peers::begin() const { return iterator{_peers}; }
 Peers::iterator Peers::end() { return iterator{}; }
 const Peers::iterator Peers::end() const { return iterator{}; }
 
-std::optional<Peer *> Peers::insert(const Peer &peer) {
-  std::unique_lock<std::shared_mutex> lock(_mutex);
-  if (peer.key_pub() == _own_key) {
+std::optional<Peer *> Peers::insert(std::shared_ptr<Peer> peer) {
+  if (!peer->has_key_pub()) {
     return {};
   }
 
+  if (peer->key_pub() == _own_key) {
+    return {};
+  }
+
+  std::unique_lock<std::mutex> lock(_mutex);
+  _peers.insert_or_assign(peer->key_pub(), peer);
+  peer->set_status(Peer::DISCONNECTED);
+  return peer.get();
+}
+
+std::optional<Peer *> Peers::insert(const Peer &peer) {
+  return insert(std::make_shared<Peer>(peer));
+}
+
+std::optional<Peer *> Peers::upsert(std::shared_ptr<Peer> peer) {
+  if (!peer->has_key_pub()) {
+    return {};
+  }
+
+  if (peer->key_pub() == _own_key) {
+    return {};
+  }
+
+  std::unique_lock<std::mutex> lock(_mutex);
   auto [found_element, is_inserted] = _peers.emplace(
-      std::piecewise_construct, std::forward_as_tuple(peer.key_pub()),
-      std::forward_as_tuple(std::make_unique<Peer>(peer)));
+      std::piecewise_construct, std::forward_as_tuple(peer->key_pub()),
+      std::forward_as_tuple(peer));
 
   auto &found_peer = found_element->second;
-
   if (!is_inserted) {
-    // pub key already known, update peer
-    found_peer->set_port(peer.port());
-    found_peer->set_endpoint(peer.endpoint());
-    return {found_peer.get()};
+    if (found_peer->status() == messages::Peer::DISCONNECTED) {
+      // pub key already known, update peer
+      found_peer->set_port(peer->port());
+      found_peer->set_endpoint(peer->endpoint());
+    }
+    return found_peer.get();
   }
 
   found_peer->set_status(Peer::DISCONNECTED);
-
   return found_peer.get();
+}
+
+std::optional<Peer *> Peers::upsert(const Peer &peer) {
+  return upsert(std::make_shared<Peer>(peer));
 }
 
 /**
@@ -43,25 +73,26 @@ std::optional<Peer *> Peers::insert(const Peer &peer) {
  * \return number of connection | connected peers
  */
 std::size_t Peers::used_peers_count() const {
-  std::shared_lock<std::shared_mutex> lock(_mutex);
+  std::unique_lock<std::mutex> lock(_mutex);
   long used_peers_count =
       std::count_if(_peers.begin(), _peers.end(), [](const auto &it) {
         const auto &peer = it.second;
-        auto connection_status = peer->status() & Peer::CONNECTED;
+        auto connection_status =
+            peer->status() & (Peer::CONNECTED | Peer::CONNECTING);
         return peer->has_status() && connection_status;
       });
   return used_peers_count;
 }
 
-std::optional<Peer *> Peers::find(const _KeyPub &key_pub) {
-  std::shared_lock<std::shared_mutex> lock(_mutex);
+std::shared_ptr<Peer> Peers::find(const _KeyPub &key_pub) {
+  std::unique_lock<std::mutex> lock(_mutex);
   auto got = _peers.find(key_pub);
 
   if (got == _peers.end()) {
-    return std::nullopt;
+    return nullptr;
   }
 
-  return {got->second.get()};
+  return got->second;
 }
 
 /**
@@ -71,8 +102,8 @@ std::optional<Peer *> Peers::find(const _KeyPub &key_pub) {
  * \param status a status to filter the list
  * \return the filtered list of peer
  */
-std::vector<Peer *> Peers::by_status(const Peer::Status status) {
-  std::shared_lock<std::shared_mutex> lock(_mutex);
+std::vector<Peer *> Peers::by_status(const Peer::Status status) const {
+  std::unique_lock<std::mutex> lock(_mutex);
   std::vector<Peer *> res;
 
   const auto time = ::neuro::time();
@@ -92,12 +123,12 @@ std::vector<Peer *> Peers::used_peers() {
       static_cast<Peer::Status>(Peer::CONNECTING | Peer::CONNECTED));
 }
 
-std::vector<Peer *> Peers::connected_peers() {
+std::vector<Peer *> Peers::connected_peers() const {
   return by_status(Peer::CONNECTED);
 }
 
 std::vector<Peer> Peers::peers_copy() const {
-  std::shared_lock<std::shared_mutex> lock(_mutex);
+  std::unique_lock<std::mutex> lock(_mutex);
   std::vector<Peer> res;
 
   for (const auto &[_, peer] : _peers) {
@@ -114,8 +145,8 @@ void Peers::update_unreachable() {
   }
 }
 
-std::optional<Peer* > Peers::peer_by_port(const Port port) const {
-  std::shared_lock<std::shared_mutex> lock(_mutex);
+std::optional<Peer *> Peers::peer_by_port(const Port port) const {
+  std::unique_lock<std::mutex> lock(_mutex);
   for (auto &[_, peer] : _peers) {
     if (peer->port() == port) {
       return std::make_optional(peer.get());
@@ -125,21 +156,25 @@ std::optional<Peer* > Peers::peer_by_port(const Port port) const {
   return std::nullopt;
 }
 
-bool Peers::fill(_Peers *peers, uint8_t peer_count) {
-  const auto full_mask =
-      static_cast<Peer::Status>(_Peer_Status_Status_MAX * 2 - 1);
-
-  for (auto it = begin(full_mask), e = end(); it != e; ++it) {
+/**
+ * fill a peer list with managed peer so it can be send on the wire
+ * \param peers the list to be sent
+ * \param peer_count limit the number of peer we copy
+ */
+void Peers::fill(_Peers *peers, uint8_t peer_count) {
+  for (const auto peer : *this) {
     if (peer_count <= 0) {
       break;
     }
-    peers->add_peers()->CopyFrom(**it);
+    auto *net_peer = peers->add_peers();
+    net_peer->set_endpoint(peer->endpoint());
+    net_peer->set_port(peer->port());
+    net_peer->mutable_key_pub()->CopyFrom(peer->key_pub());
     peer_count--;
   }
-  return true;
 }
 
-Peers::operator _Peers () const {
+Peers::operator _Peers() const {
   _Peers peers;
   for (const auto &[foo, peer] : _peers) {
     peers.add_peers()->CopyFrom(*peer.get());
@@ -149,11 +184,13 @@ Peers::operator _Peers () const {
 
 std::ostream &operator<<(std::ostream &os, const Peers &peers) {
   for (const auto &peer : peers.peers_copy()) {
-    os << "peers> " << peer << std::endl;
+    os << peer.port() << ":"
+       << _Peer_Status_Name(peer.status()) << " ";
+//     os << "peers> " << peer << std::endl;
   }
 
   return os;
 }
-  
+
 }  // namespace messages
 }  // namespace neuro

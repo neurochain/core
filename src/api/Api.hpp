@@ -3,6 +3,8 @@
 
 #include "messages/Message.hpp"
 #include "messages/Peers.hpp"
+#include "messages/Subscriber.hpp"
+#include "ledger/Ledger.hpp"
 
 namespace neuro {
 class Bot;
@@ -13,8 +15,8 @@ class Api {
   Bot *_bot;
 
  public:
-  Api(Bot *bot);
-  virtual ~Api() {}
+  explicit Api(Bot *bot);
+  virtual ~Api() = default;
 
  protected:
   virtual bool verify_key_pub_format(const messages::_KeyPub &key_pub) final;
@@ -33,14 +35,24 @@ class Api {
   virtual bool is_ledger_uptodate() const final;
   virtual Buffer transaction(
       const messages::Transaction &transaction) const final;
+  virtual messages::Transaction build_transaction(
+      const messages::_KeyPub &sender_key_pub,
+      const google::protobuf::RepeatedPtrField<messages::Output> &outputs,
+      const std::optional<messages::NCCAmount> &fees) final;
   virtual std::optional<messages::Transaction> transaction_from_json(
       const std::string &json) final;
   virtual messages::Transaction transaction(
       const messages::TransactionID &id) final;
+  virtual messages::Transactions
+  list_transactions(const ledger::Ledger::Filter &filter) const;
   virtual bool transaction_publish(
       const messages::Transaction &transaction) final;
 
   virtual const messages::Peers &peers() const final;
+  virtual const messages::_Peers connections() const final;
+
+  virtual void subscribe(const messages::Type type,
+                         const messages::Subscriber::Callback &callback) final;
 };
 
 }  // namespace api

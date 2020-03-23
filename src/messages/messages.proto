@@ -4,37 +4,37 @@ package neuro.messages;
 
 import "common.proto";
 
-
 // Handshake
 // =========
 message Hello {
   required _Peer peer = 1;
+  optional Hash tip = 2;
 }
 
 message World {
   required bool accepted = 1;
+  optional Hash missing_block = 2;
 }
 
-// Update 
+// Update
 // ======
 
-message GetPeers {
-}
+message GetPeers {}
 
-message _Peers {
-  repeated _Peer peers = 1;
-}
+message _Peers { repeated _Peer peers = 1; }
+
+message HeartBeat {}
+
+message Ping {}
 
 // Ask for block hash
 // ------------------
 message GetRoots {
   optional Hash last_known_root = 1;
-  optional int32 count = 2; // ask for count last roots 
+  optional int32 count = 2; // ask for count last roots
 }
 
-message Roots {
-  repeated Hash roots = 1;
-}
+message Roots { repeated Hash roots = 1; }
 
 message GetBlock {
   oneof getblock {
@@ -72,9 +72,7 @@ message Transaction {
   optional int32 expires = 7;
 }
 
-message Transactions {
-  repeated Transaction transactions = 1;
-}
+message Transactions { repeated Transaction transactions = 1; }
 
 message BlockHeader {
   required Hash id = 1;
@@ -102,15 +100,16 @@ message Block {
   repeated _Denunciation denunciations = 40;
 }
 
-message Blocks {
-  repeated Block block = 1;
-}
+message Tip { optional Hash id = 1; }
+
+message Blocks { repeated Block block = 1; }
 
 enum Branch {
   MAIN = 0;
   FORK = 1;
-  UNVERIFIED = 3;
   DETACHED = 2;
+  UNVERIFIED = 3;
+  INVALID = 4;
 }
 
 // The branch path is a strange beast.
@@ -153,6 +152,7 @@ message TaggedBlock {
   optional int64 score = 4;
   optional Hash previous_assembly_id = 5;
   repeated Balance balances = 6;
+  optional Timestamp reception_time = 7;
 }
 
 message TaggedTransaction {
@@ -161,13 +161,9 @@ message TaggedTransaction {
   optional Hash block_id = 3;
 }
 
-message ConnectionClosed {
-  optional _Peer peer = 1;
-}
+message ConnectionClosed { optional _Peer peer = 1; }
 
-message ConnectionReady {
-  required bool from_remote = 1;
-}
+message ConnectionReady { required bool from_remote = 1; }
 
 message BodyCount {}
 
@@ -190,19 +186,23 @@ message Body {
     Block block = 9;
     ConnectionClosed connection_closed = 10;
     ConnectionReady connection_ready = 11;
-    BodyCount body_count = 12;
-    Publish publish = 13;
+    Publish publish = 12;
+    HeartBeat heart_beat = 13;
+    Ping ping = 14;
+    Tip tip = 15;
+    // should be last with hightest index
+    BodyCount body_count = 16;
   }
 }
 
 message Header {
-  required int32 version = 1;
+  required string version = 1;
   required Timestamp ts = 2;
   optional Hash signature = 3;
 
-  // req/rep pattern 
+  // req/rep pattern
   optional int32 connection_id = 10;
-  optional int32 id = 11; 
+  optional int32 id = 11;
   optional int32 request_id = 12;
   optional _KeyPub key_pub = 13;
 }

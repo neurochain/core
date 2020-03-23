@@ -1,8 +1,9 @@
 #include <boost/program_options.hpp>
-#include <fstream>
-#include <iostream>
+
+#include "bsoncxx/builder/stream/document.hpp"
 #include "common/logger.hpp"
-#include "ledger/LedgerMongodb.hpp"
+#include "ledger/mongo.hpp"
+#include "messages.pb.h"
 #include "messages/Message.hpp"
 
 namespace po = boost::program_options;
@@ -26,7 +27,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  if (options.count("help")) {
+  if (options.count("help") != 0u) {
     LOG_INFO << description;
     return 1;
   }

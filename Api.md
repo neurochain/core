@@ -84,13 +84,21 @@ $ curl localhost:8080/transaction/ -d '{"type":"SHA256", "data":"h75iSkWlN53Z78e
 ```
 
 ### Get a list of transaction
-**URL**: `/list_transactions/:address`
+**URL**: `/list_transactions/:page`
 
-**URL Parameter**: `address` address of wallet to list transaction
+**URL Parameter**: `page` access a particular page in this public key list of transaction (0 indexed)
 
-**method**: `GET`
+**method**: `POST`
 
-get unspent transaction (search by output)
+**data**:
+```
+{
+    rawData: <public key>
+}
+```
+
+get the list of transaction with a pagination, if page number is omited
+the total available page is sent instead
 
 **exemple**:
 ```
@@ -139,19 +147,50 @@ $ curl http://52.47.129.155:8080/total_nb_transactions
 
 ## Misc.
 ### Get the balance of a wallet
-**URL**: `/balance
+**URL**: `/balance`
+
+**method**: `GET`
+**query parameter: `pubkey`
+
+**exemple**:
+```
+$ curl http://localhost:8080/balance?pubkey=A5mc7ff4DMn9DyLq2qcbAUMyHfmzlvKKbLWuXHlQmuCD
+{"value":"30861119"}
+```
+
+### Get the balance of a wallet
+**URL**: `/balance`
 
 **method**: `POST`
 **data**:
 ```
 {
-    hexData: <public key>
+    rawData: <public key>
 }
 ```
 **exemple**:
 ```
 $ curl 'http://localhost:8080/balance' --data '{"hexData":"0402368ae94009f1e32ef39826c057d6e3ff3b8ea1c9364f34dfebad765daf7e96a9f6abf90c855ab883044a25eee6aa338c0f8210303cc02687d648182abe0da0"}'
-  {"value":"0"}
+{"value":"0"}
+```
+
+### Check if a key is valid
+**URL**: `/validate`
+
+**method**: `POST`
+**data**:
+```
+{
+    rawData: <public key>
+}
+```
+
+return a `406 Not acceptable` error code when key_pub is invalid
+
+**exemple**:
+```
+$ curl 'http://0.0.0.0:8080/validate' --data '{"rawData":"AlhV0BmXEIlOksGUtRrJqXy4UBfFFGue49H5TagwpSUH"}'
+invalid key
 ```
 
 ### Check if a bot is alive
@@ -203,3 +242,14 @@ $ curl http://52.47.129.155:8080/peers
 $ curl localhost:8080/status
 {"bot":{"uptime":8,"utime":0,"stime":0,"cpuUsage":0,"memory":94456,"netIn":0,"netOut":0},"blockchain":{"lastBlockTs":1562759946,"currentHeight":161620},"fs":{"totalSpace":1473970176,"usedSpace":1033154560,"totalInode":15073280,"usedInode":1246545},"peer":{"connected":0,"connecting":0,"disconnected":0,"unreachable":1}}
 ```
+
+# Cookbook
+## Make a transaction
+To effectively emit a transaction on the network, several endpoint must be used,
+
+- /validate to ensure your generated key is valid
+- /transaction with the transaction information (outputs, ncc to send, data, fees) to create your transaction payload  
+- sign your payload using secp256k1 elliptic curve
+- /publish with your signature, the untouched payload and your public key
+
+when correctly done the bot should response with the transaction id used on the network

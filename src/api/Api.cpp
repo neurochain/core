@@ -8,7 +8,6 @@ namespace api {
 Api::Api(Bot *bot) : _bot(bot) {
   messages::Block block;
   _bot->ledger()->get_block(int32_t{0}, &block, true);
-  std::cout << messages::to_json(block) << std::endl;
 }
 
 bool Api::verify_key_pub_format(const messages::_KeyPub &key_pub) {
@@ -20,8 +19,8 @@ messages::NCCAmount Api::balance(const messages::_KeyPub &key_pub) {
   return _bot->ledger()->balance(key_pub);
 }
 
-std::vector<messages::_KeyPub> Api::previous_recipients(
-    const messages::_KeyPub &key_pub) {
+std::vector<messages::_KeyPub>
+Api::previous_recipients(const messages::_KeyPub &key_pub) {
   return {};
 }
 
@@ -66,8 +65,18 @@ Buffer Api::transaction(const messages::Transaction &transaction) const {
   return buffer;
 }
 
-std::optional<messages::Transaction> Api::transaction_from_json(
-    const std::string &json) {
+messages::Transaction Api::build_transaction(
+    const messages::_KeyPub &sender_key_pub,
+    const google::protobuf::RepeatedPtrField<messages::Output> &outputs,
+    const std::optional<messages::NCCAmount> &fees) {
+  auto transaction =
+      _bot->ledger()->build_transaction(sender_key_pub, outputs, fees);
+  transaction.mutable_id()->set_data("");
+  return transaction;
+}
+
+std::optional<messages::Transaction>
+Api::transaction_from_json(const std::string &json) {
   messages::Transaction transaction;
   return (messages::from_json(json, &transaction))
              ? std::make_optional(transaction)
@@ -81,6 +90,8 @@ messages::Transaction Api::transaction(const messages::TransactionID &id) {
 }
 
 const messages::Peers &Api::peers() const { return _bot->peers(); }
+
+const messages::_Peers Api::connections() const { return _bot->remote_peers(); }
 
 // messages::Transactions Api::transactions_in(const messages::_KeyPub &key_pub)
 // {
@@ -101,10 +112,20 @@ const messages::Peers &Api::peers() const { return _bot->peers(); }
 
 // }
 
+messages::Transactions
+Api::list_transactions(const ledger::Ledger::Filter &filter) const {
+  return _bot->ledger()->list_transactions(filter);
+}
+
 bool Api::transaction_publish(const messages::Transaction &transaction) {
   return _bot->publish_transaction(transaction);
 }
 
-}  // namespace api
+void Api::subscribe(messages::Type type,
+                    const messages::Subscriber::Callback &callback) {
+  _bot->subscribe(type, callback);
+}
 
-}  // namespace neuro
+} // namespace api
+
+} // namespace neuro

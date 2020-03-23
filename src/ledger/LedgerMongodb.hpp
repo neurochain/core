@@ -1,27 +1,98 @@
 #ifndef NEURO_SRC_LEDGERMONGODB_HPP
 #define NEURO_SRC_LEDGERMONGODB_HPP
 
-#include <mutex>
-
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
+#include <cstdint>
+#include <mutex>
+
+#include "bsoncxx/document/view_or_value.hpp"
+#include "common.pb.h"
 #include "common/types.hpp"
 #include "config.pb.h"
+#include "consensus.pb.h"
 #include "ledger/Ledger.hpp"
 #include "ledger/mongo.hpp"
 #include "messages.pb.h"
+#include "messages/Message.hpp"
 #include "messages/config/Database.hpp"
+#include "mongocxx/client.hpp"
+#include "mongocxx/collection.hpp"
+#include "mongocxx/cursor.hpp"
+#include "mongocxx/database.hpp"
+#include "mongocxx/instance.hpp"
+#include "mongocxx/options/find.hpp"
+#include "mongocxx/uri.hpp"
 
 namespace neuro {
 namespace tooling {
-class Simulator;
 class RealtimeSimulator;
+class Simulator;
 }  // namespace tooling
 
 namespace ledger {
 namespace tests {
 class LedgerMongodb;
 }
+
+template <typename M>
+class Cursor {
+ private:
+  std::optional<mongocxx::cursor> _cursor;
+  mutable mongocxx::client _client;
+  mutable mongocxx::database _db;
+  mutable mongocxx::collection _collection;
+
+ public:
+  Cursor(const mongocxx::uri &_uri, const std::string &db_name,
+         const std::string &collection_name)
+      : _client(_uri),
+        _db(_client[db_name]),
+        _collection(_db.collection(collection_name)) {}
+
+  mongocxx::collection *collection() { return &_collection; }
+
+  bool find(
+      bsoncxx::document::view_or_value filter,
+      const mongocxx::options::find &options = mongocxx::options::find()) {
+    _cursor = std::make_optional(_collection.find(filter, options));
+    return true;
+  }
+
+  class iterator {
+   private:
+    mongocxx::cursor::iterator _mongo_iterator;
+
+   public:
+    explicit iterator(mongocxx::cursor::iterator &mongo_iterator)
+        : _mongo_iterator(std::move(mongo_iterator)) {}
+
+    void operator++() { _mongo_iterator++; }
+    bool operator==(const iterator &it) {
+      return _mongo_iterator == it._mongo_iterator;
+    }
+    bool operator!=(const iterator &it) {
+      return _mongo_iterator != it._mongo_iterator;
+    }
+    M dereference() {
+      M message;
+      messages::from_bson(*_mongo_iterator, &message);
+      return message;
+    }
+    M operator*() { return dereference(); }
+    M operator->() { return dereference(); }
+  };
+
+  iterator begin() {
+    auto df = _cursor->begin();
+    return iterator(df);
+  }
+
+  iterator end() {
+    auto df = _cursor->end();
+    return iterator(df);
+  }
+};
 
 class LedgerMongodb : public Ledger {
   struct BalanceChange {
@@ -33,6 +104,7 @@ class LedgerMongodb : public Ledger {
   static mongocxx::instance _instance;
   mutable mongocxx::uri _uri;
   mutable mongocxx::client _client;
+  const std::string _db_name;
   mutable mongocxx::database _db;
   mutable mongocxx::collection _blocks;
   mutable mongocxx::collection _transactions;
@@ -45,7 +117,9 @@ class LedgerMongodb : public Ledger {
 
   messages::TaggedBlock _main_branch_tip;
 
-  mongocxx::options::find remove_OID() const;
+  static mongocxx::options::find remove_OID();
+
+  static mongocxx::options::find remove_balances();
 
   mongocxx::options::find projection(const std::string &field) const;
 
@@ -57,28 +131,22 @@ class LedgerMongodb : public Ledger {
   bool load_block0(const messages::config::Database &config,
                    messages::Block *block0);
 
-  bool is_ancestor(const messages::BranchPath &ancestor_path,
-                   const messages::BranchPath &block_path) const;
-
-  bool is_ancestor(const messages::TaggedBlock &ancestor,
-                   const messages::TaggedBlock &block) const;
-
   bool is_main_branch(
       const messages::TaggedTransaction &tagged_transaction) const;
-
-  int fill_block_transactions(messages::Block *block) const;
 
   bool get_block(const messages::BlockHeight height,
                  const messages::BranchPath &branch_path,
                  messages::TaggedBlock *tagged_block,
                  bool include_transactions = true) const;
 
+  messages::TaggedBlocks get_blocks(mongocxx::cursor &cursor,
+                                    bool include_transactions) const;
+
   messages::BranchID new_branch_id() const;
 
-  bool set_branch_path(const messages::BlockHeader &block_header,
-                       const messages::BranchPath &branch_path);
-
-  bool set_branch_path(const messages::BlockHeader &block_header);
+  bool set_branch_path(
+      std::list<std::pair<messages::BlockHeader, messages::BranchPath>>
+          *block_headers);
 
   bool update_branch_tag(const messages::BlockID &id,
                          const messages::Branch &branch);
@@ -95,13 +163,28 @@ class LedgerMongodb : public Ledger {
       std::unordered_map<messages::_KeyPub, BalanceChange> *balance_changes,
       const messages::Transaction &transaction);
 
+  mongocxx::cursor find(
+      mongocxx::collection &collection, bsoncxx::document::view_or_value filter,
+      const mongocxx::options::find &options = remove_OID()) const;
+
+  Double compute_new_balance(messages::Balance *balance,
+                             const BalanceChange &change,
+                             messages::BlockHeight height,
+                             int blocks_per_assembly);
+
  public:
   LedgerMongodb(const std::string &url, const std::string &db_name);
   LedgerMongodb(const std::string &url, const std::string &db_name,
                 const messages::Block &block0);
-  LedgerMongodb(const messages::config::Database &config);
+  explicit LedgerMongodb(const messages::config::Database &config);
 
   ~LedgerMongodb();
+
+  bool is_ancestor(const messages::BranchPath &ancestor_path,
+                   const messages::BranchPath &block_path) const;
+
+  bool is_ancestor(const messages::TaggedBlock &ancestor,
+                   const messages::TaggedBlock &block) const;
 
   void remove_all();
 
@@ -122,6 +205,9 @@ class LedgerMongodb : public Ledger {
   bool get_block(const messages::BlockID &id,
                  messages::TaggedBlock *tagged_block,
                  bool include_transactions = true) const;
+
+  bool get_tagged_block_balances(const messages::BlockID &id,
+                                 messages::TaggedBlock *tagged_block) const;
 
   bool get_block(const messages::BlockID &id, messages::Block *block,
                  bool include_transactions = true) const;
@@ -149,6 +235,8 @@ class LedgerMongodb : public Ledger {
 
   bool delete_block_and_children(const messages::BlockID &id);
 
+  bool set_branch_invalid(const messages::BlockID &id);
+
   bool get_transaction(const messages::TransactionID &id,
                        messages::Transaction *transaction) const;
 
@@ -168,9 +256,12 @@ class LedgerMongodb : public Ledger {
   std::size_t total_nb_transactions() const;
 
   std::size_t total_nb_blocks() const;
+  std::size_t total_nb_transactions_legacy() const;
 
-  bool for_each(const Filter &filter, const messages::TaggedBlock &tip,
-                bool include_transaction_pool, Functor functor) const;
+  bool for_each(const Filter &filter,
+		bool include_transaction_pool,
+		const messages::TaggedBlock &tip,
+		Functor functor) const;
 
   bool for_each(const Filter &filter, Functor functor) const;
 
@@ -182,12 +273,14 @@ class LedgerMongodb : public Ledger {
 
   bool delete_transaction(const messages::TransactionID &id);
 
-  std::vector<messages::TaggedTransaction> get_transaction_pool() const;
+  Cursor<messages::TaggedTransaction> get_transaction_pool(
+      const std::optional<std::size_t> max_transactions = {}) const;
 
-  std::size_t get_transaction_pool(messages::Block *block) const;
+  std::size_t get_transaction_pool(messages::Block *block,
+                                   const std::size_t size_limit,
+                                   const std::size_t max_transactions) const;
 
-  bool get_unverified_blocks(
-      std::vector<messages::TaggedBlock> *tagged_blocks) const;
+  Cursor<messages::TaggedBlock> get_unverified_blocks() const;
 
   bool set_block_verified(const messages::BlockID &id,
                           const messages::BlockScore &score,
@@ -201,7 +294,7 @@ class LedgerMongodb : public Ledger {
       const messages::BranchPath &branch_path) const;
 
   bool get_pii(const messages::_KeyPub &key_pub,
-               const messages::AssemblyID &assembly_id, Double *score) const;
+               const messages::AssemblyID &assembly_id, Double *pii) const;
 
   bool get_assembly_piis(const messages::AssemblyID &assembly_id,
                          std::vector<messages::Pii> *piis);
@@ -211,6 +304,9 @@ class LedgerMongodb : public Ledger {
   void init_database(const messages::Block &block0);
 
   bool get_assembly(const messages::AssemblyID &assembly_id,
+                    messages::Assembly *assembly) const;
+
+  bool get_assembly(const messages::AssemblyHeight &height,
                     messages::Assembly *assembly) const;
 
   bool add_assembly(const messages::TaggedBlock &tagged_block,
@@ -255,9 +351,10 @@ class LedgerMongodb : public Ledger {
                            const messages::BlockHeight &max_block_height,
                            const messages::BranchPath &branch_path) const;
 
-  std::vector<messages::TaggedBlock> get_blocks(
-      const messages::BlockHeight height, const messages::_KeyPub &author,
-      bool include_transactions = true) const;
+  messages::TaggedBlocks get_blocks(const messages::BlockHeight height,
+                                    const messages::_KeyPub &author,
+                                    bool include_transactions = true) const;
+  messages::TaggedBlocks get_blocks(const messages::Branch name) const;
 
   void add_double_mining(
       const std::vector<messages::TaggedBlock> &tagged_blocks);
@@ -275,7 +372,12 @@ class LedgerMongodb : public Ledger {
       const messages::_KeyPub &key_pub,
       const messages::TaggedBlock &tagged_block) const;
 
-  bool add_balances(messages::TaggedBlock *tagged_block);
+  bool add_balances(messages::TaggedBlock *tagged_block,
+                    int blocks_per_assembly);
+
+  int fill_block_transactions(messages::Block *block) const;
+
+  bool set_branch_path(const messages::BlockHeader &block_header);
 
   friend class neuro::ledger::tests::LedgerMongodb;
 };

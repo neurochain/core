@@ -11,6 +11,7 @@
       }
     ],
     "max_connections": 3,
+    "default_next_update_time": 3,
     "tcp": {
       "port": 1338,
       "endpoint": "localhost",
@@ -19,7 +20,6 @@
           "endpoint": "localhost",
           "port": 1337,
           "keyPub": {
-            "type": "ECP256K1",
             "rawData": "Awqh/GaK+zXAydO8h4sDf4apFNmW8SFaIqRqXioYDXy8"
           }
         }

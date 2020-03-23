@@ -1,6 +1,8 @@
-#include "messages/Message.hpp"
+#include <google/protobuf/util/json_util.h>
+
 #include "common/logger.hpp"
 #include "messages/Hasher.hpp"
+#include "messages/Message.hpp"
 
 namespace neuro {
 namespace messages {
@@ -24,8 +26,8 @@ bool from_json(const std::string &json, Packet *packet) {
   return r.ok();
 }
 
-bool from_json_file(const std::string &path, Packet *packet) {
-  std::ifstream t(path);
+bool from_json_file(const Path &path, Packet *packet) {
+  std::ifstream t(path.string());
   std::string str((std::istreambuf_iterator<char>(t)),
                   std::istreambuf_iterator<char>());
   return from_json(str, packet);
@@ -55,30 +57,33 @@ bool to_buffer(const Packet &packet, Buffer *buffer) {
 
 std::optional<Buffer> to_buffer(const Packet &packet) {
   Buffer buffer;
-  if(!to_buffer(packet, &buffer)) {
+  if (!to_buffer(packet, &buffer)) {
     return std::nullopt;
   }
   return std::make_optional(buffer);
 }
 
-void to_json(const Packet &packet, std::string *output) {
+void to_json(const Packet &packet, std::string *output, bool pretty) {
   try {
-    google::protobuf::util::MessageToJsonString(packet, output);
+    google::protobuf::util::JsonPrintOptions options;
+    if (pretty) {
+      options.add_whitespace = true;
+    }
+    google::protobuf::util::MessageToJsonString(packet, output, options);
   } catch (...) {
     auto buff = to_buffer(packet);
-    if(!buff) {
+    if (!buff) {
       throw std::runtime_error("Could not parse packet");
     }
     buff->save("crashing.proto");
-    LOG_ERROR << "Could not to_json packet " << buff->size() << boost::stacktrace::stacktrace()
-              << std::endl;
+    LOG_TRACE << "Could not to_json packet " << buff->size();
     throw;
   }
 }
 
-std::string to_json(const Packet &packet) {
+std::string to_json(const Packet &packet, bool pretty) {
   std::string output;
-  to_json(packet, &output);
+  to_json(packet, &output, pretty);
   return output;
 }
 
@@ -110,7 +115,6 @@ void sort_transactions(Block *block) {
 void set_transaction_hash(Transaction *transaction) {
   // Fill the id which is a required field. This makes the transaction
   // serializable.
-  transaction->mutable_id()->set_type(messages::Hash::SHA256);
   transaction->mutable_id()->set_data("");
 
   const auto id = messages::Hasher(*transaction);
@@ -120,7 +124,6 @@ void set_transaction_hash(Transaction *transaction) {
 void set_default(messages::Signature *author) {
   author->Clear();
   author->mutable_key_pub()->set_raw_data("");
-  author->mutable_signature()->set_type(messages::Hash::SHA256);
   author->mutable_signature()->set_data("");
 }
 
@@ -129,9 +132,8 @@ void set_block_hash(Block *block) {
 
   // Fill the id which is a required field. This makes the block
   // serializable.
-  header->mutable_id()->set_type(messages::Hash::SHA256);
   header->mutable_id()->set_data("");
-  
+
   // The author should always be filled after the hash is set because the author
   // field contains the signature of a denunciation that contains the hash of
   // the block
@@ -142,7 +144,7 @@ void set_block_hash(Block *block) {
 }
 
 int32_t fill_header(messages::Header *header) {
-  int32_t id = std::rand();
+  const auto id = _dist(_rd);
   header->set_version(MessageVersion);
   header->mutable_ts()->set_data(std::time(nullptr));
   header->set_id(id);

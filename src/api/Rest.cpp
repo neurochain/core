@@ -1,15 +1,14 @@
 #include "api/Rest.hpp"
-#include <messages/Hasher.hpp>
 #include "Bot.hpp"
 #include "common/logger.hpp"
-#include "ledger/Ledger.hpp"
+#include "messages/Hasher.hpp"
 
 namespace neuro::api {
 
 Rest::Rest(const messages::config::Rest &config, Bot *bot)
     : Api::Api(bot), _httpEndpoint(std::make_shared<Http::Endpoint>(
                          Address(Ipv4::any(), config.port()))),
-      _monitor(*bot) {
+      _monitor(bot) {
   init();
   start();
 }
@@ -17,7 +16,7 @@ Rest::Rest(const messages::config::Rest &config, Bot *bot)
 void Rest::init() {
   auto opts = Http::Endpoint::options()
                   .threads(1)
-                  .maxRequestSize(1024 * 1024)  // 1Mio
+                  .maxRequestSize(1024 * 1024) // 1Mio
                   .flags(Tcp::Options::ReuseAddr);
   _httpEndpoint->init(opts);
   setupRoutes();
@@ -30,14 +29,20 @@ void Rest::start() {
 
 void Rest::shutdown() { _httpEndpoint->shutdown(); }
 
+std::string Rest::raw_data_to_json(std::string raw_data) const {
+  return "{rawData:\"" + raw_data + "\"}";
+}
+
 void Rest::send(Response &response, const messages::Packet &packet) {
   response.headers().add<Http::Header::AccessControlAllowOrigin>("*");
+  response.headers().add<Http::Header::AccessControlAllowHeaders>("*");
   response.headers().add<Http::Header::ContentType>(MIME(Application, Json));
-  response.send(Pistache::Http::Code::Ok, messages::to_json(packet));
+  response.send(Pistache::Http::Code::Ok, messages::to_json(packet, true));
 }
 
 void Rest::send(Response &response, const std::string &value) {
   response.headers().add<Http::Header::AccessControlAllowOrigin>("*");
+  response.headers().add<Http::Header::AccessControlAllowHeaders>("*");
   response.send(Pistache::Http::Code::Ok, value);
 }
 
@@ -46,23 +51,29 @@ void Rest::bad_request(Response &response, const std::string &message) {
   response.send(Pistache::Http::Code::Bad_Request, message);
 }
 
-void Rest::allow_option(const Rest::Request& req, Rest::Response res) {
+void Rest::allow_option(const Rest::Request &req, Rest::Response res) {
   res.headers().add<Http::Header::AccessControlAllowOrigin>("*");
-  res.headers().add<Http::Header::AccessControlAllowMethods>("GET, POST");
+  res.headers().add<Http::Header::AccessControlAllowHeaders>("*, content-type");
+  res.headers().add<Http::Header::AccessControlAllowMethods>(
+      "GET, POST, OPTIONS");
   res.send(Pistache::Http::Code::Ok);
 }
 
 void Rest::setupRoutes() {
   using namespace ::Pistache::Rest::Routes;
-  Post(_router, "/balance", bind(&Rest::get_balance, this));
-  Options(_router, "/balance", bind(&Rest::get_balance, this));
+  Get(_router, "/balance", bind(&Rest::get_balance, this));
+  Post(_router, "/balance", bind(&Rest::post_balance, this));
+  Options(_router, "/balance", bind(&Rest::allow_option, this));
+  Post(_router, "/validate", bind(&Rest::post_validate_key, this));
+  Options(_router, "/validate", bind(&Rest::allow_option, this));
   Get(_router, "/ready", bind(&Rest::get_ready, this));
-  Post(_router, "/create_transaction/:fees",
+  Post(_router, "/create_transaction",
        bind(&Rest::get_create_transaction, this));
-  Options(_router, "/create_transaction/:fees", bind(&Rest::allow_option, this));
+  Options(_router, "/create_transaction", bind(&Rest::allow_option, this));
   Post(_router, "/publish", bind(&Rest::publish, this));
   Options(_router, "/publish", bind(&Rest::allow_option, this));
-  // Post(_router, "/list_transactions/:key_pub", bind(&Rest::get_unspent_transaction_list, this));
+  Post(_router, "/list_transactions", bind(&Rest::get_list_transactions, this));
+  Options(_router, "/list_transactions", bind(&Rest::allow_option, this));
   Post(_router, "/transaction/", bind(&Rest::get_transaction, this));
   Options(_router, "/transaction/", bind(&Rest::allow_option, this));
   Post(_router, "/block/id", bind(&Rest::get_block_by_id, this));
@@ -73,10 +84,44 @@ void Rest::setupRoutes() {
       bind(&Rest::get_total_nb_transactions, this));
   Get(_router, "/total_nb_blocks", bind(&Rest::get_total_nb_blocks, this));
   Get(_router, "/peers", bind(&Rest::get_peers, this));
+  Get(_router, "/connections", bind(&Rest::get_connections, this));
   Get(_router, "/status", bind(&Rest::get_status, this));
+  Get(_router, "/status/all", bind(&Rest::get_all_status, this));
 }
 
 void Rest::get_balance(const Request &req, Response res) {
+  if (!req.query().has("pubkey")) {
+    bad_request(res, "public key not found");
+    return;
+  }
+
+  messages::_KeyPub public_key;
+  // we must use from_json to prevent protobuf from base64 the data again
+  auto json_query = raw_data_to_json(req.query().get("pubkey").get());
+  if (!messages::from_json(json_query, &public_key)) {
+    bad_request(res, "could not parse public key");
+  }
+  const auto balance_amount = balance(public_key);
+  send(res, balance_amount);
+}
+
+void Rest::post_validate_key(const Request &req, Response res) {
+  messages::_KeyPub key_pub_message;
+  if (!messages::from_json(req.body(), &key_pub_message)) {
+    bad_request(res, "could not parse body");
+  }
+
+  crypto::KeyPub key_pub(key_pub_message);
+  if (key_pub.validate()) {
+    res.headers().add<Http::Header::AccessControlAllowOrigin>("*");
+    res.send(Pistache::Http::Code::Ok);
+  } else {
+    res.headers().add<Http::Header::AccessControlAllowOrigin>("*");
+    res.send(Pistache::Http::Code::Not_Acceptable, "invalid key");
+  }
+}
+
+void Rest::post_balance(const Request &req, Response res) {
   messages::_KeyPub key_pub_message;
   if (!messages::from_json(req.body(), &key_pub_message)) {
     bad_request(res, "could not parse body");
@@ -109,12 +154,8 @@ void Rest::get_create_transaction(const Request &req, Response res) {
     bad_request(res, "could not parse body");
   }
 
-  messages::Transaction transaction;
-  transaction.mutable_outputs()->CopyFrom(body.outputs());
-  transaction.add_inputs()->mutable_key_pub()->CopyFrom(body.key_pub());
-
-  transaction.mutable_id()->set_type(messages::Hash::SHA256);
-  transaction.mutable_id()->set_data("");
+  const auto transaction = build_transaction(body.key_pub(), body.outputs(),
+                                             messages::NCCAmount(body.fee()));
 
   const auto transaction_opt = messages::to_buffer(transaction);
   if (!transaction_opt) {
@@ -141,11 +182,8 @@ void Rest::publish(const Request &req, Response res) {
     return;
   }
 
-  crypto::KeyPub key_pub(publish_message.key_pub());
   auto input = transaction.mutable_inputs(0);
   auto input_signature = input->mutable_signature();
-  input_signature->set_type(messages::Hash::SHA256);
-  key_pub.save(input->mutable_key_pub());
   input_signature->set_data(signature.str());
 
   if (!crypto::verify(transaction)) {
@@ -161,7 +199,7 @@ void Rest::publish(const Request &req, Response res) {
   }
 
   res.headers().add<Http::Header::AccessControlAllowOrigin>("*");
-  res.send(Pistache::Http::Code::Ok);
+  send(res, transaction);
 }
 
 void Rest::get_block_by_id(const Rest::Request &req, Rest::Response res) {
@@ -190,6 +228,39 @@ void Rest::get_total_nb_transactions(const Rest::Request &req,
   send(res, std::to_string(Api::total_nb_transactions()));
 }
 
+void Rest::get_list_transactions(const Rest::Request &req, Rest::Response res) {
+  // TODO merge both filters
+  messages::TransactionsFilter filter_rest;
+  ledger::Ledger::Filter filter_ledger;
+
+  if (!messages::from_json(req.body(), &filter_rest)) {
+    bad_request(res, "Could not parse request");
+    return;
+  }
+
+  uint32_t page_size = _transaction_per_page;
+  if (filter_rest.has_page_size()) {
+    page_size = filter_rest.page_size();
+  }
+
+  filter_ledger.limit(page_size);
+          
+  if (filter_rest.has_page()) {
+    filter_ledger.skip(filter_rest.page() * page_size);
+  }
+
+  if (filter_rest.has_output_key_pub()) {
+    filter_ledger.output_key_pub(filter_rest.output_key_pub());
+  }
+
+  if (filter_rest.has_input_key_pub()) {
+    filter_ledger.input_key_pub(filter_rest.input_key_pub());
+  }
+  
+  send(res,
+       Api::list_transactions(filter_ledger));
+}
+
 void Rest::get_total_nb_blocks(const Rest::Request &req, Rest::Response res) {
   send(res, std::to_string(Api::total_nb_blocks()));
 }
@@ -198,7 +269,16 @@ void Rest::get_peers(const Rest::Request &request, Rest::Response res) {
   send(res, Api::peers());
 }
 
+void Rest::get_connections(const Rest::Request &request, Rest::Response res) {
+  send(res, Api::connections());
+}
+
 void Rest::get_status(const Rest::Request &req, Rest::Response res) {
+  auto status = _monitor.fast_status();
+  send(res, status);
+}
+
+void Rest::get_all_status(const Rest::Request &req, Rest::Response res) {
   auto status = _monitor.complete_status();
   send(res, status);
 }

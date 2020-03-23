@@ -1,6 +1,10 @@
 #ifndef NEURO_SRC_CONSENSUS_PII_HPP
 #define NEURO_SRC_CONSENSUS_PII_HPP
 
+#include <cstddef>
+#include <memory>
+#include "common.pb.h"
+#include "common/types.hpp"
 #include "consensus/Config.hpp"
 #include "ledger/Ledger.hpp"
 #include "messages.pb.h"
@@ -11,6 +15,8 @@ namespace consensus {
 namespace tests {
 class Pii;
 }
+
+const double NCC_SUBDIVISIONS = 1E9;
 
 using TotalSpent = std::unordered_map<messages::_KeyPub, messages::NCCValue>;
 using Balances = std::unordered_map<messages::_KeyPub, messages::Balance>;

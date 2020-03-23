@@ -104,7 +104,7 @@ build_image_prod:release:
     mkdir build || echo k
     pwd && ls -lahrt ~/
     cd build
-    cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/root -DCMAKE_BUILD_TYPE=$1 -G Ninja ..
+    cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/root -DCMAKE_BUILD_TYPE=$1 -G Ninja ..
     ninja
     mkdir /tmp/db && nohup mongod --dbpath /tmp/db &
     sleep 5

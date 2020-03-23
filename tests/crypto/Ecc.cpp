@@ -1,8 +1,8 @@
-#include "crypto/Ecc.hpp"
-#include <cryptopp/dsa.h>
 #include <gtest/gtest.h>
-#include "common/logger.hpp"
 
+#include <cryptopp/dsa.h>
+#include "common/logger.hpp"
+#include "crypto/Ecc.hpp"
 namespace neuro {
 namespace crypto {
 namespace test {
@@ -11,7 +11,7 @@ TEST(Ecc, save_load_file) {
   crypto::Ecc keys0;
   ASSERT_TRUE(keys0.save("test_keys.priv", "test_keys.pub"));
 
-  crypto::Ecc keys1("test_keys.priv", "test_keys.pub");
+  crypto::Ecc keys1(Path{"test_keys.priv"}, Path{"test_keys.pub"});
 
   ASSERT_EQ(keys0, keys1);
 }
@@ -39,9 +39,8 @@ TEST(Ecc, save_load_buffer) {
 
   keys0.key_priv().save(&buff);
   keys1.mutable_key_priv()->load(buff);
-
   keys0.key_pub().save(&buff);
-  *keys1.mutable_key_pub() = buff;
+  *keys1.mutable_key_pub() = KeyPub(buff);
 
   ASSERT_EQ(keys0, keys1);
 }

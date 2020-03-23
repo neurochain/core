@@ -1,3 +1,8 @@
+#include <cstdint>
+#include <ctime>
+
+#include "common/logger.hpp"
+#include "common/types.hpp"
 #include "messages/Peer.hpp"
 
 namespace neuro {
@@ -9,7 +14,8 @@ Peer::Peer(const ::neuro::messages::config::Networking &config)
 }
 
 Peer::Peer(const ::neuro::messages::config::Networking &config,
-           const _Peer &peer) : _config(config) {
+           const _Peer &peer)
+    : _config(config) {
   CopyFrom(peer);
   if (!has_status()) {
     set_status(Peer::DISCONNECTED);
@@ -17,7 +23,8 @@ Peer::Peer(const ::neuro::messages::config::Networking &config,
 }
 
 Peer::Peer(const ::neuro::messages::config::Networking &config,
-           const crypto::KeyPub &ecc_pub) : _config(config) {
+           const crypto::KeyPub &ecc_pub)
+    : _config(config) {
   set_endpoint(config.tcp().endpoint());
   set_port(config.tcp().port());
   ecc_pub.save(mutable_key_pub());
@@ -32,9 +39,12 @@ Peer::Peer(const ::neuro::messages::config::Networking &config,
  */
 void Peer::set_status(::neuro::messages::_Peer_Status value) {
   _Peer::set_status(value);
-  switch(value) {
+  switch (value) {
     case _Peer_Status_CONNECTING:
       update_timestamp(_config.connecting_next_update_time());
+      break;
+    case _Peer_Status_CONNECTED:
+      update_timestamp(_config.connected_next_update_time());
       break;
     default:
       update_timestamp(_config.default_next_update_time());
@@ -55,7 +65,7 @@ void Peer::update_timestamp(std::time_t tick) {
 void Peer::update_unreachable(const std::time_t t) {
   if (next_update().data() < t) {
     const auto peer_status = status();
-    if (peer_status & Peer::UNREACHABLE) {
+    if ((peer_status & Peer::UNREACHABLE) && !has_connection_id()) {
       this->set_status(Peer::DISCONNECTED);
     } else if (peer_status & Peer::CONNECTING) {
       LOG_WARNING << this << " : " << port() << " connection timed out";

@@ -1,3 +1,6 @@
+#include <mpreal.h>
+#include <cstdint>
+
 #include "consensus/Pii.hpp"
 
 namespace neuro {
@@ -29,14 +32,19 @@ bool Pii::add_transaction(const messages::Transaction &transaction,
     const auto &balance = balances.at(input.key_pub());
     const Double enthalpy_spent_block =
         Double{balance.enthalpy_begin()} - balance.enthalpy_end();
-    const Double enthalpy_spent_transaction = input_ratio * enthalpy_spent_block;
+    const Double enthalpy_spent_transaction =
+        input_ratio * enthalpy_spent_block;
     Double previous_pii;
     _ledger->get_pii(input.key_pub(), tagged_block.previous_assembly_id(),
                      &previous_pii);
     for (const auto &output : transaction.outputs()) {
       if (output.key_pub() != input.key_pub()) {
-        const Double output_ratio = Double{output.value().value()} / total_outputs;
-        const Double raw_enthalpy = output_ratio * enthalpy_spent_transaction;
+        const Double output_ratio =
+            Double{output.value().value()} / total_outputs;
+
+        // We want the enthalpy in NCC and not in the smallest unit
+        const Double raw_enthalpy =
+            output_ratio * enthalpy_spent_transaction / NCC_SUBDIVISIONS;
 
         // TODO reference to a pdf in english that contains the formula
         const Double enthalpy =
@@ -64,7 +72,10 @@ TotalSpent Pii::get_total_spent(const messages::Block &block) const {
 
 Balances Pii::get_balances(const messages::TaggedBlock &tagged_block) const {
   Balances balances;
-  for (const auto &balance : tagged_block.balances()) {
+  messages::TaggedBlock tagged_block_balances;
+  _ledger->get_tagged_block_balances(tagged_block.block().header().id(),
+                                     &tagged_block_balances);
+  for (const auto &balance : tagged_block_balances.balances()) {
     balances[balance.key_pub()] = balance;
   }
   return balances;
@@ -74,7 +85,7 @@ bool Pii::add_block(const messages::TaggedBlock &tagged_block) {
   // Warning: this method only works for blocks that are already inserted in the
   // ledger.
   // Notice that for now coinbases don't give any entropy
-  std::lock_guard lock(mpfr_mutex); // TODO trax, is it really needed?
+  std::lock_guard lock(mpfr_mutex);  // TODO trax, is it really needed?
   auto total_spent = get_total_spent(tagged_block.block());
   auto balances = get_balances(tagged_block);
 
@@ -133,6 +144,7 @@ std::vector<messages::_KeyPub> KeyPubs::key_pubs() const {
 std::vector<messages::Pii> Pii::get_key_pubs_pii(
     const messages::AssemblyHeight &assembly_height,
     const messages::BranchPath &branch_path) {
+  std::lock_guard lock(mpfr_mutex);  // TODO trax, is it really needed?
   std::vector<messages::Pii> piis;
   for (const auto &key_pub : _key_pubs.key_pubs()) {
     auto &pii = piis.emplace_back();

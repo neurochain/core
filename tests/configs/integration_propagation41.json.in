@@ -11,6 +11,7 @@
       }
     ],
     "max_connections": 3,
+    "default_next_update_time": 3,
     "tcp": {
       "port": 13341,
       "endpoint": "localhost",
@@ -18,7 +19,6 @@
         {
           "endpoint": "localhost",
           "keyPub": {
-            "type": "ECP256K1",
             "rawData": "A+BPdJmNMRu7dZ0O4+b/jG5CyuLeI870VKYu0DrtJ8I8"
           },
           "port": 1338
@@ -26,7 +26,6 @@
         {
           "endpoint": "localhost",
           "keyPub": {
-            "type": "ECP256K1",
             "rawData": "AyMKGnZhazXAoXb0SJIqi4Ho+lk6bw0UttE34PDtDbya"
           },
           "port": 1339
@@ -36,7 +35,7 @@
   },
   "database": {
     "url": "mongodb://localhost:27017/neuro",
-    "db_name": "neuro_tests_propa1339",
+    "db_name": "neuro_tests_propa13341",
     "block0_file": {
       "block_format": "PROTO",
       "block_path": "@CMAKE_CURRENT_BINARY_DIR@/data.0.testnet"

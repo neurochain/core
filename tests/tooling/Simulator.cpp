@@ -1,13 +1,7 @@
-#include "tooling/Simulator.hpp"
-#include <boost/stacktrace.hpp>
-#include "common/types.hpp"
-#include "ledger/LedgerMongodb.hpp"
-#include "messages/Message.hpp"
-#include "messages/config/Config.hpp"
-#include "messages/config/Database.hpp"
-#include "tooling/blockgen.hpp"
-
 #include <gtest/gtest.h>
+
+#include "ledger/LedgerMongodb.hpp"
+#include "tooling/Simulator.hpp"
 
 namespace neuro {
 namespace tooling {

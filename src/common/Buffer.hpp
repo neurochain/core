@@ -40,7 +40,8 @@ class Buffer : public std::vector<uint8_t> {
   Buffer(const char *data, const std::size_t size) {
     copy(reinterpret_cast<const uint8_t *>(data), size);
   }
-  Buffer(const std::initializer_list<uint8_t> init) : vector<uint8_t>(init) {}
+  explicit Buffer(const std::initializer_list<uint8_t> init)
+      : vector<uint8_t>(init) {}
 
   Buffer(const std::string &string,
          const InputType input_type = InputType::RAW);
@@ -53,7 +54,7 @@ class Buffer : public std::vector<uint8_t> {
 
   std::string str() const;
   std::string to_hex() const;
-  };
+};
 
 std::ostream &operator<<(std::ostream &os, const Buffer &buffer);
 

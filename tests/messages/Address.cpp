@@ -1,8 +1,7 @@
-#include "messages/Address.hpp"
-#include <cryptopp/hex.h>
 #include <gtest/gtest.h>
-#include <random>
-#include "crypto/KeyPub.hpp"
+
+#include "messages/Address.hpp"
+#include "messages/Message.hpp"
 
 namespace neuro {
 namespace messages {
@@ -30,7 +29,8 @@ TEST(Address, decode_base58) {
     ASSERT_EQ(decode_base58(i), result);
   }
 
-  std::string test_str = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ123456789";
+  std::string test_str =
+      "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ123456789";
   ASSERT_EQ(test_str, encode_base58(decode_base58(test_str)));
 }
 
@@ -47,10 +47,10 @@ TEST(Address, address) {
     ASSERT_EQ(address.data()[0], 'N');
     ASSERT_TRUE(address.verify());
   }
-  ASSERT_EQ(address0.data(), address1.data());
-  ASSERT_NE(address0.data(), address2.data());
-  ASSERT_NE(address1.data(), address2.data());
 
+  ASSERT_EQ(address0, address1);
+  ASSERT_NE(address0, address2);
+  ASSERT_NE(address1, address2);
 }
 
 TEST(Address, verify) {

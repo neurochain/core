@@ -14,22 +14,28 @@ namespace messages {
 class Subscriber {
  public:
   using Callback = std::function<void(const Header &header, const Body &body)>;
+  using CallbackR = std::function<void(const Message &message)>;
 
  private:
   mutable std::mutex _mutex_handler;
-  Queue *_queue;
+  ::neuro::messages::Queue *_queue;
+  std::unordered_map<Message::ID, CallbackR> _callbacks_by_id;
   std::vector<std::vector<Callback>> _callbacks_by_type;
   std::unordered_set<Buffer> _seen_messages_hash;
   std::map<std::time_t, Buffer> _message_hash_by_ts;
 
  public:
-  Subscriber(Queue *queue)
+  Subscriber(messages::Queue *queue)
       : _queue(queue), _callbacks_by_type(Body::kBodyCount) {
     _queue->subscribe(this);
   }
 
   void subscribe(const Type type, const Callback &callback) {
     _callbacks_by_type[type].emplace_back(callback);
+  }
+
+  void subscribe(const Message::ID id, const CallbackR &callback) {
+    _callbacks_by_id[id] = callback;
   }
 
   void unsubscribe() { _queue->unsubscribe(this); }
@@ -51,9 +57,9 @@ class Subscriber {
 
     for (auto it = _message_hash_by_ts.begin(),
               end = _message_hash_by_ts.lower_bound(current_time - MESSAGE_TTL);
-         it != end; ++it) {
+         it != end;) {
       _seen_messages_hash.erase(it->second);
-      _message_hash_by_ts.erase(it);
+      it = _message_hash_by_ts.erase(it);
     }
 
     return true;
@@ -61,20 +67,27 @@ class Subscriber {
 
   void handler(std::shared_ptr<const Message> message) {
     std::lock_guard<std::mutex> lock_handler(_mutex_handler);
+
+    if (message->has_header() && message->header().has_id()) {
+      const auto id = message->header().id();
+      auto got = _callbacks_by_id.find(id);
+      if (got != _callbacks_by_id.end()) {
+        got->second(*message.get());
+      }
+    }
+
     const auto time = std::time(nullptr);
     for (const auto &body : message->bodies()) {
       const auto type = get_type(body);
-      for (const auto &cb : _callbacks_by_type[type]) {
-        bool process{true};
-        if (type == messages::Type::kTransaction ||
-            type == messages::Type::kBlock) {
-          process = is_new_body(time, body);
-        }
+      bool process{true};
+      if (type == messages::Type::kTransaction ||
+          type == messages::Type::kBlock) {
+        process = is_new_body(time, body);
+      }
 
-        if (process) {
+      if (process) {
+        for (const auto &cb : _callbacks_by_type[type]) {
           cb(message->header(), body);
-        } else {
-          LOG_ERROR << "Dropping message because message is old " << *message;
         }
       }
     }

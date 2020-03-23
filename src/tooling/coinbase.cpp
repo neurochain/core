@@ -1,10 +1,12 @@
 #include <boost/program_options.hpp>
-#include "common/types.hpp"
-#include "crypto/Ecc.hpp"
-#include "crypto/Hash.hpp"
+#include <boost/program_options/value_semantic.hpp>
+#include <boost/program_options/variables_map.hpp>
+
+#include "common/Buffer.hpp"
+#include "crypto/KeyPub.hpp"
 #include "messages.pb.h"
-#include "messages/Hasher.hpp"
 #include "messages/Message.hpp"
+#include "messages/NCCAmount.hpp"
 
 namespace po = boost::program_options;
 
@@ -42,12 +44,12 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  if (vm.count("help")) {
+  if (vm.count("help") != 0u) {
     std::cout << desc << "\n";
     return 1;
   }
 
-  const auto keypath = vm["keypath"].as<std::string>();
+  const auto keypath = Path{vm["keypath"].as<std::string>()};
   const auto type = vm["type"].as<std::string>();
   const auto ncc = vm["ncc"].as<uint64_t>();
 

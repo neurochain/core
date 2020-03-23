@@ -29,11 +29,11 @@ TEST(Conf, load) {
   ASSERT_EQ(priv_path.filename(), "key2.priv");
 
   ASSERT_TRUE(conf.has_networking());
-  const auto networking = conf.networking();
+  const auto& networking = conf.networking();
   ASSERT_EQ(networking.max_connections(), 3);
 
   ASSERT_TRUE(networking.has_tcp());
-  const auto tcp = networking.tcp();
+  const auto& tcp = networking.tcp();
   ASSERT_TRUE(tcp.has_port());
   ASSERT_EQ(tcp.port(), 1339);
 
@@ -46,8 +46,6 @@ TEST(Conf, load) {
     ASSERT_TRUE(peer.has_port());
     ASSERT_TRUE(peer.has_key_pub());
     const messages::_KeyPub& kp(peer.key_pub());
-    ASSERT_TRUE(kp.has_type());
-    ASSERT_EQ(kp.type(), messages::ECP256K1);
     ASSERT_TRUE(kp.has_raw_data());
   }
 

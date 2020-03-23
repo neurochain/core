@@ -5,13 +5,13 @@
 
 #include "common/logger.hpp"
 #include "common/types.hpp"
+#include "crypto/Ecc.hpp"
+#include "messages/Peer.hpp"
 #include "messages/Peers.hpp"
+#include "messages/Queue.hpp"
 #include "networking/Connection.hpp"
 
 namespace neuro {
-namespace messages {
-class Queue;
-}  // namespace messages
 
 namespace crypto {
 class Ecc;
@@ -32,17 +32,23 @@ class TransportLayer {
   TransportLayer(messages::Queue* queue, messages::Peers* peers,
                  crypto::Ecc* keys);
 
-  virtual SendResult send(
-      const std::shared_ptr<messages::Message> message) const = 0;
-  virtual bool send_unicast(
-      const std::shared_ptr<messages::Message> message) const = 0;
+  virtual SendResult send(const messages::Message& message,
+                          const Connection::ID id) const = 0;
+  virtual TransportLayer::SendResult send_one(
+      const messages::Message& message) const = 0;
+  virtual TransportLayer::SendResult send_all(
+      const messages::Message& message) const = 0;
+  virtual bool reply(std::shared_ptr<messages::Message> message) const = 0;
   virtual std::size_t peer_count() const = 0;
+  virtual std::vector<std::shared_ptr<messages::Peer>> remote_peers() const = 0;
   virtual bool terminate(const Connection::ID id) = 0;
-  virtual std::optional<messages::Peer *> find_peer(const Connection::ID id) = 0;
+  virtual std::shared_ptr<messages::Peer> find_peer(
+      const Connection::ID id) = 0;
   virtual Port listening_port() const = 0;
-  virtual bool connect(messages::Peer* peer) = 0;
+  virtual bool connect(std::shared_ptr<messages::Peer> peer) = 0;
+  virtual void clean_old_connections(int delta) = 0;
 
-  virtual ~TransportLayer(){};
+  virtual ~TransportLayer() = default;
   virtual void join() = 0;
 };
 

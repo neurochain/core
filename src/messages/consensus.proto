@@ -22,7 +22,8 @@ message Integrity {
   required Hash assembly_id = 2;
   required string score = 3;
   required int32 assembly_height = 4;
-  required BranchPath branch_path = 5;
+  required int32 block_height = 5;
+  required BranchPath branch_path = 6;
 }
 
 message Assembly {

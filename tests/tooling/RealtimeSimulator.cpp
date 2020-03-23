@@ -1,7 +1,12 @@
 #include <gtest/gtest.h>
-#include <thread>
+#include <cstdint>
+#include <memory>
+
+#include "common/logger.hpp"
 #include "consensus/Consensus.hpp"
 #include "ledger/LedgerMongodb.hpp"
+#include "messages.pb.h"
+#include "messages/NCCAmount.hpp"
 #include "tooling/Simulator.hpp"
 
 namespace neuro {
@@ -69,7 +74,7 @@ class RealtimeSimulator : public testing::Test {
         auto t0 = Timer::now();
         auto transaction =
             ledger->send_ncc(simulator.keys[sender_index].key_priv(),
-                             simulator.key_pubs[recipient_index], 0.5);
+                             simulator.key_pubs[recipient_index], 0.1);
         LOG_DEBUG << "SEND_NCC TOOK " << (Timer::now() - t0).count() / 1E6
                   << " MS";
 
@@ -93,13 +98,17 @@ class RealtimeSimulator : public testing::Test {
 
       milliseconds sleep_time =
           (milliseconds)(1000 * (begin_timestamp + i * config.block_period) +
-                         800 * config.block_period) -
+                         750 * config.block_period) -
           duration_cast<milliseconds>(system_clock::now().time_since_epoch());
       LOG_DEBUG << "WAITING " << sleep_time.count() << " MS FOR BLOCK "
                 << i + config.blocks_per_assembly * nb_empty_assemblies
                 << std::endl;
       std::this_thread::sleep_for(sleep_time);
       messages::TaggedBlock tagged_block;
+
+      // Make sure the last block is verified
+      consensus->verify_blocks();
+      ledger->update_main_branch();
 
       auto t2 = Timer::now();
       ASSERT_TRUE(simulator.ledger->get_last_block(&tagged_block));

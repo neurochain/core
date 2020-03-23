@@ -1,8 +1,10 @@
 #ifndef NEURO_SRC_CONSENSUS_INTEGRITY_HPP
 #define NEURO_SRC_CONSENSUS_INTEGRITY_HPP
 
+#include "common.pb.h"
 #include "consensus/Config.hpp"
 #include "ledger/Ledger.hpp"
+#include "messages.pb.h"
 #include "messages/Message.hpp"
 
 namespace neuro {
@@ -15,7 +17,7 @@ class Integrities {
   std::unordered_map<messages::_KeyPub, messages::IntegrityScore> _scores;
 
  public:
-  Integrities(const consensus::Config &config) : _config(config) {}
+  explicit Integrities(const consensus::Config &config) : _config(config) {}
 
   Config config() const;
 

@@ -6,32 +6,43 @@ import "messages.proto";
 
 message Status {
   message BlockChain {
-    optional int32 last_block_ts = 1;
-    optional int32 current_height = 2;
+    optional uint32 last_block_ts = 1;
+    optional uint32 current_height = 2;
+    optional uint32 mined_block = 3;
+    optional uint32 transaction_count = 4;
+    optional int32 nb_blocks_5m = 5;
+    optional int32 nb_blocks_1h = 6;
+    optional int32 nb_transactions_5m = 7;
+    optional int32 nb_transactions_1h = 8;
+    optional float average_block_propagation_5m = 9;
+    optional float average_block_propagation_1h = 10;
   }
 
   message Bot {
-    optional int32 uptime = 1;
-    optional int32 utime = 2;
-    optional int32 stime = 3;
+    optional uint32 uptime = 1;
+    optional uint32 utime = 2;
+    optional uint32 stime = 3;
     optional float cpu_usage = 4;
-    optional int32 memory = 5;
-    optional int32 net_in = 6;
-    optional int32 net_out = 7;
+    optional uint32 memory = 5;
+    optional uint32 net_in = 6;
+    optional uint32 net_out = 7;
+    optional string version = 8;
+    optional _Peer me = 9;
+    optional string proto_version = 10;
   }
 
   message FileSystem {
-    optional int32 total_space = 1;
-    optional int32 used_space = 2;
-    optional int32 total_inode = 3;
-    optional int32 used_inode = 4;
+    optional uint64 total_space = 1;
+    optional uint64 used_space = 2;
+    optional uint32 total_inode = 3;
+    optional uint32 used_inode = 4;
   }
 
   message PeerCount {
-    optional int32 connected = 1;
-    optional int32 connecting = 2;
-    optional int32 disconnected = 3;
-    optional int32 unreachable = 4;
+    optional uint32 connected = 1;
+    optional uint32 connecting = 2;
+    optional uint32 disconnected = 3;
+    optional uint32 unreachable = 4;
   }
 
   optional Bot bot = 1;
@@ -44,4 +55,11 @@ message CreateTransactionBody {
   required _KeyPub key_pub = 1;
   repeated Output outputs = 2;
   optional uint64 fee = 3;
+}
+
+message TransactionsFilter {
+  optional uint32 page = 1 [default = 0];
+  optional uint32 page_size = 2 [default = 10];
+  optional _KeyPub output_key_pub = 3;
+  optional _KeyPub input_key_pub = 4;
 }

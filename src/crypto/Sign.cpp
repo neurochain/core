@@ -1,18 +1,22 @@
 #include "crypto/Sign.hpp"
+#include "KeyPub.hpp"
+#include "common/Buffer.hpp"
 #include "common/logger.hpp"
-#include "messages/Address.hpp"
+#include "crypto/KeyPriv.hpp"
 
 namespace neuro {
 namespace crypto {
 
-bool sign(const std::vector<const crypto::Ecc *> keys,
+bool sign(const std::vector<const crypto::Ecc *> &keys,
           messages::Transaction *transaction) {
   // Fill the id which is a required field. This makes the transaction
   // serializable.
   // The transaction should always be hashed after setting the signature so this
   // should not be overwriting anything
-  transaction->mutable_id()->set_type(messages::Hash::SHA256);
   transaction->mutable_id()->set_data("");
+  for (int i = 0; i < transaction->inputs_size(); i++) {
+    transaction->mutable_inputs(i)->clear_signature();
+  }
 
   Buffer serialized_transaction;
   messages::to_buffer(*transaction, &serialized_transaction);
@@ -23,7 +27,6 @@ bool sign(const std::vector<const crypto::Ecc *> keys,
     const auto signature = key->key_priv().sign(serialized_transaction);
 
     input->mutable_signature()->set_data(signature.str());
-    input->mutable_signature()->set_type(messages::Hash::SHA256);
   }
 
   return true;
@@ -37,7 +40,6 @@ bool verify(const messages::Transaction &transaction) {
 
   // Fill the id which is a required field. This makes the transaction
   // serializable.
-  transaction_copy.mutable_id()->set_type(messages::Hash::SHA256);
   transaction_copy.mutable_id()->set_data("");
 
   Buffer buffer;
@@ -82,7 +84,6 @@ bool sign(const crypto::Ecc &keys, messages::Denunciation *denunciation) {
 
   const auto signature = keys.key_priv().sign(serialized);
   author->mutable_signature()->set_data(signature.str());
-  author->mutable_signature()->set_type(messages::Hash::SHA256);
   keys.key_pub().save(author->mutable_key_pub());
 
   return true;
@@ -95,7 +96,7 @@ bool verify(const messages::Denunciation &denunciation) {
   Buffer buffer;
   messages::to_buffer(denunciation_copy, &buffer);
 
-  const auto author = denunciation.block_author();
+  const auto &author = denunciation.block_author();
   const auto hash = author.signature().data();
   const Buffer sig(hash.data(), hash.size());
 

@@ -8,7 +8,7 @@
 namespace neuro {
 namespace crypto {
 
-KeyPub::KeyPub(const std::string &filepath) {
+KeyPub::KeyPub(const Path &filepath) {
   if (!load(filepath)) {
     throw std::runtime_error("Could not load key from file");
   }
@@ -39,15 +39,15 @@ KeyPub::KeyPub(const messages::_KeyPub &key_pub) {
   }
 }
 
-bool KeyPub::save(const std::string &filepath) const {
-  CryptoPP::FileSink fs(filepath.c_str(), true);
+bool KeyPub::save(const Path &filepath) const {
+  CryptoPP::FileSink fs(filepath.string().c_str(), true);
   _key.Save(fs);
 
   return true;
 }
 
-bool KeyPub::load(const std::string &filepath) {
-  CryptoPP::FileSource fs(filepath.c_str(), true);
+bool KeyPub::load(const Path &filepath) {
+  CryptoPP::FileSource fs(filepath.string().c_str(), true);
   _key.Load(fs);
 
   // Fill the protobuf
@@ -125,7 +125,6 @@ bool KeyPub::save(Buffer *buffer) const {
 }
 
 bool KeyPub::save(messages::_KeyPub *key_pub) const {
-  key_pub->set_type(messages::KeyType::ECP256K1);
   const auto &x = _key.GetPublicElement().x;
   const auto &y = _key.GetPublicElement().y;
 
@@ -148,7 +147,6 @@ bool KeyPub::save(messages::_KeyPub *key_pub) const {
 }
 
 bool KeyPub::save_as_hex(messages::_KeyPub *key_pub) const {
-  key_pub->set_type(messages::KeyType::ECP256K1);
   const auto x = _key.GetPublicElement().x;
   const auto y = _key.GetPublicElement().y;
 
@@ -175,12 +173,34 @@ bool KeyPub::verify(const Buffer &data, const Buffer &signature) const {
   return verify(data, signature.data(), signature.size());
 }
 
+bool KeyPub::validate() const {
+  CryptoPP::AutoSeededRandomPool prng;
+  return _key.Validate(prng, 3);
+}
+
 bool KeyPub::operator==(const KeyPub &key) const {
-  CryptoPP::ByteQueue queue0;
-  CryptoPP::ByteQueue queue1;
+  CryptoPP::ByteQueue queue0, queue1;
   _key.Save(queue0);
   key._key.Save(queue1);
-  return (queue0 == queue1);
+  return queue0 == queue1;
+}
+
+bool KeyPub::operator<(const KeyPub &key) const {
+  std::string own_raw_data, key_raw_data;
+  messages::_KeyPub key_pub;
+  if (!has_raw_data()) {
+    save(&key_pub);
+    own_raw_data = key_pub.raw_data();
+  } else {
+    own_raw_data = raw_data();
+  }
+  if (!key.has_raw_data()) {
+    save(&key_pub);
+    key_raw_data = key_pub.raw_data();
+  } else {
+    key_raw_data = key.raw_data();
+  }
+  return own_raw_data < key_raw_data;
 }
 
 std::ostream &operator<<(std::ostream &os, const KeyPub &pub) {

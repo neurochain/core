@@ -1,9 +1,7 @@
 #include <gtest/gtest.h>
 #include <src/messages/config/Config.hpp>
-#include <typeinfo>
 
 #include "crypto/Ecc.hpp"
-#include "messages.pb.h"
 #include "src/messages/Peers.hpp"
 
 namespace neuro {
@@ -70,7 +68,7 @@ TEST_F(PeersF, pick) {
   (*new_peer1)->set_status(Peer::CONNECTED);
   (*new_peer2)->set_status(Peer::CONNECTING);
 
-  ASSERT_EQ(peers.used_peers_count(), 1);
+  ASSERT_EQ(peers.used_peers_count(), 2);
   const auto used_peers = peers.used_peers();
   ASSERT_EQ(used_peers.size(), 2);
 
@@ -118,6 +116,22 @@ TEST_F(PeersF, iterator) {
   ASSERT_EQ(peers.size(), 3);
 
   // TODO: operator*
+}
+
+TEST_F(PeersF, fill) {
+  ::neuro::messages::Peers peers(peer3.key_pub(), conf3.networking());
+  peers.insert(peer0);
+  peers.insert(peer1);
+  peers.insert(peer2);
+  peers.insert(peer3);
+  messages::_Peers net_peers;
+  peers.fill(&net_peers);
+  ASSERT_TRUE(net_peers.peers(0).has_endpoint());
+  ASSERT_TRUE(net_peers.peers(0).has_key_pub());
+  ASSERT_TRUE(net_peers.peers(0).has_port());
+  ASSERT_FALSE(net_peers.peers(0).has_status());
+  ASSERT_FALSE(net_peers.peers(0).has_next_update());
+  ASSERT_FALSE(net_peers.peers(0).has_connection_id());
 }
 
 }  // namespace test

@@ -1,8 +1,9 @@
 #include "tooling/blockgen.hpp"
-#include <fstream>
-#include <iostream>
-#include "common/logger.hpp"
-#include "crypto/Sign.hpp"
+#include "crypto/Ecc.hpp"
+#include "messages/Message.hpp"
+#include "mongocxx/client.hpp"
+#include "mongocxx/database.hpp"
+#include "mongocxx/uri.hpp"
 
 namespace po = boost::program_options;
 
@@ -14,7 +15,7 @@ void coinbase(const std::vector<crypto::KeyPub> &pub_keys,
               const messages::NCCAmount &ncc,
               messages::Transaction *transaction,
               const messages::BlockID &last_seen_block_id,
-              const std::string output_data) {
+              const std::string &output_data) {
   for (const auto &pub_key : pub_keys) {
     auto output = transaction->add_outputs();
     output->mutable_key_pub()->CopyFrom(messages::_KeyPub(pub_key));
@@ -30,7 +31,7 @@ void coinbase(const std::vector<crypto::Ecc> &eccs,
               const messages::NCCAmount &ncc,
               messages::Transaction *transaction,
               const messages::BlockID &last_seen_block_id,
-              const std::string output_data) {
+              const std::string &output_data) {
   for (size_t i = 0; i < eccs.size(); i++) {
     auto output = transaction->add_outputs();
     output->mutable_key_pub()->CopyFrom(messages::_KeyPub(eccs[i].key_pub()));
@@ -51,7 +52,6 @@ messages::TaggedBlock gen_block0(const std::vector<crypto::Ecc> &keys,
   header->mutable_timestamp()->set_data(std::time(nullptr) + time_delta);
   auto previons_block_hash = header->mutable_previous_block_hash();
   previons_block_hash->set_data("");
-  previons_block_hash->set_type(messages::Hash::Type::Hash_Type_SHA256);
   header->set_height(0);
   std::vector<crypto::KeyPub> pub_keys;
   for (const auto &key : keys) {
@@ -59,7 +59,6 @@ messages::TaggedBlock gen_block0(const std::vector<crypto::Ecc> &keys,
   }
 
   messages::BlockID block_id;
-  block_id.set_type(messages::BlockID::SHA256);
   block_id.set_data("");
   blockgen::coinbase(pub_keys, ncc_block0, block->mutable_coinbase(), block_id);
   tagged_block.set_branch(messages::Branch::MAIN);
@@ -74,46 +73,34 @@ messages::TaggedBlock gen_block0(const std::vector<crypto::Ecc> &keys,
   return tagged_block;
 }
 
-void block0(uint32_t bots, const std::string &pathdir,
-            const messages::NCCAmount &nccsdf, ledger::LedgerMongodb *ledger) {
-  std::vector<crypto::Ecc> keys;
-  for (uint32_t i = 0; i < bots; ++i) {
-    // gen i keys
-    crypto::Ecc &ecc = keys.emplace_back();
-    ecc.save({pathdir + "/key_" + std::to_string(i) + ".priv"},
-             {pathdir + "/key_" + std::to_string(i) + ".pub"});
+std::vector<crypto::Ecc> create_key_pairs(uint32_t number_of_wallets,
+                                          const Path &pathdir) {
+  std::vector<crypto::Ecc> eccs;
+  for (uint32_t i = 0; i < number_of_wallets; i++) {
+    const auto key_priv_name = "key" + std::to_string(i) + ".priv";
+    const auto key_pub_name = "key" + std::to_string(i) + ".pub";
+    eccs.emplace_back(pathdir / key_priv_name, pathdir / key_pub_name);
+    std::cout << eccs.back() << std::endl;
   }
-
-  auto tagged_block0 = gen_block0(keys, nccsdf);
-  ledger->insert_block(tagged_block0);
-
-  std::ofstream blockfile0;
-  blockfile0.open("block.0.bp");
-  blockfile0 << tagged_block0.block().SerializeAsString();
-  blockfile0.close();
+  return eccs;
 }
 
-void testnet_blockg(uint32_t bots, const std::string &pathdir,
+void testnet_blockg(uint32_t number_of_wallets, const Path &pathdir,
                     messages::NCCAmount &nccsdf) {
-  std::vector<crypto::Ecc> eccs;
-  for (uint32_t i = 0; i < bots; i++) {
-    eccs.emplace_back(pathdir + "key" + std::to_string(i) + ".priv",
-                      pathdir + "key" + std::to_string(i) + ".pub");
-  }
-
-  const messages::Block block0 = gen_block0(eccs, nccsdf).block();
+  const auto eccs = create_key_pairs(number_of_wallets, pathdir);
+  const messages::Block block0 = gen_block0(eccs, nccsdf, 0).block();
 
   std::cout << "block0 " << block0 << std::endl;
   std::ofstream stream_block0;
-  stream_block0.open("data.0.testnet");
+  stream_block0.open(pathdir / "data.0.testnet");
   stream_block0 << block0.SerializeAsString();
   stream_block0.close();
 }
 
-bool blockgen_from_block(messages::Block *block,
-                         const messages::Block &last_block,
-                         const int32_t height, const uint64_t seed,
-                         std::optional<neuro::messages::_KeyPub> author) {
+bool blockgen_from_block(
+    messages::Block *block, const messages::Block &last_block,
+    const int32_t height, const uint64_t seed,
+    const std::optional<neuro::messages::_KeyPub> &author) {
   /*uint32_t height = last_height;
   if (height == 0) {
     height = ledger->height();
@@ -178,11 +165,11 @@ bool blockgen_from_block(messages::Block *block,
   return true;
 }
 
-bool blockgen_from_last_db_block(messages::Block *block,
-                                 std::shared_ptr<ledger::Ledger> ledger,
-                                 const uint64_t seed, const int32_t new_height,
-                                 std::optional<neuro::messages::_KeyPub> author,
-                                 const int32_t last_height) {
+bool blockgen_from_last_db_block(
+    messages::Block *block, std::shared_ptr<ledger::Ledger> ledger,
+    const uint64_t seed, const int32_t new_height,
+    const std::optional<neuro::messages::_KeyPub> &author,
+    const int32_t last_height) {
   int32_t height = last_height;
   if (height == 0) {
     height = ledger->height();

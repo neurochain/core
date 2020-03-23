@@ -13,33 +13,30 @@
 #include "crypto/KeyPriv.hpp"
 namespace neuro {
 namespace crypto {
-  static constexpr std::size_t sign_length() { return KeyPriv::sign_length(); }
+static constexpr std::size_t sign_length() { return KeyPriv::sign_length(); }
 
 Ecc::Ecc()
     : _prng(std::make_shared<CryptoPP::AutoSeededRandomPool>()),
       _key_private(std::make_unique<KeyPriv>(_prng)),
       _key_public(std::make_unique<KeyPub>(_key_private->make_key_pub())) {}
 
-Ecc::Ecc(const std::string &filepath_private,
-         const std::string &filepath_public)
+Ecc::Ecc(const messages::_KeyPriv &key_priv, const messages::_KeyPub &key_pub)
+    : _prng(std::make_shared<CryptoPP::AutoSeededRandomPool>()),
+      _key_private(std::make_unique<KeyPriv>(_prng, key_priv)),
+      _key_public(std::make_unique<KeyPub>(key_pub)) {}
+
+Ecc::Ecc(const Path &filepath_private, const Path &filepath_public)
     : _prng(std::make_shared<CryptoPP::AutoSeededRandomPool>()) {
   if (!load_keys(filepath_private, filepath_public)) {
     throw std::runtime_error("Could not create or load keys");
   }
 }
 
-Ecc::Ecc(const messages::_KeyPriv &key_priv, const messages::_KeyPub &key_pub)
-    : _prng(std::make_shared<CryptoPP::AutoSeededRandomPool>()),
-      _key_private(std::make_unique<KeyPriv>(_prng, key_priv)),
-      _key_public(std::make_unique<KeyPub>(key_pub)) {}
-
-bool Ecc::load_keys(const std::string &keypath_priv,
-                    const std::string &keypath_pub) {
+bool Ecc::load_keys(const Path &keypath_priv, const Path &keypath_pub) {
   bool keys_save{false};
   bool keys_create{false};
 
-  if (!boost::filesystem::exists(keypath_pub) ||
-      !boost::filesystem::exists(keypath_priv)) {
+  if (!filesystem::exists(keypath_pub) || !filesystem::exists(keypath_priv)) {
     keys_create = true;
     keys_save = true;
   }
@@ -65,13 +62,17 @@ bool Ecc::load_keys(const std::string &keypath_priv,
   return true;
 }
 
-const KeyPriv &Ecc::key_priv() const { return *_key_private.get(); }
-const KeyPub &Ecc::key_pub() const { return *_key_public.get(); }
+const KeyPriv &Ecc::key_priv() const { return *_key_private; }
+const KeyPub &Ecc::key_pub() const { return *_key_public; }
 KeyPriv *Ecc::mutable_key_priv() { return _key_private.get(); }
 KeyPub *Ecc::mutable_key_pub() { return _key_public.get(); }
 
-bool Ecc::save(const std::string &filepath_private,
-               const std::string &filepath_public) const {
+bool Ecc::save(const Path &dirpath) const {
+  return save({dirpath / "key.priv"}, {dirpath / "key.pub"});
+}
+
+bool Ecc::save(const Path &filepath_private,
+               const Path &filepath_public) const {
   if (!_key_private->save(filepath_private)) {
     LOG_ERROR << "Could not save private key file";
     return false;
@@ -96,9 +97,17 @@ void Ecc::sign(const uint8_t *data, const std::size_t size, uint8_t *dest) {
 }
 
 bool Ecc::operator==(const Ecc &ecc) const {
-  return (ecc.key_priv() == *_key_private.get() &&
-          ecc.key_pub() == *_key_public.get());
+  return (ecc.key_priv() == *_key_private && ecc.key_pub() == *_key_public);
 }
 
+bool Ecc::operator!=(const Ecc &ecc) const { return !(ecc == *this); }
+
+std::ostream &operator<<(std::ostream &os, const Ecc &ecc) {
+  os << "priv> " << ecc.key_priv() 
+     << "\tpub>  " << ecc.key_pub();
+
+  return os;
+}
+  
 }  // namespace crypto
 }  // namespace neuro
