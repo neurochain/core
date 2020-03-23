@@ -619,52 +619,70 @@ $ curl http://localhost:8080/total_nb_transactions
 12940117
 ```
 ### Create transaction
-**URL**: `/create_transaction/:fee`
-
 **method**: `POST`
+
+**URL**: `/create_transaction`
 
 **data**:
 ```
 {
-    key_pub: {hexData: <public key>},
+    key_pub: {rawData: <public_key>},
     outputs: [
         {
-            address: {data: <address>},
-            value: {value: <value>},
-            data: <data>
+            key_pub: {rawData: <public_key>},
+            value: {value: <string>},
+            data: <string>
         },
         ...
     ],
-    fee: <optional amount for fee>
+    fee: <number>
 }
 ```
 
-**exemple**:
-```
-```
+create a payload for a transaction
 
 ### publish a transaction
+**Method**: `POST`
+
 **URL**: `/publish`
 
-**method**: `POST`
+**data**:
+```
+{
+    transaction: <payload from /create_transaction>,
+    signature: <signature for the payload>,
+    keyPub: {rawData: <public_key>}
+}
+```
+
+publish a transaction created with `/create_transaction`
+
+the `signature` is a sha256 of the payload after being signed with a ecdsa algorithm using the secp256k1 curve
+using the private key associted with the key sended in `keyPub` field
+
+Note: you should probably use the js cli instead of trying to make it work with curl / openssl
 
 ## Misc.
 ### Get the balance of a wallet
+**method**: `GET`
+
 **URL**: `/balance`
 
-**method**: `GET`
-**query parameter: `pubkey`
+**query parameter**: `pubkey`
 
 **exemple**:
 ```
-$ curl http://localhost:8080/balance?pubkey=A5mc7ff4DMn9DyLq2qcbAUMyHfmzlvKKbLWuXHlQmuCD
-{"value":"30861119"}
+$ curl http://localhost:8080/balance?pubkey=A6EnLlJ5FjMOruJF7h2WdCP+P4BMgyRMjAYj8nW2BO6S
+{
+ "value": "413335199968488640"
+}
 ```
 
 ### Get the balance of a wallet
+**Method**: `POST`
+
 **URL**: `/balance`
 
-**method**: `POST`
 **data**:
 ```
 {
@@ -673,8 +691,10 @@ $ curl http://localhost:8080/balance?pubkey=A5mc7ff4DMn9DyLq2qcbAUMyHfmzlvKKbLWu
 ```
 **exemple**:
 ```
-$ curl 'http://localhost:8080/balance' --data '{"hexData":"0402368ae94009f1e32ef39826c057d6e3ff3b8ea1c9364f34dfebad765daf7e96a9f6abf90c855ab883044a25eee6aa338c0f8210303cc02687d648182abe0da0"}'
-{"value":"0"}
+$ curl 'http://localhost:8080/balance' -d '{"rawData":"A6EnLlJ5FjMOruJF7h2WdCP+P4BMgyRMjAYj8nW2BO6S"}'
+{
+ "value": "413335199968488640"
+}
 ```
 
 ### Check if a key is valid
@@ -688,11 +708,18 @@ $ curl 'http://localhost:8080/balance' --data '{"hexData":"0402368ae94009f1e32ef
 }
 ```
 
-return a `406 Not acceptable` error code when key_pub is invalid
+because some key pair are not as strong as other, the bot could refuse some key. This endpoint allow to test if the bot would allow a key before actually using it
+
+it return a `406 Not acceptable` error code when key_pub is invalid
 
 **exemple**:
 ```
-$ curl 'http://0.0.0.0:8080/validate' --data '{"rawData":"AlhV0BmXEIlOksGUtRrJqXy4UBfFFGue49H5TagwpSUH"}'
+$ curl http://localhost:8080/validate -d '{"rawData":"AlhV0BmXEIlOksGUtRrJqXy4UBfFFGue49H5TagwpSUH"}' -i
+HTTP/1.1 406 Not Acceptable
+Access-Control-Allow-Origin: *
+Connection: Close
+Content-Length: 11
+
 invalid key
 ```
 
@@ -703,7 +730,7 @@ invalid key
 
 **exemple**:
 ```
-$ curl http://52.47.129.155:8080/ready
+$ curl http://localhost:8080/ready
 {ok: 1}
 ```
 
