@@ -1,119 +1,622 @@
 # Rest API
 ## Block
 ### Get block by id
-**URL**: `/block/id`
+**Method**: `POST`
 
-**method**: `POST`
+**URL**: `/block/id`
 
 return the block with the corresponding id
 
 **data**:
 ```
 {
-    type: SHA256,
     data: <block_id>
 }
 ```
 
 **example**
 ```
-$ curl localhost:8080/block/id -d '{"type":"SHA256", "data":"ehLcF3IgQAOf2LqQtcIKnYsjdF4JQ5SgANSiHiqc3J4="}'
-{"header":{"id":{"type":"SHA256","data":"ehLcF3IgQAOf2LqQtcIKnYsjdF4JQ5SgANSiHiqc3J4="},"timestamp":{"data":1562759886},"previousBlockHash":{"type":"SHA256","data":"QCUzO1SN+I+rkwn5VGv3npeH+JVqxLTqdo0u+W/jEHY="},"author":{"signature":{"type":"SHA256","data":"Q9/XCc/ka5AuUJ1wLJUvIkQjbqm/RyEtCN3TeMfwKEnWBu+mdWSV5XzK2gsGdIa6EDvpkPd9A6x2XVg8hPVf7Q=="},"keyPub":{"type":"ECP256K1","rawData":"Anjy3xeuFab7G1v7A8HBPPaTO/oYqVGdb0nOJevecP/h"}},"height":161616},"transactions":[{"id":{"type":"SHA256","data":"Z1+uk6pCAhahvafiiUvzNL8giag/Yw5VJUayXb+DMYc="},"inputs":[{"id":{"type":"SHA256","data":"T1u9AcC1e/tJfdP0laqAlzPZ+MB94/3KOLx5uNG3D+g="},"outputId":1,"signatureId":0},{"id":{"type":"SHA256","data":"7Ku6xw/kxD5aalMfm/T0OGC0t5ki2LyLO09NUhboAeE="},"outputId":0,"signatureId":0}],"outputs":[{"address":{"data":"N7kmiqPSAtzgzMLRFD6GbqamhdYXhq4ACD"},"value":{"value":"50"}},{"address":{"data":"NBjqvjJrgyh2M3BtQL1nBtsGf9ky384Eud"},"value":{"value":"51"}}],"signatures":[{"signature":{"type":"SHA256","data":"GjXQe9mfBUMON7Ams+tdTPjY2kD6jZt2siwtwucw02P1pYiG6jjEknI8zm72Ks6AG53EIQg0N/Rks1VGsQn8gw=="},"keyPub":{"type":"ECP256K1","rawData":"Anjy3xeuFab7G1v7A8HBPPaTO/oYqVGdb0nOJevecP/h"}},{"signature":{"type":"SHA256","data":"iL1fQZhODFVln4mZuN0Kh6cuDn1Ne28N7K6AdMWjW9yNug48ZeP7fnTxwhbRcAvUtsdCXUBHXN9zaISzn7Pxhg=="},"keyPub":{"type":"ECP256K1","rawData":"Anjy3xeuFab7G1v7A8HBPPaTO/oYqVGdb0nOJevecP/h"}}]}],"coinbase":{"id":{"type":"SHA256","data":"WJygVld/K9I4Nic71/v1rcKx2V+IGuQOCAEWLH6uY5I="},"outputs":[{"address":{"data":"NBjqvjJrgyh2M3BtQL1nBtsGf9ky384Eud"},"value":{"value":"100"},"data":""}],"coinbaseHeight":161616}}
+$ curl localhost:8080/block/id -d '{"data":"Fapqu5uBJp9PLip7loZWwnt6Rpuk3pnwvlQNUaF2mIg="}'
+{
+ "header": {
+  "id": {
+   "data": "Fapqu5uBJp9PLip7loZWwnt6Rpuk3pnwvlQNUaF2mIg="
+  },
+  "timestamp": {
+   "data": 1583500807
+  },
+  "previousBlockHash": {
+   "data": "NQOmi7r2NvX/16x3PaFO7f78HvDXfyGSene/MnNma/M="
+  },
+  "author": {
+   "signature": {
+    "data": "2P2xMQI0i22W3z8/ezroEdWekY1cHkYyQCmvg3EEUzWF9vXRo/LtuQs5EknZDwk0FcvsYwRzRDKurNJ8rOhHkg=="
+   },
+   "keyPub": {
+    "rawData": "A35FDjWC1WDD2BIV/oXHAcXbjpcxuWqDKZmepm5GoJyl"
+   }
+  },
+  "height": 2331081
+ },
+ "transactions": [
+  {
+   "id": {
+    "data": "37JYz1pcAxigI7+xEmfOgHtRywWdORN2bt3cltlCNjM="
+   },
+   "inputs": [
+    {
+     "keyPub": {
+      "rawData": "A8TtAKDkkTIQC0j9XG1j0gFseniJSOh2GA3Sfh+C8o36"
+     },
+     "value": {
+      "value": "100"
+     },
+     "signature": {
+      "data": "oqqAgI+YsqxEtVqsM2YZUJDUqdk8oYNAvjkYKGEyjOshCLRf9lHirtj1X4DhrJ/v5DUbsmebCTBu/NcgwhS0Xg=="
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "keyPub": {
+      "rawData": "A/B0B0Lt4PVC5oLE9DoOW7jwcStDKvBAcaaRWoUhMJfP"
+     },
+     "value": {
+      "value": "100"
+     }
+    }
+   ],
+   "lastSeenBlockId": {
+    "data": "NQOmi7r2NvX/16x3PaFO7f78HvDXfyGSene/MnNma/M="
+   }
+  },
+  {
+   "id": {
+    "data": "7fhKBoFwuyRjQJYh8N4NceX24mfvYco+XWDUV/yM7Ys="
+   },
+   "inputs": [
+    {
+     "keyPub": {
+      "rawData": "A2SREP/2E+FH4cax+lskviIrvBPWJPf/6WO133HEwJ/2"
+     },
+     "value": {
+      "value": "100"
+     },
+     "signature": {
+      "data": "HsLkkhOEwqZffLCjVNlzh7Q7K+KJWk//AblKou914JJFAe+Pm0Zpe+qBIq++P4Tnej9fYlr6geAx8BzZReNuFg=="
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "keyPub": {
+      "rawData": "AxeIKYQej4u7lxy2mk3IRymMa0bVbFr0bg83ZO4Z/JqA"
+     },
+     "value": {
+      "value": "100"
+     }
+    }
+   ],
+   "lastSeenBlockId": {
+    "data": "NQOmi7r2NvX/16x3PaFO7f78HvDXfyGSene/MnNma/M="
+   }
+  },
+  {
+   "id": {
+    "data": "KO2CGHAkRz1WY4nSMq8VwUfURpd/2pgbWYpU0SiRDfk="
+   },
+   "inputs": [
+    {
+     "keyPub": {
+      "rawData": "A9r7EJFJbfWcMLeiWHLLXHnRZ0KLZ0uToN6qVjjSnp+3"
+     },
+     "value": {
+      "value": "100"
+     },
+     "signature": {
+      "data": "UqKvEKEYdbQN7kX/WEFX8zLBSFm1J4NaxNU3ynmNILPP5Kpmk+N97MsLdwDiKyO1FR7ct+D8ZPmaC0HmrJ8NfQ=="
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "keyPub": {
+      "rawData": "AkDQ28cmXMr5xcTXUqxw+J3Ia4FAMs8B+nWyK+iekEAL"
+     },
+     "value": {
+      "value": "100"
+     }
+    }
+   ],
+   "lastSeenBlockId": {
+    "data": "NQOmi7r2NvX/16x3PaFO7f78HvDXfyGSene/MnNma/M="
+   }
+  },
+  {
+   "id": {
+    "data": "WoK89r2Zf9icFhL4oCCIUr9AIpTswuJV1wab+4NXsmw="
+   },
+   "inputs": [
+    {
+     "keyPub": {
+      "rawData": "AwATWyNVEmYELf1MfCMA/efzWuw2ChocfxKFGrS0Q/x+"
+     },
+     "value": {
+      "value": "100"
+     },
+     "signature": {
+      "data": "0dL9u6ZnnyalNFG0ikgfi4MwW4pTE6Khxhmp+3TSbmh3L+8tkYOlXdKuJu8egYYhm3youuQHCqdan+vpfzG68Q=="
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "keyPub": {
+      "rawData": "A35FDjWC1WDD2BIV/oXHAcXbjpcxuWqDKZmepm5GoJyl"
+     },
+     "value": {
+      "value": "100"
+     }
+    }
+   ],
+   "lastSeenBlockId": {
+    "data": "NQOmi7r2NvX/16x3PaFO7f78HvDXfyGSene/MnNma/M="
+   }
+  },
+  {
+   "id": {
+    "data": "aojLDmlVow1hjesyJ2XBXgdTi5YZgV6f9xY3Z0Opy7c="
+   },
+   "inputs": [
+    {
+     "keyPub": {
+      "rawData": "A6EnLlJ5FjMOruJF7h2WdCP+P4BMgyRMjAYj8nW2BO6S"
+     },
+     "value": {
+      "value": "100"
+     },
+     "signature": {
+      "data": "E3RTvRxVgsqdA7JNf/gxHDLfdqE/HM6tIx1Z5zZcBiTTqBM2asfHGwA54BVtwbyRiWSF+35N4Ym8excSDOUpkQ=="
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "keyPub": {
+      "rawData": "A/De3pk8zUIIcrMZkDHkdW7Y7n92R2aHaub2C4CYvQ8E"
+     },
+     "value": {
+      "value": "100"
+     }
+    }
+   ],
+   "lastSeenBlockId": {
+    "data": "NQOmi7r2NvX/16x3PaFO7f78HvDXfyGSene/MnNma/M="
+   }
+  }
+ ],
+ "coinbase": {
+  "id": {
+   "data": "2+JfOGUAyvpQm9wNMbcFaeiE+8YUVizx2c+mAPBo2IY="
+  },
+  "outputs": [
+   {
+    "keyPub": {
+     "rawData": "A35FDjWC1WDD2BIV/oXHAcXbjpcxuWqDKZmepm5GoJyl"
+    },
+    "value": {
+     "value": "100000000000"
+    },
+    "data": ""
+   }
+  ],
+  "lastSeenBlockId": {
+   "data": "NQOmi7r2NvX/16x3PaFO7f78HvDXfyGSene/MnNma/M="
+  }
+ }
+}
 ```
 
 ### Get block by height
+**method**: `GET`
+
 **URL**: `/block/height/:height`
 
 **URL Parameter**: `height` height of the block you want info on
-
-**method**: `GET`
 
 return the block corresponding to a certain height
 
 **example**:
 ```
 $ curl localhost:8080/block/height/0
-{"header":{"id":{"type":"SHA256","data":"he8knu6idJCQEADAPD1vkmo8OzIBBJ58Bb3apnB9+sE="},"timestamp":{"data":1560335646},"previousBlockHash":{"type":"SHA256","data":""},"author":{"signature":{"type":"SHA256","data":"Dg5gfxNN0teVG3auB72eEcH89LHA/YcuIxSB42INO5r7C66JuhfLXhIe2IHIHOUpC5X6M6yfHQwTycgUNIoqbw=="},"keyPub":{"type":"ECP256K1","rawData":"At2zvnKjc8FhInceEx4LWJ3Yy6DyD83MR3jlCneoZZpP"}},"height":0},"coinbase":{"id":{"type":"SHA256","data":"QVu0VZ6AS5XmGA/f0rkGxKkg1XO4F2DJ3fuZF+4CwJU="},"outputs":[{"address":{"data":"NEcd7W2csRbQJz7NeTNGHGoNoGvrw7EkvL"},"value":{"value":"1152921504606846976"},"data":""},{"address":{"data":"N9i6KhU5mUPrS3uTQCtwTNeEztRM318Cik"},"value":{"value":"1152921504606846976"},"data":""}],"coinbaseHeight":0}}
+{
+ "header": {
+  "id": {
+   "data": "WPyMrBdGUdN+jgJXhZ9tAZbWmXw8ORbB31cHpuT27Kg="
+  },
+  "timestamp": {
+   "data": 1576507564
+  },
+  "previousBlockHash": {
+   "data": ""
+  },
+  "author": {
+   "signature": {
+    "data": "BArxHBLhjwxnE5C2QnCxx4WUNJEkWgQXg7BquEMms7C931yYpek3CLNIMED2oi1U8FFpNLrswj8X719nKNjVTw=="
+   },
+   "keyPub": {
+    "rawData": "A6EnLlJ5FjMOruJF7h2WdCP+P4BMgyRMjAYj8nW2BO6S"
+   }
+  },
+  "height": 0
+ },
+ "coinbase": {
+  "id": {
+   "data": "GUJ24F0Ynrytcf6dw/BZePns7goY3qHgv5P/SyP+Djw="
+  },
+  "outputs": [
+   {
+    "keyPub": {
+     "rawData": "A6EnLlJ5FjMOruJF7h2WdCP+P4BMgyRMjAYj8nW2BO6S"
+    },
+    "value": {
+     "value": "400000000000000000"
+    },
+    "data": ""
+   },
+   {
+    "keyPub": {
+     "rawData": "ApYsnVU0VczRb6H/qvW3arxQaQ4N7NQ0X6ZWtA2Fa8ES"
+    },
+    "value": {
+     "value": "400000000000000000"
+    },
+    "data": ""
+   },
+   {
+    "keyPub": {
+     "rawData": "Ay7bJHzqY+Wtn2RKQ0bOLe4QJ1p+4jRdI7QQsvMfxeSl"
+    },
+    "value": {
+     "value": "400000000000000000"
+    },
+    "data": ""
+   },
+   {
+    "keyPub": {
+     "rawData": "AwsmLgIRhWU6/+udvSRlNbI13AkToqQwPo8wju6/b0UW"
+    },
+    "value": {
+     "value": "400000000000000000"
+    },
+    "data": ""
+   },
+   {
+    "keyPub": {
+     "rawData": "AqjSGeMVxItmaBgC152V5UvzeP60oIk0QIoC0Y5HnO1h"
+    },
+    "value": {
+     "value": "400000000000000000"
+    },
+    "data": ""
+   },
+   {
+    "keyPub": {
+     "rawData": "A5Rv7beIMWr9e6QY5/tIGDoeW+1UidMf4qkJW9jHCXdH"
+    },
+    "value": {
+     "value": "400000000000000000"
+    },
+    "data": ""
+   },
+   {
+    "keyPub": {
+     "rawData": "AgH4AZ2IqwLnnPB/ZhvPH6XICNTUOD1ANouLYSGAtbrX"
+    },
+    "value": {
+     "value": "400000000000000000"
+    },
+    "data": ""
+   },
+   {
+    "keyPub": {
+     "rawData": "A/QZkOUkyw/vcP6iZxe4Tp1CzmUiyi4rIwgwXwpy/fhq"
+    },
+    "value": {
+     "value": "400000000000000000"
+    },
+    "data": ""
+   },
+   {
+    "keyPub": {
+     "rawData": "AhDbR95xqgsviFjJYbbwnclY1lt0JgkVRN6SL6sLwmLL"
+    },
+    "value": {
+     "value": "400000000000000000"
+    },
+    "data": ""
+   },
+   {
+    "keyPub": {
+     "rawData": "AvJMns1Ww1u+L9cCrCbqjoxEHSuePd6LTPfeRQ4xy5ON"
+    },
+    "value": {
+     "value": "400000000000000000"
+    },
+    "data": ""
+   }
+  ],
+  "lastSeenBlockId": {
+   "data": ""
+  }
+ }
+}
 ```
 
 
 ### Get latest block
+**Method**: `GET`
+
 **URL**: `/last_blocks/:number`
 
 **URL Parameter**: `number` quantity of block you want
-
-**method**: `GET`
 
 get the last N block
 
 **example**:
 ```
-$ curl http://52.47.129.155:8080/last_blocks/2
-{"block":[{"header":{"id":{"type":"SHA256","data":"3pNSyJPlhBMPzvV8fqCot/0obdTaFI+EJqddWd3zuZ4="},"timestamp":{"data":1562621676},"previousBlockHash":{"type":"SHA256","data":"fZPA9sA2vZWKDAZNY6L5uG/9042xzrIJxk5798WRK4I="},"author":{"signature":{"type":"SHA256","data":"fv8PxaN4MpZ3B3MZHa5KVUnAuGuwNHoUmfIA06vRwQMCjEuOqgqY2wY2Pfzy/eKK8nktaRryJf+sAeKqqMeWig=="},"keyPub":{"type":"ECP256K1","rawData":"Am4regJZ+i3Z7QVhreQ05qVKxis00ib2l98I/T+dx/ZE"}},"height":152402},"transactions":[{"id":{"type":"SHA256","data":"22GsjS8+hNaB/7G3X6WGQEFYKa2KyfkhcrjTh6qrKFw="},"inputs":[{"id":{"type":"SHA256","data":"79B1e2exKBbJXc+QHiVqRPPtO8tfmEfxYSzk/QzSCcQ="},"outputId":1,"signatureId":0}],"outputs":[{"address":{"data":"N9i6KhU5mUPrS3uTQCtwTNeEztRM318Cik"},"value":{"value":"25"}},{"address":{"data":"NH5Sr4NDcLDdEd5Gc6byrA2Rxh6ndR5E2N"},"value":{"value":"26"}}],"signatures":[{"signature":{"type":"SHA256","data":"yspA2OUaUIp1NFjxd881IkuQDKVtdG4E2pv7S+5UI/41GBh+f9shBpcsJ6ufHZSxsmb7ZX1NJ5YOODHwTpgGqA=="},"keyPub":{"type":"ECP256K1","rawData":"Am4regJZ+i3Z7QVhreQ05qVKxis00ib2l98I/T+dx/ZE"}}]},{"id":{"type":"SHA256","data":"79B1e2exKBbJXc+QHiVqRPPtO8tfmEfxYSzk/QzSCcQ="},"inputs":[{"id":{"type":"SHA256","data":"wSdT7oEUxvkjqrc6vfCbij6AfirHvGebfVd4LmN8O6Y="},"outputId":0,"signatureId":0},{"id":{"type":"SHA256","data":"MLAOopyP33JBc1bZC8k3rFFod4jGmgEgpFJVYfBH6is="},"outputId":1,"signatureId":0}],"outputs":[{"address":{"data":"N7BiWVGenpHu7w7rd8vF1pmxhtnMEYE45H"},"value":{"value":"50"}},{"address":{"data":"NH5Sr4NDcLDdEd5Gc6byrA2Rxh6ndR5E2N"},"value":{"value":"51"}}],"signatures":[{"signature":{"type":"SHA256","data":"DBucSVeI4Mch/Lsvn3y2TPHgw0hdWLtLacD5YTOh+YRPWFPPAEA3EXKUSjd+HRerd7QQ5+sO0cxTqNpoe+OweQ=="},"keyPub":{"type":"ECP256K1","rawData":"Am4regJZ+i3Z7QVhreQ05qVKxis00ib2l98I/T+dx/ZE"}},{"signature":{"type":"SHA256","data":"3Ff9EKflDBynfAw178hDrQvN+f6wT5ovsrXLQ0hAn3MMGvT3CpeKrhZMMbNxiUs8eEjm7axmYGUJ6XqY7F446A=="},"keyPub":{"type":"ECP256K1","rawData":"Am4regJZ+i3Z7QVhreQ05qVKxis00ib2l98I/T+dx/ZE"}}]},{"id":{"type":"SHA256","data":"CBsJv2T6ydW42/tGtdz2lwJIqBa7LiprRkla2pGpT4Y="},"inputs":[{"id":{"type":"SHA256","data":"22GsjS8+hNaB/7G3X6WGQEFYKa2KyfkhcrjTh6qrKFw="},"outputId":1,"signatureId":0}],"outputs":[{"address":{"data":"N7BiWVGenpHu7w7rd8vF1pmxhtnMEYE45H"},"value":{"value":"13"}},{"address":{"data":"NH5Sr4NDcLDdEd5Gc6byrA2Rxh6ndR5E2N"},"value":{"value":"13"}}],"signatures":[{"signature":{"type":"SHA256","data":"64j+oxl8a3BXl8VJqDHQM4Jr2ecoxXm8scS4j6iEDcNYAMQVW9KnqTtVHtWtuBiX+kAYNSG2KTnW3A5RMhfDZg=="},"keyPub":{"type":"ECP256K1","rawData":"Am4regJZ+i3Z7QVhreQ05qVKxis00ib2l98I/T+dx/ZE"}}]},{"id":{"type":"SHA256","data":"MLAOopyP33JBc1bZC8k3rFFod4jGmgEgpFJVYfBH6is="},"inputs":[{"id":{"type":"SHA256","data":"VhstOOA/cjoZnayXN8n16W3A2Itm59H+o+aVzZuaH3s="},"outputId":1,"signatureId":0}],"outputs":[{"address":{"data":"NEcd7W2csRbQJz7NeTNGHGoNoGvrw7EkvL"},"value":{"value":"1"}},{"address":{"data":"NH5Sr4NDcLDdEd5Gc6byrA2Rxh6ndR5E2N"},"value":{"value":"1"}}],"signatures":[{"signature":{"type":"SHA256","data":"hx4qpPaxXNuFqpWLgjZH7qFkHXa2XJeH0C4jG8xshzBUdu1djB9zSTVX1wAPiMsleH5tQLZ4HGE9ctY7Gpo2ug=="},"keyPub":{"type":"ECP256K1","rawData":"Am4regJZ+i3Z7QVhreQ05qVKxis00ib2l98I/T+dx/ZE"}}]}],"coinbase":{"id":{"type":"SHA256","data":"4CxYEe+AsOENLRqVGTxb4phtxchbfjNGY/DtKd/KT10="},"outputs":[{"address":{"data":"NH5Sr4NDcLDdEd5Gc6byrA2Rxh6ndR5E2N"},"value":{"value":"100"},"data":""}],"coinbaseHeight":152402}},{"header":{"id":{"type":"SHA256","data":"fZPA9sA2vZWKDAZNY6L5uG/9042xzrIJxk5798WRK4I="},"timestamp":{"data":1562621496},"previousBlockHash":{"type":"SHA256","data":"hgBBGkI/cLujO9B4z+Ur//ZNpi9eRo/Ol5kVGhLSejo="},"author":{"signature":{"type":"SHA256","data":"RTBg5yp/FhXkbsx+AzgbVpC8XyRv/cBXZhKRm3tyjduTaeUh3Oqon1Kcf3BsF3oQAYOJu8pQagD3bEiGrNpySw=="},"keyPub":{"type":"ECP256K1","rawData":"Am4regJZ+i3Z7QVhreQ05qVKxis00ib2l98I/T+dx/ZE"}},"height":152390},"transactions":[{"id":{"type":"SHA256","data":"77FJSI0TN2PKG1sSMzdxXulTgYksFnmpAhcaeQv2gT0="},"inputs":[{"id":{"type":"SHA256","data":"lOGg7isE2tJGMVHjXMz2bwlNhrewHr4Wk/jo278jNt4="},"outputId":1,"signatureId":0}],"outputs":[{"address":{"data":"N9i6KhU5mUPrS3uTQCtwTNeEztRM318Cik"},"value":{"value":"3"}},{"address":{"data":"NH5Sr4NDcLDdEd5Gc6byrA2Rxh6ndR5E2N"},"value":{"value":"4"}}],"signatures":[{"signature":{"type":"SHA256","data":"yMnsiogumdolz/20oNtyR2O/lF/sTCA4AvoFzofKJ8kMe1lwcLW8CHVDPqgvMfUdWhJ7HlKSKkG/j2wbFgJ4HA=="},"keyPub":{"type":"ECP256K1","rawData":"Am4regJZ+i3Z7QVhreQ05qVKxis00ib2l98I/T+dx/ZE"}}]},{"id":{"type":"SHA256","data":"GTgLuFXzp8IxjChAdaIPdTUZrznPwDvQT6uwM7qmi8Y="},"inputs":[{"id":{"type":"SHA256","data":"zgFWx0/N0rX5CmxAEBofWwHPgXNz3O3n/JQgMUdLz4k="},"outputId":0,"signatureId":0},{"id":{"type":"SHA256","data":"h4PKFa0Iu9+mCPnJyOO2uYQiHJoGUk2CKSUB/mqe/DU="},"outputId":1,"signatureId":0}],"outputs":[{"address":{"data":"N7BiWVGenpHu7w7rd8vF1pmxhtnMEYE45H"},"value":{"value":"50"}},{"address":{"data":"NH5Sr4NDcLDdEd5Gc6byrA2Rxh6ndR5E2N"},"value":{"value":"51"}}],"signatures":[{"signature":{"type":"SHA256","data":"zi1b9QXV/j5iDeQf0VcbtPsdZepvJUuAV/o+12j+eQgsMPkV+LYz4IPDP2/5nrOJUjYefNtpEstd1SPQqKtHzg=="},"keyPub":{"type":"ECP256K1","rawData":"Am4regJZ+i3Z7QVhreQ05qVKxis00ib2l98I/T+dx/ZE"}},{"signature":{"type":"SHA256","data":"lwgrAsz6aD+ma7hUPR8L++1VlJTTeZ5aZbaDU0LKYrs6vPMzoVMRLHp8PBOFjxfJH8F9D8ZfoKe8PjNTyIINKg=="},"keyPub":{"type":"ECP256K1","rawData":"Am4regJZ+i3Z7QVhreQ05qVKxis00ib2l98I/T+dx/ZE"}}]},{"id":{"type":"SHA256","data":"MEidA+ycYRTqx2NeYFEaGBNohYQLoffbrud4ZBJG3xY="},"inputs":[{"id":{"type":"SHA256","data":"osN9+bFKntO2KAVi6XjhLnJwnyUzOJCdDkp4xPMqezY="},"outputId":1,"signatureId":0}],"outputs":[{"address":{"data":"NEcd7W2csRbQJz7NeTNGHGoNoGvrw7EkvL"},"value":{"value":"13"}},{"address":{"data":"NH5Sr4NDcLDdEd5Gc6byrA2Rxh6ndR5E2N"},"value":{"value":"13"}}],"signatures":[{"signature":{"type":"SHA256","data":"wqocBceVmAyI20m4+vTiWgzMiC2T1aRyTX07kIIJ7Ji0sN5/rAjwMpYmxP4tDziJO0LOR7cX/RtuFbO6NqeKCw=="},"keyPub":{"type":"ECP256K1","rawData":"Am4regJZ+i3Z7QVhreQ05qVKxis00ib2l98I/T+dx/ZE"}}]},{"id":{"type":"SHA256","data":"VhstOOA/cjoZnayXN8n16W3A2Itm59H+o+aVzZuaH3s="},"inputs":[{"id":{"type":"SHA256","data":"77FJSI0TN2PKG1sSMzdxXulTgYksFnmpAhcaeQv2gT0="},"outputId":1,"signatureId":0}],"outputs":[{"address":{"data":"N7BiWVGenpHu7w7rd8vF1pmxhtnMEYE45H"},"value":{"value":"2"}},{"address":{"data":"NH5Sr4NDcLDdEd5Gc6byrA2Rxh6ndR5E2N"},"value":{"value":"2"}}],"signatures":[{"signature":{"type":"SHA256","data":"6t43t6it1LQYpGL/zpMbyvyNwHOYVe/ZEpwHJbRyMugSMpqAOBflmsRWb1dZMOfzsZ119MYaWdAIbPtxsa54Eg=="},"keyPub":{"type":"ECP256K1","rawData":"Am4regJZ+i3Z7QVhreQ05qVKxis00ib2l98I/T+dx/ZE"}}]},{"id":{"type":"SHA256","data":"h4PKFa0Iu9+mCPnJyOO2uYQiHJoGUk2CKSUB/mqe/DU="},"inputs":[{"id":{"type":"SHA256","data":"hXBet5nSZi/9ySWdZQNQcfWPF5O0aDQS5cdVYSE7cs8="},"outputId":1,"signatureId":0}],"outputs":[{"address":{"data":"N5U2TQWMWfXF5z5bBVpnT4KzxpkYuFGnho"},"value":{"value":"1"}},{"address":{"data":"NH5Sr4NDcLDdEd5Gc6byrA2Rxh6ndR5E2N"},"value":{"value":"1"}}],"signatures":[{"signature":{"type":"SHA256","data":"JUrNTRKQ1i0pTb0AGBh0HkOj5aKiz9BeC8N4/XbCql7YMAFZCPA+gm9xJuwoNKdm/Ttf9jtde4ugDwzmdYDCAA=="},"keyPub":{"type":"ECP256K1","rawData":"Am4regJZ+i3Z7QVhreQ05qVKxis00ib2l98I/T+dx/ZE"}}]},{"id":{"type":"SHA256","data":"lOGg7isE2tJGMVHjXMz2bwlNhrewHr4Wk/jo278jNt4="},"inputs":[{"id":{"type":"SHA256","data":"MEidA+ycYRTqx2NeYFEaGBNohYQLoffbrud4ZBJG3xY="},"outputId":1,"signatureId":0}],"outputs":[{"address":{"data":"NEcd7W2csRbQJz7NeTNGHGoNoGvrw7EkvL"},"value":{"value":"6"}},{"address":{"data":"NH5Sr4NDcLDdEd5Gc6byrA2Rxh6ndR5E2N"},"value":{"value":"7"}}],"signatures":[{"signature":{"type":"SHA256","data":"xIz2H6rx0tD+yoVuBc1U7R77siY2Q3tUwDWaay7KnicWhg4koMmovKuiP6SK523RfPzOjIkjlZpVa7zJi0IhKQ=="},"keyPub":{"type":"ECP256K1","rawData":"Am4regJZ+i3Z7QVhreQ05qVKxis00ib2l98I/T+dx/ZE"}}]},{"id":{"type":"SHA256","data":"osN9+bFKntO2KAVi6XjhLnJwnyUzOJCdDkp4xPMqezY="},"inputs":[{"id":{"type":"SHA256","data":"GTgLuFXzp8IxjChAdaIPdTUZrznPwDvQT6uwM7qmi8Y="},"outputId":1,"signatureId":0}],"outputs":[{"address":{"data":"N5U2TQWMWfXF5z5bBVpnT4KzxpkYuFGnho"},"value":{"value":"25"}},{"address":{"data":"NH5Sr4NDcLDdEd5Gc6byrA2Rxh6ndR5E2N"},"value":{"value":"26"}}],"signatures":[{"signature":{"type":"SHA256","data":"rqSUgPLWbsf8vIllAi3D2izYJbxcCs/08+Iim26flV5pSqSrcfv8WuHm1NbvAODOsVtwTTwDNnw42MlEgL9QDw=="},"keyPub":{"type":"ECP256K1","rawData":"Am4regJZ+i3Z7QVhreQ05qVKxis00ib2l98I/T+dx/ZE"}}]}],"coinbase":{"id":{"type":"SHA256","data":"wSdT7oEUxvkjqrc6vfCbij6AfirHvGebfVd4LmN8O6Y="},"outputs":[{"address":{"data":"NH5Sr4NDcLDdEd5Gc6byrA2Rxh6ndR5E2N"},"value":{"value":"100"},"data":""}],"coinbaseHeight":152390}}]}
+$ curl http://localhost:8080/last_blocks/2
+{
+ "block": [
+  {
+   "header": {
+    "id": {
+     "data": "vLe42H6rN/1qg2J39xzehsBNcTeKbSxzptBsLFTU6WE="
+    },
+    "timestamp": {
+     "data": 1583832778
+    },
+    "previousBlockHash": {
+     "data": "U5r1VeNKGUKjKN7s8Snqr5sEYX0cJ8ZBQY6lMEB1fcQ="
+    },
+    "author": {
+     "signature": {
+      "data": "t9s3owrIwAP7V7+KOcsJqxl+PKkFnwyNruetZh4e++KMtb2nQN554gPyWQ4O5IlWhBKSirOvKnllubGpMqW3GA=="
+     },
+     "keyPub": {
+      "rawData": "An/C69LZ874bbX1twFk5BfatQ6ulZqElsljAatL3YuKt"
+     }
+    },
+    "height": 2441738
+   },
+   "coinbase": {
+    "id": {
+     "data": "AOU3cGqJV4KwrLRUSt8v0SQqqLAwKBeYkp1+kk5jyZo="
+    },
+    "outputs": [
+     {
+      "keyPub": {
+       "rawData": "An/C69LZ874bbX1twFk5BfatQ6ulZqElsljAatL3YuKt"
+      },
+      "value": {
+       "value": "100000000000"
+      },
+      "data": ""
+     }
+    ],
+    "lastSeenBlockId": {
+     "data": "U5r1VeNKGUKjKN7s8Snqr5sEYX0cJ8ZBQY6lMEB1fcQ="
+    }
+   }
+  },
+  {
+   "header": {
+    "id": {
+     "data": "U5r1VeNKGUKjKN7s8Snqr5sEYX0cJ8ZBQY6lMEB1fcQ="
+    },
+    "timestamp": {
+     "data": 1583832775
+    },
+    "previousBlockHash": {
+     "data": "r98RvYWnw06yJpCDCNfS6H1cpiqAyXAgORZM5h2FFe8="
+    },
+    "author": {
+     "signature": {
+      "data": "AFG1WJDHOicpNmIpfxn99SXc9taa6gXC+MPGardXM+YWmW+EQkLnnApe4QiZSmLjSfeDssGD1Xiwv0Ikcqi1NQ=="
+     },
+     "keyPub": {
+      "rawData": "An/C69LZ874bbX1twFk5BfatQ6ulZqElsljAatL3YuKt"
+     }
+    },
+    "height": 2441737
+   },
+   "coinbase": {
+    "id": {
+     "data": "Zsmu4fD2lCVI0cGmKDHd3O0tEQlJ+skXgXfKbBHE9RQ="
+    },
+    "outputs": [
+     {
+      "keyPub": {
+       "rawData": "An/C69LZ874bbX1twFk5BfatQ6ulZqElsljAatL3YuKt"
+      },
+      "value": {
+       "value": "100000000000"
+      },
+      "data": ""
+     }
+    ],
+    "lastSeenBlockId": {
+     "data": "r98RvYWnw06yJpCDCNfS6H1cpiqAyXAgORZM5h2FFe8="
+    }
+   }
+  }
+ ]
+}
 ```
 
 ### Get total amount of block
-**URL**: `/total_nb_blocks`
+**Method**: `GET`
 
-**method**: `GET`
+**URL**: `/total_nb_blocks`
 
 **exemple**:
 ```
-$ curl http://52.47.129.155:8080/total_nb_blocks
-24414
+$ curl http://localhost:8080/total_nb_blocks
+1953888
 ```
 
 ## Transaction
 ### Get Transaction by id
-**URL**: `/transaction/`
+**Method**: `POST`
 
-**method**: `POST`
+**URL**: `/transaction/`
 
 **data**:
 ```
 {
-    type: SHA256,
     data: <transaction_id>
 }
 ```
 
 **example**:
 ```
-$ curl localhost:8080/transaction/ -d '{"type":"SHA256", "data":"h75iSkWlN53Z78ejSHEy4wx5qV4glWnNwqK8q+ICBFQ="}'
-{"id":{"type":"SHA256","data":"h75iSkWlN53Z78ejSHEy4wx5qV4glWnNwqK8q+ICBFQ="},"inputs":[{"id":{"type":"SHA256","data":"iN0DNP+1hOlA3CB2c15BUHfC8OVnFd4MDvfPPhZg78g="},"outputId":0,"signatureId":0},{"id":{"type":"SHA256","data":"tDfNuNuzlkuy3FYcVoCvDLMmifTeXEPbgah1xHHjHU0="},"outputId":1,"signatureId":0}],"outputs":[{"address":{"data":"NH5Sr4NDcLDdEd5Gc6byrA2Rxh6ndR5E2N"},"value":{"value":"1"}},{"address":{"data":"N5U2TQWMWfXF5z5bBVpnT4KzxpkYuFGnho"},"value":{"value":"2"}}],"signatures":[{"signature":{"type":"SHA256","data":"hOGo2sNhLVYgUmVLXGzUbaCvaP5xrqX9OmNpKmTsUC9T51MpA+mbf6XvkxfKD9euCMj7gvkYqFUH/k4+vs8sAw=="},"keyPub":{"type":"ECP256K1","rawData":"AgNEbgj8H4laaNQlIwH0rXiG+KQWEjDV5cBHCMkQ5X+i"}},{"signature":{"type":"SHA256","data":"NWGRS4rLxCf2sXCKFzMS7jt7nzH1DWy7PwVr+Jcn3dBFZCdRiE+9shSj5lXwgmzjnTqrhllGBjR0KAtsWrDJ+w=="},"keyPub":{"type":"ECP256K1","rawData":"AgNEbgj8H4laaNQlIwH0rXiG+KQWEjDV5cBHCMkQ5X+i"}}]}
+$ curl localhost:8080/transaction/ -d '{"data":"37JYz1pcAxigI7+xEmfOgHtRywWdORN2bt3cltlCNjM="}'
+{
+ "id": {
+  "data": "37JYz1pcAxigI7+xEmfOgHtRywWdORN2bt3cltlCNjM="
+ },
+ "inputs": [
+  {
+   "keyPub": {
+    "rawData": "A8TtAKDkkTIQC0j9XG1j0gFseniJSOh2GA3Sfh+C8o36"
+   },
+   "value": {
+    "value": "100"
+   },
+   "signature": {
+    "data": "oqqAgI+YsqxEtVqsM2YZUJDUqdk8oYNAvjkYKGEyjOshCLRf9lHirtj1X4DhrJ/v5DUbsmebCTBu/NcgwhS0Xg=="
+   }
+  }
+ ],
+ "outputs": [
+  {
+   "keyPub": {
+    "rawData": "A/B0B0Lt4PVC5oLE9DoOW7jwcStDKvBAcaaRWoUhMJfP"
+   },
+   "value": {
+    "value": "100"
+   }
+  }
+ ],
+ "lastSeenBlockId": {
+  "data": "NQOmi7r2NvX/16x3PaFO7f78HvDXfyGSene/MnNma/M="
+ }
+}
 ```
 
 ### Get a list of transaction
-**URL**: `/list_transactions/:page`
+**Method**: `POST`
 
-**URL Parameter**: `page` access a particular page in this public key list of transaction (0 indexed)
-
-**method**: `POST`
+**URL**: `/list_transactions`
 
 **data**:
 ```
 {
-    rawData: <public key>
+  page: <number>;
+  page_size: <number>;
+  output_key_pub: {rawData: <public key>};
+  input_key_pub: {rawData: <public key>};
 }
 ```
 
-get the list of transaction with a pagination, if page number is omited
-the total available page is sent instead
+get the list of transaction using a pagination system.
+
+default value are used if page number / page size are omitted
+(0 for page and 10 for page size)
+
+you must specifies either an output key pub or input key pub,
+the call return the transaction in which the specified key appear (act as an `or` if output and input are given)
 
 **exemple**:
 ```
-
+$ curl localhost:8080/list_transactions -d '{"page_size":2,"output_key_pub": {"rawData":"A6EnLlJ5FjMOruJF7h2WdCP+P4BMgyRMjAYj8nW2BO6S"},"input_key_pub":{"rawData":"A2SREP/2E+FH4cax+lskviIrvBPWJPf/6WO133HEwJ/2"}}'
+{
+ "transactions": [
+  {
+   "id": {
+    "data": "1A7iGAWIkNd+XGhWHrJnqhbSkUtOw6RhSDkPbgM5hMU="
+   },
+   "inputs": [
+    {
+     "keyPub": {
+      "rawData": "A2SREP/2E+FH4cax+lskviIrvBPWJPf/6WO133HEwJ/2"
+     },
+     "value": {
+      "value": "100"
+     },
+     "signature": {
+      "data": "5x7d2t+yekTveJloDfJFkvgMTo6merTllY+NkpT5YdkcVDVQjxdaKtXMyo3uIVcE3M4lMSthzE4VFCIim8CS/w=="
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "keyPub": {
+      "rawData": "A6EnLlJ5FjMOruJF7h2WdCP+P4BMgyRMjAYj8nW2BO6S"
+     },
+     "value": {
+      "value": "100"
+     }
+    }
+   ],
+   "lastSeenBlockId": {
+    "data": "xaxOtWYu87XfBF9ykt/CCI4WrizwIBKHIpjXv7j2idw="
+   }
+  },
+  {
+   "id": {
+    "data": "sFVw8g/tq32xChdAOUs1BslwYssZPfa5RQk6v9vW3fs="
+   },
+   "inputs": [
+    {
+     "keyPub": {
+      "rawData": "A2SREP/2E+FH4cax+lskviIrvBPWJPf/6WO133HEwJ/2"
+     },
+     "value": {
+      "value": "100"
+     },
+     "signature": {
+      "data": "S0/9gEOjVFgalvlcUpknODgqW+2+Ly1oR5HGVsDtaZYynGMqdqJSWI7w1iWyDLdc5RX4GTBMBViyBg2+xy4Lvw=="
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "keyPub": {
+      "rawData": "A6EnLlJ5FjMOruJF7h2WdCP+P4BMgyRMjAYj8nW2BO6S"
+     },
+     "value": {
+      "value": "100"
+     }
+    }
+   ],
+   "lastSeenBlockId": {
+    "data": "xaxOtWYu87XfBF9ykt/CCI4WrizwIBKHIpjXv7j2idw="
+   }
+  }
+ ]
+}
 ```
 
 ### Get total number of transaction
-**URL**: `/total_nb_transactions`
+**Method**: `GET`
 
-**method**: `GET`
+**URL**: `/total_nb_transactions`
 
 **exemple**:
 ```
-$ curl http://52.47.129.155:8080/total_nb_transactions
-129885
+$ curl http://localhost:8080/total_nb_transactions
+12940117
 ```
 ### Create transaction
 **URL**: `/create_transaction/:fee`
