@@ -684,13 +684,18 @@ bool LedgerMongodb::insert_block(const messages::TaggedBlock &tagged_block) {
   mutable_tagged_block.mutable_block()->clear_coinbase();
   mutable_tagged_block.mutable_reception_time()->set_data(std::time(nullptr));
   auto bson_block = to_bson(mutable_tagged_block);
+  auto result = _blocks.insert_one(std::move(bson_block));
+  if (!result) {
+    LOG_INFO << "Block insert failed";
+    return false;
+  }
   if (!bson_transactions.empty()) {
-    if(!static_cast<bool>
-       (_transactions.insert_many(std::move(bson_transactions)))) {
+    if (!_transactions.insert_many(std::move(bson_transactions))) {
+      LOG_INFO << "Could not insert transaction for block " << tagged_block;
       return false;
     }
   }
-  return static_cast<bool>(_blocks.insert_one(std::move(bson_block)));  
+  return static_cast<bool>(result);
 }
 
 bool LedgerMongodb::delete_block(const messages::BlockID &id) {
@@ -1045,6 +1050,9 @@ bool LedgerMongodb::insert_block(const messages::Block &block) {
                 set_branch_path(tagged_block.block().header());
   LOG_DEBUG << "Insert block took " << (Timer::now() - t1).count() / 1E6
             << " ms";
+  if(!result) {
+    LOG_INFO << "Could not insert block " << block.header();
+  }
   return result;
 }
 
