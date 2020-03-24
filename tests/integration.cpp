@@ -402,9 +402,12 @@ TEST(INTEGRATION, fullfill_network) {
   ASSERT_TRUE(bot40->check_peers_ports({1337, 1338, 1339})) << bot40->peers();
 }
 
+/**
+ * Test that a node can't connect to a network withouth connection slot available
+ * then can connect if one node of the network is killed
+ * Async test that node receive *disconnect* event when a node is killed
+ */
 TEST(INTEGRATION, connection_opportunity) {
-  // Check a node excluded from a connected graph can connect after a node of
-  // the complete graph is destroyed.
   int bot0_disconnect_received = 0;
   int bot1_disconnect_received = 0;
   int bot2_disconnect_received = 0;
