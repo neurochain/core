@@ -256,6 +256,10 @@ TEST(INTEGRATION, disconnect) {
   ASSERT_EQ(bot0->connected_peers().size(), 0);
 }
 
+/**
+ * Async test that *disconnect* event is emited when nodes are killed
+ * Test that the number or connected peer is correct after killing other node
+ */
 TEST(INTEGRATION, disconnect_message) {
   Port port_offset = random_port();
   bool message_received0 = false;
