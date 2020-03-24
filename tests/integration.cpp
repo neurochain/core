@@ -587,6 +587,10 @@ TEST(INTEGRATION, connection_reconfig) {
   ASSERT_TRUE(bot6->check_peers_ports({1337, 13350, 13351}));
 }
 
+/**
+ * Test that a bad message (wrong message version) doesn't emit an event in
+ * node event queue
+ */
 TEST(INTEGRATION, ignore_bad_message) {
   Port port_offset = random_port();
   auto bot0 = std::make_unique<BotTest>("bot0.json", port_offset);
