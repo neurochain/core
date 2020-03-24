@@ -520,6 +520,10 @@ TEST(INTEGRATION, connection_opportunity_update) {
   ASSERT_TRUE(bot4->check_peers_ports({13340})) << bot4->peers();
 }
 
+/**
+ * Test that a bot which is connected to a network can reconnect to a different network
+ * if all it's peer are disconnected
+ */
 TEST(INTEGRATION, connection_reconfig) {
   // Test that new nodes can form a graph even if first node are all
   // disconnected.
