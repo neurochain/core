@@ -690,12 +690,12 @@ bool LedgerMongodb::insert_block(const messages::TaggedBlock &tagged_block) {
     return false;
   }
   if (!bson_transactions.empty()) {
-    if(!_transactions.insert_many(std::move(bson_transactions))) {
+    if (!_transactions.insert_many(std::move(bson_transactions))) {
       LOG_INFO << "Could not insert transaction for block " << tagged_block;
-      return false; 
+      return false;
     }
   }
-  return static_cast<bool>(_blocks.insert_one(std::move(bson_block)));  
+  return static_cast<bool>(result);
 }
 
 bool LedgerMongodb::delete_block(const messages::BlockID &id) {
