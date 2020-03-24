@@ -292,6 +292,9 @@ TEST(INTEGRATION, disconnect_message) {
   ASSERT_EQ(bot2->connected_peers().size(), 1) << bot2->peers();
 }
 
+/**
+ * Test that when a node disconnect a bot it reconnect itself
+ */
 TEST(INTEGRATION, random_deconnection) {
   Port port_offset = random_port();
   auto bot0 = std::make_unique<BotTest>("bot0.json", port_offset);
