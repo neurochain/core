@@ -403,7 +403,7 @@ TEST(INTEGRATION, fullfill_network) {
 }
 
 /**
- * Test that a node can't connect to a network withouth connection slot available
+ * Test that a node can't connect to a network without connection slot available
  * then can connect if one node of the network is killed
  * Async test that node receive *disconnect* event when a node is killed
  */
@@ -475,6 +475,10 @@ TEST(INTEGRATION, connection_opportunity) {
   ASSERT_TRUE(bot4->check_peers_ports({1337, 1338, 1339})) << bot4->peers();
 }
 
+/**
+ * Test that a node can't connect to a network without connection slot available
+ * then can connect if one node increase it's *max_connection* slot
+ */
 TEST(INTEGRATION, connection_opportunity_update) {
   // Check a node excluded from a connected graph can connect after a node of
   // the complete graph accept one more connection.
