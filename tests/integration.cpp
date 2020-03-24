@@ -317,6 +317,11 @@ TEST(INTEGRATION, random_deconnection) {
   ASSERT_TRUE(bot40->poll_connected_ports({1337, 1338, 1339})) << bot40->peers();
 }
 
+/**
+ * Test that 2 nodes that don't know each other directly (through the config file)
+ * can be connected with the help of a third node which is connected to them
+ * (that is, a node can pass on it's peer list to others node)
+ */
 TEST(INTEGRATION, neighbors_propagation) {
   Port port_offset = random_port();
   auto bot0 =
