@@ -194,6 +194,10 @@ TEST(INTEGRATION, full_node) {
       << bot1->peers();
 }
 
+/**
+ * Async test that a *connection ready* event is emited when bot try to connect
+ * Test that 3 bot which know each other (through the config file) make a fully connected network
+ */
 TEST(INTEGRATION, simple_interaction) {
   int received_connection = 0;
   int received_deconnection = 0;
