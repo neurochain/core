@@ -378,6 +378,9 @@ TEST(INTEGRATION, key_gen_connection) {
   ASSERT_TRUE(bot50->check_peers_ports({1337})) << bot50->peers();
 }
 
+/**
+ * Test that a node can connect to an already fully connected network
+ */
 TEST(INTEGRATION, fullfill_network) {
   // Add a fourth node to get a complete graph
   Port port_offset = random_port();
@@ -392,7 +395,7 @@ TEST(INTEGRATION, fullfill_network) {
       std::make_unique<BotTest>("integration_propagation40.json", port_offset);
 
   sleep_for_boot();
-
+  // TODO add a fifth node that shouldn't be able to connect (no *incoming_max_connection* slot available)
   ASSERT_TRUE(bot0->check_peers_ports({1338, 1339, 13340})) << bot0->peers();
   ASSERT_TRUE(bot1->check_peers_ports({1337, 1339, 13340})) << bot1->peers();
   ASSERT_TRUE(bot2->check_peers_ports({1337, 1338, 13340})) << bot2->peers();
