@@ -588,7 +588,7 @@ TEST(INTEGRATION, connection_reconfig) {
 }
 
 /**
- * Test that a bad message (wrong message version) doesn't emit an event in
+ * Async test that a bad message (wrong message version) doesn't emit an event in
  * node event queue
  */
 TEST(INTEGRATION, ignore_bad_message) {
@@ -631,6 +631,10 @@ TEST(INTEGRATION, keep_max_connections) {
   ASSERT_TRUE(bot2->check_peers_ports({1338})) << bot2->peers();
 }
 
+/**
+ * Async test that when a node request a block using an id, the block is sent by
+ * others node and that it's the correct block
+ */
 TEST(INTEGRATION, handler_get_block) {
   Port port_offset = random_port();
   auto fake_bot = std::make_unique<BotTest>("bot0.json", port_offset);
