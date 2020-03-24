@@ -363,8 +363,10 @@ TEST(INTEGRATION, neighbors_connections) {
   ASSERT_TRUE(bot2->check_peers_ports({1337, 1338})) << bot2->peers();
 }
 
+/**
+ * Test that 2 node can connect even when only only know the other
+ */
 TEST(INTEGRATION, key_gen_connection) {
-  // Check an unknown bot with unknown signature can connect to bot0.
   Port port_offset = random_port();
   auto bot0 = std::make_unique<BotTest>("bot0.json", port_offset);
   auto bot50 =
