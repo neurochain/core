@@ -170,10 +170,11 @@ Port random_port() {
 
 void sleep_for_boot() { std::this_thread::sleep_for(8s); }
 
+/**
+ * Test that a node that is full (connected to *max_connection* node)
+ * don't accept others connections
+ */
 TEST(INTEGRATION, full_node) {
-  // Try to connect to a bot that is full. The full node should me marked as
-  // UNREACHABLE and the node that initiated the connection should be marked as
-  // UNREACHABLE too
   Port port_offset = random_port();
   auto bot0 = std::make_unique<BotTest>("bot0.json", port_offset);
   bot0->set_max_incoming_connections(0);
