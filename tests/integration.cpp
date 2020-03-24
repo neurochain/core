@@ -613,6 +613,10 @@ TEST(INTEGRATION, ignore_bad_message) {
   bot0->send_all(msg);
 }
 
+/**
+ * Test that a bot don't accept new connection if it doesn-t have
+ * *max_incoming_connections* slot available
+ */
 TEST(INTEGRATION, keep_max_connections) {
   Port port_offset = random_port();
   auto bot0 = std::make_unique<BotTest>("bot0.json", port_offset);
