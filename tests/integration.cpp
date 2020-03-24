@@ -195,8 +195,8 @@ TEST(INTEGRATION, full_node) {
 }
 
 /**
- * Async test that a *connection ready* event is emited when bot try to connect
- * Test that 3 bot which know each other (through the config file) make a fully connected network
+ * Async test that a *connection ready* event is emited when node try to connect
+ * Test that 3 node which know each other (through the config file) make a fully connected network
  */
 TEST(INTEGRATION, simple_interaction) {
   int received_connection = 0;
@@ -234,6 +234,11 @@ TEST(INTEGRATION, simple_interaction) {
   bot0.reset();
 }
 
+/**
+ * Test that a node *A* which is already connected to another one *B*
+ * mark the other one as disconnected when this one is killed
+ * (*A* have 0 connected node when *B* is killed)
+ */
 TEST(INTEGRATION, disconnect) {
   Port port_offset = random_port();
   auto bot0 = std::make_unique<BotTest>("bot0.json", port_offset);
