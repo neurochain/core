@@ -763,16 +763,28 @@ TEST_F(Consensus, check_transaction_signatures) {
   test_check_transaction_signatures();
 }
 
+/**
+ * Test that the consensus can check a transaction outputs
+ */
 TEST_F(Consensus, check_transaction_outputs) {
   test_check_transaction_outputs();
 }
 
+/**
+ * Test that the consensus can check that a transaction don't have 2 identical input
+ */
 TEST_F(Consensus, check_transaction_double_inputs) {
   test_check_transaction_double_inputs();
 }
 
+/**
+ * Test that the consensus can check that a transaction don't have 2 identical input
+ */
 TEST_F(Consensus, check_coinbase) { test_check_coinbase(); }
 
+/**
+ * Test that transactions are sorted by id
+ */
 TEST_F(Consensus, check_transactions_order) { test_check_transactions_order(); }
 
 TEST_F(Consensus, check_block_id) { test_check_block_id(); }
