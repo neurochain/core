@@ -589,6 +589,9 @@ TEST_F(Consensus, get_current_height) {
                     consensus->config().block_period)) <= 1);
 }
 
+/**
+ * Test that block can be added using the consensus
+ */
 TEST_F(Consensus, add_block) {
   messages::TaggedBlock block0;
   ASSERT_TRUE(ledger->get_block(0, &block0));
