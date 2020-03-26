@@ -656,6 +656,9 @@ TEST_F(Consensus, add_denunciations) {
   ASSERT_EQ(denunciation.block_height(), block1_bis.header().height());
 }
 
+/**
+ * Test that consensus can compute the total money of the block chain, and reward are generated
+ */
 TEST_F(Consensus, money_supply) { test_money_supply(); }
 
 TEST_F(Consensus, send_ncc) { test_send_ncc(); }
