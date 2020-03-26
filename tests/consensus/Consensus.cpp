@@ -694,6 +694,9 @@ TEST_F(Consensus, fees_on_coinbase) {
   ASSERT_FALSE(consensus->add_block(block));
 }
 
+/**
+ * Test consensus accept transaction with data
+ */
 TEST_F(Consensus, change_data) {
   auto fees = messages::NCCAmount(100);
   auto transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
