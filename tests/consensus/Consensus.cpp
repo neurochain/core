@@ -737,6 +737,9 @@ TEST_F(Consensus, fees_too_high) {
   ASSERT_FALSE(consensus->add_transaction(transaction));
 }
 
+/**
+ * Test that consensus reject negative transaction
+ */
 TEST_F(Consensus, transaction_overflow) {
   auto fees = messages::NCCAmount(100);
   auto transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
