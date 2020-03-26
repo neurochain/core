@@ -63,6 +63,9 @@ TEST_F(Simulator, send_ncc) {
   ledger->add_to_transaction_pool(transaction2);
 }
 
+/**
+ * Test that a making a random transaction is a valid one
+ */
 TEST_F(Simulator, random_transaction) {
   ASSERT_TRUE(ledger->add_to_transaction_pool(simulator.random_transaction()));
 }
