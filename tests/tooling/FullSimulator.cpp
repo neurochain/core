@@ -78,6 +78,10 @@ class FullSimulator : public ::testing::Test {
   }
 };
 
+/**
+ * Test that node in the simulator are connected, and that the blockchain of the network
+ * have the correct height / block / transaction
+ */
 TEST_F(FullSimulator, check_bots) { check_bots(); }
 
 TEST_F(FullSimulator, check_send_transaction) { check_send_transaction(); }
