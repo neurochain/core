@@ -8,6 +8,9 @@ namespace neuro {
 namespace consensus {
 namespace tests {
 
+/**
+ * Test that checking a transaction take output key_pub into account
+ */
 TEST(check_transaction, output) {
   messages::Transaction transaction;
   namespace ncc = ::neuro::consensus;
