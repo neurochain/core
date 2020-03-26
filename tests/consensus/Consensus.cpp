@@ -666,6 +666,9 @@ TEST_F(Consensus, money_supply) { test_money_supply(); }
  */
 TEST_F(Consensus, send_ncc) { test_send_ncc(); }
 
+/**
+ * Test that consensus reject transaction with invalid signature
+ */
 TEST_F(Consensus, fake_signature) {
   auto fees = messages::NCCAmount(100);
   auto transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
