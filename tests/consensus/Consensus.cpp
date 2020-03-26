@@ -708,6 +708,9 @@ TEST_F(Consensus, change_data) {
   ASSERT_TRUE(consensus->add_transaction(transaction));
 }
 
+/**
+ * Test that consensus don't accept transaction that send more ncc than the key holder have
+ */
 TEST_F(Consensus, outputs_too_high) {
   auto fees = messages::NCCAmount(100);
   auto transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
