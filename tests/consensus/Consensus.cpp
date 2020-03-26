@@ -631,6 +631,9 @@ TEST_F(Consensus, add_transaction) {
  */
 TEST_F(Consensus, build_block) { test_build_block(); }
 
+/**
+ * Test that consensus create denonciation block when someone add the same block twice
+ */
 TEST_F(Consensus, add_denunciations) {
   // Let's make the first miner double mine
   auto block1 = simulator.new_block();
