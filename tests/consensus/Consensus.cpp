@@ -609,6 +609,9 @@ TEST_F(Consensus, compute_assembly_pii) { test_compute_assembly_pii(); }
  */
 TEST_F(Consensus, start_computations) { test_start_computations(); }
 
+/**
+ * Test that consensus don't add the same transaction twice
+ */
 TEST_F(Consensus, add_transaction) {
   auto t0 = ledger->send_ncc(simulator.keys[0].key_priv(),
                              simulator.key_pubs[1], 0.5);
