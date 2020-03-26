@@ -84,12 +84,21 @@ class RealtimeConsensus : public testing::Test {
   }
 };
 
+/**
+ * Test that Consensus generate new height to write when mining block
+ */
 TEST_F(RealtimeConsensus, update_heights_thread) {
   test_update_heights_thread();
 }
 
+/**
+ * Test that Consensus mine block
+ */
 TEST_F(RealtimeConsensus, miner_thread) { test_miner_thread(); }
 
+/**
+ * Test that assembly have the right assembly id
+ */
 TEST_F(RealtimeConsensus, pii_thread) { test_pii_thread(); }
 
 }  // namespace tests
