@@ -626,6 +626,9 @@ TEST_F(Consensus, add_transaction) {
   ASSERT_TRUE(consensus->add_transaction(t1));
 }
 
+/**
+ * Test can consensus can build a block and don't accept the same block twice
+ */
 TEST_F(Consensus, build_block) { test_build_block(); }
 
 TEST_F(Consensus, add_denunciations) {
