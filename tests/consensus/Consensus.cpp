@@ -577,6 +577,9 @@ TEST_F(Consensus, is_valid_transaction) { test_is_valid_transaction(); }
  */
 TEST_F(Consensus, is_valid_block) { test_is_valid_block(); }
 
+/**
+ * Test that the consensus can track the blockchain height
+ */
 TEST_F(Consensus, get_current_height) {
   messages::Block block0;
   ASSERT_TRUE(ledger->get_block(0, &block0));
