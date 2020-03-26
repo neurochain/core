@@ -572,6 +572,9 @@ class Consensus : public testing::Test {
  */
 TEST_F(Consensus, is_valid_transaction) { test_is_valid_transaction(); }
 
+/**
+ * Test that the consensus can check the validity of a block
+ */
 TEST_F(Consensus, is_valid_block) { test_is_valid_block(); }
 
 TEST_F(Consensus, get_current_height) {
