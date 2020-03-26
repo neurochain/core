@@ -24,6 +24,9 @@ class Simulator : public ::testing::Test {
         ledger(simulator.ledger) {}
 };
 
+/**
+ * Test that a simulator can laod a block0 and have correct information
+ */
 TEST_F(Simulator, block0) {
   messages::Block block;
   ASSERT_TRUE(ledger->get_block(0, &block));
