@@ -7,6 +7,9 @@ namespace neuro {
 namespace crypto {
 namespace test {
 
+/**
+ * Test that cryptopp know how to make a shasum
+ */
 TEST(Hash, SHA3_256) {
   {
     const Buffer input("Hello world!");

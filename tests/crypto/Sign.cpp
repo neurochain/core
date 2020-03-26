@@ -7,6 +7,9 @@ namespace neuro {
 namespace crypto {
 namespace tests {
 
+/**
+ * Test that transaction can be signed and verified
+ */
 TEST(Sign, transaction) {
   messages::Transaction transaction;
   transaction.mutable_id()->CopyFrom(messages::Hasher::random());
@@ -28,6 +31,9 @@ TEST(Sign, transaction) {
   ASSERT_FALSE(verify(transaction));
 }
 
+/**
+ * Test that block can be signed and verified
+ */
 TEST(Sign, block) {
   messages::Block block;
   auto header = block.mutable_header();
@@ -49,6 +55,9 @@ TEST(Sign, block) {
   ASSERT_FALSE(verify(block));
 }
 
+/**
+ * Test that denonciation can be signed and verified
+ */
 TEST(Sign, denunciation) {
   messages::Denunciation denunciation;
   denunciation.mutable_block_id()->CopyFrom(messages::Hasher::random());
