@@ -84,6 +84,9 @@ class FullSimulator : public ::testing::Test {
  */
 TEST_F(FullSimulator, check_bots) { check_bots(); }
 
+/**
+ * Test that sending transaction in a network populate all the nodes transaction pool
+ */
 TEST_F(FullSimulator, check_send_transaction) { check_send_transaction(); }
 
 }  // namespace tests
