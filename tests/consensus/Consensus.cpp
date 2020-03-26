@@ -567,6 +567,9 @@ class Consensus : public testing::Test {
   }
 };
 
+/**
+ * Test that the consensus can check the validity of a transaction
+ */
 TEST_F(Consensus, is_valid_transaction) { test_is_valid_transaction(); }
 
 TEST_F(Consensus, is_valid_block) { test_is_valid_block(); }
