@@ -7,6 +7,9 @@ namespace neuro {
 namespace crypto {
 namespace test {
 
+/**
+ * Test that we can save and load a key
+ */
 TEST(Ecc, save_load_file) {
   crypto::Ecc keys0;
   ASSERT_TRUE(keys0.save("test_keys.priv", "test_keys.pub"));
@@ -16,6 +19,9 @@ TEST(Ecc, save_load_file) {
   ASSERT_EQ(keys0, keys1);
 }
 
+/**
+ * Test that keys can be stored as buffer
+ */
 TEST(Ecc, check_key_value_expectations) {
   crypto::Ecc keys0;
   keys0.save("test_keys.priv", "test_keys.pub");
@@ -32,6 +38,9 @@ TEST(Ecc, check_key_value_expectations) {
   ASSERT_EQ(buffer1, buffer2);
 }
 
+/**
+ * Test that keys can be saved / loaded to a Buffer
+ */
 TEST(Ecc, save_load_buffer) {
   const crypto::Ecc keys0;
   crypto::Ecc keys1;
@@ -45,6 +54,9 @@ TEST(Ecc, save_load_buffer) {
   ASSERT_EQ(keys0, keys1);
 }
 
+/**
+ * Test that keys can be save / load to protobuff messasge
+ */
 TEST(Ecc, save_load_protobuf) {
   crypto::Ecc ecc;
   crypto::KeyPub key_pub = ecc.key_pub();
@@ -54,6 +66,9 @@ TEST(Ecc, save_load_protobuf) {
   ASSERT_EQ(key_pub, key_pub_loaded);
 }
 
+/**
+ * Test that keys can be save / load to protobuff message in hex format
+ */
 TEST(Ecc, save_load_protobuf_as_hex) {
   const crypto::Ecc keys0;
   crypto::Ecc ecc;
@@ -64,6 +79,9 @@ TEST(Ecc, save_load_protobuf_as_hex) {
   ASSERT_EQ(ecc.key_pub(), ecc_pub);
 }
 
+/**
+ * Test that Cryptopp know how to verify signature
+ */
 TEST(Ecc, sign_verify) {
   // echo -n "Hola mundo desde NeuroChainTech" |openssl dgst -sha256 -sign
   // test_sign.priv -keyform DER |hexdump
@@ -88,6 +106,9 @@ TEST(Ecc, sign_verify) {
   ASSERT_TRUE(pub_key.verify(buf_msg, signature));
 }
 
+/**
+ * Test that Ecc constructor generate new keys
+ */
 TEST(Ecc, key_pub) {
   crypto::Ecc ecc;
   auto &key_pub = ecc.key_pub();
