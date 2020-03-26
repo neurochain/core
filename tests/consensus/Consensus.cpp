@@ -756,6 +756,9 @@ TEST_F(Consensus, transaction_overflow) {
  */
 TEST_F(Consensus, check_transaction_id) { test_check_transaction_id(); }
 
+/**
+ * Test that the consensus can check a transaction signature
+ */
 TEST_F(Consensus, check_transaction_signatures) {
   test_check_transaction_signatures();
 }
