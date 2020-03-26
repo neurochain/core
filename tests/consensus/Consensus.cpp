@@ -599,6 +599,9 @@ TEST_F(Consensus, add_block) {
   ASSERT_TRUE(consensus->add_block(block));
 }
 
+/**
+ * Test that pii increase in an assembly
+ */
 TEST_F(Consensus, compute_assembly_pii) { test_compute_assembly_pii(); }
 
 TEST_F(Consensus, start_computations) { test_start_computations(); }
