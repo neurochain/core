@@ -70,6 +70,9 @@ TEST_F(Simulator, random_transaction) {
   ASSERT_TRUE(ledger->add_to_transaction_pool(simulator.random_transaction()));
 }
 
+/**
+ * Test that running the simulator create the correct amount of block and transaction
+ */
 TEST_F(Simulator, run) {
   // Create 10 block with 7 transactions each
   simulator.run(10, 7);
