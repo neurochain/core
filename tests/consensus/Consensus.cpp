@@ -661,6 +661,9 @@ TEST_F(Consensus, add_denunciations) {
  */
 TEST_F(Consensus, money_supply) { test_money_supply(); }
 
+/**
+ * Test that we can't send an invalid amount of ncc (negative / more than we have)
+ */
 TEST_F(Consensus, send_ncc) { test_send_ncc(); }
 
 TEST_F(Consensus, fake_signature) {
