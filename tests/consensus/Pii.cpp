@@ -567,14 +567,29 @@ TEST(KeyPubs, get_pii) {
   ASSERT_EQ(key_pubs.get_entropy(a1), 1);
 }
 
+/**
+ * Test that pii score is updated when adding block
+ */
 TEST_F(Pii, add_block) { test_add_block(); }
 
+/**
+ * Test that pii score is updated when sending ncc
+ */
 TEST_F(Pii, send_pii) { test_send_pii(); }
 
+/**
+ * Test that pii score is updated when receiving ncc
+ */
 TEST_F(Pii, receive_pii) { test_receive_pii(); }
 
+/**
+ * Test that pii score is updated when sending and receiving ncc
+ */
 TEST_F(Pii, send_receive_pii) { test_send_receive_pii(); }
 
+/**
+ * Test that pii score is updated using previous pii score
+ */
 TEST_F(Pii, previous_pii) { test_previous_pii(); }
 
 }  // namespace tests
