@@ -790,30 +790,33 @@ TEST_F(Consensus, check_transactions_order) { test_check_transactions_order(); }
 TEST_F(Consensus, check_block_id) { test_check_block_id(); }
 
 /**
- * Test that the consensus check that a block is not too big
+ * Test that the consensus can check that a block is not too big
  */
 TEST_F(Consensus, check_block_size) { test_check_block_size(); }
 
 /**
- * Test that the consensus check that a block are created in the right time frame
+ * Test that the consensus can check that a block are created in the right time frame
  */
 TEST_F(Consensus, check_block_timestamp) { test_check_block_timestamp(); }
 
 /**
- * Test that the consensus check if a block's transaction are valid
+ * Test that the consensus can check if a block's transaction are valid
  */
 TEST_F(Consensus, check_block_transactions) { test_check_block_transactions(); }
 
 /**
- * Test that the consensus check that a block have the correct height
+ * Test that the consensus can check that a block have the correct height
  */
 TEST_F(Consensus, check_block_height) { test_check_block_height(); }
 
 /**
- * Test that the consensus check that a block have the correct author
+ * Test that the consensus can check that a block have the correct author
  */
 TEST_F(Consensus, check_block_author) { test_check_block_author(); }
 
+/**
+ * Test that the consensus can check that author's integrity are correct
+ */
 TEST_F(Consensus, check_integrity) { test_check_integrity(); }
 
 }  // namespace tests
