@@ -604,6 +604,9 @@ TEST_F(Consensus, add_block) {
  */
 TEST_F(Consensus, compute_assembly_pii) { test_compute_assembly_pii(); }
 
+/**
+ * Test that consensus can write assembly to db
+ */
 TEST_F(Consensus, start_computations) { test_start_computations(); }
 
 TEST_F(Consensus, add_transaction) {
