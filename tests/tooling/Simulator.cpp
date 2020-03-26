@@ -35,6 +35,9 @@ TEST_F(Simulator, block0) {
   ASSERT_EQ(ledger->total_nb_transactions(), 1);
 }
 
+/**
+ * Test that created transaction have the correct recipient / sender / ncc value
+ */
 TEST_F(Simulator, send_ncc) {
   auto sender_private_key = simulator.keys[0].key_priv();
   auto recipient_public_key = simulator.key_pubs[1];
