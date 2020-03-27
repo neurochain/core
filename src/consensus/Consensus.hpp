@@ -60,7 +60,6 @@ class Consensus {
   std::condition_variable _is_stopped_cv;
   std::mutex _is_stopped_mutex;
   uint32_t _nb_check_signatures_threads;
-  mutable boost::asio::thread_pool _check_signatures_pool;
   bool _is_miner_stopped;
   bool _is_update_heights_stopped;
   bool _is_compute_pii_stopped;

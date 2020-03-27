@@ -275,15 +275,16 @@ bool Consensus::check_block_transactions(
     return false;
   }
   std::atomic_bool all_signature_ok = true;
+  boost::asio::thread_pool check_signatures_pool(_nb_check_signatures_threads);
     for (uint32_t i = 0; i < block.transactions_size(); ++i) {
-    boost::asio::post(_check_signatures_pool, [this, &tagged_block,
+    boost::asio::post(check_signatures_pool, [this, &tagged_block,
                                                &all_signature_ok, i]() {
       bool is_signature_ok = this->check_one_transaction(tagged_block, i);
       all_signature_ok = all_signature_ok && is_signature_ok;
     });
   }
 
-  _check_signatures_pool.join();
+  check_signatures_pool.join();
 
   return all_signature_ok;
 }
