@@ -21,8 +21,7 @@ Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
       _ledger(ledger),
       _keys(keys),
       _publish_block(publish_block),
-      _nb_check_signatures_threads(nb_check_signatures_threads),
-      _check_signatures_pool(_nb_check_signatures_threads) {
+      _nb_check_signatures_threads(nb_check_signatures_threads) {
   init(start_threads);
 }
 
