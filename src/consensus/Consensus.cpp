@@ -21,7 +21,8 @@ Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
       _ledger(ledger),
       _keys(keys),
       _publish_block(publish_block),
-      _nb_check_signatures_threads(nb_check_signatures_threads) {
+      _nb_check_signatures_threads(nb_check_signatures_threads),
+      _check_signatures_pool(_nb_check_signatures_threads) {
   init(start_threads);
 }
 
@@ -274,48 +275,32 @@ bool Consensus::check_block_transactions(
     return false;
   }
 
-  if (!_check_signatures_pool) {
-    for (const auto transaction : block.transactions()) {
-      messages::TaggedTransaction tagged_transaction;
-      tagged_transaction.set_is_coinbase(false);
-      tagged_transaction.mutable_block_id()->CopyFrom(block.header().id());
-      tagged_transaction.mutable_transaction()->CopyFrom(transaction);
-      if (!is_block_transaction_valid(tagged_transaction, block,
-                                      tagged_block)) {
-        LOG_INFO << "Failed check_block_transactions for block "
-                 << block.header().id();
-        return false;
-      }
-    }
-    return true;
-  } else {
-    std::condition_variable check_signatures_cv;
-    std::mutex check_signatures_mutex;
-    std::vector<bool> check_signatures_results(_nb_check_signatures_threads);
-    std::atomic<uint32_t> total_done = 0;
-    for (uint32_t i = 0; i < _nb_check_signatures_threads; i++) {
-      boost::asio::post(*_check_signatures_pool,
-                        [this, &tagged_block, &check_signatures_results, i,
-                         &total_done, &check_signatures_cv]() {
-                          check_signatures_results[i] =
-                              this->check_transactions_modulo(tagged_block, i);
-                          total_done++;
-                          check_signatures_cv.notify_all();
-                        });
-    }
-
-    std::unique_lock cv_lock(check_signatures_mutex);
-    check_signatures_cv.wait(cv_lock, [this, &total_done]() {
-      return total_done == _nb_check_signatures_threads;
-    });
-
-    for (bool check : check_signatures_results) {
-      if (!check) {
-        return false;
-      }
-    }
-    return true;
+  std::condition_variable check_signatures_cv;
+  std::mutex check_signatures_mutex;
+  std::vector<bool> check_signatures_results(_nb_check_signatures_threads);
+  std::atomic<uint32_t> total_done = 0;
+  for (uint32_t i = 0; i < _nb_check_signatures_threads; i++) {
+    boost::asio::post(_check_signatures_pool,
+                      [this, &tagged_block, &check_signatures_results, i,
+                       &total_done, &check_signatures_cv]() {
+                        check_signatures_results[i] =
+                            this->check_transactions_modulo(tagged_block, i);
+                        total_done++;
+                        check_signatures_cv.notify_all();
+                      });
   }
+
+  std::unique_lock cv_lock(check_signatures_mutex);
+  check_signatures_cv.wait(cv_lock, [this, &total_done]() {
+    return total_done == _nb_check_signatures_threads;
+  });
+
+  for (bool check : check_signatures_results) {
+    if (!check) {
+      return false;
+    }
+  }
+  return true;
 }
 
 bool Consensus::check_transactions_modulo(
@@ -642,10 +627,6 @@ bool Consensus::is_new_assembly(const messages::TaggedBlock &tagged_block,
 Config Consensus::config() const { return _config; }
 
 void Consensus::init(bool start_threads) {
-  if (_nb_check_signatures_threads > 1) {
-    _check_signatures_pool.emplace(_nb_check_signatures_threads);
-  }
-
   for (const auto &key : _keys) {
     _key_pubs.emplace_back(key.key_pub());
   }
