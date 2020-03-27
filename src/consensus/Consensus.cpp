@@ -299,14 +299,16 @@ bool Consensus::check_block_transactions(
                          &total_done, &check_signatures_cv]() {
                           check_signatures_results[i] =
                               this->check_transactions_modulo(tagged_block, i);
-                          total_done += 1;
+                          total_done++;
                           check_signatures_cv.notify_all();
                         });
     }
-    while (total_done < _nb_check_signatures_threads) {
-      std::unique_lock<std::mutex> lock(check_signatures_mutex);
-      check_signatures_cv.wait(lock);
-    }
+
+    std::unique_lock cv_lock(check_signatures_mutex);
+    check_signatures_cv.wait(cv_lock, [this, &total_done]() {
+      return total_done == _nb_check_signatures_threads;
+    });
+
     for (bool check : check_signatures_results) {
       if (!check) {
         return false;
