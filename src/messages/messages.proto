@@ -56,6 +56,7 @@ message Output {
   required _NCCAmount value = 2;
   optional bytes data = 3;
   optional int32 output_id = 4;
+  extensions 100 to 120;
 }
 
 message Signature {
@@ -70,6 +71,7 @@ message Transaction {
   optional _NCCAmount fees = 5;
   required Hash last_seen_block_id = 6;
   optional int32 expires = 7;
+  extensions 100 to 120;
 }
 
 message Transactions { repeated Transaction transactions = 1; }
