@@ -276,13 +276,10 @@ bool Consensus::check_block_transactions(
   }
 
   std::atomic_bool all_signature_ok = true;
-  for (uint32_t i = 0; i < _nb_check_signatures_threads; i++) {
+    for (uint32_t i = 0; i < block.transactions_size(); ++i) {
     boost::asio::post(_check_signatures_pool, [this, &tagged_block,
                                                &all_signature_ok, &i]() {
-      bool is_signature_ok = this->check_transactions_modulo(tagged_block, i);
-      if (!is_signature_ok) {
-        LOG_DEBUG << "signature for transaction " << tagged_block << " invalid";
-      }
+      bool is_signature_ok = this->check_one_transaction(tagged_block, i);
       all_signature_ok = all_signature_ok && is_signature_ok;
     });
   }
@@ -292,21 +289,18 @@ bool Consensus::check_block_transactions(
   return all_signature_ok;
 }
 
-bool Consensus::check_transactions_modulo(
-    const messages::TaggedBlock &tagged_block, uint32_t modulo) const {
+bool Consensus::check_one_transaction(const messages::TaggedBlock &tagged_block,
+                                      uint32_t index) const {
   const auto &block = tagged_block.block();
-  for (int i = modulo; i < block.transactions_size();
-       i += _nb_check_signatures_threads) {
-    const auto &transaction = block.transactions(i);
-    messages::TaggedTransaction tagged_transaction;
-    tagged_transaction.set_is_coinbase(false);
-    tagged_transaction.mutable_block_id()->CopyFrom(block.header().id());
-    tagged_transaction.mutable_transaction()->CopyFrom(transaction);
-    if (!is_block_transaction_valid(tagged_transaction, block, tagged_block)) {
-      LOG_INFO << "Failed check_block_transactions for block "
-               << block.header().id();
-      return false;
-    }
+  const auto &transaction = block.transactions(index);
+  messages::TaggedTransaction tagged_transaction;
+  tagged_transaction.set_is_coinbase(false);
+  tagged_transaction.mutable_block_id()->CopyFrom(block.header().id());
+  tagged_transaction.mutable_transaction()->CopyFrom(transaction);
+  if (!is_block_transaction_valid(tagged_transaction, block, tagged_block)) {
+    LOG_INFO << "Failed check_block_transactions for block "
+             << block.header().id();
+    return false;
   }
   return true;
 }

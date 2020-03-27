@@ -129,8 +129,8 @@ class Consensus {
 
   bool add_block(const messages::Block &block, bool async);
 
-  bool check_transactions_modulo(const messages::TaggedBlock &tagged_block,
-                                 uint32_t modulo) const;
+  bool check_one_transaction(const messages::TaggedBlock &tagged_block,
+                             uint32_t index) const;
 
  public:
   Consensus(std::shared_ptr<ledger::Ledger> ledger,
