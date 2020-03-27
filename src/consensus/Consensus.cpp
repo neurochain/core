@@ -274,11 +274,10 @@ bool Consensus::check_block_transactions(
              << block.header().id();
     return false;
   }
-
   std::atomic_bool all_signature_ok = true;
     for (uint32_t i = 0; i < block.transactions_size(); ++i) {
     boost::asio::post(_check_signatures_pool, [this, &tagged_block,
-                                               &all_signature_ok, &i]() {
+                                               &all_signature_ok, i]() {
       bool is_signature_ok = this->check_one_transaction(tagged_block, i);
       all_signature_ok = all_signature_ok && is_signature_ok;
     });
