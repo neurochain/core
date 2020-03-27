@@ -275,32 +275,21 @@ bool Consensus::check_block_transactions(
     return false;
   }
 
-  std::condition_variable check_signatures_cv;
-  std::mutex check_signatures_mutex;
-  std::vector<bool> check_signatures_results(_nb_check_signatures_threads);
-  std::atomic<uint32_t> total_done = 0;
+  std::atomic_bool all_signature_ok = true;
   for (uint32_t i = 0; i < _nb_check_signatures_threads; i++) {
-    boost::asio::post(_check_signatures_pool,
-                      [this, &tagged_block, &check_signatures_results, i,
-                       &total_done, &check_signatures_cv]() {
-                        check_signatures_results[i] =
-                            this->check_transactions_modulo(tagged_block, i);
-                        total_done++;
-                        check_signatures_cv.notify_all();
-                      });
+    boost::asio::post(_check_signatures_pool, [this, &tagged_block,
+                                               &all_signature_ok, &i]() {
+      bool is_signature_ok = this->check_transactions_modulo(tagged_block, i);
+      if (!is_signature_ok) {
+        LOG_DEBUG << "signature for transaction " << tagged_block << " invalid";
+      }
+      all_signature_ok = all_signature_ok && is_signature_ok;
+    });
   }
 
-  std::unique_lock cv_lock(check_signatures_mutex);
-  check_signatures_cv.wait(cv_lock, [this, &total_done]() {
-    return total_done == _nb_check_signatures_threads;
-  });
+  _check_signatures_pool.join();
 
-  for (bool check : check_signatures_results) {
-    if (!check) {
-      return false;
-    }
-  }
-  return true;
+  return all_signature_ok;
 }
 
 bool Consensus::check_transactions_modulo(
