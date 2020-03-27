@@ -27,8 +27,7 @@ std::optional<Peer *> Peers::insert(std::shared_ptr<Peer> peer) {
   }
 
   std::unique_lock<std::mutex> lock(_mutex);
-  _peers[peer->key_pub()] = peer;
-
+  _peers.insert_or_assign(peer->key_pub(), peer);
   peer->set_status(Peer::DISCONNECTED);
   return peer.get();
 }
@@ -185,10 +184,9 @@ Peers::operator _Peers() const {
 
 std::ostream &operator<<(std::ostream &os, const Peers &peers) {
   for (const auto &peer : peers.peers_copy()) {
-    os << peer.endpoint() << ":" << peer.port() << ":"
-       << _Peer_Status_Name(peer.status()) << ":"
-       << (peer.has_connection_id() ? peer.connection_id() : 0) << " ";
-    // os << "peers> " << peer << std::endl;
+    os << peer.port() << ":"
+       << _Peer_Status_Name(peer.status()) << " ";
+//     os << "peers> " << peer << std::endl;
   }
 
   return os;

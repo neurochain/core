@@ -27,6 +27,10 @@ message Rest {
   optional uint64 faucet_amount = 3;
 }
 
+message GRPC {
+  optional int32 port = 1;
+}
+
 message BlockFile {
   enum BlockFormat {
     PROTO = 1;
@@ -88,6 +92,7 @@ message _Config {
   optional _Peer.Status keep_status = 4 [default = CONNECTED]; 
   optional SelectionMethod selection_method = 5 [default = RANDOM];
   optional Rest rest = 6;
+  optional GRPC grpc = 10;
   optional string connection_graph_uri = 7;
 
   // Probability of doing a random transaction during regular_update

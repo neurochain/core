@@ -2,6 +2,7 @@
 #include <boost/asio.hpp>
 #include <boost/asio/io_context.hpp>
 #include "api/Rest.hpp"
+#include "api/GRPC.hpp"
 #include "common/logger.hpp"
 #include "messages/Subscriber.hpp"
 
@@ -19,7 +20,7 @@ Bot::Bot(const messages::config::Config &config,
       _peers(_me.key_pub(), _config.networking()),
       _networking(&_queue, &_keys.at(0), &_peers, _config.mutable_networking()),
       _ledger(std::make_shared<ledger::LedgerMongodb>(_config.database())),
-      _update_timer(std::ref(*_io_context)),
+      _update_timer(*_io_context),
       _consensus_config(consensus_config) {
   if (!init()) {
     throw std::runtime_error("Could not create bot from configuration file");
@@ -260,20 +261,33 @@ bool Bot::init() {
   }
 
   if (_config.has_rest()) {
-    _api = std::make_unique<api::Rest>(_config.rest(), this);
-    LOG_INFO << "api launched on : " << _config.rest().port();
+    _rest_api = std::make_unique<api::Rest>(_config.rest(), this);
+    LOG_INFO << "rest api launched on : " << _config.rest().port();
+  }
+
+  if (_config.has_grpc()) {
+    _grpc_api = std::make_unique<api::GRPC>(_config.grpc(), this);
+    LOG_INFO << "grpc api launched on : " << _config.grpc().port();
   }
 
   return true;
 }
 
 void Bot::regular_update() {
+  // don't add stuff here, use handler_heart_beat
   auto message = std::make_shared<messages::Message>();
   message->add_bodies()->mutable_heart_beat();
   _queue.push(message);
   _update_timer.expires_at(_update_timer.expiry() +
                            boost::asio::chrono::seconds(_update_time));
   _update_timer.async_wait(boost::bind(&Bot::regular_update, this));
+}
+
+void Bot::send_deferred() {
+  for (auto &f : _deferred_world) {
+    f();
+  }
+  _deferred_world.clear();
 }
 
 void Bot::handler_heart_beat(const messages::Header &header,
@@ -290,6 +304,7 @@ void Bot::handler_heart_beat(const messages::Header &header,
       rand() < _config.random_transaction() * float(RAND_MAX)) {
     send_random_transaction();
   }
+  send_deferred();
 }
 
 void Bot::handler_ping(const messages::Header &header,
@@ -523,31 +538,24 @@ void Bot::handler_hello(const messages::Header &header,
     throw std::runtime_error(m.str());
   }
 
-  const auto inserted_peer = _peers.insert(remote_peer_connection);
-  if (!inserted_peer) {
-    LOG_WARNING << "Could not insert peer";
-    return;
+  _peers.insert(remote_peer_connection);
+  if (remote_peer_bot && remote_peer_bot->connection_id() !=
+                             remote_peer_connection->connection_id()) {
+    LOG_WARNING
+        << "new connection for the same bot accepted, closing the old one";
+    _networking.terminate(remote_peer_bot->connection_id());
   }
 
   // == Create world message for replying ==
   auto message = std::make_shared<messages::Message>();
   auto world = message->add_bodies()->mutable_world();
   auto peers = message->add_bodies()->mutable_peers();
-  bool accepted = _peers.used_peers_count() < _max_incoming_connections;
-
+  const bool accepted = _peers.used_peers_count() < _max_incoming_connections;
+  if (accepted) {
+    remote_peer_connection->set_status(messages::Peer::CONNECTING);
+  }
   const auto tip = _ledger->get_main_branch_tip();
   world->mutable_missing_block()->CopyFrom(tip.block().header().id());
-
-  // update peer status
-  if (accepted) {
-    remote_peer_connection->set_status(messages::Peer::CONNECTED);
-    LOG_DEBUG << this << " : " << _me.port() << " Accept status "
-              << std::boolalpha << accepted << " " << *remote_peer_connection
-              << std::endl
-              << _peers;
-  } else {
-    remote_peer_connection->set_status(messages::Peer::UNREACHABLE);
-  }
 
   auto header_reply = message->mutable_header();
   messages::fill_header_reply(header, header_reply);
@@ -555,10 +563,24 @@ void Bot::handler_hello(const messages::Header &header,
 
   _peers.fill(peers);
 
-  if (!_networking.reply(message)) {
-    LOG_ERROR << this << " : " << _me.port() << " Failed to send world message";
-    remote_peer_connection->set_status(messages::Peer::UNREACHABLE);
-  }
+  _deferred_world.emplace_back([accepted, remote_peer_connection, this,
+                                message]() {
+    // update peer status
+    if (accepted) {
+      remote_peer_connection->set_status(messages::Peer::CONNECTED);
+      LOG_DEBUG << _me.port() << " Accept status "
+                << std::boolalpha << accepted << " " << *remote_peer_connection
+                << std::endl
+                << _peers;
+    } else {
+      remote_peer_connection->set_status(messages::Peer::UNREACHABLE);
+    }
+
+    if (!_networking.reply(message)) {
+      LOG_ERROR << this << " : " << _me.port() << " Failed to send world message";
+      remote_peer_connection->set_status(messages::Peer::UNREACHABLE);
+    }
+  });
 }
 
 std::ostream &operator<<(

@@ -8,6 +8,18 @@ namespace neuro {
 namespace consensus {
 namespace tests {
 
+TEST(check_transaction, output) {
+  messages::Transaction transaction;
+  namespace ncc = ::neuro::consensus;
+  ASSERT_TRUE(ncc::Consensus::check_outputs(transaction));
+  auto *output = transaction.add_outputs();
+  ASSERT_FALSE(ncc::Consensus::check_outputs(transaction));
+  auto *key_pub = output->mutable_key_pub();
+  ASSERT_FALSE(ncc::Consensus::check_outputs(transaction));
+  key_pub->set_hex_data("c0c0");
+  ASSERT_TRUE(ncc::Consensus::check_outputs(transaction));
+}
+
 class Consensus : public testing::Test {
  public:
   const std::string db_url = "mongodb://mongo:27017";
@@ -60,9 +72,9 @@ class Consensus : public testing::Test {
             block.block().header().id());
         tagged_transaction.set_is_coinbase(false);
         ASSERT_TRUE(consensus->check_id(tagged_transaction, block));
-        ASSERT_TRUE(consensus->check_signatures(tagged_transaction));
+        ASSERT_TRUE(consensus->check_signatures(tagged_transaction.transaction()));
         ASSERT_TRUE(consensus->check_double_inputs(tagged_transaction));
-        ASSERT_TRUE(consensus->check_outputs(tagged_transaction));
+        ASSERT_TRUE(consensus->check_outputs(tagged_transaction.transaction()));
         ASSERT_TRUE(consensus->is_valid(tagged_transaction, block));
       }
       messages::TaggedTransaction tagged_coinbase;
@@ -277,7 +289,7 @@ class Consensus : public testing::Test {
   void test_check_transaction_signatures() {
     auto tagged_transaction = new_tagged_transaction();
     auto tip = ledger->get_main_branch_tip();
-    ASSERT_TRUE(consensus->check_signatures(tagged_transaction));
+    ASSERT_TRUE(consensus->check_signatures(tagged_transaction.transaction()));
     ASSERT_TRUE(consensus->is_valid(tagged_transaction, tip));
     auto signature = tagged_transaction.mutable_transaction()
                          ->mutable_inputs(0)
@@ -286,14 +298,14 @@ class Consensus : public testing::Test {
     (*data)[0] += 1;
     messages::set_transaction_hash(tagged_transaction.mutable_transaction());
     ASSERT_TRUE(consensus->check_id(tagged_transaction, tip));
-    ASSERT_FALSE(consensus->check_signatures(tagged_transaction));
+    ASSERT_FALSE(consensus->check_signatures(tagged_transaction.transaction()));
     ASSERT_FALSE(consensus->is_valid(tagged_transaction, tip));
   }
 
   void test_check_transaction_outputs() {
     auto tagged_transaction = new_tagged_transaction();
     auto tip = ledger->get_main_branch_tip();
-    ASSERT_TRUE(consensus->check_outputs(tagged_transaction));
+    ASSERT_TRUE(consensus->check_outputs(tagged_transaction.transaction()));
     ASSERT_TRUE(consensus->is_valid(tagged_transaction, tip));
     auto tagged_transaction_orig = tagged_transaction;
 
@@ -301,7 +313,7 @@ class Consensus : public testing::Test {
     tagged_transaction.mutable_transaction()->mutable_inputs()->Clear();
     messages::set_transaction_hash(tagged_transaction.mutable_transaction());
     ASSERT_TRUE(consensus->check_id(tagged_transaction, tip));
-    ASSERT_FALSE(consensus->check_outputs(tagged_transaction));
+    ASSERT_FALSE(consensus->check_outputs(tagged_transaction.transaction()));
     ASSERT_FALSE(consensus->is_valid(tagged_transaction, tip));
   }
 
@@ -520,6 +532,36 @@ class Consensus : public testing::Test {
     crypto::sign(non_author_keys, tagged_block.mutable_block());
     ASSERT_FALSE(consensus->check_block_author(tagged_block));
   }
+
+  void test_check_integrity() {
+    messages::TaggedBlock last_block;
+    ledger->get_last_block(&last_block);
+    ASSERT_EQ(last_block.block().header().height(), 0);
+    std::unordered_map<messages::_KeyPub, int> counts;
+
+    for (int i = 1; i < 6; i++) {
+      ledger->get_last_block(&last_block);
+      ASSERT_EQ(last_block.block().header().height(), i - 1);
+      auto block = simulator.new_block(last_block);
+      simulator.consensus->add_block(block);
+      ASSERT_EQ(block.header().height(), i);
+      counts[block.header().author().key_pub()] += 1;
+    }
+
+    // Compute the assembly piis
+    messages::Assembly assembly;
+    ASSERT_TRUE(ledger->get_assembly(0, &assembly));
+    ASSERT_TRUE(simulator.consensus->compute_assembly_pii(assembly));
+    messages::TaggedBlock tagged_block;
+    ASSERT_TRUE(ledger->get_block(assembly.id(), &tagged_block));
+
+    for (int i = 0; i < nb_keys; ++i) {
+      ASSERT_EQ(
+          ledger->get_integrity(simulator.keys.at(i).key_pub(),
+                                assembly.height(), tagged_block.branch_path()),
+          counts[simulator.keys.at(i).key_pub()]);
+    }
+  }
 };
 
 TEST_F(Consensus, is_valid_transaction) { test_is_valid_transaction(); }
@@ -687,6 +729,8 @@ TEST_F(Consensus, check_block_transactions) { test_check_block_transactions(); }
 TEST_F(Consensus, check_block_height) { test_check_block_height(); }
 
 TEST_F(Consensus, check_block_author) { test_check_block_author(); }
+
+TEST_F(Consensus, check_integrity) { test_check_integrity(); }
 
 }  // namespace tests
 }  // namespace consensus

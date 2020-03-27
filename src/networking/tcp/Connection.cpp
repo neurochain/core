@@ -15,7 +15,9 @@ Connection::Connection(const ID id, messages::Queue *queue,
                        const std::shared_ptr<tcp::socket> &socket,
                        std::shared_ptr<messages::Peer> remote_peer)
     : ::neuro::networking::Connection::Connection(id, queue),
-      _header(sizeof(HeaderPattern), 0), _buffer(128, 0), _socket(socket),
+      _header(sizeof(HeaderPattern), 0),
+      _buffer(128, 0),
+      _socket(socket),
       _remote_peer(remote_peer) {
   assert(_socket != nullptr);
   remote_peer->set_connection_id(id);
@@ -50,6 +52,10 @@ void Connection::read_header() {
         }
         const auto header_pattern =
             reinterpret_cast<const HeaderPattern *>(_this->_header.data());
+        if (header_pattern->size > MAX_MESSAGE_SIZE) {
+          LOG_WARNING << "Receiving message too big " << header_pattern->size;
+          return;
+        }
         _this->read_body(header_pattern->size);
       });
 }
@@ -189,7 +195,7 @@ void Connection::terminate(bool from_inside) const {
   boost::system::error_code ec;
   _socket->shutdown(tcp::socket::shutdown_both, ec);
   if (ec) {
-    LOG_DEBUG << "can't shutdown connection socket to: id " << _id << " "
+    LOG_ERROR << "can't shutdown connection socket to: id " << _id << " "
               << remote_port().value_or(0) << " : " << ec.message();
   }
   if (!from_inside) {
@@ -245,6 +251,6 @@ Connection::~Connection() {
             << remote_port().value_or(0) << ":" << _id;
   close();
 }
-} // namespace tcp
-} // namespace networking
-} // namespace neuro
+}  // namespace tcp
+}  // namespace networking
+}  // namespace neuro
