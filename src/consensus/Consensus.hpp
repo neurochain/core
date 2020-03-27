@@ -137,12 +137,12 @@ class Consensus {
             const std::vector<crypto::Ecc> &keys,
             const std::optional<Config> &config,
             const PublishBlock &publish_block, bool start_threads = true,
-            uint32_t check_signatures_threads = 0);
+            uint32_t check_signatures_threads = 1);
 
   Consensus(std::shared_ptr<ledger::Ledger> ledger,
             const std::vector<crypto::Ecc> &keys, const Config &config,
             const PublishBlock &publish_block, bool start_threads = true,
-            uint32_t check_signatures_threads = 0);
+            uint32_t check_signatures_threads = 1);
 
   Config config() const;
 
