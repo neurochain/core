@@ -462,6 +462,9 @@ TEST_F(LedgerMongodb, set_block_verified) {
   ASSERT_EQ(tagged_block.score(), 17);
 }
 
+/**
+ * Test that ledger can get all unverified block
+ */
 TEST_F(LedgerMongodb, get_unverified_blocks) {
   messages::Block block0, block1, block2, fork1, fork2;
   ASSERT_TRUE(ledger->get_block(0, &block0));
@@ -501,16 +504,29 @@ TEST_F(LedgerMongodb, get_unverified_blocks) {
   ASSERT_EQ(cursor_size(ledger->get_unverified_blocks()), 0);
 }
 
+/**
+ * Test that main branch is correctly tracked
+ */
 TEST_F(LedgerMongodb, update_main_branch) { test_update_main_branch(); }
 
+/**
+ * Test that block relation can be check using *branch_path*
+ */
 TEST_F(LedgerMongodb, is_ancestor) { test_is_ancestor(); }
 
+/**
+ * Test that the ledger can clean it's base
+ */
 TEST_F(LedgerMongodb, empty_database) {
   ASSERT_EQ(ledger->total_nb_blocks(), 1);
   ledger->empty_database();
   ASSERT_EQ(ledger->total_nb_blocks(), 0);
 }
 
+/**
+ * Test assembly manipulation function (add / set_nb_key_pub / set seed)
+ * and try to compute the assembly
+ */
 TEST_F(LedgerMongodb, assembly) {
   messages::TaggedBlock tagged_block;
   ASSERT_TRUE(ledger->get_block(0, &tagged_block));
@@ -565,6 +581,9 @@ TEST_F(LedgerMongodb, pii) {
   }
 }
 
+/**
+ * Test integrity manipulation function (set / get)
+ */
 TEST_F(LedgerMongodb, integrity) {
   messages::Integrity integrity;
   crypto::Ecc ecc;
@@ -647,6 +666,9 @@ TEST_F(LedgerMongodb, set_previous_assembly_id) {
   ASSERT_EQ(tagged_block.previous_assembly_id(), assembly_id);
 }
 
+/**
+ * Test that *list_transaction* return the transactions previously sent
+ */
 TEST_F(LedgerMongodb, list_transactions) {
   auto &key_pub = simulator.key_pubs[0];
   {
@@ -687,6 +709,9 @@ TEST_F(LedgerMongodb, list_transactions) {
   ASSERT_EQ(transactions.size(), has_coinbase ? 3 : 2);
 }
 
+/**
+ * Test that transaction can be retrieved using *input_key* or *output_key* or *transaction_id*
+ */
 TEST_F(LedgerMongodb, filter_transactions) {
   auto &output_key_pub = simulator.key_pubs[0];
   auto &input_key_pub = simulator.keys[1].key_pub();
@@ -717,6 +742,9 @@ TEST_F(LedgerMongodb, filter_transactions) {
   }
 }
 
+/**
+ * Test that ledger can get transaction by output_key
+ */
 TEST_F(LedgerMongodb, get_outputs_for_key_pub) {
   auto transaction = ledger->send_ncc(simulator.keys[0].key_priv(),
                                       simulator.key_pubs[1], 0.5);
@@ -744,6 +772,9 @@ TEST_F(LedgerMongodb, has_received_transaction) {
   ASSERT_TRUE(ledger->has_received_transaction(key_pub));
 }
 
+/**
+ * Test that ledger can look the last block
+ */
 TEST_F(LedgerMongodb, get_last_blocks) {
   for (int i = 0; i < 2; i++) {
     auto new_block = simulator.new_block();
@@ -755,6 +786,9 @@ TEST_F(LedgerMongodb, get_last_blocks) {
   ASSERT_EQ(blocks.at(1).header().height(), 1);
 }
 
+/**
+ * Test that ledger can get balance
+ */
 TEST_F(LedgerMongodb, balance) {
   auto &key_pub0 = simulator.key_pubs[0];
   auto &key_pub1 = simulator.key_pubs[1];
@@ -786,6 +820,9 @@ TEST_F(LedgerMongodb, balance) {
   ASSERT_EQ(ledger->balance(key_pub1).value(), balance1);
 }
 
+/**
+ * Test that ledger can check if there is a denonciation for a block
+ */
 TEST_F(LedgerMongodb, denunciation_exists) {
   // Let's make the first miner double mine
   auto block1 = simulator.new_block();
@@ -856,6 +893,9 @@ TEST_F(LedgerMongodb, denunciation_exists) {
                                            tagged_block3_bis.branch_path()));
 }
 
+/**
+ * Test that ledger can list blocks
+ */
 TEST_F(LedgerMongodb, get_blocks) {
   // Let's make the first miner double mine
   auto block1 = simulator.new_block();
@@ -880,6 +920,9 @@ TEST_F(LedgerMongodb, get_blocks) {
               blocks.at(1).block() == block1_bis);
 }
 
+/**
+ * Test that ledger can retriever denonciation blocks
+ */
 TEST_F(LedgerMongodb, double_minings) {
   // Let's make the first miner double mine
   auto block1 = simulator.new_block();
