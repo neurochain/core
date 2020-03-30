@@ -209,17 +209,26 @@ class LedgerMongodb : public ::testing::Test {
   }
 };
 
+/**
+ * Test that ledger don't have any other block than block0 after loading
+ */
 TEST_F(LedgerMongodb, load_block_0) {
   messages::Block block;
   ASSERT_TRUE(ledger->get_block(0, &block));
   ASSERT_FALSE(ledger->get_block_by_previd(block.header().id(), &block));
 }
 
+/**
+ * Test that blockgen can generate block
+ */
 TEST_F(LedgerMongodb, load_block_1_to_9) {
   tooling::blockgen::append_blocks(9, ledger);
   ASSERT_EQ(9, ledger->height());
 }
 
+/**
+ * Test that *get_last_block_header* return the correct block
+ */
 TEST_F(LedgerMongodb, header) {
   tooling::blockgen::append_blocks(1, ledger);
   messages::Block block;
@@ -233,12 +242,18 @@ TEST_F(LedgerMongodb, header) {
   ASSERT_EQ(last_header, header);
 }
 
+/**
+ * Test that the ledger can remove all block
+ */
 TEST_F(LedgerMongodb, remove_all) {
   tooling::blockgen::append_blocks(9, ledger);
   ledger->remove_all();
   ASSERT_EQ(0, ledger->height());
 }
 
+/**
+ * Test we can access block by previd or index
+ */
 TEST_F(LedgerMongodb, get_block) {
   messages::Block block0, block0bis, block1, block7;
   tooling::blockgen::append_blocks(9, ledger);
@@ -250,6 +265,9 @@ TEST_F(LedgerMongodb, get_block) {
   ASSERT_TRUE(ledger->get_block(id0, &block0bis));
 }
 
+/**
+ * Test we can delete block
+ */
 TEST_F(LedgerMongodb, delete_block) {
   messages::Block block0;
   ledger->get_block(0, &block0);
@@ -262,6 +280,9 @@ TEST_F(LedgerMongodb, delete_block) {
   ASSERT_EQ(0, ledger->height());
 }
 
+/**
+ * Test transaction manipulation function (get / delete / add)
+ */
 TEST_F(LedgerMongodb, transactions) {
   messages::Block block0;
   ledger->get_block(0, &block0);
@@ -295,6 +316,9 @@ TEST_F(LedgerMongodb, transactions) {
   ASSERT_EQ(block.transactions_size(), 0);
 }
 
+/**
+ * Test that tagged block can be insered in ledger
+ */
 TEST_F(LedgerMongodb, insert_tagged_block) {
   messages::Block block, fake_block;
   tooling::blockgen::append_blocks(2, ledger);
@@ -315,6 +339,9 @@ TEST_F(LedgerMongodb, insert_tagged_block) {
   ASSERT_TRUE(ledger->get_block(block.header().id(), &fake_block));
 }
 
+/**
+ * Test that branch path and branch id are correctly set
+ */
 TEST_F(LedgerMongodb, insert_block) {
   messages::Block block0, block1, block2;
   messages::TaggedBlock tagged_block;
@@ -342,6 +369,10 @@ TEST_F(LedgerMongodb, insert_block) {
   ASSERT_EQ(tagged_block.branch_path(), branch_path);
 }
 
+/**
+ * Test that block with *previous_block_hash* set to MAIN block is in Branch::DETACHED
+ * and other are in Branch::UNVERIFIED
+ */
 TEST_F(LedgerMongodb, insert_block_attach) {
   messages::Block block0, block1, block2;
   messages::TaggedBlock tagged_block;
@@ -373,6 +404,9 @@ TEST_F(LedgerMongodb, insert_block_attach) {
   ASSERT_EQ(tagged_block.branch_path(), branch_path);
 }
 
+/**
+ * Test that branch path are correct for fork
+ */
 TEST_F(LedgerMongodb, branch_path) {
   messages::Block block0, block1, block2, fork1, fork2;
   ASSERT_TRUE(ledger->get_block(0, &block0));
@@ -414,6 +448,9 @@ TEST_F(LedgerMongodb, branch_path) {
   ASSERT_EQ(tagged_block.branch_path(), branch_path);
 }
 
+/**
+ * Test ledger can set the score of a block
+ */
 TEST_F(LedgerMongodb, set_block_verified) {
   messages::TaggedBlock tagged_block;
   messages::Block block0;
