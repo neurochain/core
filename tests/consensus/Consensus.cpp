@@ -610,7 +610,7 @@ TEST_F(Consensus, compute_assembly_pii) { test_compute_assembly_pii(); }
 TEST_F(Consensus, start_computations) { test_start_computations(); }
 
 /**
- * Test that consensus don't add the same transaction twice
+ * Test that consensus don't add the same transaction twice and accept transaction with 0 ncc
  */
 TEST_F(Consensus, add_transaction) {
   auto t0 = ledger->send_ncc(simulator.keys[0].key_priv(),
@@ -624,6 +624,10 @@ TEST_F(Consensus, add_transaction) {
   auto t1 = ledger->send_ncc(simulator.keys[0].key_priv(),
                              simulator.key_pubs[0], 0.5);
   ASSERT_TRUE(consensus->add_transaction(t1));
+  auto t3 = ledger->send_ncc(
+      simulator.keys[0].key_priv(), simulator.key_pubs[0], 0,
+      static_cast<const std::optional<messages::NCCAmount>>(0));
+  ASSERT_TRUE(consensus->add_transaction(t3));
 }
 
 /**
