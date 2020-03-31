@@ -573,6 +573,41 @@ class Consensus : public testing::Test {
 TEST_F(Consensus, is_valid_transaction) { test_is_valid_transaction(); }
 
 /**
+ * Test to make a transaction with more address a block can handle
+ */
+TEST_F(Consensus, big_transaction) {
+  auto &sender_key_priv = simulator.keys[0].key_priv();
+  auto &sender_key_pub = simulator.keys[0].key_pub();
+  auto &recipient_key_pub = sender_key_pub;
+
+  messages::Transaction transaction;
+  transaction.mutable_last_seen_block_id()->CopyFrom(ledger->get_main_branch_tip().block().header().id());
+  transaction.mutable_fees()->set_value(0);
+  auto *transaction_input = transaction.add_inputs();
+  transaction_input->mutable_value()->set_value(0);
+  transaction_input->mutable_key_pub()->CopyFrom(sender_key_pub);
+  while (transaction.ByteSizeLong() < consensus->config().max_block_size) {
+    auto *transaction_output = transaction.add_outputs();
+    transaction_output->mutable_key_pub()->CopyFrom(recipient_key_pub);
+    transaction_output->mutable_value()->set_value(0);
+  }
+
+  const auto ecc = crypto::Ecc(sender_key_priv, sender_key_pub);
+  std::vector<const crypto::Ecc *> keys = {&ecc};
+
+  crypto::sign(keys, &transaction);
+  messages::set_transaction_hash(&transaction);
+  ASSERT_TRUE(consensus->add_transaction(transaction));
+
+  messages::TaggedBlock block0;
+  ASSERT_TRUE(ledger->get_block(0, &block0));
+  auto block = simulator.new_block(0, block0);
+  ASSERT_TRUE(consensus->add_block(block));
+  for (auto &tr : block.transactions()) {
+    ASSERT_NE(tr, transaction) << tr;
+  }
+}
+/**
  * Test that the consensus can check the validity of a block
  */
 TEST_F(Consensus, is_valid_block) { test_is_valid_block(); }
