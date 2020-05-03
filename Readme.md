@@ -6,7 +6,10 @@
 * Full documentation: https://neurochaintech.gitlab.io/core/index.html
 * Dashboard: http://dashboard.neurochaintech.io:3000/dashboard/snapshot/XawbPu2Y4fJ05xS25tJGZ5wF5V2RRKAJ
 
-[TOC]
+# Testnet 
+
+* https://blockexplorer.testnet.neurochaintech.io
+* https://wallet.testnet.neurochaintech.io/
 
 # What is it?
 
