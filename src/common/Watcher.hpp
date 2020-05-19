@@ -21,7 +21,10 @@ class Watcher {
 
   void handle_new_element(const T& new_element) {
     if (_has_watcher) {
-      _last_element = new_element;
+      {
+        std::unique_lock cv_lock(_cv_mutex);
+        _last_element = new_element;
+      }
       _has_new_element.notify_all();
     }
   }
