@@ -98,6 +98,10 @@ void Bot::handler_block(const messages::Header &header,
     LOG_WARNING << "Consensus rejected block" << body.block().header().id();
     return;
   }
+  auto publish_message = std::make_shared<messages::Message>();
+  publish_message->add_bodies()->mutable_publish()->mutable_block()->CopyFrom(body.block());
+  _queue.push(publish_message);
+
   update_ledger(_ledger->new_missing_block(body.block().header().id()));
 
   if (header.has_request_id()) {
@@ -217,13 +221,6 @@ void Bot::subscribe() {
       messages::Type::kPing,
       [this](const messages::Header &header, const messages::Body &body) {
         this->handler_ping(header, body);
-      });
-  _subscriber.subscribe(
-      messages::Type::kPublish,
-      [](const messages::Header &header, const messages::Body &body) {
-        std::cout << "publish : " << header << std::endl;
-        std::cout << "publish : " << body << std::endl;
-        std::cout << std::endl;
       });
 }
 
