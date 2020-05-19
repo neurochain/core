@@ -166,7 +166,7 @@ void Rest::get_create_transaction(const Request &req, Response res) {
 }
 
 void Rest::publish(const Request &req, Response res) {
-  messages::Publish publish_message;
+  messages::PublishTransaction publish_message;
   if (!messages::from_json(req.body(), &publish_message)) {
     bad_request(res, "Could not parse body");
   }

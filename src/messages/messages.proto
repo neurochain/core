@@ -170,9 +170,7 @@ message ConnectionReady { required bool from_remote = 1; }
 message BodyCount {}
 
 message Publish {
-  required string transaction = 1;
-  required string signature = 2;
-  required _KeyPub key_pub = 3;
+  required Block block = 1;
 }
 
 message Body {
