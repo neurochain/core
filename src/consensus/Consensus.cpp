@@ -13,33 +13,41 @@ namespace consensus {
 
 Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
                      const std::vector<crypto::Ecc> &keys,
-                     const PublishBlock &publish_block, bool start_threads)
-    : _ledger(ledger), _keys(keys), _publish_block(publish_block) {
+                     const PublishBlock &publish_block,
+                     const VerifiedBlock &verified_block, bool start_threads)
+    : _ledger(ledger),
+      _keys(keys),
+      _publish_block(publish_block),
+      _verified_block(verified_block) {
   init(start_threads);
 }
 
 Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
                      const std::vector<crypto::Ecc> &keys,
                      const std::optional<Config> &config,
-                     const PublishBlock &publish_block, bool start_threads)
+                     const PublishBlock &publish_block,
+                     const VerifiedBlock &verified_block, bool start_threads)
     : _config(config.value_or(Config())),
       _ledger(ledger),
       _keys(keys),
-      _publish_block(publish_block) {
+      _publish_block(publish_block),
+      _verified_block(verified_block) {
   init(start_threads);
 }
 
 Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
                      const std::vector<crypto::Ecc> &keys, const Config &config,
-                     const PublishBlock &publish_block, bool start_threads)
+                     const PublishBlock &publish_block,
+                     const VerifiedBlock &verified_block, bool start_threads)
     : _config(config),
       _ledger(ledger),
       _keys(keys),
-      _publish_block(publish_block) {
+      _publish_block(publish_block),
+      _verified_block(verified_block) {
   init(start_threads);
 }
 
-  bool Consensus::check_outputs(
+bool Consensus::check_outputs(
     const messages::Transaction &transaction) {
   messages::NCCValue total_received = 0;
   for (const auto &input : transaction.inputs()) {
@@ -570,6 +578,7 @@ bool Consensus::verify_blocks() {
         is_valid(tagged_block)) {
       _ledger->set_block_verified(tagged_block.block().header().id(),
                                   get_block_score(tagged_block), assembly_id);
+      _verified_block(tagged_block.block());
     } else if (!_ledger->set_branch_invalid(
                    tagged_block.block().header().id())) {
       throw std::runtime_error("Failed to mark a block as invalid");

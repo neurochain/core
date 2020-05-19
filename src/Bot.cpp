@@ -98,10 +98,6 @@ void Bot::handler_block(const messages::Header &header,
     LOG_WARNING << "Consensus rejected block" << body.block().header().id();
     return;
   }
-  auto publish_message = std::make_shared<messages::Message>();
-  publish_message->add_bodies()->mutable_publish()->mutable_block()->CopyFrom(body.block());
-  _queue.push(publish_message);
-
   update_ledger(_ledger->new_missing_block(body.block().header().id()));
 
   if (header.has_request_id()) {
@@ -253,7 +249,8 @@ bool Bot::init() {
 
   _consensus = std::make_shared<consensus::Consensus>(
       _ledger, _keys, _consensus_config,
-      [this](const messages::Block &block) { publish_block(block); });
+      [this](const messages::Block &block) { publish_block(block); },
+      [](const messages::Block &block) {});
 
   _io_context_thread = std::thread([this]() { _io_context->run(); });
 
