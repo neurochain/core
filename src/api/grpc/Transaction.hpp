@@ -19,7 +19,7 @@ class Transaction : public Api, public grpcservice::Transaction::Service {
       ::grpc::ServerWriter<messages::Transaction>;
 
  private:
-  Watcher<messages::Transaction> _transaction_watcher;
+  Watcher<messages::Block> _transaction_watcher;
 
  public:
   explicit Transaction(Bot* bot);

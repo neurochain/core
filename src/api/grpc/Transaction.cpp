@@ -4,15 +4,15 @@ namespace neuro::api::grpc {
 
 Transaction::Transaction(Bot *bot) : Api::Api(bot) {
   Api::subscribe(
-      messages::Type::kTransaction,
+      messages::Type::kPublish,
       [this](const messages::Header &header, const messages::Body &body) {
-        _transaction_watcher.handle_new_element(body.transaction());
+        _transaction_watcher.handle_new_element(body.publish().block());
       });
 }
 
 Transaction::Status Transaction::by_id(ServerContext *context,
-                                        const messages::Hash *request,
-                                        messages::Transaction *response) {
+                                       const messages::Hash *request,
+                                       messages::Transaction *response) {
   auto transaction = Api::transaction(*request);
   response->Swap(&transaction);
   return Status::OK;
@@ -41,7 +41,7 @@ Transaction::Status Transaction::list(
 }
 
 Transaction::Status Transaction::total(ServerContext *context,
-                                        const Empty *request, UInt64 *response) {
+                                       const Empty *request, UInt64 *response) {
   auto total = Api::total_nb_transactions();
   response->set_value(total);
   return Status::OK;
@@ -63,18 +63,24 @@ Transaction::Status Transaction::create(
 }
 
 Transaction::Status Transaction::publish(ServerContext *context,
-                                          const messages::Publish *request,
-                                          Transaction::Empty *response) {
+                                         const messages::Publish *request,
+                                         Transaction::Empty *response) {
   // TODO rework that, use rest api for now
   return Status::CANCELLED;
 }
 
-Transaction::Status Transaction::watch(
-    ServerContext *context, const Transaction::Empty *request,
-    TransactionWriter *writer) {
-  _transaction_watcher.watch([&writer](const std::optional<messages::Transaction>& last_transaction) {
-    return writer->Write(last_transaction.value());
-  });
+Transaction::Status Transaction::watch(ServerContext *context,
+                                       const Transaction::Empty *request,
+                                       TransactionWriter *writer) {
+  _transaction_watcher.watch(
+      [&writer](const std::optional<messages::Block> &last_block) {
+        for (auto &transaction : last_block->transactions()) {
+          if (!writer->Write(transaction)) {
+            return false;
+          }
+        }
+        return true;
+      });
   return Status::OK;
 }
 
