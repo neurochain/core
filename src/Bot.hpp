@@ -128,7 +128,7 @@ public:
                  messages::Subscriber::Callback callback);
 
   bool publish_transaction(const messages::Transaction &transaction) const;
-  void publish_block(const messages::Block &block) const;
+  void publish_block(const messages::Block &block);
   ledger::Ledger *ledger();
 
   friend class neuro::tests::BotTest;

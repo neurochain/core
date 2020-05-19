@@ -218,6 +218,13 @@ void Bot::subscribe() {
       [this](const messages::Header &header, const messages::Body &body) {
         this->handler_ping(header, body);
       });
+  _subscriber.subscribe(
+      messages::Type::kPublish,
+      [](const messages::Header &header, const messages::Body &body) {
+        std::cout << "publish : " << header << std::endl;
+        std::cout << "publish : " << body << std::endl;
+        std::cout << std::endl;
+      });
 }
 
 bool Bot::configure_networking(messages::config::Config *config) {
@@ -661,13 +668,17 @@ bool Bot::publish_transaction(const messages::Transaction &transaction) const {
          networking::TransportLayer::SendResult::FAILED;
 }
 
-void Bot::publish_block(const messages::Block &block) const {
+void Bot::publish_block(const messages::Block &block) {
   // Send the transaction on the network
   messages::Message message;
   messages::fill_header(message.mutable_header());
   auto body = message.add_bodies();
   body->mutable_block()->CopyFrom(block);
   _networking.send_all(message);
+
+  auto publish_message = std::make_shared<messages::Message>();
+  publish_message->add_bodies()->mutable_publish()->mutable_block()->CopyFrom(block);
+  _queue.push(publish_message);
   LOG_INFO << "Publishing block " << block;
 }
 
