@@ -250,7 +250,14 @@ bool Bot::init() {
   _consensus = std::make_shared<consensus::Consensus>(
       _ledger, _keys, _consensus_config,
       [this](const messages::Block &block) { publish_block(block); },
-      [](const messages::Block &block) {});
+      [this](const messages::Block &block) {
+        auto publish_message = std::make_shared<messages::Message>();
+        publish_message->add_bodies()
+            ->mutable_publish()
+            ->mutable_block()
+            ->CopyFrom(block);
+        _queue.push(publish_message);
+      });
 
   _io_context_thread = std::thread([this]() { _io_context->run(); });
 
@@ -670,9 +677,6 @@ void Bot::publish_block(const messages::Block &block) {
   body->mutable_block()->CopyFrom(block);
   _networking.send_all(message);
 
-  auto publish_message = std::make_shared<messages::Message>();
-  publish_message->add_bodies()->mutable_publish()->mutable_block()->CopyFrom(block);
-  _queue.push(publish_message);
   LOG_INFO << "Publishing block " << block;
 }
 
