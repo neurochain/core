@@ -576,9 +576,12 @@ bool Consensus::verify_blocks() {
 
     if (_ledger->add_balances(&tagged_block, _config.blocks_per_assembly) &&
         is_valid(tagged_block)) {
-      _ledger->set_block_verified(tagged_block.block().header().id(),
-                                  get_block_score(tagged_block), assembly_id);
-      _verified_block(tagged_block.block());
+      bool is_verified = _ledger->set_block_verified(
+          tagged_block.block().header().id(), get_block_score(tagged_block),
+          assembly_id);
+      if (is_verified) {
+        _verified_block(tagged_block.block());
+      }
     } else if (!_ledger->set_branch_invalid(
                    tagged_block.block().header().id())) {
       throw std::runtime_error("Failed to mark a block as invalid");
