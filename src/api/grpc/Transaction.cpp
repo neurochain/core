@@ -6,12 +6,16 @@ Transaction::Transaction(Bot *bot) : Api::Api(bot) {
   Api::subscribe(
       messages::Type::kPublish,
       [this](const messages::Header &header, const messages::Body &body) {
-        _transaction_watcher.handle_new_element(body.publish().block());
+        for (auto& transaction_watcher : _transaction_watchers) {
+          transaction_watcher.handle_new_element(body.publish().block());
+        }
       });
   Api::subscribe(
       messages::Type::kTransaction,
       [this](const messages::Header &header, const messages::Body &body) {
-        _pending_transaction_watcher.handle_new_element(body.transaction());
+        for (auto& pending_transaction_watcher : _pending_transaction_watchers) {
+          pending_transaction_watcher.handle_new_element(body.transaction());
+        }
       });
 }
 
@@ -77,26 +81,37 @@ Transaction::Status Transaction::publish(ServerContext *context,
 Transaction::Status Transaction::watch(ServerContext *context,
                                        const Transaction::Empty *request,
                                        TransactionWriter *writer) {
-  _transaction_watcher.watch(
-      [&writer](const std::optional<messages::Block> &last_block) {
-        for (auto &transaction : last_block->transactions()) {
-          if (!writer->Write(transaction)) {
-            return false;
-          }
-        }
-        return true;
-      });
-  return Status::OK;
+  for (auto &transaction_watcher : _transaction_watchers) {
+    if (!transaction_watcher.has_watcher()) {
+      transaction_watcher.watch(
+          [&writer](const std::optional<messages::Block> &last_block) {
+            for (auto &transaction : last_block->transactions()) {
+              if (!writer->Write(transaction)) {
+                return false;
+              }
+            }
+            return true;
+          });
+      return Status::OK;
+    }
+  }
+  return Status::CANCELLED;
 }
 
 Transaction::Status Transaction::watch_pending(
     ServerContext *context, const Transaction::Empty *request,
     TransactionWriter *writer) {
-  _pending_transaction_watcher.watch(
-      [&writer](const std::optional<messages::Transaction> &last_transaction) {
-        return writer->Write(last_transaction.value());
-      });
-  return Status::OK;
+  for (auto &pending_transaction_watcher : _pending_transaction_watchers) {
+    if (!pending_transaction_watcher.has_watcher()) {
+      pending_transaction_watcher.watch(
+          [&writer](
+              const std::optional<messages::Transaction> &last_transaction) {
+            return writer->Write(last_transaction.value());
+          });
+      return Status::OK;
+    }
+  }
+  return Status::CANCELLED;
 }
 
 }  // namespace neuro::api::grpc

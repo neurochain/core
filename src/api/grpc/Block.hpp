@@ -16,7 +16,8 @@ class Block : public Api, public grpcservice::Block::Service {
   using BlockWriter = ::grpc::ServerWriter<messages::Block>;
 
  private:
-  Watcher<messages::Block> _block_watcher;
+  static constexpr int WATCHER_LIMIT = 5;
+  std::vector<Watcher<messages::Block>> _block_watchers{WATCHER_LIMIT};
 
  public:
   explicit Block(Bot* bot);

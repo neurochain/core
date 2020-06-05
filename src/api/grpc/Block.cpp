@@ -6,7 +6,9 @@ Block::Block(Bot *bot) : Api::Api(bot) {
   Api::subscribe(
       messages::Type::kPublish,
       [this](const messages::Header &header, const messages::Body &body) {
-        _block_watcher.handle_new_element(body.publish().block());
+        for (auto &block_watcher : _block_watchers) {
+          block_watcher.handle_new_element(body.publish().block());
+        }
       });
 }
 
@@ -40,11 +42,17 @@ Block::Status Block::total(ServerContext *context, const Empty *request,
 
 Block::Status Block::watch(ServerContext *context, const Empty *request,
                            BlockWriter *writer) {
-  _block_watcher.watch(
-      [&writer](const std::optional<messages::Block> &last_block) {
-        return writer->Write(last_block.value());
-      });
-  return Status::OK;
+  for (auto &block_watcher : _block_watchers) {
+    if (!block_watcher.has_watcher()) {
+      block_watcher.watch(
+          [&writer](const std::optional<messages::Block> &last_block) {
+            return writer->Write(last_block.value());
+          });
+
+      return Status::OK;
+    }
+  }
+  return Status::CANCELLED;
 }
 
 }  // namespace neuro::api::grpc

@@ -19,8 +19,10 @@ class Transaction : public Api, public grpcservice::Transaction::Service {
       ::grpc::ServerWriter<messages::Transaction>;
 
  private:
-  Watcher<messages::Block> _transaction_watcher;
-  Watcher<messages::Transaction> _pending_transaction_watcher;
+  static constexpr int WATCHER_LIMIT = 5;
+  std::vector<Watcher<messages::Block>> _transaction_watchers{WATCHER_LIMIT};
+  std::vector<Watcher<messages::Transaction>> _pending_transaction_watchers{
+      WATCHER_LIMIT};
 
  public:
   explicit Transaction(Bot* bot);

@@ -41,6 +41,10 @@ class Watcher {
       _last_element = std::nullopt;
     }
   }
+
+  bool has_watcher() {
+    return _has_watcher;
+  }
 };
 
 }  // namespace neuro
