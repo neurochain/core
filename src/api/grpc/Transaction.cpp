@@ -8,6 +8,11 @@ Transaction::Transaction(Bot *bot) : Api::Api(bot) {
       [this](const messages::Header &header, const messages::Body &body) {
         _transaction_watcher.handle_new_element(body.publish().block());
       });
+  Api::subscribe(
+      messages::Type::kTransaction,
+      [this](const messages::Header &header, const messages::Body &body) {
+        _pending_transaction_watcher.handle_new_element(body.transaction());
+      });
 }
 
 Transaction::Status Transaction::by_id(ServerContext *context,
@@ -80,6 +85,16 @@ Transaction::Status Transaction::watch(ServerContext *context,
           }
         }
         return true;
+      });
+  return Status::OK;
+}
+
+Transaction::Status Transaction::watch_pending(
+    ServerContext *context, const Transaction::Empty *request,
+    TransactionWriter *writer) {
+  _pending_transaction_watcher.watch(
+      [&writer](const std::optional<messages::Transaction> &last_transaction) {
+        return writer->Write(last_transaction.value());
       });
   return Status::OK;
 }

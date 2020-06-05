@@ -20,6 +20,7 @@ class Transaction : public Api, public grpcservice::Transaction::Service {
 
  private:
   Watcher<messages::Block> _transaction_watcher;
+  Watcher<messages::Transaction> _pending_transaction_watcher;
 
  public:
   explicit Transaction(Bot* bot);
@@ -37,6 +38,8 @@ class Transaction : public Api, public grpcservice::Transaction::Service {
                  Empty* response);
   Status watch(ServerContext* context, const Empty* request,
                     TransactionWriter* writer);
+  Status watch_pending(ServerContext* context, const Empty* request,
+               TransactionWriter* writer);
 };
 
 }  // namespace neuro::api::grpc
