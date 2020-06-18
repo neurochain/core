@@ -2,7 +2,8 @@
 
 namespace neuro::api::grpc {
 
-Block::Block(Bot *bot) : Api::Api(bot) {
+Block::Block(const messages::config::GRPC &config, Bot *bot)
+    : Api::Api(bot), _block_watchers(config.watcher_limit()) {
   Api::subscribe(
       messages::Type::kPublish,
       [this](const messages::Header &header, const messages::Body &body) {

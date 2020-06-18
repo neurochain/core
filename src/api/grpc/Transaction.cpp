@@ -2,18 +2,20 @@
 
 namespace neuro::api::grpc {
 
-Transaction::Transaction(Bot *bot) : Api::Api(bot) {
+Transaction::Transaction(const messages::config::GRPC &config, Bot *bot)
+    : Api::Api(bot), _transaction_watchers(config.watcher_limit()), _pending_transaction_watchers(config.watcher_limit()) {
   Api::subscribe(
       messages::Type::kPublish,
       [this](const messages::Header &header, const messages::Body &body) {
-        for (auto& transaction_watcher : _transaction_watchers) {
+        for (auto &transaction_watcher : _transaction_watchers) {
           transaction_watcher.handle_new_element(body.publish().block());
         }
       });
   Api::subscribe(
       messages::Type::kTransaction,
       [this](const messages::Header &header, const messages::Body &body) {
-        for (auto& pending_transaction_watcher : _pending_transaction_watchers) {
+        for (auto &pending_transaction_watcher :
+             _pending_transaction_watchers) {
           pending_transaction_watcher.handle_new_element(body.transaction());
         }
       });

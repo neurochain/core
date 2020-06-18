@@ -16,11 +16,10 @@ class Block : public Api, public grpcservice::Block::Service {
   using BlockWriter = ::grpc::ServerWriter<messages::Block>;
 
  private:
-  static constexpr int WATCHER_LIMIT = 5;
-  std::vector<Watcher<messages::Block>> _block_watchers{WATCHER_LIMIT};
+  std::vector<Watcher<messages::Block>> _block_watchers;
 
  public:
-  explicit Block(Bot* bot);
+  explicit Block(const messages::config::GRPC &config, Bot* bot);
 
   Status by_id(ServerContext* context, const messages::Hash* request,
                 messages::Block* response);
