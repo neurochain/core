@@ -42,7 +42,7 @@ class Watcher {
     }
   }
 
-  bool has_watcher() {
+  bool has_watcher() const {
     return _has_watcher;
   }
 };

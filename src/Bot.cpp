@@ -669,7 +669,7 @@ bool Bot::publish_transaction(const messages::Transaction &transaction) const {
          networking::TransportLayer::SendResult::FAILED;
 }
 
-void Bot::publish_block(const messages::Block &block) {
+void Bot::publish_block(const messages::Block &block) const {
   // Send the transaction on the network
   messages::Message message;
   messages::fill_header(message.mutable_header());

@@ -14,7 +14,8 @@ namespace consensus {
 Consensus::Consensus(std::shared_ptr<ledger::Ledger> ledger,
                      const std::vector<crypto::Ecc> &keys,
                      const PublishBlock &publish_block,
-                     const VerifiedBlock &verified_block, bool start_threads)
+                     const VerifiedBlock &verified_block,
+                     bool start_threads)
     : _ledger(ledger),
       _keys(keys),
       _publish_block(publish_block),
