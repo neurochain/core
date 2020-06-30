@@ -36,6 +36,7 @@ Simulator::Simulator(const std::string &db_url, const std::string &db_name,
               .block())),
       consensus(std::make_shared<consensus::Consensus>(
           ledger, keys, config, [](const messages::Block &block) {},
+          [](const messages::Block &block) {},
           start_threads)) {
   for (size_t i = 0; i < keys.size(); i++) {
     auto &key_pub = key_pubs.emplace_back(keys[i].key_pub());

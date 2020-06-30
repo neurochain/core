@@ -2,7 +2,8 @@
 
 namespace neuro::api::grpc {
 
-Status::Status(Bot *bot) : Api::Api(bot), _monitor(bot) {}
+Status::Status(const messages::config::GRPC &config, Bot *bot)
+    : Api::Api(bot), _monitor(bot) {}
 
 Status::gStatus Status::balance(gServerContext *context,
                            const messages::_KeyPub *request,

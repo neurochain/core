@@ -51,6 +51,12 @@ message Status {
   optional PeerCount peer = 4;
 }
 
+message PublishTransaction {
+  required string transaction = 1;
+  required string signature = 2;
+  required _KeyPub key_pub = 3;
+}
+
 message CreateTransactionBody {
   required _KeyPub key_pub = 1;
   repeated Output outputs = 2;

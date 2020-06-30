@@ -37,6 +37,7 @@ class RealtimeConsensus;
 }  // namespace tests
 
 using PublishBlock = std::function<void(const messages::Block &block)>;
+using VerifiedBlock = std::function<void(const messages::Block &block)>;
 using KeyPubIndex = uint32_t;
 
 class Consensus {
@@ -46,6 +47,7 @@ class Consensus {
   const std::vector<crypto::Ecc> &_keys;
   std::vector<messages::_KeyPub> _key_pubs;
   const PublishBlock _publish_block;
+  const VerifiedBlock _verified_block;
   std::thread _compute_pii_thread;
   std::vector<std::pair<messages::BlockHeight, KeyPubIndex>> _heights_to_write;
   messages::BlockHeight _last_mined_block_height = 0;  //!< cache for the last
@@ -129,16 +131,22 @@ class Consensus {
  public:
   Consensus(std::shared_ptr<ledger::Ledger> ledger,
             const std::vector<crypto::Ecc> &keys,
-            const PublishBlock &publish_block, bool start_threads = true);
+            const PublishBlock &publish_block,
+            const VerifiedBlock &verified_block,
+            bool start_threads = true);
 
   Consensus(std::shared_ptr<ledger::Ledger> ledger,
             const std::vector<crypto::Ecc> &keys,
             const std::optional<Config> &config,
-            const PublishBlock &publish_block, bool start_threads = true);
+            const PublishBlock &publish_block,
+            const VerifiedBlock &verified_block,
+            bool start_threads = true);
 
   Consensus(std::shared_ptr<ledger::Ledger> ledger,
             const std::vector<crypto::Ecc> &keys, const Config &config,
-            const PublishBlock &publish_block, bool start_threads = true);
+            const PublishBlock &publish_block,
+            const VerifiedBlock &verified_block,
+            bool start_threads = true);
 
   Config config() const;
 

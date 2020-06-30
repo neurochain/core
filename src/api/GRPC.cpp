@@ -7,9 +7,9 @@ namespace neuro::api {
 
 GRPC::GRPC(const messages::config::GRPC &config, Bot *bot)
     : Api::Api(bot),
-      _block_service(bot),
-      _transaction_service(bot),
-      _status_service(bot) {
+      _block_service(config, bot),
+      _transaction_service(config, bot),
+      _status_service(config, bot) {
   _server_thread = std::thread([this, &config](){
     std::string server_address("0.0.0.0:" + std::to_string(config.port()));
     ::grpc::ServerBuilder builder;

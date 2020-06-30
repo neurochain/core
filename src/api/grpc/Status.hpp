@@ -18,7 +18,7 @@ class Status : public Api, public grpcservice::Status::Service {
   Monitoring _monitor;
 
  public:
-  Status(Bot *bot);
+  Status(const messages::config::GRPC &config, Bot *bot);
   gStatus balance(gServerContext *context, const messages::_KeyPub *request,
                   messages::_NCCAmount *response);
   gStatus validate_key(gServerContext *context,
