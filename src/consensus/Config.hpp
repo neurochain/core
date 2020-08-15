@@ -8,8 +8,8 @@ namespace neuro {
 namespace consensus {
 
 struct Config {
-  uint32_t blocks_per_assembly{28800};
-  uint32_t members_per_assembly{500};
+  uint32_t blocks_per_assembly{3600};
+  uint32_t members_per_assembly{7};
   uint32_t block_period{3};
   messages::NCCAmount block_reward{uint64_t{100 * 1000 * 1000 * 1000llu}};
   uint32_t max_block_size{256000};
