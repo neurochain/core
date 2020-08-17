@@ -2,17 +2,28 @@
 
 namespace neuro::api::grpc {
 
-Transaction::Transaction(Bot *bot) : Api::Api(bot) {
+Transaction::Transaction(const messages::config::GRPC &config, Bot *bot)
+    : Api::Api(bot), _transaction_watchers(config.watcher_limit()), _pending_transaction_watchers(config.watcher_limit()) {
+  Api::subscribe(
+      messages::Type::kPublish,
+      [this](const messages::Header &header, const messages::Body &body) {
+        for (auto &transaction_watcher : _transaction_watchers) {
+          transaction_watcher.handle_new_element(body.publish().block());
+        }
+      });
   Api::subscribe(
       messages::Type::kTransaction,
       [this](const messages::Header &header, const messages::Body &body) {
-        _transaction_watcher.handle_new_element(body.transaction());
+        for (auto &pending_transaction_watcher :
+             _pending_transaction_watchers) {
+          pending_transaction_watcher.handle_new_element(body.transaction());
+        }
       });
 }
 
 Transaction::Status Transaction::by_id(ServerContext *context,
-                                        const messages::Hash *request,
-                                        messages::Transaction *response) {
+                                       const messages::Hash *request,
+                                       messages::Transaction *response) {
   auto transaction = Api::transaction(*request);
   response->Swap(&transaction);
   return Status::OK;
@@ -41,7 +52,7 @@ Transaction::Status Transaction::list(
 }
 
 Transaction::Status Transaction::total(ServerContext *context,
-                                        const Empty *request, UInt64 *response) {
+                                       const Empty *request, UInt64 *response) {
   auto total = Api::total_nb_transactions();
   response->set_value(total);
   return Status::OK;
@@ -63,19 +74,46 @@ Transaction::Status Transaction::create(
 }
 
 Transaction::Status Transaction::publish(ServerContext *context,
-                                          const messages::Publish *request,
-                                          Transaction::Empty *response) {
+                                         const messages::Publish *request,
+                                         Transaction::Empty *response) {
   // TODO rework that, use rest api for now
   return Status::CANCELLED;
 }
 
-Transaction::Status Transaction::watch(
+Transaction::Status Transaction::watch(ServerContext *context,
+                                       const Transaction::Empty *request,
+                                       TransactionWriter *writer) {
+  for (auto &transaction_watcher : _transaction_watchers) {
+    if (!transaction_watcher.has_watcher()) {
+      transaction_watcher.watch(
+          [&writer](const std::optional<messages::Block> &last_block) {
+            for (auto &transaction : last_block->transactions()) {
+              if (!writer->Write(transaction)) {
+                return false;
+              }
+            }
+            return true;
+          });
+      return Status::OK;
+    }
+  }
+  return Status::CANCELLED;
+}
+
+Transaction::Status Transaction::watch_pending(
     ServerContext *context, const Transaction::Empty *request,
     TransactionWriter *writer) {
-  _transaction_watcher.watch([&writer](const std::optional<messages::Transaction>& last_transaction) {
-    return writer->Write(last_transaction.value());
-  });
-  return Status::OK;
+  for (auto &pending_transaction_watcher : _pending_transaction_watchers) {
+    if (!pending_transaction_watcher.has_watcher()) {
+      pending_transaction_watcher.watch(
+          [&writer](
+              const std::optional<messages::Transaction> &last_transaction) {
+            return writer->Write(last_transaction.value());
+          });
+      return Status::OK;
+    }
+  }
+  return Status::CANCELLED;
 }
 
 }  // namespace neuro::api::grpc

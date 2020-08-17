@@ -25,6 +25,7 @@ service Transaction {
     // TODO does it make sense to use string payload anymore ?
     rpc publish(messages.Publish) returns (google.protobuf.Empty);
     rpc watch(google.protobuf.Empty) returns (stream messages.Transaction);
+    rpc watch_pending(google.protobuf.Empty) returns (stream messages.Transaction);
 }
 
 service Status {

@@ -19,10 +19,11 @@ class Transaction : public Api, public grpcservice::Transaction::Service {
       ::grpc::ServerWriter<messages::Transaction>;
 
  private:
-  Watcher<messages::Transaction> _transaction_watcher;
+  std::vector<Watcher<messages::Block>> _transaction_watchers;
+  std::vector<Watcher<messages::Transaction>> _pending_transaction_watchers;
 
  public:
-  explicit Transaction(Bot* bot);
+  explicit Transaction(const messages::config::GRPC& config, Bot* bot);
 
   Status by_id(ServerContext* context, const messages::Hash* request,
                 messages::Transaction* response);
@@ -37,6 +38,8 @@ class Transaction : public Api, public grpcservice::Transaction::Service {
                  Empty* response);
   Status watch(ServerContext* context, const Empty* request,
                     TransactionWriter* writer);
+  Status watch_pending(ServerContext* context, const Empty* request,
+               TransactionWriter* writer);
 };
 
 }  // namespace neuro::api::grpc
